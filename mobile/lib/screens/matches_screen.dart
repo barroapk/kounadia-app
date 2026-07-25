@@ -58,7 +58,7 @@ class _MatchesScreenState extends State<MatchesScreen> {
                 child: Column(
                   mainAxisSize: MainAxisSize.min,
                   children: [
-                    const Text("Impossible de charger les matchs."),
+                    Text("Erreur : ${snapshot.error}"),
                     const SizedBox(height: 12),
                     ElevatedButton(
                       onPressed: _reload,
