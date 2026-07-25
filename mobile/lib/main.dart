@@ -1,5 +1,5 @@
 import "package:flutter/material.dart";
-import "screens/matches_screen.dart";
+import "screens/main_screen.dart";
 
 void main() {
   runApp(const KounadiaApp());
@@ -17,7 +17,7 @@ class KounadiaApp extends StatelessWidget {
         colorSchemeSeed: Colors.green,
         useMaterial3: true,
       ),
-      home: const MatchesScreen(),
+      home: const MainScreen(),
     );
   }
 }

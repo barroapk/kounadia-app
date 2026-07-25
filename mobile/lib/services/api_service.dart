@@ -4,8 +4,8 @@ import "../config/api_config.dart";
 import "../models/match.dart";
 
 class ApiService {
-  Future<List<Match>> getTodayMatches() async {
-    final uri = Uri.parse("${ApiConfig.baseUrl}/matches/today");
+  Future<List<Match>> _fetchMatches(String path) async {
+    final uri = Uri.parse("${ApiConfig.baseUrl}$path");
     final response = await http.get(uri).timeout(const Duration(seconds: 90));
 
     if (response.statusCode != 200) {
@@ -17,4 +17,7 @@ class ApiService {
         .map((item) => Match.fromJson(item as Map<String, dynamic>))
         .toList();
   }
+
+  Future<List<Match>> getTodayMatches() => _fetchMatches("/matches/today");
+  Future<List<Match>> getLiveMatches() => _fetchMatches("/matches/live");
 }

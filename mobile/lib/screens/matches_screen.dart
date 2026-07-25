@@ -2,8 +2,17 @@ import "package:flutter/material.dart";
 import "../models/match.dart";
 import "../services/api_service.dart";
 
+enum MatchesMode { today, live }
+
 class MatchesScreen extends StatefulWidget {
-  const MatchesScreen({super.key});
+  final MatchesMode mode;
+  final String emptyMessage;
+
+  const MatchesScreen({
+    super.key,
+    required this.mode,
+    required this.emptyMessage,
+  });
 
   @override
   State<MatchesScreen> createState() => _MatchesScreenState();
@@ -16,89 +25,92 @@ class _MatchesScreenState extends State<MatchesScreen> {
   @override
   void initState() {
     super.initState();
-    _matchesFuture = _apiService.getTodayMatches();
+    _matchesFuture = _fetch();
+  }
+
+  Future<List<Match>> _fetch() {
+    return widget.mode == MatchesMode.today
+        ? _apiService.getTodayMatches()
+        : _apiService.getLiveMatches();
   }
 
   void _reload() {
     setState(() {
-      _matchesFuture = _apiService.getTodayMatches();
+      _matchesFuture = _fetch();
     });
   }
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: AppBar(title: const Text("KOUNADIA")),
-      body: FutureBuilder<List<Match>>(
-        future: _matchesFuture,
-        builder: (context, snapshot) {
-          if (snapshot.connectionState == ConnectionState.waiting) {
-            return Center(
-              child: Padding(
-                padding: const EdgeInsets.all(24.0),
-                child: Column(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    const CircularProgressIndicator(),
-                    const SizedBox(height: 16),
-                    Text(
-                      "Chargement des matchs...\n(jusqu'à une minute au premier chargement)",
-                      textAlign: TextAlign.center,
-                    ),
-                  ],
-                ),
-              ),
-            );
-          }
-
-          if (snapshot.hasError) {
-            return Center(
-              child: Padding(
-                padding: const EdgeInsets.all(24.0),
-                child: Column(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    Text("Erreur : ${snapshot.error}"),
-                    const SizedBox(height: 12),
-                    ElevatedButton(
-                      onPressed: _reload,
-                      child: const Text("Réessayer"),
-                    ),
-                  ],
-                ),
-              ),
-            );
-          }
-
-          final matches = snapshot.data ?? [];
-
-          if (matches.isEmpty) {
-            return const Center(child: Text("Aucun match aujourd'hui."));
-          }
-
-          return RefreshIndicator(
-            onRefresh: () async {
-              _reload();
-              await _matchesFuture;
-            },
-            child: ListView.builder(
-              itemCount: matches.length,
-              itemBuilder: (context, index) {
-                final match = matches[index];
-                return ListTile(
-                  title: Text("${match.homeTeam} vs ${match.awayTeam}"),
-                  subtitle: Text(match.competition),
-                  trailing: Text(
-                    match.homeScore != null && match.awayScore != null
-                        ? "${match.homeScore} - ${match.awayScore}"
-                        : match.status,
+    return FutureBuilder<List<Match>>(
+      future: _matchesFuture,
+      builder: (context, snapshot) {
+        if (snapshot.connectionState == ConnectionState.waiting) {
+          return Center(
+            child: Padding(
+              padding: const EdgeInsets.all(24.0),
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  const CircularProgressIndicator(),
+                  const SizedBox(height: 16),
+                  Text(
+                    "Chargement...\n(jusqu'à une minute au premier chargement)",
+                    textAlign: TextAlign.center,
                   ),
-                );
-              },
+                ],
+              ),
             ),
           );
-        },
-      ),
+        }
+
+        if (snapshot.hasError) {
+          return Center(
+            child: Padding(
+              padding: const EdgeInsets.all(24.0),
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Text("Erreur : ${snapshot.error}"),
+                  const SizedBox(height: 12),
+                  ElevatedButton(
+                    onPressed: _reload,
+                    child: const Text("Réessayer"),
+                  ),
+                ],
+              ),
+            ),
+          );
+        }
+
+        final matches = snapshot.data ?? [];
+
+        if (matches.isEmpty) {
+          return Center(child: Text(widget.emptyMessage));
+        }
+
+        return RefreshIndicator(
+          onRefresh: () async {
+            _reload();
+            await _matchesFuture;
+          },
+          child: ListView.builder(
+            itemCount: matches.length,
+            itemBuilder: (context, index) {
+              final match = matches[index];
+              return ListTile(
+                title: Text("${match.homeTeam} vs ${match.awayTeam}"),
+                subtitle: Text(match.competition),
+                trailing: Text(
+                  match.homeScore != null && match.awayScore != null
+                      ? "${match.homeScore} - ${match.awayScore}"
+                      : match.status,
+                ),
+              );
+            },
+          ),
+        );
+      },
     );
   }
 }
