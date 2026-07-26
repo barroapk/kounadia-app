@@ -2,6 +2,7 @@ import "dart:convert";
 import "package:http/http.dart" as http;
 import "../config/api_config.dart";
 import "../models/match.dart";
+import "../models/match_analysis.dart";
 
 class ApiService {
   Future<List<Match>> _fetchMatches(String path) async {
@@ -20,4 +21,17 @@ class ApiService {
 
   Future<List<Match>> getTodayMatches() => _fetchMatches("/matches/today");
   Future<List<Match>> getLiveMatches() => _fetchMatches("/matches/live");
+
+  Future<MatchAnalysis> getMatchAnalysis(int matchId) async {
+    final uri = Uri.parse("${ApiConfig.baseUrl}/analyzer/$matchId");
+    final response = await http.get(uri).timeout(const Duration(seconds: 90));
+
+    if (response.statusCode != 200) {
+      throw Exception("Erreur serveur (${response.statusCode})");
+    }
+
+    return MatchAnalysis.fromJson(
+      jsonDecode(response.body) as Map<String, dynamic>,
+    );
+  }
 }

@@ -1,6 +1,7 @@
 import "package:flutter/material.dart";
 import "../models/match.dart";
 import "../services/api_service.dart";
+import "match_detail_screen.dart";
 
 enum MatchesMode { today, live }
 
@@ -99,6 +100,18 @@ class _MatchesScreenState extends State<MatchesScreen> {
             itemBuilder: (context, index) {
               final match = matches[index];
               return ListTile(
+                onTap: () {
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                      builder: (context) => MatchDetailScreen(
+                        matchId: match.id,
+                        homeTeam: match.homeTeam,
+                        awayTeam: match.awayTeam,
+                      ),
+                    ),
+                  );
+                },
                 title: Text("${match.homeTeam} vs ${match.awayTeam}"),
                 subtitle: Text(match.competition),
                 trailing: Text(
