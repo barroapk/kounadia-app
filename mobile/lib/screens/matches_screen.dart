@@ -1,6 +1,7 @@
 import "package:flutter/material.dart";
 import "../models/match.dart";
 import "../services/api_service.dart";
+import "../widgets/match_card.dart";
 import "match_detail_screen.dart";
 
 enum MatchesMode { today, live }
@@ -96,10 +97,12 @@ class _MatchesScreenState extends State<MatchesScreen> {
             await _matchesFuture;
           },
           child: ListView.builder(
+            padding: const EdgeInsets.symmetric(vertical: 8),
             itemCount: matches.length,
             itemBuilder: (context, index) {
               final match = matches[index];
-              return ListTile(
+              return MatchCard(
+                match: match,
                 onTap: () {
                   Navigator.push(
                     context,
@@ -112,13 +115,6 @@ class _MatchesScreenState extends State<MatchesScreen> {
                     ),
                   );
                 },
-                title: Text("${match.homeTeam} vs ${match.awayTeam}"),
-                subtitle: Text(match.competition),
-                trailing: Text(
-                  match.homeScore != null && match.awayScore != null
-                      ? "${match.homeScore} - ${match.awayScore}"
-                      : match.status,
-                ),
               );
             },
           ),

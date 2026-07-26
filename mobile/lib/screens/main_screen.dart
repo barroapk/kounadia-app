@@ -1,5 +1,6 @@
 import "package:flutter/material.dart";
 import "matches_screen.dart";
+import "design_preview_screen.dart";
 
 class MainScreen extends StatefulWidget {
   const MainScreen({super.key});
@@ -29,6 +30,15 @@ class _MainScreenState extends State<MainScreen> {
     return Scaffold(
       appBar: AppBar(title: Text(_titles[_currentIndex])),
       body: _screens[_currentIndex],
+      floatingActionButton: FloatingActionButton.small(
+        onPressed: () {
+          Navigator.push(
+            context,
+            MaterialPageRoute(builder: (context) => const DesignPreviewScreen()),
+          );
+        },
+        child: const Icon(Icons.palette),
+      ),
       bottomNavigationBar: NavigationBar(
         selectedIndex: _currentIndex,
         onDestinationSelected: (index) {
