@@ -1,23 +1,69 @@
+import "dart:async";
 import "package:flutter/material.dart";
 import "../models/match.dart";
 
-class MatchRow extends StatelessWidget {
+class MatchRow extends StatefulWidget {
   final Match match;
   final VoidCallback onTap;
 
   const MatchRow({super.key, required this.match, required this.onTap});
 
-  bool get _isLive => match.status == "IN_PLAY" || match.status == "PAUSED";
-  bool get _isFinished => match.status == "FINISHED";
+  @override
+  State<MatchRow> createState() => _MatchRowState();
+}
+
+class _MatchRowState extends State<MatchRow> {
+  Timer? _ticker;
+
+  bool get _isLive =>
+      widget.match.status == "IN_PLAY" || widget.match.status == "PAUSED";
+  bool get _isFinished => widget.match.status == "FINISHED";
+
+  @override
+  void initState() {
+    super.initState();
+    if (_isLive) {
+      _ticker = Timer.periodic(const Duration(seconds: 30), (_) {
+        if (mounted) setState(() {});
+      });
+    }
+  }
+
+  @override
+  void dispose() {
+    _ticker?.cancel();
+    super.dispose();
+  }
+
+  /// Estimation locale de la minute de jeu, calculée à partir du coup d'envoi.
+  /// Approximative : ne tient pas compte du temps additionnel exact.
+  String _estimatedMinute() {
+    final kickoff = DateTime.tryParse(widget.match.utcDate);
+    if (kickoff == null) return "LIVE";
+
+    final elapsedMinutes = DateTime.now().toUtc().difference(kickoff).inMinutes;
+
+    if (widget.match.status == "PAUSED") return "MT";
+
+    if (elapsedMinutes <= 45) {
+      return elapsedMinutes < 1 ? "1'" : "$elapsedMinutes'";
+    }
+
+    // Au-delà de 45 min réelles, on suppose ~15 min de mi-temps
+    const halftimeBreak = 15;
+    final secondHalfMinute = elapsedMinutes - halftimeBreak;
+
+    if (secondHalfMinute <= 45) {
+      return secondHalfMinute < 46 ? "$secondHalfMinute'" : "45'";
+    }
+
+    return "90'+";
+  }
 
   String get _statusText {
-    if (_isLive) {
-      return match.status == "PAUSED"
-          ? "MT"
-          : (match.minute != null ? "${match.minute}'" : "LIVE");
-    }
+    if (_isLive) return _estimatedMinute();
     if (_isFinished) return "Terminé";
-    final date = DateTime.tryParse(match.utcDate)?.toLocal();
+    final date = DateTime.tryParse(widget.match.utcDate)?.toLocal();
     if (date == null) return "";
     final hh = date.hour.toString().padLeft(2, '0');
     final mm = date.minute.toString().padLeft(2, '0');
@@ -26,10 +72,11 @@ class MatchRow extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final hasScore = match.homeScore != null && match.awayScore != null;
+    final hasScore =
+        widget.match.homeScore != null && widget.match.awayScore != null;
 
     return InkWell(
-      onTap: onTap,
+      onTap: widget.onTap,
       child: Padding(
         padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
         child: Row(
@@ -37,7 +84,7 @@ class MatchRow extends StatelessWidget {
           children: [
             Expanded(
               child: Text(
-                match.homeTeam,
+                widget.match.homeTeam,
                 textAlign: TextAlign.right,
                 overflow: TextOverflow.ellipsis,
                 style: const TextStyle(fontSize: 14),
@@ -59,7 +106,7 @@ class MatchRow extends StatelessWidget {
                   const SizedBox(height: 2),
                   Text(
                     hasScore
-                        ? "${match.homeScore} - ${match.awayScore}"
+                        ? "${widget.match.homeScore} - ${widget.match.awayScore}"
                         : "vs",
                     textAlign: TextAlign.center,
                     style: TextStyle(
@@ -73,7 +120,7 @@ class MatchRow extends StatelessWidget {
             ),
             Expanded(
               child: Text(
-                match.awayTeam,
+                widget.match.awayTeam,
                 textAlign: TextAlign.left,
                 overflow: TextOverflow.ellipsis,
                 style: const TextStyle(fontSize: 14),
