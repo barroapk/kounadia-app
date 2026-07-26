@@ -3,6 +3,7 @@ import "package:http/http.dart" as http;
 import "../config/api_config.dart";
 import "../models/match.dart";
 import "../models/match_analysis.dart";
+import "../models/eligible_match.dart";
 
 class ApiService {
   Future<List<Match>> _fetchMatches(String path) async {
@@ -33,5 +34,19 @@ class ApiService {
     return MatchAnalysis.fromJson(
       jsonDecode(response.body) as Map<String, dynamic>,
     );
+  }
+
+  Future<List<EligibleMatch>> getTodaysPredictions() async {
+    final uri = Uri.parse("${ApiConfig.baseUrl}/predictions/today");
+    final response = await http.get(uri).timeout(const Duration(seconds: 90));
+
+    if (response.statusCode != 200) {
+      throw Exception("Erreur serveur (${response.statusCode})");
+    }
+
+    final List<dynamic> data = jsonDecode(response.body) as List<dynamic>;
+    return data
+        .map((item) => EligibleMatch.fromJson(item as Map<String, dynamic>))
+        .toList();
   }
 }
