@@ -23,6 +23,9 @@ class ApiService {
   Future<List<Match>> getTodayMatches() => _fetchMatches("/matches/today");
   Future<List<Match>> getLiveMatches() => _fetchMatches("/matches/live");
 
+  Future<List<Match>> getMatchesByDate(String date) =>
+      _fetchMatches("/matches/by-date?date=$date");
+
   Future<MatchAnalysis> getMatchAnalysis(int matchId) async {
     final uri = Uri.parse("${ApiConfig.baseUrl}/analyzer/$matchId");
     final response = await http.get(uri).timeout(const Duration(seconds: 90));
