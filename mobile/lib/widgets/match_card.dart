@@ -1,20 +1,12 @@
 import "package:flutter/material.dart";
 import "../models/match.dart";
+import "match_status_widget.dart";
 
 class MatchCard extends StatelessWidget {
   final Match match;
   final VoidCallback onTap;
 
   const MatchCard({super.key, required this.match, required this.onTap});
-
-  bool get _isLive => match.status == "IN_PLAY" || match.status == "PAUSED";
-  bool get _isFinished => match.status == "FINISHED";
-
-  String get _statusLabel {
-    if (_isLive) return match.minute != null ? "${match.minute}'" : "EN DIRECT";
-    if (_isFinished) return "Terminé";
-    return "À venir";
-  }
 
   @override
   Widget build(BuildContext context) {
@@ -23,6 +15,7 @@ class MatchCard extends StatelessWidget {
     return Card(
       margin: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
       elevation: 1,
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
       child: InkWell(
         onTap: onTap,
         borderRadius: BorderRadius.circular(12),
@@ -31,39 +24,13 @@ class MatchCard extends StatelessWidget {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              Row(
-                children: [
-                  Expanded(
-                    child: Text(
-                      match.competition,
-                      style: Theme.of(context).textTheme.labelMedium?.copyWith(
-                            color: Colors.grey[600],
-                          ),
-                      overflow: TextOverflow.ellipsis,
-                    ),
-                  ),
-                  if (_isLive)
-                    Container(
-                      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
-                      decoration: BoxDecoration(
-                        color: Colors.red,
-                        borderRadius: BorderRadius.circular(6),
-                      ),
-                      child: Text(
-                        _statusLabel,
-                        style: const TextStyle(
-                          color: Colors.white,
-                          fontSize: 11,
-                          fontWeight: FontWeight.bold,
-                        ),
-                      ),
-                    )
-                  else
-                    Text(
-                      _statusLabel,
-                      style: TextStyle(color: Colors.grey[500], fontSize: 12),
-                    ),
-                ],
+              Align(
+                alignment: Alignment.centerRight,
+                child: MatchStatusWidget(
+                  status: match.status,
+                  minute: match.minute,
+                  utcDate: match.utcDate,
+                ),
               ),
               const SizedBox(height: 10),
               Row(
