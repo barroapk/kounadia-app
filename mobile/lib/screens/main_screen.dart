@@ -1,6 +1,5 @@
 import "package:flutter/material.dart";
 import "matches_screen.dart";
-import "match_detail_screen.dart";
 
 class MainScreen extends StatefulWidget {
   const MainScreen({super.key});
@@ -30,22 +29,6 @@ class _MainScreenState extends State<MainScreen> {
     return Scaffold(
       appBar: AppBar(title: Text(_titles[_currentIndex])),
       body: _screens[_currentIndex],
-      floatingActionButton: FloatingActionButton.extended(
-        onPressed: () {
-          Navigator.push(
-            context,
-            MaterialPageRoute(
-              builder: (context) => const MatchDetailScreen(
-                matchId: 554938,
-                homeTeam: "Santos FC",
-                awayTeam: "Chapecoense AF",
-              ),
-            ),
-          );
-        },
-        label: const Text("Test analyse"),
-        icon: const Icon(Icons.science),
-      ),
       bottomNavigationBar: NavigationBar(
         selectedIndex: _currentIndex,
         onDestinationSelected: (index) {
