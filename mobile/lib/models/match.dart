@@ -8,6 +8,7 @@ class Match {
   final String status;
   final int? minute;
   final String utcDate;
+  final String? liveMinuteLabel;
 
   Match({
     required this.id,
@@ -19,6 +20,7 @@ class Match {
     required this.status,
     this.minute,
     required this.utcDate,
+    this.liveMinuteLabel,
   });
 
   factory Match.fromJson(Map<String, dynamic> json) {
@@ -32,6 +34,7 @@ class Match {
       status: json['status'] as String? ?? '',
       minute: json['minute'] as int?,
       utcDate: json['utcDate'] as String? ?? '',
+      liveMinuteLabel: json['liveMinuteLabel'] as String?,
     );
   }
 }

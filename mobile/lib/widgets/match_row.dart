@@ -15,14 +15,18 @@ class MatchRow extends StatefulWidget {
 class _MatchRowState extends State<MatchRow> {
   Timer? _ticker;
 
-  bool get _isLive =>
-      widget.match.status == "IN_PLAY" || widget.match.status == "PAUSED";
+  static const _liveStatuses = ["LIVE", "IN_PLAY", "PAUSED"];
+
+  bool get _isLive => _liveStatuses.contains(widget.match.status);
   bool get _isFinished => widget.match.status == "FINISHED";
+  bool get _hasRealMinute => widget.match.liveMinuteLabel != null;
 
   @override
   void initState() {
     super.initState();
-    if (_isLive) {
+    // Le ticker local ne sert que de repli : si on a déjà la vraie minute
+    // (liveMinuteLabel), pas besoin d'estimer localement.
+    if (_isLive && !_hasRealMinute) {
       _ticker = Timer.periodic(const Duration(seconds: 30), (_) {
         if (mounted) setState(() {});
       });
@@ -35,8 +39,6 @@ class _MatchRowState extends State<MatchRow> {
     super.dispose();
   }
 
-  /// Estimation locale de la minute de jeu, calculée à partir du coup d'envoi.
-  /// Approximative : ne tient pas compte du temps additionnel exact.
   String _estimatedMinute() {
     final kickoff = DateTime.tryParse(widget.match.utcDate);
     if (kickoff == null) return "LIVE";
@@ -44,24 +46,22 @@ class _MatchRowState extends State<MatchRow> {
     final elapsedMinutes = DateTime.now().toUtc().difference(kickoff).inMinutes;
 
     if (widget.match.status == "PAUSED") return "MT";
-
     if (elapsedMinutes <= 45) {
       return elapsedMinutes < 1 ? "1'" : "$elapsedMinutes'";
     }
 
-    // Au-delà de 45 min réelles, on suppose ~15 min de mi-temps
     const halftimeBreak = 15;
     final secondHalfMinute = elapsedMinutes - halftimeBreak;
-
     if (secondHalfMinute <= 45) {
       return secondHalfMinute < 46 ? "$secondHalfMinute'" : "45'";
     }
-
     return "90'+";
   }
 
   String get _statusText {
-    if (_isLive) return _estimatedMinute();
+    if (_isLive) {
+      return widget.match.liveMinuteLabel ?? _estimatedMinute();
+    }
     if (_isFinished) return "Terminé";
     final date = DateTime.tryParse(widget.match.utcDate)?.toLocal();
     if (date == null) return "";
