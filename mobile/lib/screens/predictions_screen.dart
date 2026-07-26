@@ -33,6 +33,12 @@ class _PredictionsScreenState extends State<PredictionsScreen> {
     return const Color(0xFF16A34A);
   }
 
+  IconData _sideIcon(String side) {
+    if (side == 'home') return Icons.arrow_back;
+    if (side == 'away') return Icons.arrow_forward;
+    return Icons.balance;
+  }
+
   @override
   Widget build(BuildContext context) {
     return FutureBuilder<List<EligibleMatch>>(
@@ -105,9 +111,21 @@ class _PredictionsScreenState extends State<PredictionsScreen> {
                           style: TextStyle(color: Colors.grey[600], fontSize: 12),
                         ),
                         const SizedBox(height: 6),
+                        Row(
+                          children: [
+                            Expanded(
+                              child: Text(
+                                "${p.homeTeam} vs ${p.awayTeam}",
+                                style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 15),
+                              ),
+                            ),
+                            Icon(_sideIcon(p.favoredSide), size: 18, color: _sideColor(p.favoredSide)),
+                          ],
+                        ),
+                        const SizedBox(height: 4),
                         Text(
-                          "${p.homeTeam} vs ${p.awayTeam}",
-                          style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 15),
+                          "Indice de force : ${p.homeElo} · ${p.awayElo}",
+                          style: TextStyle(color: Colors.grey[500], fontSize: 11),
                         ),
                         const SizedBox(height: 8),
                         Container(
