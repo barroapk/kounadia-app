@@ -31,65 +31,52 @@ class MatchRow extends StatelessWidget {
     return InkWell(
       onTap: onTap,
       child: Padding(
-        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
         child: Row(
           crossAxisAlignment: CrossAxisAlignment.center,
           children: [
-            SizedBox(
-              width: 44,
+            Expanded(
               child: Text(
-                _statusText,
-                style: TextStyle(
-                  fontSize: 12,
-                  fontWeight: _isLive ? FontWeight.bold : FontWeight.normal,
-                  color: _isLive ? const Color(0xFFDC2626) : Colors.grey[600],
-                ),
+                match.homeTeam,
+                textAlign: TextAlign.right,
+                overflow: TextOverflow.ellipsis,
+                style: const TextStyle(fontSize: 14),
+              ),
+            ),
+            SizedBox(
+              width: 64,
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Text(
+                    _statusText,
+                    style: TextStyle(
+                      fontSize: 11,
+                      fontWeight: _isLive ? FontWeight.bold : FontWeight.normal,
+                      color: _isLive ? const Color(0xFFDC2626) : Colors.grey[600],
+                    ),
+                  ),
+                  const SizedBox(height: 2),
+                  Text(
+                    hasScore
+                        ? "${match.homeScore} - ${match.awayScore}"
+                        : "vs",
+                    textAlign: TextAlign.center,
+                    style: TextStyle(
+                      fontWeight: FontWeight.bold,
+                      fontSize: hasScore ? 15 : 13,
+                      color: hasScore ? Colors.black : Colors.grey[500],
+                    ),
+                  ),
+                ],
               ),
             ),
             Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Row(
-                    children: [
-                      Expanded(
-                        child: Text(
-                          match.homeTeam,
-                          overflow: TextOverflow.ellipsis,
-                          style: const TextStyle(fontSize: 14),
-                        ),
-                      ),
-                      SizedBox(
-                        width: 24,
-                        child: Text(
-                          hasScore ? "${match.homeScore}" : "",
-                          textAlign: TextAlign.center,
-                          style: const TextStyle(fontWeight: FontWeight.bold),
-                        ),
-                      ),
-                    ],
-                  ),
-                  const SizedBox(height: 2),
-                  Row(
-                    children: [
-                      Expanded(
-                        child: Text(
-                          match.awayTeam,
-                          overflow: TextOverflow.ellipsis,
-                          style: const TextStyle(fontSize: 14),
-                        ),
-                      ),
-                      SizedBox(
-                        width: 24,
-                        child: Text(
-                          hasScore ? "${match.awayScore}" : "",
-                          textAlign: TextAlign.center,
-                          style: const TextStyle(fontWeight: FontWeight.bold),
-                        ),
-                      ),
-                    ],
-                  ),
-                ],
+              child: Text(
+                match.awayTeam,
+                textAlign: TextAlign.left,
+                overflow: TextOverflow.ellipsis,
+                style: const TextStyle(fontSize: 14),
               ),
             ),
           ],
