@@ -44,7 +44,13 @@ class _MainScreenState extends State<MainScreen> {
           ),
         ],
       ),
-      body: _screens[_currentIndex],
+      // IndexedStack garde les deux écrans vivants simultanément (au lieu de
+      // les détruire/recréer à chaque changement d'onglet), pour ne pas
+      // perdre la date sélectionnée ni interrompre le suivi d'un match en direct.
+      body: IndexedStack(
+        index: _currentIndex,
+        children: _screens,
+      ),
       bottomNavigationBar: NavigationBar(
         selectedIndex: _currentIndex,
         onDestinationSelected: (index) {
