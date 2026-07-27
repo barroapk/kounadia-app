@@ -1,6 +1,7 @@
 class Match {
   final int id;
   final String competition;
+  final String? competitionCode;
   final String homeTeam;
   final String awayTeam;
   final int? homeScore;
@@ -18,6 +19,7 @@ class Match {
   Match({
     required this.id,
     required this.competition,
+    this.competitionCode,
     required this.homeTeam,
     required this.awayTeam,
     this.homeScore,
@@ -37,6 +39,7 @@ class Match {
     return Match(
       id: json['id'] as int,
       competition: json['competition'] as String? ?? '',
+      competitionCode: json['competitionCode'] as String?,
       homeTeam: json['homeTeam'] as String? ?? '',
       awayTeam: json['awayTeam'] as String? ?? '',
       homeScore: json['homeScore'] as int?,

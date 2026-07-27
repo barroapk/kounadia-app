@@ -4,6 +4,7 @@ import "../config/api_config.dart";
 import "../models/match.dart";
 import "../models/match_analysis.dart";
 import "../models/eligible_match.dart";
+import "../models/standings.dart";
 
 class ApiService {
   Future<List<Match>> _fetchMatches(String path) async {
@@ -51,5 +52,20 @@ class ApiService {
     return data
         .map((item) => EligibleMatch.fromJson(item as Map<String, dynamic>))
         .toList();
+  }
+
+  /// Retourne null si le classement n'est pas disponible pour cette compétition
+  /// (compétitions venant d'API-Football, ou code inconnu).
+  Future<StandingsResponse?> getStandings(String competitionCode) async {
+    final uri = Uri.parse("${ApiConfig.baseUrl}/standings/$competitionCode");
+    final response = await http.get(uri).timeout(const Duration(seconds: 90));
+
+    if (response.statusCode != 200) {
+      return null;
+    }
+
+    return StandingsResponse.fromJson(
+      jsonDecode(response.body) as Map<String, dynamic>,
+    );
   }
 }
