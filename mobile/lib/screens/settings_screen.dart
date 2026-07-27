@@ -61,37 +61,51 @@ class _SettingsScreenState extends State<SettingsScreen> {
           return ExpansionTile(
             title: Text(
               continentEntry.key,
-              style: const TextStyle(fontWeight: FontWeight.bold),
+              style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 14),
             ),
+            childrenPadding: EdgeInsets.zero,
             children: continentEntry.value.entries.map((countryEntry) {
-              final showCountryHeader = countryEntry.key != "International" &&
-                  countryEntry.value.length > 1 == false &&
-                  countryEntry.key.isNotEmpty;
-
               return Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
+                mainAxisSize: MainAxisSize.min,
                 children: [
                   if (countryEntry.key != "International")
                     Padding(
-                      padding: const EdgeInsets.fromLTRB(24, 8, 16, 0),
+                      padding: const EdgeInsets.fromLTRB(24, 6, 16, 2),
                       child: Text(
                         countryEntry.key,
                         style: TextStyle(
                           color: Colors.grey[600],
-                          fontSize: 12,
+                          fontSize: 11,
                           fontWeight: FontWeight.w600,
                         ),
                       ),
                     ),
                   ...countryEntry.value.map((comp) {
                     final isEnabled = !_disabled.contains(comp.name);
-                    return SwitchListTile(
-                      contentPadding: const EdgeInsets.only(left: 32, right: 16),
-                      dense: true,
-                      title: Text(comp.name),
-                      value: isEnabled,
-                      activeColor: const Color(0xFF16A34A),
-                      onChanged: (value) => _toggle(comp.name, value),
+                    return InkWell(
+                      onTap: () => _toggle(comp.name, !isEnabled),
+                      child: Padding(
+                        padding: const EdgeInsets.symmetric(horizontal: 32, vertical: 6),
+                        child: Row(
+                          children: [
+                            Expanded(
+                              child: Text(
+                                comp.name,
+                                style: const TextStyle(fontSize: 13),
+                              ),
+                            ),
+                            Transform.scale(
+                              scale: 0.75,
+                              child: Switch(
+                                value: isEnabled,
+                                activeColor: const Color(0xFF16A34A),
+                                onChanged: (value) => _toggle(comp.name, value),
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
                     );
                   }),
                 ],
