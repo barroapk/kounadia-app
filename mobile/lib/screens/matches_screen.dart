@@ -82,12 +82,14 @@ class _MatchesScreenState extends State<MatchesScreen> {
     }
   }
 
-  /// Actualisation silencieuse : ne touche à rien si aucun match n'est
-  /// actuellement en direct dans la liste affichée, pour ne pas consommer
-  /// de requêtes inutilement. Ne montre jamais de chargement à l'utilisateur.
+  /// Actualisation silencieuse : seulement pour "Aujourd'hui", et seulement
+  /// si un match en direct est présent dans la liste actuellement affichée.
   Future<void> _silentRefreshIfLive() async {
+    if (!_isToday) return;
+
     final current = _matches;
     if (current == null) return;
+
     final hasLive = current.any((m) => _liveStatuses.contains(m.status));
     if (!hasLive) return;
 

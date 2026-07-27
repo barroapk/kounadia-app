@@ -27,32 +27,42 @@ class _MatchRowState extends State<MatchRow> {
     super.initState();
     _baseLabel = widget.match.liveMinuteLabel;
     _anchorTime = DateTime.now();
-    if (_isLive) {
-      _ticker = Timer.periodic(const Duration(seconds: 15), (_) {
-        if (mounted) setState(() {});
-      });
-    }
+    if (_isLive) _startTicker();
+  }
+
+  void _startTicker() {
+    _ticker ??= Timer.periodic(const Duration(seconds: 15), (_) {
+      if (mounted) setState(() {});
+    });
+  }
+
+  void _stopTicker() {
+    _ticker?.cancel();
+    _ticker = null;
   }
 
   @override
   void didUpdateWidget(covariant MatchRow oldWidget) {
     super.didUpdateWidget(oldWidget);
-    // Dès qu'une vraie nouvelle minute arrive du backend, on se recale dessus.
+
     if (widget.match.liveMinuteLabel != oldWidget.match.liveMinuteLabel) {
       _baseLabel = widget.match.liveMinuteLabel;
       _anchorTime = DateTime.now();
+    }
+
+    if (_isLive) {
+      _startTicker();
+    } else {
+      _stopTicker();
     }
   }
 
   @override
   void dispose() {
-    _ticker?.cancel();
+    _stopTicker();
     super.dispose();
   }
 
-  /// Fait progresser l'affichage entre deux synchronisations réelles.
-  /// Ne s'applique qu'aux labels simples ("48'"), jamais à "45+3'", "MT", "FT"...
-  /// pour ne jamais extrapoler une valeur qu'on ne peut pas garantir juste.
   String _computeDisplayLabel() {
     final label = _baseLabel;
     if (label == null) return _estimatedMinuteFallback();
@@ -62,8 +72,6 @@ class _MatchRowState extends State<MatchRow> {
 
     final baseMinute = int.parse(simpleMatch.group(1)!);
     final elapsedSinceSync = DateTime.now().difference(_anchorTime).inMinutes;
-    // Sécurité : on ne dérive jamais de plus de 3 minutes sans nouvelle donnée réelle,
-    // le temps que l'actualisation en arrière-plan recale la vraie valeur.
     final drift = elapsedSinceSync.clamp(0, 3);
     final computed = baseMinute + drift;
 
