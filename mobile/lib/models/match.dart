@@ -11,6 +11,9 @@ class Match {
   final String? liveMinuteLabel;
   final String? continent;
   final String? country;
+  final String? homeTeamCrest;
+  final String? awayTeamCrest;
+  final String? competitionEmblem;
 
   Match({
     required this.id,
@@ -25,6 +28,9 @@ class Match {
     this.liveMinuteLabel,
     this.continent,
     this.country,
+    this.homeTeamCrest,
+    this.awayTeamCrest,
+    this.competitionEmblem,
   });
 
   factory Match.fromJson(Map<String, dynamic> json) {
@@ -41,6 +47,9 @@ class Match {
       liveMinuteLabel: json['liveMinuteLabel'] as String?,
       continent: json['continent'] as String?,
       country: json['country'] as String?,
+      homeTeamCrest: json['homeTeamCrest'] as String?,
+      awayTeamCrest: json['awayTeamCrest'] as String?,
+      competitionEmblem: json['competitionEmblem'] as String?,
     );
   }
 }

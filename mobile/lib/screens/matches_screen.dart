@@ -210,7 +210,7 @@ class MatchesScreenState extends State<MatchesScreen> {
                     return Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        CompetitionHeader(name: competition),
+                        CompetitionHeader(name: competition, emblemUrl: competitionMatches.first.competitionEmblem),
                         ...competitionMatches.asMap().entries.map((entry) {
                           final match = entry.value;
                           return Column(

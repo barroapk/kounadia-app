@@ -1,6 +1,7 @@
 import "dart:async";
 import "package:flutter/material.dart";
 import "../models/match.dart";
+import "cached_logo.dart";
 
 class MatchRow extends StatefulWidget {
   final Match match;
@@ -44,12 +45,10 @@ class _MatchRowState extends State<MatchRow> {
   @override
   void didUpdateWidget(covariant MatchRow oldWidget) {
     super.didUpdateWidget(oldWidget);
-
     if (widget.match.liveMinuteLabel != oldWidget.match.liveMinuteLabel) {
       _baseLabel = widget.match.liveMinuteLabel;
       _anchorTime = DateTime.now();
     }
-
     if (_isLive) {
       _startTicker();
     } else {
@@ -105,6 +104,7 @@ class _MatchRowState extends State<MatchRow> {
     return "$hh:$mm";
   }
 
+
   @override
   Widget build(BuildContext context) {
     final hasScore =
@@ -118,11 +118,20 @@ class _MatchRowState extends State<MatchRow> {
           crossAxisAlignment: CrossAxisAlignment.center,
           children: [
             Expanded(
-              child: Text(
-                widget.match.homeTeam,
-                textAlign: TextAlign.right,
-                overflow: TextOverflow.ellipsis,
-                style: const TextStyle(fontSize: 14),
+              child: Row(
+                mainAxisAlignment: MainAxisAlignment.end,
+                children: [
+                  Flexible(
+                    child: Text(
+                      widget.match.homeTeam,
+                      textAlign: TextAlign.right,
+                      overflow: TextOverflow.ellipsis,
+                      style: const TextStyle(fontSize: 14),
+                    ),
+                  ),
+                  const SizedBox(width: 6),
+                  CachedLogo(url: widget.match.homeTeamCrest),
+                ],
               ),
             ),
             SizedBox(
@@ -154,11 +163,19 @@ class _MatchRowState extends State<MatchRow> {
               ),
             ),
             Expanded(
-              child: Text(
-                widget.match.awayTeam,
-                textAlign: TextAlign.left,
-                overflow: TextOverflow.ellipsis,
-                style: const TextStyle(fontSize: 14),
+              child: Row(
+                children: [
+                  CachedLogo(url: widget.match.awayTeamCrest),
+                  const SizedBox(width: 6),
+                  Flexible(
+                    child: Text(
+                      widget.match.awayTeam,
+                      textAlign: TextAlign.left,
+                      overflow: TextOverflow.ellipsis,
+                      style: const TextStyle(fontSize: 14),
+                    ),
+                  ),
+                ],
               ),
             ),
           ],
