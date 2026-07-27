@@ -9,6 +9,8 @@ class Match {
   final int? minute;
   final String utcDate;
   final String? liveMinuteLabel;
+  final String? continent;
+  final String? country;
 
   Match({
     required this.id,
@@ -21,6 +23,8 @@ class Match {
     this.minute,
     required this.utcDate,
     this.liveMinuteLabel,
+    this.continent,
+    this.country,
   });
 
   factory Match.fromJson(Map<String, dynamic> json) {
@@ -35,6 +39,8 @@ class Match {
       minute: json['minute'] as int?,
       utcDate: json['utcDate'] as String? ?? '',
       liveMinuteLabel: json['liveMinuteLabel'] as String?,
+      continent: json['continent'] as String?,
+      country: json['country'] as String?,
     );
   }
 }
