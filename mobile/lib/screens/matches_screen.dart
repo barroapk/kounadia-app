@@ -1,3 +1,4 @@
+import "dart:async";
 import "package:flutter/material.dart";
 import "../models/match.dart";
 import "../services/api_service.dart";
@@ -16,14 +17,29 @@ class MatchesScreen extends StatefulWidget {
 }
 
 class _MatchesScreenState extends State<MatchesScreen> {
+  static const _liveStatuses = ["LIVE", "IN_PLAY", "PAUSED"];
+
   final ApiService _apiService = ApiService();
   DateTime _selectedDate = DateTime.now();
-  late Future<List<Match>> _matchesFuture;
+
+  List<Match>? _matches;
+  bool _isInitialLoading = true;
+  String? _errorMessage;
+  Timer? _backgroundTimer;
 
   @override
   void initState() {
     super.initState();
-    _matchesFuture = _fetch();
+    _loadInitial();
+    _backgroundTimer = Timer.periodic(const Duration(seconds: 25), (_) {
+      _silentRefreshIfLive();
+    });
+  }
+
+  @override
+  void dispose() {
+    _backgroundTimer?.cancel();
+    super.dispose();
   }
 
   bool get _isToday {
@@ -45,18 +61,56 @@ class _MatchesScreenState extends State<MatchesScreen> {
     return _apiService.getMatchesByDate(_formatDateForApi(_selectedDate));
   }
 
+  Future<void> _loadInitial() async {
+    setState(() {
+      _isInitialLoading = true;
+      _errorMessage = null;
+    });
+    try {
+      final data = await _fetch();
+      if (!mounted) return;
+      setState(() {
+        _matches = data;
+        _isInitialLoading = false;
+      });
+    } catch (e) {
+      if (!mounted) return;
+      setState(() {
+        _errorMessage = e.toString();
+        _isInitialLoading = false;
+      });
+    }
+  }
+
+  /// Actualisation silencieuse : ne touche à rien si aucun match n'est
+  /// actuellement en direct dans la liste affichée, pour ne pas consommer
+  /// de requêtes inutilement. Ne montre jamais de chargement à l'utilisateur.
+  Future<void> _silentRefreshIfLive() async {
+    final current = _matches;
+    if (current == null) return;
+    final hasLive = current.any((m) => _liveStatuses.contains(m.status));
+    if (!hasLive) return;
+
+    try {
+      final data = await _fetch();
+      if (!mounted) return;
+      setState(() {
+        _matches = data;
+      });
+    } catch (_) {
+      // Échec silencieux : on garde l'affichage actuel plutôt que de
+      // perturber l'utilisateur pour un rafraîchissement en arrière-plan.
+    }
+  }
+
   void _onDateChanged(DateTime date) {
     setState(() {
       _selectedDate = date;
-      _matchesFuture = _fetch();
     });
+    _loadInitial();
   }
 
-  void _reload() {
-    setState(() {
-      _matchesFuture = _fetch();
-    });
-  }
+  Future<void> _manualReload() => _loadInitial();
 
   @override
   Widget build(BuildContext context) {
@@ -68,24 +122,23 @@ class _MatchesScreenState extends State<MatchesScreen> {
         ),
         const Divider(height: 1),
         Expanded(
-          child: FutureBuilder<List<Match>>(
-            future: _matchesFuture,
-            builder: (context, snapshot) {
-              if (snapshot.connectionState == ConnectionState.waiting) {
+          child: Builder(
+            builder: (context) {
+              if (_isInitialLoading) {
                 return const LoadingSkeleton();
               }
 
-              if (snapshot.hasError) {
+              if (_errorMessage != null && _matches == null) {
                 return Center(
                   child: Padding(
                     padding: const EdgeInsets.all(24.0),
                     child: Column(
                       mainAxisSize: MainAxisSize.min,
                       children: [
-                        Text("Erreur : ${snapshot.error}"),
+                        Text("Erreur : $_errorMessage"),
                         const SizedBox(height: 12),
                         ElevatedButton(
-                          onPressed: _reload,
+                          onPressed: _manualReload,
                           child: const Text("Réessayer"),
                         ),
                       ],
@@ -94,7 +147,7 @@ class _MatchesScreenState extends State<MatchesScreen> {
                 );
               }
 
-              final matches = snapshot.data ?? [];
+              final matches = _matches ?? [];
 
               if (matches.isEmpty) {
                 return const EmptyState(message: "Aucun match à cette date.");
@@ -107,10 +160,7 @@ class _MatchesScreenState extends State<MatchesScreen> {
               final competitions = grouped.keys.toList();
 
               return RefreshIndicator(
-                onRefresh: () async {
-                  _reload();
-                  await _matchesFuture;
-                },
+                onRefresh: _manualReload,
                 child: ListView.builder(
                   itemCount: competitions.length,
                   itemBuilder: (context, index) {
@@ -125,6 +175,7 @@ class _MatchesScreenState extends State<MatchesScreen> {
                           return Column(
                             children: [
                               MatchRow(
+                                key: ValueKey(match.id),
                                 match: match,
                                 onTap: () {
                                   Navigator.push(

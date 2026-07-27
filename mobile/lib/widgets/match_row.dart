@@ -14,22 +14,33 @@ class MatchRow extends StatefulWidget {
 
 class _MatchRowState extends State<MatchRow> {
   Timer? _ticker;
+  String? _baseLabel;
+  DateTime _anchorTime = DateTime.now();
 
   static const _liveStatuses = ["LIVE", "IN_PLAY", "PAUSED"];
 
   bool get _isLive => _liveStatuses.contains(widget.match.status);
   bool get _isFinished => widget.match.status == "FINISHED";
-  bool get _hasRealMinute => widget.match.liveMinuteLabel != null;
 
   @override
   void initState() {
     super.initState();
-    // Le ticker local ne sert que de repli : si on a déjà la vraie minute
-    // (liveMinuteLabel), pas besoin d'estimer localement.
-    if (_isLive && !_hasRealMinute) {
-      _ticker = Timer.periodic(const Duration(seconds: 30), (_) {
+    _baseLabel = widget.match.liveMinuteLabel;
+    _anchorTime = DateTime.now();
+    if (_isLive) {
+      _ticker = Timer.periodic(const Duration(seconds: 15), (_) {
         if (mounted) setState(() {});
       });
+    }
+  }
+
+  @override
+  void didUpdateWidget(covariant MatchRow oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    // Dès qu'une vraie nouvelle minute arrive du backend, on se recale dessus.
+    if (widget.match.liveMinuteLabel != oldWidget.match.liveMinuteLabel) {
+      _baseLabel = widget.match.liveMinuteLabel;
+      _anchorTime = DateTime.now();
     }
   }
 
@@ -39,17 +50,35 @@ class _MatchRowState extends State<MatchRow> {
     super.dispose();
   }
 
-  String _estimatedMinute() {
+  /// Fait progresser l'affichage entre deux synchronisations réelles.
+  /// Ne s'applique qu'aux labels simples ("48'"), jamais à "45+3'", "MT", "FT"...
+  /// pour ne jamais extrapoler une valeur qu'on ne peut pas garantir juste.
+  String _computeDisplayLabel() {
+    final label = _baseLabel;
+    if (label == null) return _estimatedMinuteFallback();
+
+    final simpleMatch = RegExp(r"^(\d+)'$").firstMatch(label);
+    if (simpleMatch == null) return label;
+
+    final baseMinute = int.parse(simpleMatch.group(1)!);
+    final elapsedSinceSync = DateTime.now().difference(_anchorTime).inMinutes;
+    // Sécurité : on ne dérive jamais de plus de 3 minutes sans nouvelle donnée réelle,
+    // le temps que l'actualisation en arrière-plan recale la vraie valeur.
+    final drift = elapsedSinceSync.clamp(0, 3);
+    final computed = baseMinute + drift;
+
+    return "$computed'";
+  }
+
+  String _estimatedMinuteFallback() {
     final kickoff = DateTime.tryParse(widget.match.utcDate);
     if (kickoff == null) return "LIVE";
+    if (widget.match.status == "PAUSED") return "MT";
 
     final elapsedMinutes = DateTime.now().toUtc().difference(kickoff).inMinutes;
-
-    if (widget.match.status == "PAUSED") return "MT";
     if (elapsedMinutes <= 45) {
       return elapsedMinutes < 1 ? "1'" : "$elapsedMinutes'";
     }
-
     const halftimeBreak = 15;
     final secondHalfMinute = elapsedMinutes - halftimeBreak;
     if (secondHalfMinute <= 45) {
@@ -59,9 +88,7 @@ class _MatchRowState extends State<MatchRow> {
   }
 
   String get _statusText {
-    if (_isLive) {
-      return widget.match.liveMinuteLabel ?? _estimatedMinute();
-    }
+    if (_isLive) return _computeDisplayLabel();
     if (_isFinished) return "Terminé";
     final date = DateTime.tryParse(widget.match.utcDate)?.toLocal();
     if (date == null) return "";
