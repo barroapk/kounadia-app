@@ -1,6 +1,7 @@
 import "dart:async";
 import "package:flutter/material.dart";
 import "../models/match.dart";
+import "../models/search_result.dart";
 import "../services/api_service.dart";
 import "../services/competition_preferences.dart";
 import "../widgets/match_row.dart";
@@ -14,15 +15,16 @@ class MatchesScreen extends StatefulWidget {
   const MatchesScreen({super.key});
 
   @override
-  State<MatchesScreen> createState() => _MatchesScreenState();
+  State<MatchesScreen> createState() => MatchesScreenState();
 }
 
-class _MatchesScreenState extends State<MatchesScreen> {
+class MatchesScreenState extends State<MatchesScreen> {
   static const _liveStatuses = ["LIVE", "IN_PLAY", "PAUSED"];
 
   final ApiService _apiService = ApiService();
   final CompetitionPreferences _competitionPrefs = CompetitionPreferences();
   DateTime _selectedDate = DateTime.now();
+  SearchResult? _activeFilter;
 
   List<Match>? _matches;
   Set<String> _disabledCompetitions = {};
@@ -45,6 +47,15 @@ class _MatchesScreenState extends State<MatchesScreen> {
     super.dispose();
   }
 
+  /// Appelé depuis MainScreen après une sélection dans l'écran de recherche.
+  void applySearchFilter(SearchResult result) {
+    setState(() => _activeFilter = result);
+  }
+
+  void clearFilter() {
+    setState(() => _activeFilter = null);
+  }
+
   bool get _isToday {
     final now = DateTime.now();
     return _selectedDate.year == now.year &&
@@ -64,11 +75,29 @@ class _MatchesScreenState extends State<MatchesScreen> {
     return _apiService.getMatchesByDate(_formatDateForApi(_selectedDate));
   }
 
-  List<Match> _applyFilter(List<Match> matches) {
-    if (_disabledCompetitions.isEmpty) return matches;
-    return matches
-        .where((m) => !_disabledCompetitions.contains(m.competition))
-        .toList();
+  List<Match> _applyFilters(List<Match> matches) {
+    var result = matches;
+
+    if (_disabledCompetitions.isNotEmpty) {
+      result = result.where((m) => !_disabledCompetitions.contains(m.competition)).toList();
+    }
+
+    final filter = _activeFilter;
+    if (filter != null) {
+      switch (filter.type) {
+        case SearchResultType.competition:
+          result = result.where((m) => m.competition == filter.value).toList();
+          break;
+        case SearchResultType.country:
+          result = result.where((m) => m.country == filter.value).toList();
+          break;
+        case SearchResultType.continent:
+          result = result.where((m) => m.continent == filter.value).toList();
+          break;
+      }
+    }
+
+    return result;
   }
 
   Future<void> _loadInitial() async {
@@ -96,26 +125,20 @@ class _MatchesScreenState extends State<MatchesScreen> {
 
   Future<void> _silentRefreshIfLive() async {
     if (!_isToday) return;
-
     final current = _matches;
     if (current == null) return;
-
     final hasLive = current.any((m) => _liveStatuses.contains(m.status));
     if (!hasLive) return;
 
     try {
       final data = await _fetch();
       if (!mounted) return;
-      setState(() {
-        _matches = data;
-      });
+      setState(() => _matches = data);
     } catch (_) {}
   }
 
   void _onDateChanged(DateTime date) {
-    setState(() {
-      _selectedDate = date;
-    });
+    setState(() => _selectedDate = date);
     _loadInitial();
   }
 
@@ -129,6 +152,18 @@ class _MatchesScreenState extends State<MatchesScreen> {
           selectedDate: _selectedDate,
           onDateChanged: _onDateChanged,
         ),
+        if (_activeFilter != null)
+          Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+            child: Align(
+              alignment: Alignment.centerLeft,
+              child: Chip(
+                label: Text(_activeFilter!.label),
+                deleteIcon: const Icon(Icons.close, size: 16),
+                onDeleted: clearFilter,
+              ),
+            ),
+          ),
         const Divider(height: 1),
         Expanded(
           child: Builder(
@@ -146,20 +181,17 @@ class _MatchesScreenState extends State<MatchesScreen> {
                       children: [
                         Text("Erreur : $_errorMessage"),
                         const SizedBox(height: 12),
-                        ElevatedButton(
-                          onPressed: _manualReload,
-                          child: const Text("Réessayer"),
-                        ),
+                        ElevatedButton(onPressed: _manualReload, child: const Text("Réessayer")),
                       ],
                     ),
                   ),
                 );
               }
 
-              final matches = _applyFilter(_matches ?? []);
+              final matches = _applyFilters(_matches ?? []);
 
               if (matches.isEmpty) {
-                return const EmptyState(message: "Aucun match à cette date.");
+                return const EmptyState(message: "Aucun match ne correspond.");
               }
 
               final Map<String, List<Match>> grouped = {};

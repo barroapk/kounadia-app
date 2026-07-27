@@ -2,6 +2,8 @@ import "package:flutter/material.dart";
 import "matches_screen.dart";
 import "predictions_screen.dart";
 import "settings_screen.dart";
+import "search_screen.dart";
+import "../models/search_result.dart";
 
 class MainScreen extends StatefulWidget {
   const MainScreen({super.key});
@@ -12,14 +14,30 @@ class MainScreen extends StatefulWidget {
 
 class _MainScreenState extends State<MainScreen> {
   int _currentIndex = 0;
+  final _matchesKey = GlobalKey<MatchesScreenState>();
 
-  final _screens = const [MatchesScreen(), PredictionsScreen()];
+  late final List<Widget> _screens = [
+    MatchesScreen(key: _matchesKey),
+    const PredictionsScreen(),
+  ];
   final _titles = const ["KOUNADIA", "Prédiction"];
 
   void _comingSoon(BuildContext context, String feature) {
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(content: Text("$feature : bientôt disponible")),
     );
+  }
+
+  Future<void> _openSearch() async {
+    final result = await Navigator.push<SearchResult>(
+      context,
+      MaterialPageRoute(builder: (context) => const SearchScreen()),
+    );
+
+    if (result != null) {
+      setState(() => _currentIndex = 0);
+      _matchesKey.currentState?.applySearchFilter(result);
+    }
   }
 
   @override
@@ -33,7 +51,7 @@ class _MainScreenState extends State<MainScreen> {
         actions: [
           IconButton(
             icon: const Icon(Icons.search),
-            onPressed: () => _comingSoon(context, "Recherche"),
+            onPressed: _openSearch,
           ),
           IconButton(
             icon: const Icon(Icons.notifications_outlined),
