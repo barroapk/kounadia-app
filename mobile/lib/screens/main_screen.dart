@@ -1,6 +1,7 @@
 import "package:flutter/material.dart";
 import "matches_screen.dart";
 import "predictions_screen.dart";
+import "settings_screen.dart";
 
 class MainScreen extends StatefulWidget {
   const MainScreen({super.key});
@@ -39,14 +40,16 @@ class _MainScreenState extends State<MainScreen> {
             onPressed: () => _comingSoon(context, "Notifications"),
           ),
           IconButton(
-            icon: const Icon(Icons.person_outline),
-            onPressed: () => _comingSoon(context, "Profil"),
+            icon: const Icon(Icons.settings_outlined),
+            onPressed: () {
+              Navigator.push(
+                context,
+                MaterialPageRoute(builder: (context) => const SettingsScreen()),
+              );
+            },
           ),
         ],
       ),
-      // IndexedStack garde les deux écrans vivants simultanément (au lieu de
-      // les détruire/recréer à chaque changement d'onglet), pour ne pas
-      // perdre la date sélectionnée ni interrompre le suivi d'un match en direct.
       body: IndexedStack(
         index: _currentIndex,
         children: _screens,

@@ -2,6 +2,7 @@ import "dart:async";
 import "package:flutter/material.dart";
 import "../models/match.dart";
 import "../services/api_service.dart";
+import "../services/competition_preferences.dart";
 import "../widgets/match_row.dart";
 import "../widgets/competition_header.dart";
 import "../widgets/empty_state.dart";
@@ -20,9 +21,11 @@ class _MatchesScreenState extends State<MatchesScreen> {
   static const _liveStatuses = ["LIVE", "IN_PLAY", "PAUSED"];
 
   final ApiService _apiService = ApiService();
+  final CompetitionPreferences _competitionPrefs = CompetitionPreferences();
   DateTime _selectedDate = DateTime.now();
 
   List<Match>? _matches;
+  Set<String> _disabledCompetitions = {};
   bool _isInitialLoading = true;
   String? _errorMessage;
   Timer? _backgroundTimer;
@@ -61,15 +64,24 @@ class _MatchesScreenState extends State<MatchesScreen> {
     return _apiService.getMatchesByDate(_formatDateForApi(_selectedDate));
   }
 
+  List<Match> _applyFilter(List<Match> matches) {
+    if (_disabledCompetitions.isEmpty) return matches;
+    return matches
+        .where((m) => !_disabledCompetitions.contains(m.competition))
+        .toList();
+  }
+
   Future<void> _loadInitial() async {
     setState(() {
       _isInitialLoading = true;
       _errorMessage = null;
     });
     try {
+      final disabled = await _competitionPrefs.getDisabled();
       final data = await _fetch();
       if (!mounted) return;
       setState(() {
+        _disabledCompetitions = disabled;
         _matches = data;
         _isInitialLoading = false;
       });
@@ -82,8 +94,6 @@ class _MatchesScreenState extends State<MatchesScreen> {
     }
   }
 
-  /// Actualisation silencieuse : seulement pour "Aujourd'hui", et seulement
-  /// si un match en direct est présent dans la liste actuellement affichée.
   Future<void> _silentRefreshIfLive() async {
     if (!_isToday) return;
 
@@ -99,10 +109,7 @@ class _MatchesScreenState extends State<MatchesScreen> {
       setState(() {
         _matches = data;
       });
-    } catch (_) {
-      // Échec silencieux : on garde l'affichage actuel plutôt que de
-      // perturber l'utilisateur pour un rafraîchissement en arrière-plan.
-    }
+    } catch (_) {}
   }
 
   void _onDateChanged(DateTime date) {
@@ -149,7 +156,7 @@ class _MatchesScreenState extends State<MatchesScreen> {
                 );
               }
 
-              final matches = _matches ?? [];
+              final matches = _applyFilter(_matches ?? []);
 
               if (matches.isEmpty) {
                 return const EmptyState(message: "Aucun match à cette date.");
