@@ -255,9 +255,6 @@ class MatchesScreenState extends State<MatchesScreen> {
     return widgets;
   }
 
-  /// Une compétition à l'intérieur d'une carte pays : repliable individuellement.
-  /// Ouverte par défaut si c'est la D1 du pays (rang 1) ou si elle a un match en direct.
-
   Widget _competitionTile(String name, List<Match> matches, {required bool autoOpen}) {
     final hasLive = matches.any((m) => _liveStatuses.contains(m.status));
     return Theme(
@@ -285,10 +282,7 @@ class MatchesScreenState extends State<MatchesScreen> {
             ),
             const SizedBox(width: 6),
             Expanded(
-              child: Text(
-                name,
-                style: const TextStyle(fontWeight: FontWeight.w600, fontSize: 13),
-              ),
+              child: Text(name, style: const TextStyle(fontWeight: FontWeight.w600, fontSize: 13)),
             ),
             Text("${matches.length}", style: TextStyle(color: Colors.grey[500], fontSize: 12)),
           ],
@@ -315,14 +309,34 @@ class MatchesScreenState extends State<MatchesScreen> {
 
   List<Widget> _buildHierarchySection(List<Match> matches) {
     final Map<String, Map<String, Map<String, List<Match>>>> tree = {};
+    final List<String> countryOrder = [];
+    final List<String> liveCountryOrder = [];
 
     for (final m in matches) {
       final continent = m.continent ?? "Autre";
       final country = m.country ?? "Autre";
       tree.putIfAbsent(continent, () => {});
       tree[continent]!.putIfAbsent(country, () => {});
+      if (country != "International" && !countryOrder.contains(country)) {
+        countryOrder.add(country);
+      }
       tree[continent]![country]!.putIfAbsent(m.competition, () => []).add(m);
+
+      if (_liveStatuses.contains(m.status) && country != "International" && !liveCountryOrder.contains(country)) {
+        liveCountryOrder.add(country);
+      }
     }
+
+    // Règle "pays ouvert par défaut" : priorité aux pays avec un match en direct,
+    // sinon les 2 premiers pays rencontrés. Un pays explicitement recherché s'ouvre toujours.
+    final autoOpenCountries = liveCountryOrder.isNotEmpty
+        ? liveCountryOrder.take(2).toSet()
+        : countryOrder.take(2).toSet();
+
+    final searchedCompetition =
+        _activeFilter?.type == SearchResultType.competition ? _activeFilter!.value : null;
+    final searchedCountry =
+        _activeFilter?.type == SearchResultType.country ? _activeFilter!.value : null;
 
     final continents = tree.keys.toList();
 
@@ -334,7 +348,12 @@ class MatchesScreenState extends State<MatchesScreen> {
         final compMatches = competitions[name]!;
         final hasLive = compMatches.any((m) => _liveStatuses.contains(m.status));
         final isTopDivision = competitionRank(name) == 1;
-        return _competitionTile(name, compMatches, autoOpen: isTopDivision || hasLive);
+        final isSearchedCompetition = searchedCompetition == name;
+        return _competitionTile(
+          name,
+          compMatches,
+          autoOpen: isTopDivision || hasLive || isSearchedCompetition,
+        );
       }).toList();
     }
 
@@ -374,13 +393,20 @@ class MatchesScreenState extends State<MatchesScreen> {
               final hasLiveInCountry = competitions.values.any(
                 (list) => list.any((m) => _liveStatuses.contains(m.status)),
               );
+              final isSearchedCountry = searchedCountry == country;
+              // Un pays doit aussi s'ouvrir si la compétition recherchée s'y trouve.
+              final containsSearchedCompetition =
+                  searchedCompetition != null && competitions.containsKey(searchedCompetition);
 
               return CountryCard(
                 title: country,
                 flagUrl: flagUrl,
                 matchCount: matchCount,
                 competitionCount: competitions.length,
-                initiallyExpanded: hasLiveInCountry,
+                initiallyExpanded: hasLiveInCountry ||
+                    autoOpenCountries.contains(country) ||
+                    isSearchedCountry ||
+                    containsSearchedCompetition,
                 children: competitionTiles(competitions),
               );
             }),

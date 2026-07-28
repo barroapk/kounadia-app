@@ -33,23 +33,34 @@ class _SearchScreenState extends State<SearchScreen> {
     super.dispose();
   }
 
-  bool _matches(String text) => text.toLowerCase().contains(_query.toLowerCase());
+  /// Retire les accents pour une comparaison insensible ("Égypte" == "egypte").
+  String _normalize(String text) {
+    const withAccents = 'àáâãäåèéêëìíîïòóôõöùúûüçñÀÁÂÃÄÅÈÉÊËÌÍÎÏÒÓÔÕÖÙÚÛÜÇÑ';
+    const withoutAccents = 'aaaaaaeeeeiiiiooooouuuucnAAAAAAEEEEIIIIOOOOOUUUUCN';
+    var result = text.toLowerCase();
+    for (var i = 0; i < withAccents.length; i++) {
+      result = result.replaceAll(withAccents[i], withoutAccents[i].toLowerCase());
+    }
+    return result;
+  }
+
+  bool _matches(String text) => _normalize(text).contains(_normalize(_query));
 
   @override
   Widget build(BuildContext context) {
-    final matchingContinents = _query.isEmpty
-        ? <String>[]
-        : _continents.where(_matches).toList();
-    final matchingCountries = _query.isEmpty
-        ? <String>[]
-        : _countries.where(_matches).toList();
     final matchingCompetitions = _query.isEmpty
         ? <CompetitionInfo>[]
         : COMPETITIONS_CATALOG.where((c) => _matches(c.name)).toList();
+    final matchingCountries = _query.isEmpty
+        ? <String>[]
+        : _countries.where(_matches).toList();
+    final matchingContinents = _query.isEmpty
+        ? <String>[]
+        : _continents.where(_matches).toList();
 
-    final hasResults = matchingContinents.isNotEmpty ||
+    final hasResults = matchingCompetitions.isNotEmpty ||
         matchingCountries.isNotEmpty ||
-        matchingCompetitions.isNotEmpty;
+        matchingContinents.isNotEmpty;
 
     return Scaffold(
       appBar: AppBar(
@@ -57,7 +68,7 @@ class _SearchScreenState extends State<SearchScreen> {
           controller: _controller,
           autofocus: true,
           decoration: const InputDecoration(
-            hintText: "Rechercher un continent, un pays, une compétition...",
+            hintText: "Rechercher une compétition, un pays, un continent...",
             border: InputBorder.none,
           ),
           onChanged: (value) => setState(() => _query = value),
@@ -69,15 +80,17 @@ class _SearchScreenState extends State<SearchScreen> {
               ? const Center(child: Text("Aucun résultat"))
               : ListView(
                   children: [
-                    if (matchingContinents.isNotEmpty) ...[
-                      const _SectionLabel("Continents"),
-                      ...matchingContinents.map(
+                    // Compétitions en premier : c'est ce que la majorité des gens cherchent.
+                    if (matchingCompetitions.isNotEmpty) ...[
+                      const _SectionLabel("Compétitions"),
+                      ...matchingCompetitions.map(
                         (c) => ListTile(
-                          leading: const Icon(Icons.public),
-                          title: Text(c),
+                          leading: const Icon(Icons.emoji_events_outlined),
+                          title: Text(c.name),
+                          subtitle: Text("${c.country} · ${c.continent}"),
                           onTap: () => Navigator.pop(
                             context,
-                            SearchResult(type: SearchResultType.continent, value: c, label: c),
+                            SearchResult(type: SearchResultType.competition, value: c.name, label: c.name),
                           ),
                         ),
                       ),
@@ -95,16 +108,15 @@ class _SearchScreenState extends State<SearchScreen> {
                         ),
                       ),
                     ],
-                    if (matchingCompetitions.isNotEmpty) ...[
-                      const _SectionLabel("Compétitions"),
-                      ...matchingCompetitions.map(
+                    if (matchingContinents.isNotEmpty) ...[
+                      const _SectionLabel("Continents"),
+                      ...matchingContinents.map(
                         (c) => ListTile(
-                          leading: const Icon(Icons.emoji_events_outlined),
-                          title: Text(c.name),
-                          subtitle: Text("${c.country} · ${c.continent}"),
+                          leading: const Icon(Icons.public),
+                          title: Text(c),
                           onTap: () => Navigator.pop(
                             context,
-                            SearchResult(type: SearchResultType.competition, value: c.name, label: c.name),
+                            SearchResult(type: SearchResultType.continent, value: c, label: c),
                           ),
                         ),
                       ),
