@@ -189,7 +189,15 @@ class MatchesScreenState extends State<MatchesScreen> {
     );
   }
 
-  /// Bloc "En direct" : liste plate par compétition, sans continent/pays.
+  /// Extrait un nombre pour trier ("67'" -> 67, "45+2'" -> 45, "MT"/null -> -1).
+  int _minuteSortValue(Match m) {
+    final label = m.liveMinuteLabel;
+    if (label == null) return -1;
+    final match = RegExp(r"^(\d+)").firstMatch(label);
+    if (match == null) return -1;
+    return int.tryParse(match.group(1)!) ?? -1;
+  }
+
   List<Widget> _buildLiveSection(List<Match> liveMatches) {
     if (liveMatches.isEmpty) return [];
 
@@ -198,6 +206,13 @@ class MatchesScreenState extends State<MatchesScreen> {
     for (final m in liveMatches) {
       if (!byCompetition.containsKey(m.competition)) order.add(m.competition);
       byCompetition.putIfAbsent(m.competition, () => []).add(m);
+    }
+
+    // Trie les matchs de chaque compétition par minute décroissante.
+    for (final competition in order) {
+      byCompetition[competition]!.sort(
+        (a, b) => _minuteSortValue(b).compareTo(_minuteSortValue(a)),
+      );
     }
 
     final widgets = <Widget>[
@@ -222,9 +237,17 @@ class MatchesScreenState extends State<MatchesScreen> {
       widgets.add(
         Padding(
           padding: const EdgeInsets.fromLTRB(16, 8, 16, 2),
-          child: Text(
-            competition,
-            style: const TextStyle(fontWeight: FontWeight.w600, fontSize: 13),
+          child: Row(
+            children: [
+              CachedLogo(
+                url: matches.first.competitionEmblem,
+                size: 16,
+                fallbackIcon: Icons.emoji_events,
+                fallbackColor: const Color(0xFF16A34A),
+              ),
+              const SizedBox(width: 6),
+              Text(competition, style: const TextStyle(fontWeight: FontWeight.w600, fontSize: 13)),
+            ],
           ),
         ),
       );
@@ -239,7 +262,6 @@ class MatchesScreenState extends State<MatchesScreen> {
     return widgets;
   }
 
-  /// Bloc "Tous les scores" : hiérarchie Continent -> Pays -> Compétition -> Matchs.
   List<Widget> _buildHierarchySection(List<Match> matches) {
     final Map<String, Map<String, Map<String, List<Match>>>> tree = {};
     final List<String> competitionOrder = [];

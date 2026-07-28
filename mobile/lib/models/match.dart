@@ -15,6 +15,7 @@ class Match {
   final String? homeTeamCrest;
   final String? awayTeamCrest;
   final String? competitionEmblem;
+  final String provider;
 
   Match({
     required this.id,
@@ -33,6 +34,7 @@ class Match {
     this.homeTeamCrest,
     this.awayTeamCrest,
     this.competitionEmblem,
+    this.provider = 'football-data',
   });
 
   factory Match.fromJson(Map<String, dynamic> json) {
@@ -53,6 +55,7 @@ class Match {
       homeTeamCrest: json['homeTeamCrest'] as String?,
       awayTeamCrest: json['awayTeamCrest'] as String?,
       competitionEmblem: json['competitionEmblem'] as String?,
+      provider: json['provider'] as String? ?? 'football-data',
     );
   }
 }
