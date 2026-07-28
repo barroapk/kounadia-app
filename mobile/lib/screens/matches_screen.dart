@@ -184,14 +184,21 @@ class MatchesScreenState extends State<MatchesScreen> {
   Widget _buildHierarchy(List<Match> matches) {
     // Continent -> Pays ("International" traité à part, sans sous-niveau pays) -> Compétition -> Matchs
     final Map<String, Map<String, Map<String, List<Match>>>> tree = {};
+    final List<String> competitionOrder = [];
 
     for (final m in matches) {
       final continent = m.continent ?? "Autre";
       final country = m.country ?? "Autre";
       tree.putIfAbsent(continent, () => {});
       tree[continent]!.putIfAbsent(country, () => {});
+      if (!tree[continent]![country]!.containsKey(m.competition)) {
+        competitionOrder.add(m.competition);
+      }
       tree[continent]![country]!.putIfAbsent(m.competition, () => []).add(m);
     }
+
+    // Les deux premières compétitions rencontrées s'ouvrent automatiquement.
+    final autoOpenCompetitions = competitionOrder.take(2).toSet();
 
     final continents = tree.keys.toList();
 
@@ -205,21 +212,32 @@ class MatchesScreenState extends State<MatchesScreen> {
         final realCountries = Map<String, Map<String, List<Match>>>.from(countries)
           ..remove("International");
 
+        final continentHasAutoOpen = countries.values.any(
+          (comps) => comps.keys.any((c) => autoOpenCompetitions.contains(c)),
+        );
+
         return ExpansionTile(
-          initiallyExpanded: continents.length <= 2,
+          initiallyExpanded: continentHasAutoOpen,
           title: Text(continent, style: const TextStyle(fontWeight: FontWeight.bold)),
           children: [
             if (international != null)
               ...international.entries.map(
-                (e) => _competitionBlock(e.key, e.value),
+                (e) => ExpansionTile(
+                  initiallyExpanded: autoOpenCompetitions.contains(e.key),
+                  title: Text(e.key, style: const TextStyle(fontSize: 13)),
+                  children: [_competitionBlock(e.key, e.value)],
+                ),
               ),
             ...realCountries.entries.map((countryEntry) {
               final country = countryEntry.key;
               final competitions = countryEntry.value;
               final flagUrl = flagUrlFor(country);
               final matchCount = competitions.values.fold<int>(0, (sum, l) => sum + l.length);
+              final countryHasAutoOpen =
+                  competitions.keys.any((c) => autoOpenCompetitions.contains(c));
 
               return ExpansionTile(
+                initiallyExpanded: countryHasAutoOpen,
                 title: Row(
                   children: [
                     if (flagUrl != null)
@@ -231,9 +249,13 @@ class MatchesScreenState extends State<MatchesScreen> {
                     Text("$matchCount", style: TextStyle(color: Colors.grey[500])),
                   ],
                 ),
-                children: competitions.entries
-                    .map((compEntry) => _competitionBlock(compEntry.key, compEntry.value))
-                    .toList(),
+                children: competitions.entries.map((compEntry) {
+                  return ExpansionTile(
+                    initiallyExpanded: autoOpenCompetitions.contains(compEntry.key),
+                    title: Text(compEntry.key, style: const TextStyle(fontSize: 13)),
+                    children: [_competitionBlock(compEntry.key, compEntry.value)],
+                  );
+                }).toList(),
               );
             }),
           ],
