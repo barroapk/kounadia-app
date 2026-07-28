@@ -2,10 +2,12 @@ import "dart:async";
 import "package:flutter/material.dart";
 import "../models/match.dart";
 import "../models/search_result.dart";
+import "../config/country_flags.dart";
 import "../services/api_service.dart";
 import "../services/competition_preferences.dart";
 import "../widgets/match_row.dart";
 import "../widgets/competition_header.dart";
+import "../widgets/cached_logo.dart";
 import "../widgets/empty_state.dart";
 import "../widgets/loading_skeleton.dart";
 import "../widgets/date_selector_bar.dart";
@@ -47,7 +49,6 @@ class MatchesScreenState extends State<MatchesScreen> {
     super.dispose();
   }
 
-  /// Appelé depuis MainScreen après une sélection dans l'écran de recherche.
   void applySearchFilter(SearchResult result) {
     setState(() => _activeFilter = result);
   }
@@ -144,6 +145,103 @@ class MatchesScreenState extends State<MatchesScreen> {
 
   Future<void> _manualReload() => _loadInitial();
 
+  void _openMatch(Match match) {
+    Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (context) => MatchDetailScreen(
+          matchId: match.id,
+          homeTeam: match.homeTeam,
+          awayTeam: match.awayTeam,
+          competitionCode: match.competitionCode,
+        ),
+      ),
+    );
+  }
+
+  Widget _competitionBlock(String competitionName, List<Match> matches) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        CompetitionHeader(name: competitionName, emblemUrl: matches.first.competitionEmblem),
+        ...matches.asMap().entries.map((entry) {
+          final match = entry.value;
+          return Column(
+            children: [
+              MatchRow(
+                key: ValueKey(match.id),
+                match: match,
+                onTap: () => _openMatch(match),
+              ),
+              if (entry.key < matches.length - 1) const Divider(height: 1, indent: 56),
+            ],
+          );
+        }),
+      ],
+    );
+  }
+
+  Widget _buildHierarchy(List<Match> matches) {
+    // Continent -> Pays ("International" traité à part, sans sous-niveau pays) -> Compétition -> Matchs
+    final Map<String, Map<String, Map<String, List<Match>>>> tree = {};
+
+    for (final m in matches) {
+      final continent = m.continent ?? "Autre";
+      final country = m.country ?? "Autre";
+      tree.putIfAbsent(continent, () => {});
+      tree[continent]!.putIfAbsent(country, () => {});
+      tree[continent]![country]!.putIfAbsent(m.competition, () => []).add(m);
+    }
+
+    final continents = tree.keys.toList();
+
+    return ListView.builder(
+      itemCount: continents.length,
+      itemBuilder: (context, index) {
+        final continent = continents[index];
+        final countries = tree[continent]!;
+
+        final international = countries["International"];
+        final realCountries = Map<String, Map<String, List<Match>>>.from(countries)
+          ..remove("International");
+
+        return ExpansionTile(
+          initiallyExpanded: continents.length <= 2,
+          title: Text(continent, style: const TextStyle(fontWeight: FontWeight.bold)),
+          children: [
+            if (international != null)
+              ...international.entries.map(
+                (e) => _competitionBlock(e.key, e.value),
+              ),
+            ...realCountries.entries.map((countryEntry) {
+              final country = countryEntry.key;
+              final competitions = countryEntry.value;
+              final flagUrl = flagUrlFor(country);
+              final matchCount = competitions.values.fold<int>(0, (sum, l) => sum + l.length);
+
+              return ExpansionTile(
+                title: Row(
+                  children: [
+                    if (flagUrl != null)
+                      Padding(
+                        padding: const EdgeInsets.only(right: 8),
+                        child: CachedLogo(url: flagUrl, size: 20, fallbackIcon: Icons.flag_outlined),
+                      ),
+                    Expanded(child: Text(country)),
+                    Text("$matchCount", style: TextStyle(color: Colors.grey[500])),
+                  ],
+                ),
+                children: competitions.entries
+                    .map((compEntry) => _competitionBlock(compEntry.key, compEntry.value))
+                    .toList(),
+              );
+            }),
+          ],
+        );
+      },
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     return Column(
@@ -194,53 +292,9 @@ class MatchesScreenState extends State<MatchesScreen> {
                 return const EmptyState(message: "Aucun match ne correspond.");
               }
 
-              final Map<String, List<Match>> grouped = {};
-              for (final m in matches) {
-                grouped.putIfAbsent(m.competition, () => []).add(m);
-              }
-              final competitions = grouped.keys.toList();
-
               return RefreshIndicator(
                 onRefresh: _manualReload,
-                child: ListView.builder(
-                  itemCount: competitions.length,
-                  itemBuilder: (context, index) {
-                    final competition = competitions[index];
-                    final competitionMatches = grouped[competition]!;
-                    return Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        CompetitionHeader(name: competition, emblemUrl: competitionMatches.first.competitionEmblem),
-                        ...competitionMatches.asMap().entries.map((entry) {
-                          final match = entry.value;
-                          return Column(
-                            children: [
-                              MatchRow(
-                                key: ValueKey(match.id),
-                                match: match,
-                                onTap: () {
-                                  Navigator.push(
-                                    context,
-                                    MaterialPageRoute(
-                                      builder: (context) => MatchDetailScreen(
-                                        matchId: match.id,
-                                        homeTeam: match.homeTeam,
-                                        awayTeam: match.awayTeam,
-                          competitionCode: match.competitionCode,
-                                      ),
-                                    ),
-                                  );
-                                },
-                              ),
-                              if (entry.key < competitionMatches.length - 1)
-                                const Divider(height: 1, indent: 56),
-                            ],
-                          );
-                        }),
-                      ],
-                    );
-                  },
-                ),
+                child: _buildHierarchy(matches),
               );
             },
           ),
