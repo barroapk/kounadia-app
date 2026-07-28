@@ -6,7 +6,6 @@ import "../config/country_flags.dart";
 import "../services/api_service.dart";
 import "../services/competition_preferences.dart";
 import "../widgets/match_row.dart";
-import "../widgets/competition_header.dart";
 import "../widgets/cached_logo.dart";
 import "../widgets/empty_state.dart";
 import "../widgets/loading_skeleton.dart";
@@ -159,32 +158,26 @@ class MatchesScreenState extends State<MatchesScreen> {
     );
   }
 
-  Widget _competitionBlock(String competitionName, List<Match> matches) {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        CompetitionHeader(name: competitionName, emblemUrl: matches.first.competitionEmblem),
-        ...matches.asMap().entries.map((entry) {
-          final match = entry.value;
-          return Column(
-            children: [
-              MatchRow(
-                key: ValueKey(match.id),
-                match: match,
-                onTap: () => _openMatch(match),
-              ),
-              if (entry.key < matches.length - 1) const Divider(height: 1, indent: 56),
-            ],
-          );
-        }),
-      ],
-    );
+  List<Widget> _matchRows(List<Match> matches) {
+    return matches.asMap().entries.map((entry) {
+      final match = entry.value;
+      return Column(
+        children: [
+          MatchRow(
+            key: ValueKey(match.id),
+            match: match,
+            onTap: () => _openMatch(match),
+          ),
+          if (entry.key < matches.length - 1) const Divider(height: 1, indent: 56),
+        ],
+      );
+    }).toList();
   }
 
   Widget _buildHierarchy(List<Match> matches) {
-    // Continent -> Pays ("International" traité à part, sans sous-niveau pays) -> Compétition -> Matchs
     final Map<String, Map<String, Map<String, List<Match>>>> tree = {};
     final List<String> competitionOrder = [];
+    final Set<String> liveCompetitions = {};
 
     for (final m in matches) {
       final continent = m.continent ?? "Autre";
@@ -195,12 +188,34 @@ class MatchesScreenState extends State<MatchesScreen> {
         competitionOrder.add(m.competition);
       }
       tree[continent]![country]!.putIfAbsent(m.competition, () => []).add(m);
+
+      if (_liveStatuses.contains(m.status)) {
+        liveCompetitions.add(m.competition);
+      }
     }
 
-    // Les deux premières compétitions rencontrées s'ouvrent automatiquement.
-    final autoOpenCompetitions = competitionOrder.take(2).toSet();
+    // Priorité : compétitions avec un match en direct. Sinon, les 2 premières rencontrées.
+    final autoOpenCompetitions = liveCompetitions.isNotEmpty
+        ? liveCompetitions
+        : competitionOrder.take(2).toSet();
 
     final continents = tree.keys.toList();
+
+    Widget competitionTile(String name, List<Match> compMatches) {
+      return ExpansionTile(
+        initiallyExpanded: autoOpenCompetitions.contains(name),
+        title: Row(
+          children: [
+            Expanded(child: Text(name, style: const TextStyle(fontSize: 13))),
+            Text(
+              "${compMatches.length}",
+              style: TextStyle(color: Colors.grey[500], fontSize: 12),
+            ),
+          ],
+        ),
+        children: _matchRows(compMatches),
+      );
+    }
 
     return ListView.builder(
       itemCount: continents.length,
@@ -221,13 +236,7 @@ class MatchesScreenState extends State<MatchesScreen> {
           title: Text(continent, style: const TextStyle(fontWeight: FontWeight.bold)),
           children: [
             if (international != null)
-              ...international.entries.map(
-                (e) => ExpansionTile(
-                  initiallyExpanded: autoOpenCompetitions.contains(e.key),
-                  title: Text(e.key, style: const TextStyle(fontSize: 13)),
-                  children: [_competitionBlock(e.key, e.value)],
-                ),
-              ),
+              ...international.entries.map((e) => competitionTile(e.key, e.value)),
             ...realCountries.entries.map((countryEntry) {
               final country = countryEntry.key;
               final competitions = countryEntry.value;
@@ -249,13 +258,9 @@ class MatchesScreenState extends State<MatchesScreen> {
                     Text("$matchCount", style: TextStyle(color: Colors.grey[500])),
                   ],
                 ),
-                children: competitions.entries.map((compEntry) {
-                  return ExpansionTile(
-                    initiallyExpanded: autoOpenCompetitions.contains(compEntry.key),
-                    title: Text(compEntry.key, style: const TextStyle(fontSize: 13)),
-                    children: [_competitionBlock(compEntry.key, compEntry.value)],
-                  );
-                }).toList(),
+                children: competitions.entries
+                    .map((compEntry) => competitionTile(compEntry.key, compEntry.value))
+                    .toList(),
               );
             }),
           ],
