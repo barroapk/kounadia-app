@@ -164,7 +164,7 @@ class MatchesScreenState extends State<MatchesScreen> {
       return Column(
         children: [
           MatchRow(
-            key: ValueKey(match.id),
+            key: ValueKey("${match.provider}-${match.id}"),
             match: match,
             onTap: () => _openMatch(match),
           ),
@@ -174,7 +174,73 @@ class MatchesScreenState extends State<MatchesScreen> {
     }).toList();
   }
 
-  Widget _buildHierarchy(List<Match> matches) {
+  Widget _sectionLabel(String text) {
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(16, 16, 16, 6),
+      child: Text(
+        text,
+        style: TextStyle(
+          fontWeight: FontWeight.bold,
+          fontSize: 12,
+          letterSpacing: 0.5,
+          color: Colors.grey[600],
+        ),
+      ),
+    );
+  }
+
+  /// Bloc "En direct" : liste plate par compétition, sans continent/pays.
+  List<Widget> _buildLiveSection(List<Match> liveMatches) {
+    if (liveMatches.isEmpty) return [];
+
+    final Map<String, List<Match>> byCompetition = {};
+    final List<String> order = [];
+    for (final m in liveMatches) {
+      if (!byCompetition.containsKey(m.competition)) order.add(m.competition);
+      byCompetition.putIfAbsent(m.competition, () => []).add(m);
+    }
+
+    final widgets = <Widget>[
+      Padding(
+        padding: const EdgeInsets.fromLTRB(16, 12, 16, 6),
+        child: Row(
+          children: [
+            Container(
+              width: 8,
+              height: 8,
+              margin: const EdgeInsets.only(right: 8),
+              decoration: const BoxDecoration(color: Color(0xFFDC2626), shape: BoxShape.circle),
+            ),
+            const Text("EN DIRECT", style: TextStyle(fontWeight: FontWeight.bold, fontSize: 13)),
+          ],
+        ),
+      ),
+    ];
+
+    for (final competition in order) {
+      final matches = byCompetition[competition]!;
+      widgets.add(
+        Padding(
+          padding: const EdgeInsets.fromLTRB(16, 8, 16, 2),
+          child: Text(
+            competition,
+            style: const TextStyle(fontWeight: FontWeight.w600, fontSize: 13),
+          ),
+        ),
+      );
+      widgets.addAll(_matchRows(matches));
+    }
+
+    widgets.add(const Padding(
+      padding: EdgeInsets.symmetric(vertical: 8),
+      child: Divider(height: 1, thickness: 4),
+    ));
+
+    return widgets;
+  }
+
+  /// Bloc "Tous les scores" : hiérarchie Continent -> Pays -> Compétition -> Matchs.
+  List<Widget> _buildHierarchySection(List<Match> matches) {
     final Map<String, Map<String, Map<String, List<Match>>>> tree = {};
     final List<String> competitionOrder = [];
     final List<String> liveCompetitionOrder = [];
@@ -198,7 +264,6 @@ class MatchesScreenState extends State<MatchesScreen> {
       }
     }
 
-    // Priorité aux compétitions en direct, mais toujours limité à 2 au maximum.
     final autoOpenCompetitions = liveCompetitionOrder.isNotEmpty
         ? liveCompetitionOrder.take(2).toSet()
         : competitionOrder.take(2).toSet();
@@ -207,7 +272,6 @@ class MatchesScreenState extends State<MatchesScreen> {
 
     Widget competitionTile(String name, List<Match> compMatches) {
       final hasLive = competitionsWithLive.contains(name);
-
       return ExpansionTile(
         initiallyExpanded: autoOpenCompetitions.contains(name),
         title: Row(
@@ -218,29 +282,21 @@ class MatchesScreenState extends State<MatchesScreen> {
                 child: Container(
                   width: 8,
                   height: 8,
-                  decoration: const BoxDecoration(
-                    color: Color(0xFFDC2626),
-                    shape: BoxShape.circle,
-                  ),
+                  decoration: const BoxDecoration(color: Color(0xFFDC2626), shape: BoxShape.circle),
                 ),
               ),
             Expanded(child: Text(name, style: const TextStyle(fontSize: 13))),
-            Text(
-              "${compMatches.length}",
-              style: TextStyle(color: Colors.grey[500], fontSize: 12),
-            ),
+            Text("${compMatches.length}", style: TextStyle(color: Colors.grey[500], fontSize: 12)),
           ],
         ),
         children: _matchRows(compMatches),
       );
     }
 
-    return ListView.builder(
-      itemCount: continents.length,
-      itemBuilder: (context, index) {
-        final continent = continents[index];
+    return [
+      _sectionLabel("TOUS LES SCORES"),
+      ...continents.map((continent) {
         final countries = tree[continent]!;
-
         final international = countries["International"];
         final realCountries = Map<String, Map<String, List<Match>>>.from(countries)
           ..remove("International");
@@ -283,8 +339,8 @@ class MatchesScreenState extends State<MatchesScreen> {
             }),
           ],
         );
-      },
-    );
+      }),
+    ];
   }
 
   @override
@@ -337,9 +393,17 @@ class MatchesScreenState extends State<MatchesScreen> {
                 return const EmptyState(message: "Aucun match ne correspond.");
               }
 
+              final liveMatches =
+                  _isToday ? matches.where((m) => _liveStatuses.contains(m.status)).toList() : <Match>[];
+
               return RefreshIndicator(
                 onRefresh: _manualReload,
-                child: _buildHierarchy(matches),
+                child: ListView(
+                  children: [
+                    ..._buildLiveSection(liveMatches),
+                    ..._buildHierarchySection(matches),
+                  ],
+                ),
               );
             },
           ),
