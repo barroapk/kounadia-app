@@ -177,7 +177,8 @@ class MatchesScreenState extends State<MatchesScreen> {
   Widget _buildHierarchy(List<Match> matches) {
     final Map<String, Map<String, Map<String, List<Match>>>> tree = {};
     final List<String> competitionOrder = [];
-    final Set<String> liveCompetitions = {};
+    final List<String> liveCompetitionOrder = [];
+    final Set<String> competitionsWithLive = {};
 
     for (final m in matches) {
       final continent = m.continent ?? "Autre";
@@ -190,22 +191,39 @@ class MatchesScreenState extends State<MatchesScreen> {
       tree[continent]![country]!.putIfAbsent(m.competition, () => []).add(m);
 
       if (_liveStatuses.contains(m.status)) {
-        liveCompetitions.add(m.competition);
+        competitionsWithLive.add(m.competition);
+        if (!liveCompetitionOrder.contains(m.competition)) {
+          liveCompetitionOrder.add(m.competition);
+        }
       }
     }
 
-    // Priorité : compétitions avec un match en direct. Sinon, les 2 premières rencontrées.
-    final autoOpenCompetitions = liveCompetitions.isNotEmpty
-        ? liveCompetitions
+    // Priorité aux compétitions en direct, mais toujours limité à 2 au maximum.
+    final autoOpenCompetitions = liveCompetitionOrder.isNotEmpty
+        ? liveCompetitionOrder.take(2).toSet()
         : competitionOrder.take(2).toSet();
 
     final continents = tree.keys.toList();
 
     Widget competitionTile(String name, List<Match> compMatches) {
+      final hasLive = competitionsWithLive.contains(name);
+
       return ExpansionTile(
         initiallyExpanded: autoOpenCompetitions.contains(name),
         title: Row(
           children: [
+            if (hasLive)
+              Padding(
+                padding: const EdgeInsets.only(right: 6),
+                child: Container(
+                  width: 8,
+                  height: 8,
+                  decoration: const BoxDecoration(
+                    color: Color(0xFFDC2626),
+                    shape: BoxShape.circle,
+                  ),
+                ),
+              ),
             Expanded(child: Text(name, style: const TextStyle(fontSize: 13))),
             Text(
               "${compMatches.length}",
