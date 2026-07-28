@@ -2,32 +2,32 @@ class CompetitionInfo {
   final String name;
   final String continent;
   final String country;
+  final String? code; // Code football-data.org, requis pour /standings. null = pas de classement dispo.
 
   const CompetitionInfo({
     required this.name,
     required this.continent,
     required this.country,
+    this.code,
   });
 }
 
-// Ces noms doivent correspondre EXACTEMENT à ce que renvoie le backend
-// (champ "competition" de chaque match), sinon le filtre ne fonctionnera pas.
 const List<CompetitionInfo> COMPETITIONS_CATALOG = [
-  // Europe - football-data.org
-  CompetitionInfo(name: "Premier League", continent: "Europe", country: "Angleterre"),
-  CompetitionInfo(name: "Championship", continent: "Europe", country: "Angleterre"),
-  CompetitionInfo(name: "Primera Division", continent: "Europe", country: "Espagne"),
-  CompetitionInfo(name: "Bundesliga", continent: "Europe", country: "Allemagne"),
-  CompetitionInfo(name: "Serie A", continent: "Europe", country: "Italie"),
-  CompetitionInfo(name: "Ligue 1", continent: "Europe", country: "France"),
-  CompetitionInfo(name: "Eredivisie", continent: "Europe", country: "Pays-Bas"),
-  CompetitionInfo(name: "Primeira Liga", continent: "Europe", country: "Portugal"),
-  CompetitionInfo(name: "UEFA Champions League", continent: "Europe", country: "International"),
-  CompetitionInfo(name: "European Championship", continent: "Europe", country: "International"),
-  CompetitionInfo(name: "Campeonato Brasileiro Série A", continent: "Amériques", country: "Brésil"),
-  CompetitionInfo(name: "FIFA World Cup", continent: "Monde", country: "International"),
+  // Europe - football-data.org (avec code, classement disponible)
+  CompetitionInfo(name: "Premier League", continent: "Europe", country: "Angleterre", code: "PL"),
+  CompetitionInfo(name: "Championship", continent: "Europe", country: "Angleterre", code: "ELC"),
+  CompetitionInfo(name: "Primera Division", continent: "Europe", country: "Espagne", code: "PD"),
+  CompetitionInfo(name: "Bundesliga", continent: "Europe", country: "Allemagne", code: "BL1"),
+  CompetitionInfo(name: "Serie A", continent: "Europe", country: "Italie", code: "SA"),
+  CompetitionInfo(name: "Ligue 1", continent: "Europe", country: "France", code: "FL1"),
+  CompetitionInfo(name: "Eredivisie", continent: "Europe", country: "Pays-Bas", code: "DED"),
+  CompetitionInfo(name: "Primeira Liga", continent: "Europe", country: "Portugal", code: "PPL"),
+  CompetitionInfo(name: "UEFA Champions League", continent: "Europe", country: "International", code: "CL"),
+  CompetitionInfo(name: "European Championship", continent: "Europe", country: "International", code: "EC"),
+  CompetitionInfo(name: "Campeonato Brasileiro Série A", continent: "Amériques", country: "Brésil", code: "BSA"),
+  CompetitionInfo(name: "FIFA World Cup", continent: "Monde", country: "International", code: "WC"),
 
-  // Europe - API-Football
+  // Europe - API-Football (pas de code football-data.org, classement non disponible pour l'instant)
   CompetitionInfo(name: "Europa League", continent: "Europe", country: "International"),
   CompetitionInfo(name: "Conference League", continent: "Europe", country: "International"),
   CompetitionInfo(name: "FA Cup", continent: "Europe", country: "Angleterre"),
@@ -79,9 +79,7 @@ const List<CompetitionInfo> COMPETITIONS_CATALOG = [
 ];
 
 // Rang d'affichage : plus petit = affiché en premier (D1 avant D2 avant coupes).
-// Les compétitions absentes de cette liste reçoivent un rang par défaut (50).
 const Map<String, int> COMPETITION_DISPLAY_RANK = {
-  // Championnats majeurs (D1)
   "Premier League": 1,
   "Primera Division": 1,
   "Bundesliga": 1,
@@ -108,22 +106,16 @@ const Map<String, int> COMPETITION_DISPLAY_RANK = {
   "Ligue 1 Tunisie": 1,
   "Egyptian Premier League": 1,
   "Premier Soccer League (Afrique du Sud)": 1,
-
-  // Deuxièmes divisions (D2)
   "Championship": 2,
   "2. Bundesliga": 2,
   "Serie B (Italie)": 2,
   "Segunda División (Espagne)": 2,
-
-  // Coupes nationales
   "FA Cup": 3,
   "Copa del Rey": 3,
   "Coppa Italia": 3,
   "DFB Pokal": 3,
   "Coupe de France": 3,
   "Supercoupe d'Espagne": 3,
-
-  // Compétitions continentales/internationales de clubs
   "UEFA Champions League": 4,
   "Europa League": 4,
   "Conference League": 4,
@@ -135,8 +127,6 @@ const Map<String, int> COMPETITION_DISPLAY_RANK = {
   "AFC Champions League Elite": 4,
   "FIFA Club World Cup": 4,
   "Copa do Brasil": 4,
-
-  // Sélections nationales
   "FIFA World Cup": 5,
   "European Championship": 5,
   "CAN": 5,

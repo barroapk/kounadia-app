@@ -58,7 +58,7 @@ class CountryCard extends StatelessWidget {
               const SizedBox(width: 8),
               Icon(Icons.sports_soccer, size: 13, color: Colors.grey[500]),
               const SizedBox(width: 2),
-              Text("$matchCount", style: TextStyle(color: Colors.grey[500], fontSize: 12)),
+              if (matchCount > 0) Text("$matchCount", style: TextStyle(color: Colors.grey[500], fontSize: 12)),
               const Icon(Icons.keyboard_arrow_down, size: 18),
             ],
           ),
