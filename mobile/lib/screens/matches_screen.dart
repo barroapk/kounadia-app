@@ -176,7 +176,6 @@ class MatchesScreenState extends State<MatchesScreen> {
     }).toList();
   }
 
-  /// "67'" -> 67, "45+2'" -> 45, "MT" -> 45 (mi-temps = 45 min jouées), sinon -1.
   int _minuteSortValue(Match m) {
     final label = m.liveMinuteLabel;
     if (label == null) return -1;
@@ -256,6 +255,49 @@ class MatchesScreenState extends State<MatchesScreen> {
     return widgets;
   }
 
+  /// Une compétition à l'intérieur d'une carte pays : repliable individuellement.
+  /// Ouverte par défaut si c'est la D1 du pays (rang 1) ou si elle a un match en direct.
+
+  Widget _competitionTile(String name, List<Match> matches, {required bool autoOpen}) {
+    final hasLive = matches.any((m) => _liveStatuses.contains(m.status));
+    return Theme(
+      data: ThemeData(dividerColor: Colors.transparent),
+      child: ExpansionTile(
+        initiallyExpanded: autoOpen,
+        tilePadding: const EdgeInsets.fromLTRB(4, 0, 4, 0),
+        childrenPadding: EdgeInsets.zero,
+        title: Row(
+          children: [
+            if (hasLive)
+              Padding(
+                padding: const EdgeInsets.only(right: 6),
+                child: Container(
+                  width: 7,
+                  height: 7,
+                  decoration: const BoxDecoration(color: Color(0xFFDC2626), shape: BoxShape.circle),
+                ),
+              ),
+            CachedLogo(
+              url: matches.first.competitionEmblem,
+              size: 16,
+              fallbackIcon: Icons.emoji_events,
+              fallbackColor: const Color(0xFF16A34A),
+            ),
+            const SizedBox(width: 6),
+            Expanded(
+              child: Text(
+                name,
+                style: const TextStyle(fontWeight: FontWeight.w600, fontSize: 13),
+              ),
+            ),
+            Text("${matches.length}", style: TextStyle(color: Colors.grey[500], fontSize: 12)),
+          ],
+        ),
+        children: _matchRows(matches),
+      ),
+    );
+  }
+
   Widget _sectionLabel(String text) {
     return Padding(
       padding: const EdgeInsets.fromLTRB(16, 16, 16, 6),
@@ -273,8 +315,6 @@ class MatchesScreenState extends State<MatchesScreen> {
 
   List<Widget> _buildHierarchySection(List<Match> matches) {
     final Map<String, Map<String, Map<String, List<Match>>>> tree = {};
-    final List<String> liveCompetitionOrder = [];
-    final Set<String> competitionsWithLive = {};
 
     for (final m in matches) {
       final continent = m.continent ?? "Autre";
@@ -282,60 +322,20 @@ class MatchesScreenState extends State<MatchesScreen> {
       tree.putIfAbsent(continent, () => {});
       tree[continent]!.putIfAbsent(country, () => {});
       tree[continent]![country]!.putIfAbsent(m.competition, () => []).add(m);
-
-      if (_liveStatuses.contains(m.status)) {
-        competitionsWithLive.add(m.competition);
-        if (!liveCompetitionOrder.contains(m.competition)) {
-          liveCompetitionOrder.add(m.competition);
-        }
-      }
     }
 
-    final autoOpenCompetitions = liveCompetitionOrder.take(2).toSet();
     final continents = tree.keys.toList();
 
-    Widget competitionSection(String name, List<Match> compMatches) {
-      final hasLive = competitionsWithLive.contains(name);
-      return Padding(
-        padding: const EdgeInsets.fromLTRB(16, 10, 16, 2),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Row(
-              children: [
-                if (hasLive)
-                  Padding(
-                    padding: const EdgeInsets.only(right: 6),
-                    child: Container(
-                      width: 7,
-                      height: 7,
-                      decoration: const BoxDecoration(color: Color(0xFFDC2626), shape: BoxShape.circle),
-                    ),
-                  ),
-                CachedLogo(
-                  url: compMatches.first.competitionEmblem,
-                  size: 16,
-                  fallbackIcon: Icons.emoji_events,
-                  fallbackColor: const Color(0xFF16A34A),
-                ),
-                const SizedBox(width: 6),
-                Text(
-                  "$name (${compMatches.length})",
-                  style: const TextStyle(fontWeight: FontWeight.w600, fontSize: 13),
-                ),
-              ],
-            ),
-            const SizedBox(height: 4),
-            ..._matchRows(compMatches),
-          ],
-        ),
-      );
-    }
-
-    List<Widget> sortedCompetitionSections(Map<String, List<Match>> competitions) {
+    List<Widget> competitionTiles(Map<String, List<Match>> competitions) {
       final names = competitions.keys.toList()
         ..sort((a, b) => competitionRank(a).compareTo(competitionRank(b)));
-      return names.map((name) => competitionSection(name, competitions[name]!)).toList();
+
+      return names.map((name) {
+        final compMatches = competitions[name]!;
+        final hasLive = compMatches.any((m) => _liveStatuses.contains(m.status));
+        final isTopDivision = competitionRank(name) == 1;
+        return _competitionTile(name, compMatches, autoOpen: isTopDivision || hasLive);
+      }).toList();
     }
 
     return [
@@ -353,21 +353,35 @@ class MatchesScreenState extends State<MatchesScreen> {
               padding: const EdgeInsets.fromLTRB(16, 12, 16, 4),
               child: Text(continent, style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 15)),
             ),
-            if (international != null) ...sortedCompetitionSections(international),
+            if (international != null)
+              Container(
+                margin: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                decoration: BoxDecoration(
+                  color: Colors.white,
+                  borderRadius: BorderRadius.circular(16),
+                  boxShadow: [
+                    BoxShadow(color: Colors.black.withOpacity(0.04), blurRadius: 6, offset: const Offset(0, 2)),
+                  ],
+                ),
+                child: Column(children: competitionTiles(international)),
+              ),
             ...realCountries.entries.map((countryEntry) {
               final country = countryEntry.key;
               final competitions = countryEntry.value;
               final flagUrl = flagUrlFor(country);
               final matchCount = competitions.values.fold<int>(0, (sum, l) => sum + l.length);
-              final countryHasAutoOpen =
-                  competitions.keys.any((c) => autoOpenCompetitions.contains(c));
+              final hasLiveInCountry = competitions.values.any(
+                (list) => list.any((m) => _liveStatuses.contains(m.status)),
+              );
 
               return CountryCard(
                 title: country,
                 flagUrl: flagUrl,
                 matchCount: matchCount,
-                initiallyExpanded: countryHasAutoOpen,
-                children: sortedCompetitionSections(competitions),
+                competitionCount: competitions.length,
+                initiallyExpanded: hasLiveInCountry,
+                children: competitionTiles(competitions),
               );
             }),
           ],

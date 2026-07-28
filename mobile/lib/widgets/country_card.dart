@@ -5,6 +5,7 @@ class CountryCard extends StatelessWidget {
   final String title;
   final String? flagUrl;
   final int matchCount;
+  final int competitionCount;
   final bool initiallyExpanded;
   final List<Widget> children;
   final IconData? fallbackIcon;
@@ -14,6 +15,7 @@ class CountryCard extends StatelessWidget {
     required this.title,
     this.flagUrl,
     required this.matchCount,
+    required this.competitionCount,
     this.initiallyExpanded = false,
     required this.children,
     this.fallbackIcon,
@@ -50,8 +52,14 @@ class CountryCard extends StatelessWidget {
           trailing: Row(
             mainAxisSize: MainAxisSize.min,
             children: [
-              Text("$matchCount", style: TextStyle(color: Colors.grey[500], fontSize: 14)),
-              const Icon(Icons.keyboard_arrow_down, size: 20),
+              Icon(Icons.emoji_events, size: 13, color: Colors.grey[500]),
+              const SizedBox(width: 2),
+              Text("$competitionCount", style: TextStyle(color: Colors.grey[500], fontSize: 12)),
+              const SizedBox(width: 8),
+              Icon(Icons.sports_soccer, size: 13, color: Colors.grey[500]),
+              const SizedBox(width: 2),
+              Text("$matchCount", style: TextStyle(color: Colors.grey[500], fontSize: 12)),
+              const Icon(Icons.keyboard_arrow_down, size: 18),
             ],
           ),
           children: children,
