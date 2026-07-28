@@ -77,3 +77,70 @@ const List<CompetitionInfo> COMPETITIONS_CATALOG = [
   // Monde
   CompetitionInfo(name: "FIFA Club World Cup", continent: "Monde", country: "International"),
 ];
+
+// Rang d'affichage : plus petit = affiché en premier (D1 avant D2 avant coupes).
+// Les compétitions absentes de cette liste reçoivent un rang par défaut (50).
+const Map<String, int> COMPETITION_DISPLAY_RANK = {
+  // Championnats majeurs (D1)
+  "Premier League": 1,
+  "Primera Division": 1,
+  "Bundesliga": 1,
+  "Serie A": 1,
+  "Ligue 1": 1,
+  "Eredivisie": 1,
+  "Primeira Liga": 1,
+  "Campeonato Brasileiro Série A": 1,
+  "Jupiler Pro League": 1,
+  "Süper Lig (Turquie)": 1,
+  "Saudi Pro League": 1,
+  "J1 League": 1,
+  "Liga MX": 1,
+  "MLS": 1,
+  "Liga Profesional Argentina": 1,
+  "Ligue 1 Burkina Faso": 1,
+  "Ligue 1 Côte d'Ivoire": 1,
+  "Ligue 1 Sénégal": 1,
+  "Première Division Mali": 1,
+  "Ghana Premier League": 1,
+  "NPFL Nigeria": 1,
+  "Botola Pro": 1,
+  "Ligue 1 Algérie": 1,
+  "Ligue 1 Tunisie": 1,
+  "Egyptian Premier League": 1,
+  "Premier Soccer League (Afrique du Sud)": 1,
+
+  // Deuxièmes divisions (D2)
+  "Championship": 2,
+  "2. Bundesliga": 2,
+  "Serie B (Italie)": 2,
+  "Segunda División (Espagne)": 2,
+
+  // Coupes nationales
+  "FA Cup": 3,
+  "Copa del Rey": 3,
+  "Coppa Italia": 3,
+  "DFB Pokal": 3,
+  "Coupe de France": 3,
+  "Supercoupe d'Espagne": 3,
+
+  // Compétitions continentales/internationales de clubs
+  "UEFA Champions League": 4,
+  "Europa League": 4,
+  "Conference League": 4,
+  "UEFA Super Cup": 4,
+  "CAF Champions League": 4,
+  "CAF Confederation Cup": 4,
+  "CONMEBOL Libertadores": 4,
+  "CONMEBOL Sudamericana": 4,
+  "AFC Champions League Elite": 4,
+  "FIFA Club World Cup": 4,
+  "Copa do Brasil": 4,
+
+  // Sélections nationales
+  "FIFA World Cup": 5,
+  "European Championship": 5,
+  "CAN": 5,
+  "Copa America": 5,
+};
+
+int competitionRank(String name) => COMPETITION_DISPLAY_RANK[name] ?? 50;

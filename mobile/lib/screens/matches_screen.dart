@@ -3,10 +3,12 @@ import "package:flutter/material.dart";
 import "../models/match.dart";
 import "../models/search_result.dart";
 import "../config/country_flags.dart";
+import "../config/competitions_catalog.dart";
 import "../services/api_service.dart";
 import "../services/competition_preferences.dart";
 import "../widgets/match_row.dart";
 import "../widgets/cached_logo.dart";
+import "../widgets/country_card.dart";
 import "../widgets/empty_state.dart";
 import "../widgets/loading_skeleton.dart";
 import "../widgets/date_selector_bar.dart";
@@ -174,25 +176,11 @@ class MatchesScreenState extends State<MatchesScreen> {
     }).toList();
   }
 
-  Widget _sectionLabel(String text) {
-    return Padding(
-      padding: const EdgeInsets.fromLTRB(16, 16, 16, 6),
-      child: Text(
-        text,
-        style: TextStyle(
-          fontWeight: FontWeight.bold,
-          fontSize: 12,
-          letterSpacing: 0.5,
-          color: Colors.grey[600],
-        ),
-      ),
-    );
-  }
-
-  /// Extrait un nombre pour trier ("67'" -> 67, "45+2'" -> 45, "MT"/null -> -1).
+  /// "67'" -> 67, "45+2'" -> 45, "MT" -> 45 (mi-temps = 45 min jouées), sinon -1.
   int _minuteSortValue(Match m) {
     final label = m.liveMinuteLabel;
     if (label == null) return -1;
+    if (label == "MT") return 45;
     final match = RegExp(r"^(\d+)").firstMatch(label);
     if (match == null) return -1;
     return int.tryParse(match.group(1)!) ?? -1;
@@ -208,12 +196,12 @@ class MatchesScreenState extends State<MatchesScreen> {
       byCompetition.putIfAbsent(m.competition, () => []).add(m);
     }
 
-    // Trie les matchs de chaque compétition par minute décroissante.
     for (final competition in order) {
       byCompetition[competition]!.sort(
         (a, b) => _minuteSortValue(b).compareTo(_minuteSortValue(a)),
       );
     }
+    order.sort((a, b) => competitionRank(a).compareTo(competitionRank(b)));
 
     final widgets = <Widget>[
       Padding(
@@ -226,7 +214,10 @@ class MatchesScreenState extends State<MatchesScreen> {
               margin: const EdgeInsets.only(right: 8),
               decoration: const BoxDecoration(color: Color(0xFFDC2626), shape: BoxShape.circle),
             ),
-            const Text("EN DIRECT", style: TextStyle(fontWeight: FontWeight.bold, fontSize: 13)),
+            Text(
+              "EN DIRECT (${liveMatches.length})",
+              style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 13),
+            ),
           ],
         ),
       ),
@@ -246,7 +237,10 @@ class MatchesScreenState extends State<MatchesScreen> {
                 fallbackColor: const Color(0xFF16A34A),
               ),
               const SizedBox(width: 6),
-              Text(competition, style: const TextStyle(fontWeight: FontWeight.w600, fontSize: 13)),
+              Text(
+                "$competition (${matches.length})",
+                style: const TextStyle(fontWeight: FontWeight.w600, fontSize: 13),
+              ),
             ],
           ),
         ),
@@ -262,9 +256,23 @@ class MatchesScreenState extends State<MatchesScreen> {
     return widgets;
   }
 
+  Widget _sectionLabel(String text) {
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(16, 16, 16, 6),
+      child: Text(
+        text,
+        style: TextStyle(
+          fontWeight: FontWeight.bold,
+          fontSize: 12,
+          letterSpacing: 0.5,
+          color: Colors.grey[600],
+        ),
+      ),
+    );
+  }
+
   List<Widget> _buildHierarchySection(List<Match> matches) {
     final Map<String, Map<String, Map<String, List<Match>>>> tree = {};
-    final List<String> competitionOrder = [];
     final List<String> liveCompetitionOrder = [];
     final Set<String> competitionsWithLive = {};
 
@@ -273,9 +281,6 @@ class MatchesScreenState extends State<MatchesScreen> {
       final country = m.country ?? "Autre";
       tree.putIfAbsent(continent, () => {});
       tree[continent]!.putIfAbsent(country, () => {});
-      if (!tree[continent]![country]!.containsKey(m.competition)) {
-        competitionOrder.add(m.competition);
-      }
       tree[continent]![country]!.putIfAbsent(m.competition, () => []).add(m);
 
       if (_liveStatuses.contains(m.status)) {
@@ -286,33 +291,51 @@ class MatchesScreenState extends State<MatchesScreen> {
       }
     }
 
-    final autoOpenCompetitions = liveCompetitionOrder.isNotEmpty
-        ? liveCompetitionOrder.take(2).toSet()
-        : competitionOrder.take(2).toSet();
-
+    final autoOpenCompetitions = liveCompetitionOrder.take(2).toSet();
     final continents = tree.keys.toList();
 
-    Widget competitionTile(String name, List<Match> compMatches) {
+    Widget competitionSection(String name, List<Match> compMatches) {
       final hasLive = competitionsWithLive.contains(name);
-      return ExpansionTile(
-        initiallyExpanded: autoOpenCompetitions.contains(name),
-        title: Row(
+      return Padding(
+        padding: const EdgeInsets.fromLTRB(16, 10, 16, 2),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            if (hasLive)
-              Padding(
-                padding: const EdgeInsets.only(right: 6),
-                child: Container(
-                  width: 8,
-                  height: 8,
-                  decoration: const BoxDecoration(color: Color(0xFFDC2626), shape: BoxShape.circle),
+            Row(
+              children: [
+                if (hasLive)
+                  Padding(
+                    padding: const EdgeInsets.only(right: 6),
+                    child: Container(
+                      width: 7,
+                      height: 7,
+                      decoration: const BoxDecoration(color: Color(0xFFDC2626), shape: BoxShape.circle),
+                    ),
+                  ),
+                CachedLogo(
+                  url: compMatches.first.competitionEmblem,
+                  size: 16,
+                  fallbackIcon: Icons.emoji_events,
+                  fallbackColor: const Color(0xFF16A34A),
                 ),
-              ),
-            Expanded(child: Text(name, style: const TextStyle(fontSize: 13))),
-            Text("${compMatches.length}", style: TextStyle(color: Colors.grey[500], fontSize: 12)),
+                const SizedBox(width: 6),
+                Text(
+                  "$name (${compMatches.length})",
+                  style: const TextStyle(fontWeight: FontWeight.w600, fontSize: 13),
+                ),
+              ],
+            ),
+            const SizedBox(height: 4),
+            ..._matchRows(compMatches),
           ],
         ),
-        children: _matchRows(compMatches),
       );
+    }
+
+    List<Widget> sortedCompetitionSections(Map<String, List<Match>> competitions) {
+      final names = competitions.keys.toList()
+        ..sort((a, b) => competitionRank(a).compareTo(competitionRank(b)));
+      return names.map((name) => competitionSection(name, competitions[name]!)).toList();
     }
 
     return [
@@ -323,16 +346,14 @@ class MatchesScreenState extends State<MatchesScreen> {
         final realCountries = Map<String, Map<String, List<Match>>>.from(countries)
           ..remove("International");
 
-        final continentHasAutoOpen = countries.values.any(
-          (comps) => comps.keys.any((c) => autoOpenCompetitions.contains(c)),
-        );
-
-        return ExpansionTile(
-          initiallyExpanded: continentHasAutoOpen,
-          title: Text(continent, style: const TextStyle(fontWeight: FontWeight.bold)),
+        return Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            if (international != null)
-              ...international.entries.map((e) => competitionTile(e.key, e.value)),
+            Padding(
+              padding: const EdgeInsets.fromLTRB(16, 12, 16, 4),
+              child: Text(continent, style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 15)),
+            ),
+            if (international != null) ...sortedCompetitionSections(international),
             ...realCountries.entries.map((countryEntry) {
               final country = countryEntry.key;
               final competitions = countryEntry.value;
@@ -341,22 +362,12 @@ class MatchesScreenState extends State<MatchesScreen> {
               final countryHasAutoOpen =
                   competitions.keys.any((c) => autoOpenCompetitions.contains(c));
 
-              return ExpansionTile(
+              return CountryCard(
+                title: country,
+                flagUrl: flagUrl,
+                matchCount: matchCount,
                 initiallyExpanded: countryHasAutoOpen,
-                title: Row(
-                  children: [
-                    if (flagUrl != null)
-                      Padding(
-                        padding: const EdgeInsets.only(right: 8),
-                        child: CachedLogo(url: flagUrl, size: 20, fallbackIcon: Icons.flag_outlined),
-                      ),
-                    Expanded(child: Text(country)),
-                    Text("$matchCount", style: TextStyle(color: Colors.grey[500])),
-                  ],
-                ),
-                children: competitions.entries
-                    .map((compEntry) => competitionTile(compEntry.key, compEntry.value))
-                    .toList(),
+                children: sortedCompetitionSections(competitions),
               );
             }),
           ],
@@ -367,70 +378,74 @@ class MatchesScreenState extends State<MatchesScreen> {
 
   @override
   Widget build(BuildContext context) {
-    return Column(
-      children: [
-        DateSelectorBar(
-          selectedDate: _selectedDate,
-          onDateChanged: _onDateChanged,
-        ),
-        if (_activeFilter != null)
-          Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-            child: Align(
-              alignment: Alignment.centerLeft,
-              child: Chip(
-                label: Text(_activeFilter!.label),
-                deleteIcon: const Icon(Icons.close, size: 16),
-                onDeleted: clearFilter,
+    return Container(
+      color: const Color(0xFFF2F2F2),
+      child: Column(
+        children: [
+          DateSelectorBar(
+            selectedDate: _selectedDate,
+            onDateChanged: _onDateChanged,
+          ),
+          if (_activeFilter != null)
+            Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+              child: Align(
+                alignment: Alignment.centerLeft,
+                child: Chip(
+                  label: Text(_activeFilter!.label),
+                  deleteIcon: const Icon(Icons.close, size: 16),
+                  onDeleted: clearFilter,
+                ),
               ),
             ),
-          ),
-        const Divider(height: 1),
-        Expanded(
-          child: Builder(
-            builder: (context) {
-              if (_isInitialLoading) {
-                return const LoadingSkeleton();
-              }
+          Expanded(
+            child: Builder(
+              builder: (context) {
+                if (_isInitialLoading) {
+                  return const LoadingSkeleton();
+                }
 
-              if (_errorMessage != null && _matches == null) {
-                return Center(
-                  child: Padding(
-                    padding: const EdgeInsets.all(24.0),
-                    child: Column(
-                      mainAxisSize: MainAxisSize.min,
-                      children: [
-                        Text("Erreur : $_errorMessage"),
-                        const SizedBox(height: 12),
-                        ElevatedButton(onPressed: _manualReload, child: const Text("Réessayer")),
-                      ],
+                if (_errorMessage != null && _matches == null) {
+                  return Center(
+                    child: Padding(
+                      padding: const EdgeInsets.all(24.0),
+                      child: Column(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          Text("Erreur : $_errorMessage"),
+                          const SizedBox(height: 12),
+                          ElevatedButton(onPressed: _manualReload, child: const Text("Réessayer")),
+                        ],
+                      ),
                     ),
+                  );
+                }
+
+                final matches = _applyFilters(_matches ?? []);
+
+                if (matches.isEmpty) {
+                  return const EmptyState(message: "Aucun match ne correspond.");
+                }
+
+                final liveMatches = _isToday
+                    ? matches.where((m) => _liveStatuses.contains(m.status)).toList()
+                    : <Match>[];
+
+                return RefreshIndicator(
+                  onRefresh: _manualReload,
+                  child: ListView(
+                    padding: const EdgeInsets.only(bottom: 16),
+                    children: [
+                      ..._buildLiveSection(liveMatches),
+                      ..._buildHierarchySection(matches),
+                    ],
                   ),
                 );
-              }
-
-              final matches = _applyFilters(_matches ?? []);
-
-              if (matches.isEmpty) {
-                return const EmptyState(message: "Aucun match ne correspond.");
-              }
-
-              final liveMatches =
-                  _isToday ? matches.where((m) => _liveStatuses.contains(m.status)).toList() : <Match>[];
-
-              return RefreshIndicator(
-                onRefresh: _manualReload,
-                child: ListView(
-                  children: [
-                    ..._buildLiveSection(liveMatches),
-                    ..._buildHierarchySection(matches),
-                  ],
-                ),
-              );
-            },
+              },
+            ),
           ),
-        ),
-      ],
+        ],
+      ),
     );
   }
 }
