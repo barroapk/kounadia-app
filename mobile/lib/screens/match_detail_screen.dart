@@ -158,6 +158,14 @@ class _MatchDetailScreenState extends State<MatchDetailScreen>
           data: data,
           highlightHomeTeam: widget.homeTeam,
           highlightAwayTeam: widget.awayTeam,
+          onSeasonChanged: (season) {
+            setState(() {
+              _standingsFuture = _apiService.getStandings(
+                widget.competitionCode ?? '',
+                season: season,
+              );
+            });
+          },
         );
       },
     );

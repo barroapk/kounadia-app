@@ -173,7 +173,12 @@ class StandingsTable extends StatelessWidget {
                 child: Row(
                   children: [
                     // Réservé pour les futures zones colorées (Ligue des Champions, relégation...).
-                    SizedBox(width: 4),
+                    // Sert déjà de marqueur pour les 2 équipes du match consulté.
+                    Container(
+                      width: 4,
+                      height: 32,
+                      color: isHighlighted ? const Color(0xFF16A34A) : Colors.transparent,
+                    ),
                     SizedBox(
                       width: 22,
                       child: Text("${row.position}", textAlign: TextAlign.center, style: const TextStyle(fontSize: 12)),
@@ -184,11 +189,6 @@ class StandingsTable extends StatelessWidget {
                         padding: const EdgeInsets.only(left: 6),
                         child: Row(
                           children: [
-                            if (isHighlighted)
-                              const Padding(
-                                padding: EdgeInsets.only(right: 4),
-                                child: Icon(Icons.circle, size: 6, color: Color(0xFF16A34A)),
-                              ),
                             Expanded(
                               child: Text(
                                 row.teamName,
