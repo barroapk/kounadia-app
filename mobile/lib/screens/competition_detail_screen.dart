@@ -3,7 +3,7 @@ import "../models/standings.dart";
 import "../models/calendar.dart";
 import "../services/api_service.dart";
 import "../services/last_competition_service.dart";
-import "../widgets/cached_logo.dart";
+import "../widgets/standings_table.dart";
 import "../widgets/match_row.dart";
 import "match_detail_screen.dart";
 
@@ -69,33 +69,7 @@ class _CompetitionDetailScreenState extends State<CompetitionDetailScreen>
           return _unavailable("Classement indisponible pour le moment.");
         }
 
-        return ListView.builder(
-          itemCount: data.standings.length,
-          itemBuilder: (context, index) {
-            final row = data.standings[index];
-            return Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-              child: Row(
-                children: [
-                  SizedBox(width: 24, child: Text("${row.position}")),
-                  CachedLogo(url: row.teamCrest, size: 20),
-                  const SizedBox(width: 8),
-                  Expanded(child: Text(row.teamName, overflow: TextOverflow.ellipsis)),
-                  SizedBox(width: 28, child: Text("${row.playedGames}", textAlign: TextAlign.center)),
-                  SizedBox(width: 32, child: Text("${row.goalDifference}", textAlign: TextAlign.center)),
-                  SizedBox(
-                    width: 32,
-                    child: Text(
-                      "${row.points}",
-                      textAlign: TextAlign.center,
-                      style: const TextStyle(fontWeight: FontWeight.bold),
-                    ),
-                  ),
-                ],
-              ),
-            );
-          },
-        );
+        return StandingsTable(data: data);
       },
     );
   }
@@ -210,6 +184,7 @@ class _CompetitionDetailScreenState extends State<CompetitionDetailScreen>
   @override
   Widget build(BuildContext context) {
     return Scaffold(
+      backgroundColor: const Color(0xFFF4F5F7),
       appBar: AppBar(
         title: Text(widget.name),
         bottom: TabBar(
