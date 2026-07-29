@@ -84,6 +84,10 @@ class MatchAnalysis {
   final int matchId;
   final String homeTeam;
   final String awayTeam;
+  final String? utcDate;
+  final String? status;
+  final String? venue;
+  final String? referee;
   final TeamForm home;
   final TeamForm away;
   final HeadToHead headToHead;
@@ -92,6 +96,10 @@ class MatchAnalysis {
     required this.matchId,
     required this.homeTeam,
     required this.awayTeam,
+    this.utcDate,
+    this.status,
+    this.venue,
+    this.referee,
     required this.home,
     required this.away,
     required this.headToHead,
@@ -102,6 +110,10 @@ class MatchAnalysis {
       matchId: json['matchId'] as int,
       homeTeam: json['homeTeam'] as String? ?? '',
       awayTeam: json['awayTeam'] as String? ?? '',
+      utcDate: json['utcDate'] as String?,
+      status: json['status'] as String?,
+      venue: json['venue'] as String?,
+      referee: json['referee'] as String?,
       home: TeamForm.fromJson(json['home'] as Map<String, dynamic>),
       away: TeamForm.fromJson(json['away'] as Map<String, dynamic>),
       headToHead: HeadToHead.fromJson(

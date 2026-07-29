@@ -3,6 +3,8 @@ import "../models/match_analysis.dart";
 import "../models/standings.dart";
 import "../services/api_service.dart";
 import "../widgets/standings_table.dart";
+import "../widgets/match_countdown.dart";
+import "../widgets/match_info_card.dart";
 
 class MatchDetailScreen extends StatefulWidget {
   final int matchId;
@@ -209,13 +211,23 @@ class _MatchDetailScreenState extends State<MatchDetailScreen>
           }
 
           final analysis = snapshot.data!;
+          final kickoff = analysis.utcDate != null ? DateTime.tryParse(analysis.utcDate!) : null;
+          final isUpcoming = analysis.status == "TIMED" || analysis.status == "SCHEDULED";
 
-          return TabBarView(
-            controller: _tabController,
+          return Column(
             children: [
-              _formTab(analysis.home, analysis.away, analysis.homeTeam, analysis.awayTeam),
-              _headToHeadTab(analysis.headToHead),
-              _standingsTab(),
+              if (isUpcoming && kickoff != null) MatchCountdown(kickoff: kickoff),
+              MatchInfoCard(venue: analysis.venue, referee: analysis.referee),
+              Expanded(
+                child: TabBarView(
+                  controller: _tabController,
+                  children: [
+                    _formTab(analysis.home, analysis.away, analysis.homeTeam, analysis.awayTeam),
+                    _headToHeadTab(analysis.headToHead),
+                    _standingsTab(),
+                  ],
+                ),
+              ),
             ],
           );
         },
