@@ -12,8 +12,16 @@ import "match_detail_screen.dart";
 class CompetitionDetailScreen extends StatefulWidget {
   final String name;
   final String? code;
+  final String? highlightHomeTeam;
+  final String? highlightAwayTeam;
 
-  const CompetitionDetailScreen({super.key, required this.name, this.code});
+  const CompetitionDetailScreen({
+    super.key,
+    required this.name,
+    this.code,
+    this.highlightHomeTeam,
+    this.highlightAwayTeam,
+  });
 
   @override
   State<CompetitionDetailScreen> createState() => _CompetitionDetailScreenState();
@@ -84,7 +92,12 @@ class _CompetitionDetailScreenState extends State<CompetitionDetailScreen>
           return _unavailable("Classement indisponible pour le moment.");
         }
 
-        return StandingsTable(data: data, onSeasonChanged: _onSeasonChanged);
+        return StandingsTable(
+          data: data,
+          highlightHomeTeam: widget.highlightHomeTeam,
+          highlightAwayTeam: widget.highlightAwayTeam,
+          onSeasonChanged: _onSeasonChanged,
+        );
       },
     );
   }
