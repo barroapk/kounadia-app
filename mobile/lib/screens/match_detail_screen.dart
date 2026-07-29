@@ -2,6 +2,7 @@ import "package:flutter/material.dart";
 import "../models/match_analysis.dart";
 import "../models/standings.dart";
 import "../services/api_service.dart";
+import "../widgets/standings_table.dart";
 
 class MatchDetailScreen extends StatefulWidget {
   final int matchId;
@@ -151,44 +152,12 @@ class _MatchDetailScreenState extends State<MatchDetailScreen>
           );
         }
 
-        return ListView.builder(
-          itemCount: data.standings.length,
-          itemBuilder: (context, index) {
-            final row = data.standings[index];
-            final isMatchTeam =
-                row.teamName == widget.homeTeam || row.teamName == widget.awayTeam;
-
-            return Container(
-              color: isMatchTeam ? const Color(0xFF16A34A).withOpacity(0.08) : null,
-              child: Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-                child: Row(
-                  children: [
-                    SizedBox(width: 24, child: Text("${row.position}")),
-                    Expanded(
-                      child: Text(
-                        row.teamName,
-                        style: TextStyle(
-                          fontWeight: isMatchTeam ? FontWeight.bold : FontWeight.normal,
-                        ),
-                        overflow: TextOverflow.ellipsis,
-                      ),
-                    ),
-                    SizedBox(width: 28, child: Text("${row.playedGames}", textAlign: TextAlign.center)),
-                    SizedBox(width: 32, child: Text("${row.goalDifference}", textAlign: TextAlign.center)),
-                    SizedBox(
-                      width: 32,
-                      child: Text(
-                        "${row.points}",
-                        textAlign: TextAlign.center,
-                        style: const TextStyle(fontWeight: FontWeight.bold),
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-            );
-          },
+        // Réutilise le même tableau premium que l'onglet Compétitions,
+        // avec les deux équipes de ce match marquées visuellement.
+        return StandingsTable(
+          data: data,
+          highlightHomeTeam: widget.homeTeam,
+          highlightAwayTeam: widget.awayTeam,
         );
       },
     );

@@ -10,8 +10,16 @@ import "match_detail_screen.dart";
 class CompetitionDetailScreen extends StatefulWidget {
   final String name;
   final String? code;
+  final String? highlightHomeTeam;
+  final String? highlightAwayTeam;
 
-  const CompetitionDetailScreen({super.key, required this.name, this.code});
+  const CompetitionDetailScreen({
+    super.key,
+    required this.name,
+    this.code,
+    this.highlightHomeTeam,
+    this.highlightAwayTeam,
+  });
 
   @override
   State<CompetitionDetailScreen> createState() => _CompetitionDetailScreenState();
@@ -25,6 +33,7 @@ class _CompetitionDetailScreenState extends State<CompetitionDetailScreen>
   Future<StandingsResponse?>? _standingsFuture;
   Future<CalendarResponse?>? _calendarFuture;
   int? _selectedMatchday;
+  String? _selectedSeason;
 
   @override
   void initState() {
@@ -41,6 +50,13 @@ class _CompetitionDetailScreenState extends State<CompetitionDetailScreen>
   void dispose() {
     _tabController.dispose();
     super.dispose();
+  }
+
+  void _onSeasonChanged(String startYear) {
+    setState(() {
+      _selectedSeason = startYear;
+      _standingsFuture = _apiService.getStandings(widget.code!, season: startYear);
+    });
   }
 
   Widget _unavailable(String message) {
@@ -69,30 +85,31 @@ class _CompetitionDetailScreenState extends State<CompetitionDetailScreen>
           return _unavailable("Classement indisponible pour le moment.");
         }
 
-        return StandingsTable(data: data);
+        return StandingsTable(
+          data: data,
+          highlightHomeTeam: widget.highlightHomeTeam,
+          highlightAwayTeam: widget.highlightAwayTeam,
+          onSeasonChanged: _onSeasonChanged,
+        );
       },
     );
   }
 
   Widget _matchdaySelector(CalendarResponse calendar) {
+    // On n'affiche que les vraies journées reçues du backend, jamais une séquence supposée
+    // (certaines compétitions à poules/élimination n'ont pas de journées continues 1..N).
+    final realMatchdays = calendar.matchdays.map((g) => g.matchday).toList();
+
     return SizedBox(
       height: 44,
       child: ListView.builder(
         scrollDirection: Axis.horizontal,
         padding: const EdgeInsets.symmetric(horizontal: 12),
-        itemCount: calendar.totalMatchdays,
+        itemCount: realMatchdays.length,
         itemBuilder: (context, index) {
-          final day = index + 1;
+          final day = realMatchdays[index];
           final isSelected = day == (_selectedMatchday ?? calendar.currentMatchday);
-          final group = calendar.matchdays.firstWhere(
-            (g) => g.matchday == day,
-            orElse: () => MatchdayGroup(
-              matchday: day,
-              matches: [],
-              allFinished: false,
-              summary: MatchdaySummary(totalMatches: 0, finished: 0, live: 0, scheduled: 0),
-            ),
-          );
+          final group = calendar.matchdays.firstWhere((g) => g.matchday == day);
 
           return Padding(
             padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 6),
@@ -190,8 +207,8 @@ class _CompetitionDetailScreenState extends State<CompetitionDetailScreen>
         bottom: TabBar(
           controller: _tabController,
           tabs: const [
-            Tab(text: "CLASSEMENT"),
-            Tab(text: "CALENDRIER"),
+            Tab(icon: Icon(Icons.leaderboard_outlined), text: "CLASSEMENT"),
+            Tab(icon: Icon(Icons.calendar_month_outlined), text: "CALENDRIER"),
           ],
         ),
       ),

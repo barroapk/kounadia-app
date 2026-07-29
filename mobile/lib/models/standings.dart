@@ -42,17 +42,35 @@ class StandingRow {
   }
 }
 
+class SeasonInfo {
+  final String startYear;
+  final String label;
+
+  SeasonInfo({required this.startYear, required this.label});
+
+  factory SeasonInfo.fromJson(Map<String, dynamic> json) {
+    return SeasonInfo(
+      startYear: json['startYear'] as String? ?? '',
+      label: json['label'] as String? ?? '',
+    );
+  }
+}
+
 class StandingsResponse {
   final String competitionCode;
   final String competitionName;
+  final String? competitionEmblem;
   final String? season;
+  final List<SeasonInfo> availableSeasons;
   final int totalTeams;
   final List<StandingRow> standings;
 
   StandingsResponse({
     required this.competitionCode,
     required this.competitionName,
+    this.competitionEmblem,
     this.season,
+    required this.availableSeasons,
     required this.totalTeams,
     required this.standings,
   });
@@ -61,7 +79,11 @@ class StandingsResponse {
     return StandingsResponse(
       competitionCode: json['competitionCode'] as String? ?? '',
       competitionName: json['competitionName'] as String? ?? '',
+      competitionEmblem: json['competitionEmblem'] as String?,
       season: json['season'] as String?,
+      availableSeasons: (json['availableSeasons'] as List<dynamic>? ?? [])
+          .map((e) => SeasonInfo.fromJson(e as Map<String, dynamic>))
+          .toList(),
       totalTeams: json['totalTeams'] as int? ?? 0,
       standings: (json['standings'] as List<dynamic>)
           .map((e) => StandingRow.fromJson(e as Map<String, dynamic>))

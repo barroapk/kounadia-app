@@ -55,8 +55,9 @@ class ApiService {
         .toList();
   }
 
-  Future<StandingsResponse?> getStandings(String competitionCode) async {
-    final uri = Uri.parse("${ApiConfig.baseUrl}/standings/$competitionCode");
+  Future<StandingsResponse?> getStandings(String competitionCode, {String? season}) async {
+    final seasonParam = season != null ? "?season=$season" : "";
+    final uri = Uri.parse("${ApiConfig.baseUrl}/standings/$competitionCode$seasonParam");
     final response = await http.get(uri).timeout(const Duration(seconds: 90));
 
     if (response.statusCode != 200) {
