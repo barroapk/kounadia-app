@@ -1,8 +1,9 @@
 import "package:flutter/material.dart";
 import "../models/standings.dart";
+import "../config/competition_zones.dart";
 import "cached_logo.dart";
 
-class StandingsTable extends StatelessWidget {
+class StandingsTable extends StatefulWidget {
   final StandingsResponse data;
   final String? highlightHomeTeam;
   final String? highlightAwayTeam;
@@ -16,25 +17,99 @@ class StandingsTable extends StatelessWidget {
     this.onSeasonChanged,
   });
 
+  @override
+  State<StandingsTable> createState() => _StandingsTableState();
+}
+
+class _StandingsTableState extends State<StandingsTable> {
+  final ScrollController _scrollController = ScrollController();
+  static const double _rowHeight = 52;
   static const _roundRobinCodes = {'PL', 'PD', 'BL1', 'SA', 'FL1', 'DED', 'PPL', 'ELC', 'BSA'};
 
-  double? get _seasonProgress {
-    if (!_roundRobinCodes.contains(data.competitionCode)) return null;
-    if (data.totalTeams < 2 || data.standings.isEmpty) return null;
+  @override
+  void initState() {
+    super.initState();
+    WidgetsBinding.instance.addPostFrameCallback((_) => _scrollToHighlighted());
+  }
 
-    final avgPlayed =
-        data.standings.map((s) => s.playedGames).reduce((a, b) => a + b) / data.standings.length;
-    final expectedTotal = (data.totalTeams - 1) * 2;
+  @override
+  void didUpdateWidget(covariant StandingsTable oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (oldWidget.data != widget.data) {
+      WidgetsBinding.instance.addPostFrameCallback((_) => _scrollToHighlighted());
+    }
+  }
+
+  @override
+  void dispose() {
+    _scrollController.dispose();
+    super.dispose();
+  }
+
+  void _scrollToHighlighted() {
+    if (widget.highlightHomeTeam == null && widget.highlightAwayTeam == null) return;
+    if (!_scrollController.hasClients) return;
+
+    final index = widget.data.standings.indexWhere(
+      (row) => row.teamName == widget.highlightHomeTeam || row.teamName == widget.highlightAwayTeam,
+    );
+    if (index == -1) return;
+
+    final target = (index * _rowHeight - 100).clamp(0, double.infinity).toDouble();
+    _scrollController.animateTo(
+      target,
+      duration: const Duration(milliseconds: 500),
+      curve: Curves.easeInOut,
+    );
+  }
+
+  double? get _seasonProgress {
+    if (!_roundRobinCodes.contains(widget.data.competitionCode)) return null;
+    if (widget.data.totalTeams < 2 || widget.data.standings.isEmpty) return null;
+
+    final avgPlayed = widget.data.standings.map((s) => s.playedGames).reduce((a, b) => a + b) /
+        widget.data.standings.length;
+    final expectedTotal = (widget.data.totalTeams - 1) * 2;
     if (expectedTotal <= 0) return null;
 
     return (avgPlayed / expectedTotal).clamp(0, 1);
+  }
+
+  Widget _legend() {
+    final hasZones = COMPETITION_ZONES.containsKey(widget.data.competitionCode);
+    if (!hasZones) return const SizedBox.shrink();
+
+    Widget dot(Color color, String label) {
+      return Padding(
+        padding: const EdgeInsets.only(right: 12),
+        child: Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Container(width: 8, height: 8, decoration: BoxDecoration(color: color, shape: BoxShape.circle)),
+            const SizedBox(width: 4),
+            Text(label, style: TextStyle(fontSize: 10, color: Colors.grey[600])),
+          ],
+        ),
+      );
+    }
+
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(16, 0, 16, 8),
+      child: Wrap(
+        children: [
+          dot(const Color(0xFF2563EB), "Ligue des Champions"),
+          dot(const Color(0xFFF97316), "Coupe d'Europe"),
+          dot(const Color(0xFFDC2626), "Relégation"),
+        ],
+      ),
+    );
   }
 
   Widget _header(BuildContext context) {
     final progress = _seasonProgress;
 
     return Container(
-      padding: const EdgeInsets.all(16),
+      padding: const EdgeInsets.fromLTRB(16, 16, 16, 4),
       color: Colors.white,
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -42,7 +117,7 @@ class StandingsTable extends StatelessWidget {
           Row(
             children: [
               CachedLogo(
-                url: data.competitionEmblem,
+                url: widget.data.competitionEmblem,
                 size: 32,
                 fallbackIcon: Icons.emoji_events,
                 fallbackColor: const Color(0xFF16A34A),
@@ -52,32 +127,28 @@ class StandingsTable extends StatelessWidget {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Text(
-                      data.competitionName,
-                      style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 17),
-                    ),
-                    if (data.season != null)
-                      Text(
-                        "Saison ${data.season}",
-                        style: TextStyle(color: Colors.grey[600], fontSize: 12),
-                      ),
+                    Text(widget.data.competitionName, style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 17)),
+                    if (widget.data.season != null)
+                      Text("Saison ${widget.data.season}", style: TextStyle(color: Colors.grey[600], fontSize: 12)),
                   ],
                 ),
               ),
-              if (data.availableSeasons.isNotEmpty && onSeasonChanged != null)
+              if (widget.data.availableSeasons.isNotEmpty && widget.onSeasonChanged != null)
                 DropdownButton<String>(
-                  value: data.availableSeasons.any((s) => s.startYear == data.season?.split('-').first)
-                      ? data.availableSeasons.firstWhere(
-                          (s) => s.startYear == data.season?.split('-').first,
-                        ).startYear
-                      : data.availableSeasons.first.startYear,
+                  value: widget.data.availableSeasons.any(
+                    (s) => s.startYear == widget.data.season?.split('-').first,
+                  )
+                      ? widget.data.availableSeasons
+                          .firstWhere((s) => s.startYear == widget.data.season?.split('-').first)
+                          .startYear
+                      : widget.data.availableSeasons.first.startYear,
                   underline: const SizedBox(),
                   isDense: true,
-                  items: data.availableSeasons
+                  items: widget.data.availableSeasons
                       .map((s) => DropdownMenuItem(value: s.startYear, child: Text(s.label, style: const TextStyle(fontSize: 12))))
                       .toList(),
                   onChanged: (value) {
-                    if (value != null) onSeasonChanged!(value);
+                    if (value != null) widget.onSeasonChanged!(value);
                   },
                 ),
             ],
@@ -87,7 +158,7 @@ class StandingsTable extends StatelessWidget {
             children: [
               Icon(Icons.groups_outlined, size: 14, color: Colors.grey[600]),
               const SizedBox(width: 4),
-              Text("${data.totalTeams} équipes", style: TextStyle(color: Colors.grey[600], fontSize: 12)),
+              Text("${widget.data.totalTeams} équipes", style: TextStyle(color: Colors.grey[600], fontSize: 12)),
             ],
           ),
           if (progress != null) ...[
@@ -102,11 +173,9 @@ class StandingsTable extends StatelessWidget {
               ),
             ),
             const SizedBox(height: 4),
-            Text(
-              "${(progress * 100).round()}% de la saison jouée",
-              style: TextStyle(color: Colors.grey[500], fontSize: 11),
-            ),
+            Text("${(progress * 100).round()}% de la saison jouée", style: TextStyle(color: Colors.grey[500], fontSize: 11)),
           ],
+          const SizedBox(height: 8),
         ],
       ),
     );
@@ -115,22 +184,14 @@ class StandingsTable extends StatelessWidget {
   Widget _columnHeaderCell(String label, double width) {
     return SizedBox(
       width: width,
-      child: Text(
-        label,
-        textAlign: TextAlign.center,
-        style: TextStyle(color: Colors.grey[600], fontSize: 11, fontWeight: FontWeight.w600),
-      ),
+      child: Text(label, textAlign: TextAlign.center, style: TextStyle(color: Colors.grey[600], fontSize: 11, fontWeight: FontWeight.w600)),
     );
   }
 
   Widget _cell(String value, double width, {bool bold = false}) {
     return SizedBox(
       width: width,
-      child: Text(
-        value,
-        textAlign: TextAlign.center,
-        style: TextStyle(fontSize: 12, fontWeight: bold ? FontWeight.bold : FontWeight.normal),
-      ),
+      child: Text(value, textAlign: TextAlign.center, style: TextStyle(fontSize: 12, fontWeight: bold ? FontWeight.bold : FontWeight.normal)),
     );
   }
 
@@ -139,6 +200,7 @@ class StandingsTable extends StatelessWidget {
     return Column(
       children: [
         _header(context),
+        _legend(),
         Container(
           color: const Color(0xFFF4F5F7),
           padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
@@ -159,47 +221,32 @@ class StandingsTable extends StatelessWidget {
         ),
         Expanded(
           child: ListView.builder(
-            itemCount: data.standings.length,
+            controller: _scrollController,
+            itemCount: widget.data.standings.length,
             itemBuilder: (context, index) {
-              final row = data.standings[index];
+              final row = widget.data.standings[index];
               final isHighlighted =
-                  row.teamName == highlightHomeTeam || row.teamName == highlightAwayTeam;
+                  row.teamName == widget.highlightHomeTeam || row.teamName == widget.highlightAwayTeam;
+              final zoneColor = zoneColorFor(widget.data.competitionCode, row.position, widget.data.totalTeams);
+              final barColor = isHighlighted ? const Color(0xFF16A34A) : (zoneColor ?? Colors.transparent);
 
               return Container(
-                color: isHighlighted
-                    ? const Color(0xFF16A34A).withOpacity(0.08)
-                    : (index.isEven ? Colors.white : const Color(0xFFFAFAFA)),
-                padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+                height: _rowHeight,
+                color: isHighlighted ? const Color(0xFF16A34A).withOpacity(0.08) : (index.isEven ? Colors.white : const Color(0xFFFAFAFA)),
+                padding: const EdgeInsets.symmetric(horizontal: 12),
                 child: Row(
                   children: [
-                    // Réservé pour les futures zones colorées (Ligue des Champions, relégation...).
-                    // Sert déjà de marqueur pour les 2 équipes du match consulté.
-                    Container(
-                      width: 4,
-                      height: 32,
-                      color: isHighlighted ? const Color(0xFF16A34A) : Colors.transparent,
-                    ),
-                    SizedBox(
-                      width: 22,
-                      child: Text("${row.position}", textAlign: TextAlign.center, style: const TextStyle(fontSize: 12)),
-                    ),
+                    Container(width: 4, height: 32, color: barColor),
+                    const SizedBox(width: 8),
+                    SizedBox(width: 22, child: Text("${row.position}", textAlign: TextAlign.center, style: const TextStyle(fontSize: 12))),
                     SizedBox(width: 26, child: CachedLogo(url: row.teamCrest, size: 20)),
                     Expanded(
                       child: Padding(
                         padding: const EdgeInsets.only(left: 6),
-                        child: Row(
-                          children: [
-                            Expanded(
-                              child: Text(
-                                row.teamName,
-                                overflow: TextOverflow.ellipsis,
-                                style: TextStyle(
-                                  fontSize: 13,
-                                  fontWeight: isHighlighted ? FontWeight.bold : FontWeight.normal,
-                                ),
-                              ),
-                            ),
-                          ],
+                        child: Text(
+                          row.teamName,
+                          overflow: TextOverflow.ellipsis,
+                          style: TextStyle(fontSize: 13, fontWeight: isHighlighted ? FontWeight.bold : FontWeight.normal),
                         ),
                       ),
                     ),
@@ -207,10 +254,7 @@ class StandingsTable extends StatelessWidget {
                     _cell("${row.won}", 22),
                     _cell("${row.draw}", 22),
                     _cell("${row.lost}", 22),
-                    _cell(
-                      row.goalDifference > 0 ? "+${row.goalDifference}" : "${row.goalDifference}",
-                      32,
-                    ),
+                    _cell(row.goalDifference > 0 ? "+${row.goalDifference}" : "${row.goalDifference}", 32),
                     _cell("${row.points}", 32, bold: true),
                   ],
                 ),
