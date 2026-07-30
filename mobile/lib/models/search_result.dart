@@ -1,4 +1,4 @@
-enum SearchResultType { competition, country, continent }
+enum SearchResultType { competition, country, continent, team }
 
 class SearchResult {
   final SearchResultType type;

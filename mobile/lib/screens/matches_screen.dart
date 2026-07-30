@@ -55,6 +55,18 @@ class MatchesScreenState extends State<MatchesScreen> {
     setState(() => _activeFilter = result);
   }
 
+  /// Liste des équipes distinctes parmi les matchs actuellement affichés
+  /// (date sélectionnée), utilisée par l'écran de recherche.
+  List<String> get currentTeams {
+    final matches = _matches ?? [];
+    final teams = <String>{};
+    for (final m in matches) {
+      teams.add(m.homeTeam);
+      teams.add(m.awayTeam);
+    }
+    return teams.toList()..sort();
+  }
+
   void clearFilter() {
     setState(() => _activeFilter = null);
   }
@@ -96,6 +108,11 @@ class MatchesScreenState extends State<MatchesScreen> {
           break;
         case SearchResultType.continent:
           result = result.where((m) => m.continent == filter.value).toList();
+          break;
+        case SearchResultType.team:
+          result = result
+              .where((m) => m.homeTeam == filter.value || m.awayTeam == filter.value)
+              .toList();
           break;
       }
     }

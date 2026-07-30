@@ -33,7 +33,11 @@ class _MainScreenState extends State<MainScreen> {
   Future<void> _openSearch() async {
     final result = await Navigator.push<SearchResult>(
       context,
-      MaterialPageRoute(builder: (context) => const SearchScreen()),
+      MaterialPageRoute(
+        builder: (context) => SearchScreen(
+          availableTeams: _matchesKey.currentState?.currentTeams ?? [],
+        ),
+      ),
     );
 
     if (result != null) {

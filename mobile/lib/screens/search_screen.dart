@@ -3,7 +3,9 @@ import "../config/competitions_catalog.dart";
 import "../models/search_result.dart";
 
 class SearchScreen extends StatefulWidget {
-  const SearchScreen({super.key});
+  final List<String> availableTeams;
+
+  const SearchScreen({super.key, this.availableTeams = const []});
 
   @override
   State<SearchScreen> createState() => _SearchScreenState();
@@ -48,6 +50,9 @@ class _SearchScreenState extends State<SearchScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final matchingTeams = _query.isEmpty
+        ? <String>[]
+        : widget.availableTeams.where(_matches).toList();
     final matchingCompetitions = _query.isEmpty
         ? <CompetitionInfo>[]
         : COMPETITIONS_CATALOG.where((c) => _matches(c.name)).toList();
@@ -58,7 +63,8 @@ class _SearchScreenState extends State<SearchScreen> {
         ? <String>[]
         : _continents.where(_matches).toList();
 
-    final hasResults = matchingCompetitions.isNotEmpty ||
+    final hasResults = matchingTeams.isNotEmpty ||
+        matchingCompetitions.isNotEmpty ||
         matchingCountries.isNotEmpty ||
         matchingContinents.isNotEmpty;
 
@@ -68,19 +74,42 @@ class _SearchScreenState extends State<SearchScreen> {
           controller: _controller,
           autofocus: true,
           decoration: const InputDecoration(
-            hintText: "Rechercher une compétition, un pays, un continent...",
+            hintText: "Rechercher une équipe, une compétition, un pays...",
             border: InputBorder.none,
           ),
           onChanged: (value) => setState(() => _query = value),
         ),
       ),
       body: _query.isEmpty
-          ? const Center(child: Text("Commencez à taper pour voir des suggestions"))
+          ? widget.availableTeams.isEmpty
+              ? const Center(child: Text("Commencez à taper pour voir des suggestions"))
+              : const Center(
+                  child: Padding(
+                    padding: EdgeInsets.all(24),
+                    child: Text(
+                      "Commencez à taper pour voir des suggestions\n(équipes du jour incluses)",
+                      textAlign: TextAlign.center,
+                    ),
+                  ),
+                )
           : !hasResults
               ? const Center(child: Text("Aucun résultat"))
               : ListView(
                   children: [
-                    // Compétitions en premier : c'est ce que la majorité des gens cherchent.
+                    // Équipes en premier : recherche la plus fréquente en pratique.
+                    if (matchingTeams.isNotEmpty) ...[
+                      const _SectionLabel("Équipes (aujourd'hui)"),
+                      ...matchingTeams.map(
+                        (t) => ListTile(
+                          leading: const Icon(Icons.shield_outlined),
+                          title: Text(t),
+                          onTap: () => Navigator.pop(
+                            context,
+                            SearchResult(type: SearchResultType.team, value: t, label: t),
+                          ),
+                        ),
+                      ),
+                    ],
                     if (matchingCompetitions.isNotEmpty) ...[
                       const _SectionLabel("Compétitions"),
                       ...matchingCompetitions.map(
