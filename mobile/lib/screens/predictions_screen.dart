@@ -41,7 +41,9 @@ class _PredictionsScreenState extends State<PredictionsScreen> {
 
   @override
   Widget build(BuildContext context) {
-    return FutureBuilder<List<EligibleMatch>>(
+    return Container(
+      color: const Color(0xFFF4F5F7),
+      child: FutureBuilder<List<EligibleMatch>>(
       future: _predictionsFuture,
       builder: (context, snapshot) {
         if (snapshot.connectionState == ConnectionState.waiting) {
@@ -151,6 +153,7 @@ class _PredictionsScreenState extends State<PredictionsScreen> {
           ),
         );
       },
+      ),
     );
   }
 }

@@ -419,7 +419,7 @@ class MatchesScreenState extends State<MatchesScreen> {
   @override
   Widget build(BuildContext context) {
     return Container(
-      color: const Color(0xFFF2F2F2),
+      color: const Color(0xFFF4F5F7),
       child: Column(
         children: [
           DateSelectorBar(
