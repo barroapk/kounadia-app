@@ -1,3 +1,4 @@
+import "dart:async";
 import "package:flutter/material.dart";
 import "../models/match_analysis.dart";
 import "../models/standings.dart";
@@ -43,26 +44,40 @@ class _MatchDetailScreenState extends State<MatchDetailScreen>
 
   TabController? _tabController;
   int _tabCountForController = 0;
+  Timer? _liveRefreshTimer;
+  bool _isCurrentlyLive = false;
+
+  Future<MatchAnalysis> _fetchAnalysis() {
+    return _apiService.getMatchAnalysis(widget.matchId, provider: widget.provider).then((analysis) {
+      _isCurrentlyLive = analysis.status == "IN_PLAY" || analysis.status == "PAUSED";
+      return analysis;
+    });
+  }
 
   @override
   void initState() {
     super.initState();
-    _analysisFuture = _apiService.getMatchAnalysis(widget.matchId, provider: widget.provider);
+    _analysisFuture = _fetchAnalysis();
 
     if (widget.competitionCode != null) {
       _standingsFuture = _apiService.getStandings(widget.competitionCode!);
     }
+
+    _liveRefreshTimer = Timer.periodic(const Duration(seconds: 30), (_) {
+      if (_isCurrentlyLive) _reloadAnalysis();
+    });
   }
 
   @override
   void dispose() {
+    _liveRefreshTimer?.cancel();
     _tabController?.dispose();
     super.dispose();
   }
 
   void _reloadAnalysis() {
     setState(() {
-      _analysisFuture = _apiService.getMatchAnalysis(widget.matchId, provider: widget.provider);
+      _analysisFuture = _fetchAnalysis();
     });
   }
 

@@ -13,6 +13,40 @@ class MatchStatisticsView extends StatelessWidget {
     required this.awayTeam,
   });
 
+  // Ordre d'importance pour l'utilisateur : les stats les plus lues en premier,
+  // celles reçues mais moins prioritaires (hors-jeu, fautes) en dernier.
+  static const List<String> _priorityOrder = [
+    "Ball Possession",
+    "expected_goals",
+    "Total Shots",
+    "Shots on Goal",
+    "Shots off Goal",
+    "Blocked Shots",
+    "Shots insidebox",
+    "Shots outsidebox",
+    "Corner Kicks",
+    "Passes %",
+    "Total passes",
+    "Passes accurate",
+    "Goalkeeper Saves",
+    "Yellow Cards",
+    "Red Cards",
+    "Fouls",
+    "Offsides",
+    "goals_prevented",
+  ];
+
+  List<String> _sortedKeys(Set<String> keys) {
+    final sorted = <String>[];
+    for (final key in _priorityOrder) {
+      if (keys.contains(key)) sorted.add(key);
+    }
+    for (final key in keys) {
+      if (!sorted.contains(key)) sorted.add(key);
+    }
+    return sorted;
+  }
+
   double? _asPercent(dynamic value) {
     if (value == null) return null;
     final str = value.toString().replaceAll('%', '');
@@ -78,7 +112,7 @@ class MatchStatisticsView extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final keys = <String>{...statistics.home.keys, ...statistics.away.keys}.toList();
+    final keys = _sortedKeys({...statistics.home.keys, ...statistics.away.keys});
 
     if (keys.isEmpty) {
       return const Center(child: Text("Statistiques indisponibles pour ce match."));
