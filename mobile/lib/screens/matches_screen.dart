@@ -13,6 +13,7 @@ import "../widgets/empty_state.dart";
 import "../widgets/loading_skeleton.dart";
 import "../widgets/date_selector_bar.dart";
 import "match_detail_screen.dart";
+import "competition_detail_screen.dart";
 
 class MatchesScreen extends StatefulWidget {
   const MatchesScreen({super.key});
@@ -287,7 +288,34 @@ class MatchesScreenState extends State<MatchesScreen> {
             Text("${matches.length}", style: TextStyle(color: Colors.grey[500], fontSize: 12)),
           ],
         ),
-        children: _matchRows(matches),
+        children: [
+          ..._matchRows(matches),
+          InkWell(
+            onTap: () {
+              final code = COMPETITIONS_CATALOG
+                  .firstWhere(
+                    (c) => c.name == name,
+                    orElse: () => CompetitionInfo(name: name, continent: '', country: ''),
+                  )
+                  .code;
+              Navigator.push(
+                context,
+                MaterialPageRoute(
+                  builder: (context) => CompetitionDetailScreen(name: name, code: code),
+                ),
+              );
+            },
+            child: Padding(
+              padding: const EdgeInsets.symmetric(vertical: 10),
+              child: Center(
+                child: Text(
+                  "Voir la compétition",
+                  style: TextStyle(color: const Color(0xFF16A34A), fontSize: 12, fontWeight: FontWeight.w600),
+                ),
+              ),
+            ),
+          ),
+        ],
       ),
     );
   }

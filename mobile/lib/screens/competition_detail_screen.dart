@@ -7,6 +7,7 @@ import "../services/last_competition_service.dart";
 import "../services/season_preference_service.dart";
 import "../widgets/standings_table.dart";
 import "../widgets/match_row.dart";
+import "../widgets/matchday_selector.dart";
 import "match_detail_screen.dart";
 
 class CompetitionDetailScreen extends StatefulWidget {
@@ -109,38 +110,6 @@ class _CompetitionDetailScreenState extends State<CompetitionDetailScreen>
     );
   }
 
-  Widget _matchdaySelector(CalendarResponse calendar) {
-    final realMatchdays = calendar.matchdays.map((g) => g.matchday).toList();
-
-    return SizedBox(
-      height: 44,
-      child: ListView.builder(
-        scrollDirection: Axis.horizontal,
-        padding: const EdgeInsets.symmetric(horizontal: 12),
-        itemCount: realMatchdays.length,
-        itemBuilder: (context, index) {
-          final day = realMatchdays[index];
-          final isSelected = day == (_selectedMatchday ?? calendar.currentMatchday);
-          final group = calendar.matchdays.firstWhere((g) => g.matchday == day);
-
-          return Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 6),
-            child: ChoiceChip(
-              label: Text("J$day"),
-              selected: isSelected,
-              selectedColor: const Color(0xFF16A34A),
-              labelStyle: TextStyle(color: isSelected ? Colors.white : Colors.black87, fontSize: 12),
-              avatar: group.summary.live > 0
-                  ? const CircleAvatar(backgroundColor: Color(0xFFDC2626), radius: 4)
-                  : null,
-              onSelected: (_) => setState(() => _selectedMatchday = day),
-            ),
-          );
-        },
-      ),
-    );
-  }
-
   static const _weekdays = ["lundi", "mardi", "mercredi", "jeudi", "vendredi", "samedi", "dimanche"];
   static const _months = [
     "janvier", "février", "mars", "avril", "mai", "juin",
@@ -199,7 +168,11 @@ class _CompetitionDetailScreenState extends State<CompetitionDetailScreen>
 
         return Column(
           children: [
-            _matchdaySelector(calendar),
+            MatchdaySelector(
+              calendar: calendar,
+              selectedDay: selectedDay,
+              onSelected: (day) => setState(() => _selectedMatchday = day),
+            ),
             Padding(
               padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
               child: TextField(
