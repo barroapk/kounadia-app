@@ -28,8 +28,9 @@ class ApiService {
   Future<List<Match>> getMatchesByDate(String date) =>
       _fetchMatches("/matches/by-date?date=$date");
 
-  Future<MatchAnalysis> getMatchAnalysis(int matchId) async {
-    final uri = Uri.parse("${ApiConfig.baseUrl}/analyzer/$matchId");
+  Future<MatchAnalysis> getMatchAnalysis(int matchId, {String provider = 'football-data'}) async {
+    final providerParam = provider == 'api-football' ? '?provider=api-football' : '';
+    final uri = Uri.parse("${ApiConfig.baseUrl}/analyzer/$matchId$providerParam");
     final response = await http.get(uri).timeout(const Duration(seconds: 90));
 
     if (response.statusCode != 200) {

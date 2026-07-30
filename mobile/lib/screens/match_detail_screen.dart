@@ -18,6 +18,7 @@ class MatchDetailScreen extends StatefulWidget {
   final String? competitionCode;
   final String? homeTeamCrest;
   final String? awayTeamCrest;
+  final String provider;
 
   const MatchDetailScreen({
     super.key,
@@ -27,6 +28,7 @@ class MatchDetailScreen extends StatefulWidget {
     this.competitionCode,
     this.homeTeamCrest,
     this.awayTeamCrest,
+    this.provider = 'football-data',
   });
 
   @override
@@ -45,7 +47,7 @@ class _MatchDetailScreenState extends State<MatchDetailScreen>
   @override
   void initState() {
     super.initState();
-    _analysisFuture = _apiService.getMatchAnalysis(widget.matchId);
+    _analysisFuture = _apiService.getMatchAnalysis(widget.matchId, provider: widget.provider);
 
     if (widget.competitionCode != null) {
       _standingsFuture = _apiService.getStandings(widget.competitionCode!);
@@ -60,7 +62,7 @@ class _MatchDetailScreenState extends State<MatchDetailScreen>
 
   void _reloadAnalysis() {
     setState(() {
-      _analysisFuture = _apiService.getMatchAnalysis(widget.matchId);
+      _analysisFuture = _apiService.getMatchAnalysis(widget.matchId, provider: widget.provider);
     });
   }
 

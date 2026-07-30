@@ -173,6 +173,9 @@ class MatchesScreenState extends State<MatchesScreen> {
           homeTeam: match.homeTeam,
           awayTeam: match.awayTeam,
           competitionCode: match.competitionCode,
+          provider: match.provider,
+          homeTeamCrest: match.homeTeamCrest,
+          awayTeamCrest: match.awayTeamCrest,
         ),
       ),
     );
