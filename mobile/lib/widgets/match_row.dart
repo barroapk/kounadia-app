@@ -97,6 +97,9 @@ class _MatchRowState extends State<MatchRow> {
   String get _statusText {
     if (_isLive) return _computeDisplayLabel();
     if (_isFinished) return "Terminé";
+    if (widget.match.status == "POSTPONED") return "Reporté";
+    if (widget.match.status == "SUSPENDED") return "Ajourné";
+    if (widget.match.status == "CANCELLED") return "Annulé";
     final date = DateTime.tryParse(widget.match.utcDate)?.toLocal();
     if (date == null) return "";
     final hh = date.hour.toString().padLeft(2, '0');

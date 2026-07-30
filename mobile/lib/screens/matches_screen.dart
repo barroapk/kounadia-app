@@ -260,7 +260,7 @@ class MatchesScreenState extends State<MatchesScreen> {
     return Theme(
       data: ThemeData(dividerColor: Colors.transparent),
       child: ExpansionTile(
-        initiallyExpanded: autoOpen,
+        initiallyExpanded: true,
         tilePadding: const EdgeInsets.fromLTRB(4, 0, 4, 0),
         childrenPadding: EdgeInsets.zero,
         title: Row(

@@ -153,28 +153,6 @@ class _StandingsTableState extends State<StandingsTable> {
                 ),
             ],
           ),
-          const SizedBox(height: 10),
-          Row(
-            children: [
-              Icon(Icons.groups_outlined, size: 14, color: Colors.grey[600]),
-              const SizedBox(width: 4),
-              Text("${widget.data.totalTeams} équipes", style: TextStyle(color: Colors.grey[600], fontSize: 12)),
-            ],
-          ),
-          if (progress != null) ...[
-            const SizedBox(height: 8),
-            ClipRRect(
-              borderRadius: BorderRadius.circular(4),
-              child: LinearProgressIndicator(
-                value: progress,
-                minHeight: 5,
-                backgroundColor: Colors.grey[200],
-                valueColor: const AlwaysStoppedAnimation(Color(0xFF16A34A)),
-              ),
-            ),
-            const SizedBox(height: 4),
-            Text("${(progress * 100).round()}% de la saison jouée", style: TextStyle(color: Colors.grey[500], fontSize: 11)),
-          ],
           const SizedBox(height: 8),
         ],
       ),
