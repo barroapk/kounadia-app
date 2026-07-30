@@ -12,7 +12,7 @@ class MatchTimelineView extends StatelessWidget {
       case "Goal":
         return Icons.sports_soccer;
       case "Card":
-        return e.detail == "Red Card" ? Icons.square : Icons.square_outlined;
+        return Icons.square_rounded;
       case "subst":
         return Icons.swap_horiz;
       default:
@@ -27,7 +27,7 @@ class MatchTimelineView extends StatelessWidget {
       case "Card":
         return e.detail == "Red Card" ? const Color(0xFFDC2626) : const Color(0xFFEAB308);
       case "subst":
-        return Colors.grey[600]!;
+        return Colors.grey[500]!;
       default:
         return Colors.grey;
     }
@@ -38,55 +38,118 @@ class MatchTimelineView extends StatelessWidget {
     return e.extraMinute != null ? "$base+${e.extraMinute}'" : "$base'";
   }
 
+  Widget _eventDetails(MatchEvent e, {required bool alignRight}) {
+    return Column(
+      crossAxisAlignment: alignRight ? CrossAxisAlignment.end : CrossAxisAlignment.start,
+      children: [
+        Text(
+          e.player ?? "",
+          textAlign: alignRight ? TextAlign.right : TextAlign.left,
+          style: const TextStyle(fontWeight: FontWeight.w600, fontSize: 12.5),
+        ),
+        if (e.assist != null)
+          Text(
+            e.type == "subst" ? "Sort : ${e.assist}" : "Passe : ${e.assist}",
+            textAlign: alignRight ? TextAlign.right : TextAlign.left,
+            style: TextStyle(color: Colors.grey[600], fontSize: 11),
+          ),
+        if (e.team != null)
+          Padding(
+            padding: const EdgeInsets.only(top: 2),
+            child: Text(
+              e.team!,
+              textAlign: alignRight ? TextAlign.right : TextAlign.left,
+              style: TextStyle(color: Colors.grey[500], fontSize: 10),
+            ),
+          ),
+      ],
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     if (events.isEmpty) {
       return const Center(child: Text("Aucun événement disponible pour ce match."));
     }
 
-    // Ordre chronologique inverse : le plus récent en haut, plus naturel pour un match en cours/terminé.
     final sorted = List<MatchEvent>.from(events)
-      ..sort((a, b) => (b.minute ?? 0).compareTo(a.minute ?? 0));
+      ..sort((a, b) {
+        final ta = (a.minute ?? 0) * 100 + (a.extraMinute ?? 0);
+        final tb = (b.minute ?? 0) * 100 + (b.extraMinute ?? 0);
+        return tb.compareTo(ta);
+      });
 
     return ListView.builder(
-      padding: const EdgeInsets.all(16),
+      padding: const EdgeInsets.symmetric(vertical: 8),
       itemCount: sorted.length,
       itemBuilder: (context, index) {
         final e = sorted[index];
         final isHome = e.team == homeTeam;
+        final isFirst = index == 0;
+        final isLast = index == sorted.length - 1;
 
-        return Padding(
-          padding: const EdgeInsets.symmetric(vertical: 8),
+        return SizedBox(
+          height: 58,
           child: Row(
-            crossAxisAlignment: CrossAxisAlignment.start,
+            crossAxisAlignment: CrossAxisAlignment.center,
             children: [
-              SizedBox(
-                width: 40,
-                child: Text(
-                  _minuteLabel(e),
-                  style: TextStyle(
-                    fontWeight: FontWeight.bold,
-                    fontSize: 12,
-                    color: e.extraMinute != null ? const Color(0xFFDC2626) : Colors.black87,
+              Expanded(
+                child: Padding(
+                  padding: const EdgeInsets.only(right: 10),
+                  child: Align(
+                    alignment: Alignment.centerRight,
+                    child: isHome ? _eventDetails(e, alignRight: true) : const SizedBox.shrink(),
                   ),
                 ),
               ),
-              Icon(_iconFor(e), size: 16, color: _colorFor(e)),
-              const SizedBox(width: 8),
-              Expanded(
+              SizedBox(
+                width: 46,
                 child: Column(
-                  crossAxisAlignment: isHome ? CrossAxisAlignment.start : CrossAxisAlignment.end,
                   children: [
-                    Text(
-                      e.player ?? "",
-                      style: const TextStyle(fontWeight: FontWeight.w600, fontSize: 13),
+                    Expanded(
+                      child: isFirst
+                          ? const SizedBox()
+                          : Container(width: 2, color: Colors.grey[300]),
                     ),
-                    if (e.assist != null)
-                      Text(
-                        e.type == "subst" ? "Sort : ${e.assist}" : "Passe : ${e.assist}",
-                        style: TextStyle(color: Colors.grey[600], fontSize: 11),
-                      ),
+                    Column(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        Text(
+                          _minuteLabel(e),
+                          style: TextStyle(
+                            fontSize: 10,
+                            fontWeight: FontWeight.bold,
+                            color: e.extraMinute != null ? const Color(0xFFDC2626) : Colors.grey[700],
+                          ),
+                        ),
+                        const SizedBox(height: 2),
+                        Container(
+                          width: 26,
+                          height: 26,
+                          decoration: BoxDecoration(
+                            color: Colors.white,
+                            shape: BoxShape.circle,
+                            border: Border.all(color: _colorFor(e), width: 2),
+                          ),
+                          child: Icon(_iconFor(e), size: 13, color: _colorFor(e)),
+                        ),
+                      ],
+                    ),
+                    Expanded(
+                      child: isLast
+                          ? const SizedBox()
+                          : Container(width: 2, color: Colors.grey[300]),
+                    ),
                   ],
+                ),
+              ),
+              Expanded(
+                child: Padding(
+                  padding: const EdgeInsets.only(left: 10),
+                  child: Align(
+                    alignment: Alignment.centerLeft,
+                    child: !isHome ? _eventDetails(e, alignRight: false) : const SizedBox.shrink(),
+                  ),
                 ),
               ),
             ],

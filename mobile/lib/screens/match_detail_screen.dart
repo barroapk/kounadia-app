@@ -240,9 +240,9 @@ class _MatchDetailScreenState extends State<MatchDetailScreen>
 
           // Construction dynamique des onglets : jamais un onglet vide.
           final tabs = <Tab>[
-            const Tab(text: "FORME"),
-            const Tab(text: "FACE À FACE"),
-            const Tab(text: "CLASSEMENT"),
+            const Tab(icon: Icon(Icons.show_chart, size: 18), text: "FORME"),
+            const Tab(icon: Icon(Icons.compare_arrows, size: 18), text: "FACE À FACE"),
+            const Tab(icon: Icon(Icons.leaderboard_outlined, size: 18), text: "CLASSEMENT"),
           ];
           final tabViews = <Widget>[
             _formTab(analysis.home, analysis.away, analysis.homeTeam, analysis.awayTeam),
@@ -252,7 +252,7 @@ class _MatchDetailScreenState extends State<MatchDetailScreen>
 
           if (analysis.statistics != null &&
               (analysis.statistics!.home.isNotEmpty || analysis.statistics!.away.isNotEmpty)) {
-            tabs.add(const Tab(text: "STATS"));
+            tabs.add(const Tab(icon: Icon(Icons.bar_chart, size: 18), text: "STATS"));
             tabViews.add(MatchStatisticsView(
               statistics: analysis.statistics!,
               homeTeam: analysis.homeTeam,
@@ -261,12 +261,12 @@ class _MatchDetailScreenState extends State<MatchDetailScreen>
           }
 
           if (analysis.lineups != null && analysis.lineups!.isNotEmpty) {
-            tabs.add(const Tab(text: "COMPOS"));
+            tabs.add(const Tab(icon: Icon(Icons.groups_outlined, size: 18), text: "COMPOS"));
             tabViews.add(MatchLineupsView(lineups: analysis.lineups!));
           }
 
           if (analysis.events != null && analysis.events!.isNotEmpty) {
-            tabs.add(const Tab(text: "CHRONO"));
+            tabs.add(const Tab(icon: Icon(Icons.timeline, size: 18), text: "CHRONO"));
             tabViews.add(MatchTimelineView(events: analysis.events!, homeTeam: analysis.homeTeam));
           }
 
