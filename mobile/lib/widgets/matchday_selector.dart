@@ -19,7 +19,7 @@ class MatchdaySelector extends StatefulWidget {
 
 class _MatchdaySelectorState extends State<MatchdaySelector> {
   final ScrollController _controller = ScrollController();
-  static const double _itemWidth = 56;
+  static const double _itemWidth = 68;
 
   @override
   void initState() {
@@ -72,10 +72,13 @@ class _MatchdaySelectorState extends State<MatchdaySelector> {
               child: ChoiceChip(
                 label: Text("J$day"),
                 selected: isSelected,
+                showCheckmark: false,
                 selectedColor: const Color(0xFF16A34A),
+                labelPadding: const EdgeInsets.symmetric(horizontal: 4),
                 labelStyle: TextStyle(
                   color: isSelected ? Colors.white : Colors.black87,
                   fontSize: 12,
+                  fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
                 ),
                 avatar: group.summary.live > 0
                     ? const CircleAvatar(backgroundColor: Color(0xFFDC2626), radius: 4)
