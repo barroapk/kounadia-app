@@ -175,6 +175,8 @@ class _StandingsTableState extends State<StandingsTable> {
 
   @override
   Widget build(BuildContext context) {
+    final seasonNotStarted = widget.data.standings.every((row) => row.playedGames == 0);
+
     return Column(
       children: [
         _header(context),
@@ -205,7 +207,9 @@ class _StandingsTableState extends State<StandingsTable> {
               final row = widget.data.standings[index];
               final isHighlighted =
                   row.teamName == widget.highlightHomeTeam || row.teamName == widget.highlightAwayTeam;
-              final zoneColor = zoneColorFor(widget.data.competitionCode, row.position, widget.data.totalTeams);
+              final zoneColor = seasonNotStarted
+                  ? null
+                  : zoneColorFor(widget.data.competitionCode, row.position, widget.data.totalTeams);
               final barColor = isHighlighted ? const Color(0xFF16A34A) : (zoneColor ?? Colors.transparent);
 
               return Container(

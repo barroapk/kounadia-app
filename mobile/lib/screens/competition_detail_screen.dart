@@ -44,13 +44,20 @@ class _CompetitionDetailScreenState extends State<CompetitionDetailScreen>
     _tabController = TabController(length: 2, vsync: this);
     _lastCompetitionService.setLast(widget.name);
     _calendarFuture = widget.code != null ? _apiService.getCalendar(widget.code!) : null;
-    _loadStandingsWithLastSeason();
+
+    // Démarre l'appel du classement immédiatement (saison courante), sans attendre
+    // la lecture de la préférence locale : évite un écran vide le temps que
+    // shared_preferences s'initialise, surtout au premier lancement de l'app.
+    if (widget.code != null) {
+      _standingsFuture = _apiService.getStandings(widget.code!);
+    }
+    _applyLastSeasonIfAny();
   }
 
-  Future<void> _loadStandingsWithLastSeason() async {
+  Future<void> _applyLastSeasonIfAny() async {
     if (widget.code == null) return;
     final lastSeason = await _seasonPreferenceService.getLastSeason(widget.code!);
-    if (!mounted) return;
+    if (!mounted || lastSeason == null) return;
     setState(() {
       _standingsFuture = _apiService.getStandings(widget.code!, season: lastSeason);
     });
