@@ -241,6 +241,45 @@ class _CompetitionDetailScreenState extends State<CompetitionDetailScreen>
 
   @override
   Widget build(BuildContext context) {
+    // Sans code football-data.org, ni classement ni calendrier ne sont possibles
+    // aujourd'hui : un seul message honnête plutôt que 2 onglets vides côte à côte.
+    if (widget.code == null) {
+      return Scaffold(
+        backgroundColor: const Color(0xFFF4F5F7),
+        appBar: AppBar(title: Text(widget.name)),
+        body: Center(
+          child: Padding(
+            padding: const EdgeInsets.all(24),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Icon(Icons.info_outline, size: 40, color: Colors.grey[400]),
+                const SizedBox(height: 12),
+                const Text(
+                  "Classement et calendrier bientôt disponibles pour cette compétition.",
+                  textAlign: TextAlign.center,
+                  style: TextStyle(fontSize: 14),
+                ),
+                const SizedBox(height: 6),
+                Text(
+                  "En attendant, vous pouvez suivre les matchs en direct et les résultats dans l'onglet Scores.",
+                  textAlign: TextAlign.center,
+                  style: TextStyle(fontSize: 12, color: Colors.grey[600]),
+                ),
+                const SizedBox(height: 20),
+                FilledButton.icon(
+                  style: FilledButton.styleFrom(backgroundColor: const Color(0xFF16A34A)),
+                  onPressed: () => Navigator.pop(context),
+                  icon: const Icon(Icons.sports_soccer, size: 18),
+                  label: const Text("Retour"),
+                ),
+              ],
+            ),
+          ),
+        ),
+      );
+    }
+
     return Scaffold(
       backgroundColor: const Color(0xFFF4F5F7),
       appBar: AppBar(
