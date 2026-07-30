@@ -5,12 +5,19 @@ import "../services/api_service.dart";
 import "../widgets/standings_table.dart";
 import "../widgets/match_countdown.dart";
 import "../widgets/match_info_card.dart";
+import "../widgets/match_header.dart";
+import "../widgets/match_statistics_view.dart";
+import "../widgets/match_lineups_view.dart";
+import "../widgets/match_timeline_view.dart";
+import "../widgets/match_summary_card.dart";
 
 class MatchDetailScreen extends StatefulWidget {
   final int matchId;
   final String homeTeam;
   final String awayTeam;
   final String? competitionCode;
+  final String? homeTeamCrest;
+  final String? awayTeamCrest;
 
   const MatchDetailScreen({
     super.key,
@@ -18,6 +25,8 @@ class MatchDetailScreen extends StatefulWidget {
     required this.homeTeam,
     required this.awayTeam,
     this.competitionCode,
+    this.homeTeamCrest,
+    this.awayTeamCrest,
   });
 
   @override
@@ -27,14 +36,15 @@ class MatchDetailScreen extends StatefulWidget {
 class _MatchDetailScreenState extends State<MatchDetailScreen>
     with SingleTickerProviderStateMixin {
   final ApiService _apiService = ApiService();
-  late TabController _tabController;
   late Future<MatchAnalysis> _analysisFuture;
   Future<StandingsResponse?>? _standingsFuture;
+
+  TabController? _tabController;
+  int _tabCountForController = 0;
 
   @override
   void initState() {
     super.initState();
-    _tabController = TabController(length: 3, vsync: this);
     _analysisFuture = _apiService.getMatchAnalysis(widget.matchId);
 
     if (widget.competitionCode != null) {
@@ -44,7 +54,7 @@ class _MatchDetailScreenState extends State<MatchDetailScreen>
 
   @override
   void dispose() {
-    _tabController.dispose();
+    _tabController?.dispose();
     super.dispose();
   }
 
@@ -52,6 +62,14 @@ class _MatchDetailScreenState extends State<MatchDetailScreen>
     setState(() {
       _analysisFuture = _apiService.getMatchAnalysis(widget.matchId);
     });
+  }
+
+  void _ensureTabController(int tabCount) {
+    if (_tabController == null || _tabCountForController != tabCount) {
+      _tabController?.dispose();
+      _tabController = TabController(length: tabCount, vsync: this);
+      _tabCountForController = tabCount;
+    }
   }
 
   Widget _formTab(TeamForm home, TeamForm away, String homeTeamName, String awayTeamName) {
@@ -154,8 +172,6 @@ class _MatchDetailScreenState extends State<MatchDetailScreen>
           );
         }
 
-        // Réutilise le même tableau premium que l'onglet Compétitions,
-        // avec les deux équipes de ce match marquées visuellement.
         return StandingsTable(
           data: data,
           highlightHomeTeam: widget.homeTeam,
@@ -176,17 +192,7 @@ class _MatchDetailScreenState extends State<MatchDetailScreen>
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(
-        title: Text("${widget.homeTeam} vs ${widget.awayTeam}"),
-        bottom: TabBar(
-          controller: _tabController,
-          tabs: const [
-            Tab(text: "FORME"),
-            Tab(text: "FACE À FACE"),
-            Tab(text: "CLASSEMENT"),
-          ],
-        ),
-      ),
+      backgroundColor: const Color(0xFFF4F5F7),
       body: FutureBuilder<MatchAnalysis>(
         future: _analysisFuture,
         builder: (context, snapshot) {
@@ -213,20 +219,71 @@ class _MatchDetailScreenState extends State<MatchDetailScreen>
           final analysis = snapshot.data!;
           final kickoff = analysis.utcDate != null ? DateTime.tryParse(analysis.utcDate!) : null;
           final isUpcoming = analysis.status == "TIMED" || analysis.status == "SCHEDULED";
+          final isLive = analysis.status == "IN_PLAY" || analysis.status == "PAUSED";
+
+          // Construction dynamique des onglets : jamais un onglet vide.
+          final tabs = <Tab>[
+            const Tab(text: "FORME"),
+            const Tab(text: "FACE À FACE"),
+            const Tab(text: "CLASSEMENT"),
+          ];
+          final tabViews = <Widget>[
+            _formTab(analysis.home, analysis.away, analysis.homeTeam, analysis.awayTeam),
+            _headToHeadTab(analysis.headToHead),
+            _standingsTab(),
+          ];
+
+          if (analysis.statistics != null &&
+              (analysis.statistics!.home.isNotEmpty || analysis.statistics!.away.isNotEmpty)) {
+            tabs.add(const Tab(text: "STATS"));
+            tabViews.add(MatchStatisticsView(
+              statistics: analysis.statistics!,
+              homeTeam: analysis.homeTeam,
+              awayTeam: analysis.awayTeam,
+            ));
+          }
+
+          if (analysis.lineups != null && analysis.lineups!.isNotEmpty) {
+            tabs.add(const Tab(text: "COMPOS"));
+            tabViews.add(MatchLineupsView(lineups: analysis.lineups!));
+          }
+
+          if (analysis.events != null && analysis.events!.isNotEmpty) {
+            tabs.add(const Tab(text: "CHRONO"));
+            tabViews.add(MatchTimelineView(events: analysis.events!, homeTeam: analysis.homeTeam));
+          }
+
+          _ensureTabController(tabs.length);
 
           return Column(
             children: [
+              MatchHeader(
+                homeTeam: widget.homeTeam,
+                awayTeam: widget.awayTeam,
+                homeTeamCrest: widget.homeTeamCrest,
+                awayTeamCrest: widget.awayTeamCrest,
+                statusLabel: isLive ? "EN DIRECT" : (analysis.status == "FINISHED" ? "Terminé" : "À venir"),
+                isLive: isLive,
+              ),
               if (isUpcoming && kickoff != null) MatchCountdown(kickoff: kickoff),
               MatchInfoCard(venue: analysis.venue, referee: analysis.referee),
+              MatchSummaryCard(
+                statistics: analysis.statistics,
+                events: analysis.events,
+                homeTeam: analysis.homeTeam,
+                awayTeam: analysis.awayTeam,
+              ),
+              const SizedBox(height: 8),
+              TabBar(
+                controller: _tabController,
+                isScrollable: true,
+                labelColor: const Color(0xFF16A34A),
+                unselectedLabelColor: Colors.grey,
+                indicatorColor: const Color(0xFF16A34A),
+                tabs: tabs,
+              ),
               Expanded(
-                child: TabBarView(
-                  controller: _tabController,
-                  children: [
-                    _formTab(analysis.home, analysis.away, analysis.homeTeam, analysis.awayTeam),
-                    _headToHeadTab(analysis.headToHead),
-                    _standingsTab(),
-                  ],
-                ),
+                child: TabBarView(controller: _tabController, children: tabViews),
               ),
             ],
           );
