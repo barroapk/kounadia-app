@@ -1,4 +1,6 @@
 import "dart:convert";
+import "dart:io";
+import "dart:math";
 import "package:http/http.dart" as http;
 import "../config/api_config.dart";
 import "../models/match.dart";
@@ -8,9 +10,43 @@ import "../models/standings.dart";
 import "../models/calendar.dart";
 
 class ApiService {
-  Future<List<Match>> _fetchMatches(String path) async {
+  static const _serverErrorCodes = {502, 503, 504};
+  final Random _random = Random();
+
+  /// Centralise tous les appels réseau : timeout + jusqu'à 3 tentatives avec
+  /// backoff exponentiel avant d'abandonner, pour absorber les échecs
+  /// DNS/réseau passagers et le réveil du serveur Render.
+  Future<http.Response> _getWithRetry(String path, {int maxAttempts = 3}) async {
     final uri = Uri.parse("${ApiConfig.baseUrl}$path");
-    final response = await http.get(uri).timeout(const Duration(seconds: 90));
+    Object? lastError;
+
+    for (var attempt = 1; attempt <= maxAttempts; attempt++) {
+      try {
+        final response = await http.get(uri).timeout(const Duration(seconds: 90));
+
+        if (_serverErrorCodes.contains(response.statusCode)) {
+          throw HttpException("Serveur temporairement indisponible (${response.statusCode})");
+        }
+
+        return response;
+      } catch (e) {
+        lastError = e;
+      }
+
+      if (attempt < maxAttempts) {
+        // Backoff exponentiel (2s, 4s, 8s...) + petite variation aléatoire,
+        // pour éviter que plusieurs appareils retentent exactement au même moment.
+        final baseDelay = pow(2, attempt).toInt();
+        final jitterMs = _random.nextInt(500);
+        await Future.delayed(Duration(seconds: baseDelay, milliseconds: jitterMs));
+      }
+    }
+
+    throw Exception("Connexion au serveur impossible après $maxAttempts tentatives : $lastError");
+  }
+
+  Future<List<Match>> _fetchMatches(String path) async {
+    final response = await _getWithRetry(path);
 
     if (response.statusCode != 200) {
       throw Exception("Erreur serveur (${response.statusCode})");
@@ -30,8 +66,7 @@ class ApiService {
 
   Future<MatchAnalysis> getMatchAnalysis(int matchId, {String provider = 'football-data'}) async {
     final providerParam = provider == 'api-football' ? '?provider=api-football' : '';
-    final uri = Uri.parse("${ApiConfig.baseUrl}/analyzer/$matchId$providerParam");
-    final response = await http.get(uri).timeout(const Duration(seconds: 90));
+    final response = await _getWithRetry("/analyzer/$matchId$providerParam");
 
     if (response.statusCode != 200) {
       throw Exception("Erreur serveur (${response.statusCode})");
@@ -43,8 +78,7 @@ class ApiService {
   }
 
   Future<List<EligibleMatch>> getTodaysPredictions() async {
-    final uri = Uri.parse("${ApiConfig.baseUrl}/predictions/today");
-    final response = await http.get(uri).timeout(const Duration(seconds: 90));
+    final response = await _getWithRetry("/predictions/today");
 
     if (response.statusCode != 200) {
       throw Exception("Erreur serveur (${response.statusCode})");
@@ -58,8 +92,7 @@ class ApiService {
 
   Future<StandingsResponse?> getStandings(String competitionCode, {String? season}) async {
     final seasonParam = season != null ? "?season=$season" : "";
-    final uri = Uri.parse("${ApiConfig.baseUrl}/standings/$competitionCode$seasonParam");
-    final response = await http.get(uri).timeout(const Duration(seconds: 90));
+    final response = await _getWithRetry("/standings/$competitionCode$seasonParam");
 
     if (response.statusCode != 200) {
       return null;
@@ -71,8 +104,7 @@ class ApiService {
   }
 
   Future<CalendarResponse?> getCalendar(String competitionCode) async {
-    final uri = Uri.parse("${ApiConfig.baseUrl}/calendar/$competitionCode");
-    final response = await http.get(uri).timeout(const Duration(seconds: 90));
+    final response = await _getWithRetry("/calendar/$competitionCode");
 
     if (response.statusCode != 200) {
       return null;

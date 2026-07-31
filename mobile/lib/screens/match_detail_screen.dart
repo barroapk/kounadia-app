@@ -45,13 +45,34 @@ class _MatchDetailScreenState extends State<MatchDetailScreen>
   TabController? _tabController;
   int _tabCountForController = 0;
   Timer? _liveRefreshTimer;
-  bool _isCurrentlyLive = false;
+  String? _lastKnownStatus;
 
   Future<MatchAnalysis> _fetchAnalysis() {
     return _apiService.getMatchAnalysis(widget.matchId, provider: widget.provider).then((analysis) {
-      _isCurrentlyLive = analysis.status == "IN_PLAY" || analysis.status == "PAUSED";
+      _updateRefreshStrategy(analysis.status);
       return analysis;
     });
+  }
+
+  /// Décide de la fréquence de rafraîchissement selon le statut réel du match :
+  /// jamais pour un match à venir ou terminé, seulement pendant qu'il se joue.
+  void _updateRefreshStrategy(String status) {
+    if (_lastKnownStatus == status) return;
+    _lastKnownStatus = status;
+
+    _liveRefreshTimer?.cancel();
+    _liveRefreshTimer = null;
+
+    Duration? interval;
+    if (status == "IN_PLAY") {
+      interval = const Duration(seconds: 20);
+    } else if (status == "PAUSED") {
+      interval = const Duration(seconds: 45);
+    }
+
+    if (interval != null) {
+      _liveRefreshTimer = Timer.periodic(interval, (_) => _reloadAnalysis());
+    }
   }
 
   @override
@@ -63,9 +84,6 @@ class _MatchDetailScreenState extends State<MatchDetailScreen>
       _standingsFuture = _apiService.getStandings(widget.competitionCode!);
     }
 
-    _liveRefreshTimer = Timer.periodic(const Duration(seconds: 30), (_) {
-      if (_isCurrentlyLive) _reloadAnalysis();
-    });
   }
 
   @override
