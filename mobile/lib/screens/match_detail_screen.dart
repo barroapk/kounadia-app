@@ -47,7 +47,7 @@ class _MatchDetailScreenState extends State<MatchDetailScreen>
 
   Future<MatchAnalysis> _fetchAnalysis() {
     return _apiService.getMatchAnalysis(widget.matchId, provider: widget.provider).then((analysis) {
-      _updateRefreshStrategy(analysis.status);
+      _updateRefreshStrategy(analysis.status ?? '');
       return analysis;
     });
   }
