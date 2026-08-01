@@ -4,13 +4,10 @@ import "../models/match_analysis.dart";
 import "../models/standings.dart";
 import "../services/api_service.dart";
 import "../widgets/standings_table.dart";
-import "../widgets/match_countdown.dart";
-import "../widgets/match_info_card.dart";
-import "../widgets/match_header.dart";
+import "../widgets/match_header_card.dart";
 import "../widgets/match_statistics_view.dart";
 import "../widgets/match_lineups_view.dart";
-import "../widgets/match_timeline_view.dart";
-import "../widgets/match_summary_card.dart";
+import "../widgets/match_details_tab.dart";
 
 class MatchDetailScreen extends StatefulWidget {
   final int matchId;
@@ -41,6 +38,7 @@ class _MatchDetailScreenState extends State<MatchDetailScreen>
   final ApiService _apiService = ApiService();
   late Future<MatchAnalysis> _analysisFuture;
   Future<StandingsResponse?>? _standingsFuture;
+  StandingsResponse? _standingsCache;
 
   TabController? _tabController;
   int _tabCountForController = 0;
@@ -82,8 +80,10 @@ class _MatchDetailScreenState extends State<MatchDetailScreen>
 
     if (widget.competitionCode != null) {
       _standingsFuture = _apiService.getStandings(widget.competitionCode!);
+      _standingsFuture!.then((data) {
+        if (mounted) setState(() => _standingsCache = data);
+      });
     }
-
   }
 
   @override
@@ -99,6 +99,15 @@ class _MatchDetailScreenState extends State<MatchDetailScreen>
     });
   }
 
+  void _onSeasonChanged(String season) {
+    setState(() {
+      _standingsFuture = _apiService.getStandings(widget.competitionCode ?? '', season: season);
+      _standingsFuture!.then((data) {
+        if (mounted) setState(() => _standingsCache = data);
+      });
+    });
+  }
+
   void _ensureTabController(int tabCount) {
     if (_tabController == null || _tabCountForController != tabCount) {
       _tabController?.dispose();
@@ -107,7 +116,12 @@ class _MatchDetailScreenState extends State<MatchDetailScreen>
     }
   }
 
-  Widget _formTab(TeamForm home, TeamForm away, String homeTeamName, String awayTeamName) {
+  void _goToTab(List<Tab> tabs, String label) {
+    final index = tabs.indexWhere((t) => (t.text ?? '').toUpperCase() == label);
+    if (index != -1) _tabController?.animateTo(index);
+  }
+
+  Widget _formTab(TeamForm home, TeamForm away, HeadToHead h2h, String homeTeamName, String awayTeamName) {
     Widget formCard(String label, TeamForm form) {
       return Card(
         margin: const EdgeInsets.symmetric(vertical: 6),
@@ -121,16 +135,10 @@ class _MatchDetailScreenState extends State<MatchDetailScreen>
               if (form.matchesAnalyzed == 0)
                 const Text("Pas assez de données historiques pour l'instant.")
               else ...[
-                Text(
-                  "${form.wins}V - ${form.draws}N - ${form.losses}D sur ${form.matchesAnalyzed} match(s)",
-                ),
+                Text("${form.wins}V - ${form.draws}N - ${form.losses}D sur ${form.matchesAnalyzed} match(s)"),
                 Text("Forme : ${form.formPercent}% (${form.points}/${form.maxPoints} pts)"),
-                Text(
-                  "Buts : ${form.goalsFor} marqués / ${form.goalsAgainst} encaissés (diff. ${form.goalDifference})",
-                ),
-                Text(
-                  "Moyenne : ${form.avgGoalsFor} marqués / ${form.avgGoalsAgainst} encaissés par match",
-                ),
+                Text("Buts : ${form.goalsFor} marqués / ${form.goalsAgainst} encaissés (diff. ${form.goalDifference})"),
+                Text("Moyenne : ${form.avgGoalsFor} marqués / ${form.avgGoalsAgainst} encaissés par match"),
                 Text("Clean sheets : ${form.cleanSheets} · Sans marquer : ${form.failedToScore}"),
               ],
             ],
@@ -144,15 +152,8 @@ class _MatchDetailScreenState extends State<MatchDetailScreen>
       children: [
         formCard(homeTeamName, home),
         formCard(awayTeamName, away),
-      ],
-    );
-  }
-
-  Widget _headToHeadTab(HeadToHead h2h) {
-    return ListView(
-      padding: const EdgeInsets.all(12),
-      children: [
         Card(
+          margin: const EdgeInsets.symmetric(vertical: 6),
           child: Padding(
             padding: const EdgeInsets.all(12),
             child: Column(
@@ -163,9 +164,7 @@ class _MatchDetailScreenState extends State<MatchDetailScreen>
                 if (!h2h.available)
                   const Text("Aucun historique de confrontation disponible.")
                 else
-                  Text(
-                    "${h2h.totalMatches} match(s) : ${h2h.team1Wins}V - ${h2h.draws}N - ${h2h.team2Wins}D",
-                  ),
+                  Text("${h2h.totalMatches} match(s) : ${h2h.team1Wins}V - ${h2h.draws}N - ${h2h.team2Wins}D"),
               ],
             ),
           ),
@@ -179,10 +178,7 @@ class _MatchDetailScreenState extends State<MatchDetailScreen>
       return const Center(
         child: Padding(
           padding: EdgeInsets.all(24),
-          child: Text(
-            "Classement non disponible pour cette compétition.",
-            textAlign: TextAlign.center,
-          ),
+          child: Text("Classement non disponible pour cette compétition.", textAlign: TextAlign.center),
         ),
       );
     }
@@ -199,10 +195,7 @@ class _MatchDetailScreenState extends State<MatchDetailScreen>
           return const Center(
             child: Padding(
               padding: EdgeInsets.all(24),
-              child: Text(
-                "Classement non disponible pour cette compétition.",
-                textAlign: TextAlign.center,
-              ),
+              child: Text("Classement non disponible pour cette compétition.", textAlign: TextAlign.center),
             ),
           );
         }
@@ -211,14 +204,7 @@ class _MatchDetailScreenState extends State<MatchDetailScreen>
           data: data,
           highlightHomeTeam: widget.homeTeam,
           highlightAwayTeam: widget.awayTeam,
-          onSeasonChanged: (season) {
-            setState(() {
-              _standingsFuture = _apiService.getStandings(
-                widget.competitionCode ?? '',
-                season: season,
-              );
-            });
-          },
+          onSeasonChanged: _onSeasonChanged,
         );
       },
     );
@@ -228,102 +214,155 @@ class _MatchDetailScreenState extends State<MatchDetailScreen>
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: const Color(0xFFF4F5F7),
-      body: FutureBuilder<MatchAnalysis>(
-        future: _analysisFuture,
-        builder: (context, snapshot) {
-          if (snapshot.connectionState == ConnectionState.waiting) {
-            return const Center(child: CircularProgressIndicator());
-          }
+      body: SafeArea(
+        child: FutureBuilder<MatchAnalysis>(
+          future: _analysisFuture,
+          builder: (context, snapshot) {
+            if (snapshot.connectionState == ConnectionState.waiting) {
+              return const Center(child: CircularProgressIndicator());
+            }
 
-          if (snapshot.hasError) {
-            return Center(
-              child: Padding(
-                padding: const EdgeInsets.all(24.0),
-                child: Column(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    Text("Erreur : ${snapshot.error}"),
-                    const SizedBox(height: 12),
-                    ElevatedButton(onPressed: _reloadAnalysis, child: const Text("Réessayer")),
-                  ],
+            if (snapshot.hasError) {
+              return Center(
+                child: Padding(
+                  padding: const EdgeInsets.all(24.0),
+                  child: Column(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Text("Erreur : ${snapshot.error}"),
+                      const SizedBox(height: 12),
+                      ElevatedButton(onPressed: _reloadAnalysis, child: const Text("Réessayer")),
+                    ],
+                  ),
                 ),
-              ),
+              );
+            }
+
+            final analysis = snapshot.data!;
+            final kickoff = analysis.utcDate != null ? DateTime.tryParse(analysis.utcDate!) : null;
+            final isUpcoming = analysis.status == "TIMED" || analysis.status == "SCHEDULED";
+            final isLive = analysis.status == "IN_PLAY" || analysis.status == "PAUSED";
+            final isPaused = analysis.status == "PAUSED";
+            final isFinished = analysis.status == "FINISHED";
+
+            final hasStats = analysis.statistics != null &&
+                (analysis.statistics!.home.isNotEmpty || analysis.statistics!.away.isNotEmpty);
+            final hasLineups = analysis.lineups != null && analysis.lineups!.isNotEmpty;
+
+            // Ordre des onglets selon le moment du match, comme validé.
+            final tabs = <Tab>[];
+            final tabViews = <Widget>[];
+
+            if (isUpcoming) {
+              tabs.add(const Tab(icon: Icon(Icons.show_chart, size: 18), text: "FORME"));
+              tabViews.add(_formTab(analysis.home, analysis.away, analysis.headToHead, analysis.homeTeam, analysis.awayTeam));
+
+              tabs.add(const Tab(icon: Icon(Icons.dashboard_outlined, size: 18), text: "DÉTAILS"));
+              tabViews.add(MatchDetailsTab(
+                analysis: analysis,
+                standings: _standingsCache,
+                onSeeStats: () => _goToTab(tabs, "STATS"),
+                onSeeStandings: () => _goToTab(tabs, "CLASSEMENT"),
+              ));
+
+              if (hasLineups) {
+                tabs.add(const Tab(icon: Icon(Icons.groups_outlined, size: 18), text: "COMPOS"));
+                tabViews.add(MatchLineupsView(lineups: analysis.lineups!));
+              }
+
+              tabs.add(const Tab(icon: Icon(Icons.leaderboard_outlined, size: 18), text: "CLASSEMENT"));
+              tabViews.add(_standingsTab());
+            } else {
+              tabs.add(const Tab(icon: Icon(Icons.dashboard_outlined, size: 18), text: "DÉTAILS"));
+              tabViews.add(MatchDetailsTab(
+                analysis: analysis,
+                standings: _standingsCache,
+                onSeeStats: () => _goToTab(tabs, "STATS"),
+                onSeeStandings: () => _goToTab(tabs, "CLASSEMENT"),
+              ));
+
+              if (hasStats) {
+                tabs.add(const Tab(icon: Icon(Icons.bar_chart, size: 18), text: "STATS"));
+                tabViews.add(MatchStatisticsView(
+                  statistics: analysis.statistics!,
+                  homeTeam: analysis.homeTeam,
+                  awayTeam: analysis.awayTeam,
+                ));
+              }
+
+              if (hasLineups) {
+                tabs.add(const Tab(icon: Icon(Icons.groups_outlined, size: 18), text: "COMPOS"));
+                tabViews.add(MatchLineupsView(lineups: analysis.lineups!));
+              }
+
+              tabs.add(const Tab(icon: Icon(Icons.leaderboard_outlined, size: 18), text: "CLASSEMENT"));
+              tabViews.add(_standingsTab());
+
+              tabs.add(const Tab(icon: Icon(Icons.show_chart, size: 18), text: "FORME"));
+              tabViews.add(_formTab(analysis.home, analysis.away, analysis.headToHead, analysis.homeTeam, analysis.awayTeam));
+            }
+
+            _ensureTabController(tabs.length);
+
+            return NestedScrollView(
+              headerSliverBuilder: (context, innerBoxIsScrolled) {
+                return [
+                  SliverToBoxAdapter(
+                    child: MatchHeaderCard(
+                      homeTeam: analysis.homeTeam,
+                      awayTeam: analysis.awayTeam,
+                      homeTeamCrest: widget.homeTeamCrest,
+                      awayTeamCrest: widget.awayTeamCrest,
+                      homeScore: analysis.homeScore,
+                      awayScore: analysis.awayScore,
+                      competition: analysis.competition,
+                      venue: analysis.venue,
+                      referee: analysis.referee,
+                      isLive: isLive,
+                      isPaused: isPaused,
+                      isFinished: isFinished,
+                      kickoff: kickoff,
+                    ),
+                  ),
+                  SliverPersistentHeader(
+                    pinned: true,
+                    delegate: _TabBarDelegate(
+                      TabBar(
+                        controller: _tabController,
+                        isScrollable: true,
+                        labelColor: const Color(0xFF16A34A),
+                        unselectedLabelColor: Colors.grey,
+                        indicatorColor: const Color(0xFF16A34A),
+                        tabs: tabs,
+                      ),
+                    ),
+                  ),
+                ];
+              },
+              body: TabBarView(controller: _tabController, children: tabViews),
             );
-          }
-
-          final analysis = snapshot.data!;
-          final kickoff = analysis.utcDate != null ? DateTime.tryParse(analysis.utcDate!) : null;
-          final isUpcoming = analysis.status == "TIMED" || analysis.status == "SCHEDULED";
-          final isLive = analysis.status == "IN_PLAY" || analysis.status == "PAUSED";
-
-          // Construction dynamique des onglets : jamais un onglet vide.
-          final tabs = <Tab>[
-            const Tab(icon: Icon(Icons.show_chart, size: 18), text: "FORME"),
-            const Tab(icon: Icon(Icons.compare_arrows, size: 18), text: "FACE À FACE"),
-            const Tab(icon: Icon(Icons.leaderboard_outlined, size: 18), text: "CLASSEMENT"),
-          ];
-          final tabViews = <Widget>[
-            _formTab(analysis.home, analysis.away, analysis.homeTeam, analysis.awayTeam),
-            _headToHeadTab(analysis.headToHead),
-            _standingsTab(),
-          ];
-
-          if (analysis.statistics != null &&
-              (analysis.statistics!.home.isNotEmpty || analysis.statistics!.away.isNotEmpty)) {
-            tabs.add(const Tab(icon: Icon(Icons.bar_chart, size: 18), text: "STATS"));
-            tabViews.add(MatchStatisticsView(
-              statistics: analysis.statistics!,
-              homeTeam: analysis.homeTeam,
-              awayTeam: analysis.awayTeam,
-            ));
-          }
-
-          if (analysis.lineups != null && analysis.lineups!.isNotEmpty) {
-            tabs.add(const Tab(icon: Icon(Icons.groups_outlined, size: 18), text: "COMPOS"));
-            tabViews.add(MatchLineupsView(lineups: analysis.lineups!));
-          }
-
-          if (analysis.events != null && analysis.events!.isNotEmpty) {
-            tabs.add(const Tab(icon: Icon(Icons.timeline, size: 18), text: "CHRONO"));
-            tabViews.add(MatchTimelineView(events: analysis.events!, homeTeam: analysis.homeTeam));
-          }
-
-          _ensureTabController(tabs.length);
-
-          return Column(
-            children: [
-              MatchHeader(
-                homeTeam: widget.homeTeam,
-                awayTeam: widget.awayTeam,
-                homeTeamCrest: widget.homeTeamCrest,
-                awayTeamCrest: widget.awayTeamCrest,
-                statusLabel: isLive ? "EN DIRECT" : (analysis.status == "FINISHED" ? "Terminé" : "À venir"),
-                isLive: isLive,
-              ),
-              if (isUpcoming && kickoff != null) MatchCountdown(kickoff: kickoff),
-              MatchInfoCard(venue: analysis.venue, referee: analysis.referee),
-              MatchSummaryCard(
-                statistics: analysis.statistics,
-                events: analysis.events,
-                homeTeam: analysis.homeTeam,
-                awayTeam: analysis.awayTeam,
-              ),
-              const SizedBox(height: 8),
-              TabBar(
-                controller: _tabController,
-                isScrollable: true,
-                labelColor: const Color(0xFF16A34A),
-                unselectedLabelColor: Colors.grey,
-                indicatorColor: const Color(0xFF16A34A),
-                tabs: tabs,
-              ),
-              Expanded(
-                child: TabBarView(controller: _tabController, children: tabViews),
-              ),
-            ],
-          );
-        },
+          },
+        ),
       ),
     );
   }
+}
+
+/// Garde la TabBar collée en haut de l'écran pendant le scroll.
+class _TabBarDelegate extends SliverPersistentHeaderDelegate {
+  final TabBar tabBar;
+  _TabBarDelegate(this.tabBar);
+
+  @override
+  double get minExtent => tabBar.preferredSize.height;
+  @override
+  double get maxExtent => tabBar.preferredSize.height;
+
+  @override
+  Widget build(BuildContext context, double shrinkOffset, bool overlapsContent) {
+    return Container(color: const Color(0xFFF4F5F7), child: tabBar);
+  }
+
+  @override
+  bool shouldRebuild(covariant _TabBarDelegate oldDelegate) => tabBar != oldDelegate.tabBar;
 }

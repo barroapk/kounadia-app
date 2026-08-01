@@ -176,6 +176,9 @@ class MatchAnalysis {
   final int matchId;
   final String homeTeam;
   final String awayTeam;
+  final String? competition;
+  final int? homeScore;
+  final int? awayScore;
   final String? utcDate;
   final String? status;
   final String? venue;
@@ -191,6 +194,9 @@ class MatchAnalysis {
     required this.matchId,
     required this.homeTeam,
     required this.awayTeam,
+    this.competition,
+    this.homeScore,
+    this.awayScore,
     this.utcDate,
     this.status,
     this.venue,
@@ -208,6 +214,9 @@ class MatchAnalysis {
       matchId: json['matchId'] as int,
       homeTeam: json['homeTeam'] as String? ?? '',
       awayTeam: json['awayTeam'] as String? ?? '',
+      competition: json['competition'] as String?,
+      homeScore: json['homeScore'] as int?,
+      awayScore: json['awayScore'] as int?,
       utcDate: json['utcDate'] as String?,
       status: json['status'] as String?,
       venue: json['venue'] as String?,
