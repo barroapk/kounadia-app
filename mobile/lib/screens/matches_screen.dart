@@ -451,10 +451,7 @@ class MatchesScreenState extends State<MatchesScreen> {
                 flagUrl: flagUrl,
                 matchCount: matchCount,
                 competitionCount: competitions.length,
-                initiallyExpanded: hasLiveInCountry ||
-                    autoOpenCountries.contains(country) ||
-                    isSearchedCountry ||
-                    containsSearchedCompetition,
+                initiallyExpanded: true,
                 children: competitionTiles(competitions),
               );
             }),
