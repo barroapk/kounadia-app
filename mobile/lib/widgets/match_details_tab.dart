@@ -2,6 +2,7 @@ import "package:flutter/material.dart";
 import "../models/match_analysis.dart";
 import "../models/standings.dart";
 import "match_summary_card.dart";
+import "match_timeline_view.dart";
 
 class MatchDetailsTab extends StatefulWidget {
   final MatchAnalysis analysis;
@@ -116,7 +117,11 @@ class _MatchDetailsTabState extends State<MatchDetailsTab> {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        ...visible.map(_eventRow),
+        MatchTimelineView(
+          events: visible,
+          homeTeam: widget.analysis.homeTeam,
+          shrinkWrap: true,
+        ),
         if (sorted.length > 3)
           InkWell(
             onTap: () => setState(() => _timelineExpanded = !_timelineExpanded),

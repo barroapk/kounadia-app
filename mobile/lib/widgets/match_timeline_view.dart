@@ -4,8 +4,14 @@ import "../models/match_analysis.dart";
 class MatchTimelineView extends StatelessWidget {
   final List<MatchEvent> events;
   final String homeTeam;
+  final bool shrinkWrap;
 
-  const MatchTimelineView({super.key, required this.events, required this.homeTeam});
+  const MatchTimelineView({
+    super.key,
+    required this.events,
+    required this.homeTeam,
+    this.shrinkWrap = false,
+  });
 
   IconData _iconFor(MatchEvent e) {
     switch (e.type) {
@@ -81,6 +87,8 @@ class MatchTimelineView extends StatelessWidget {
 
     return ListView.builder(
       padding: const EdgeInsets.symmetric(vertical: 8),
+      shrinkWrap: shrinkWrap,
+      physics: shrinkWrap ? const NeverScrollableScrollPhysics() : null,
       itemCount: sorted.length,
       itemBuilder: (context, index) {
         final e = sorted[index];
