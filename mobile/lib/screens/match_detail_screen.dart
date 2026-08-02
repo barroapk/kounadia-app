@@ -8,6 +8,7 @@ import "../widgets/match_header_card.dart";
 import "../widgets/match_statistics_view.dart";
 import "../widgets/match_lineups_view.dart";
 import "../widgets/match_details_tab.dart";
+import "../widgets/form_and_h2h_widgets.dart";
 
 class MatchDetailScreen extends StatefulWidget {
   final int matchId;
@@ -169,8 +170,20 @@ class _MatchDetailScreenState extends State<MatchDetailScreen>
     return ListView(
       padding: const EdgeInsets.all(12),
       children: [
-        formCard(homeTeamName, home),
-        formCard(awayTeamName, away),
+        Card(
+          margin: const EdgeInsets.symmetric(vertical: 6),
+          child: Padding(
+            padding: const EdgeInsets.all(12),
+            child: buildFormBar(homeTeamName, home),
+          ),
+        ),
+        Card(
+          margin: const EdgeInsets.symmetric(vertical: 6),
+          child: Padding(
+            padding: const EdgeInsets.all(12),
+            child: buildFormBar(awayTeamName, away),
+          ),
+        ),
         Card(
           margin: const EdgeInsets.symmetric(vertical: 6),
           child: Padding(
@@ -180,10 +193,7 @@ class _MatchDetailScreenState extends State<MatchDetailScreen>
               children: [
                 Text("Confrontations directes", style: Theme.of(context).textTheme.titleMedium),
                 const SizedBox(height: 8),
-                if (!h2h.available)
-                  const Text("Aucun historique de confrontation disponible.")
-                else
-                  Text("${h2h.totalMatches} match(s) : ${h2h.teamAWins}V - ${h2h.draws}N - ${h2h.teamBWins}D"),
+                buildHeadToHeadBar(h2h),
               ],
             ),
           ),

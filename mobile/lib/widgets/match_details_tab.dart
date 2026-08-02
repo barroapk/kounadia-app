@@ -3,6 +3,7 @@ import "../models/match_analysis.dart";
 import "../models/standings.dart";
 import "match_summary_card.dart";
 import "match_timeline_view.dart";
+import "form_and_h2h_widgets.dart";
 
 class MatchDetailsTab extends StatefulWidget {
   final MatchAnalysis analysis;
@@ -356,12 +357,12 @@ class _MatchDetailsTabState extends State<MatchDetailsTab> {
           icon: Icons.show_chart,
           child: Column(
             children: [
-              _formBar(analysis.homeTeam, analysis.home),
-              _formBar(analysis.awayTeam, analysis.away),
+              buildFormBar(analysis.homeTeam, analysis.home),
+              buildFormBar(analysis.awayTeam, analysis.away),
             ],
           ),
         ),
-        _sectionCard(title: "Face à face", icon: Icons.compare_arrows, child: _headToHeadBar(analysis.headToHead)),
+        _sectionCard(title: "Face à face", icon: Icons.compare_arrows, child: buildHeadToHeadBar(analysis.headToHead)),
       ],
     );
   }
