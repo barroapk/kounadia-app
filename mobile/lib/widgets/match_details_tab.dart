@@ -293,26 +293,37 @@ class _MatchDetailsTabState extends State<MatchDetailsTab> {
       return const Text("Aucun historique de confrontation disponible.", style: TextStyle(fontSize: 12, color: Colors.grey));
     }
 
-    final wins1 = h2h.team1Wins ?? 0;
+    final winsA = h2h.teamAWins ?? 0;
     final draws = h2h.draws ?? 0;
-    final wins2 = h2h.team2Wins ?? 0;
+    final winsB = h2h.teamBWins ?? 0;
+    final teamAName = h2h.teamA ?? "Équipe A";
+    final teamBName = h2h.teamB ?? "Équipe B";
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
+        Row(
+          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+          children: [
+            Text("$winsA", style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 13, color: Color(0xFF16A34A))),
+            Text("$draws nuls", style: TextStyle(color: Colors.grey[600], fontSize: 11.5)),
+            Text("$winsB", style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 13)),
+          ],
+        ),
+        const SizedBox(height: 4),
         ClipRRect(
           borderRadius: BorderRadius.circular(4),
           child: Row(
             children: [
-              if (wins1 > 0) Expanded(flex: wins1, child: Container(height: 10, color: const Color(0xFF16A34A))),
+              if (winsA > 0) Expanded(flex: winsA, child: Container(height: 10, color: const Color(0xFF16A34A))),
               if (draws > 0) Expanded(flex: draws, child: Container(height: 10, color: Colors.grey[400])),
-              if (wins2 > 0) Expanded(flex: wins2, child: Container(height: 10, color: Colors.grey[700])),
+              if (winsB > 0) Expanded(flex: winsB, child: Container(height: 10, color: Colors.grey[700])),
             ],
           ),
         ),
         const SizedBox(height: 4),
         Text(
-          "${h2h.totalMatches} confrontation(s) : $wins1 victoires - $draws nuls - $wins2 victoires (sens non attribué par équipe)",
+          "$teamAName : $winsA victoire(s) · $teamBName : $winsB victoire(s) · $draws nul(s) · ${h2h.totalMatches} confrontation(s) au total",
           style: TextStyle(color: Colors.grey[600], fontSize: 10.5),
         ),
       ],

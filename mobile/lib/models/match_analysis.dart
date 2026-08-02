@@ -53,16 +53,20 @@ class TeamForm {
 
 class HeadToHead {
   final bool available;
+  final String? teamA;
+  final String? teamB;
   final int? totalMatches;
-  final int? team1Wins;
-  final int? team2Wins;
+  final int? teamAWins;
+  final int? teamBWins;
   final int? draws;
 
   HeadToHead({
     required this.available,
+    this.teamA,
+    this.teamB,
     this.totalMatches,
-    this.team1Wins,
-    this.team2Wins,
+    this.teamAWins,
+    this.teamBWins,
     this.draws,
   });
 
@@ -72,9 +76,11 @@ class HeadToHead {
     }
     return HeadToHead(
       available: true,
+      teamA: json['teamA'] as String?,
+      teamB: json['teamB'] as String?,
       totalMatches: json['totalMatches'] as int? ?? 0,
-      team1Wins: json['team1Wins'] as int? ?? 0,
-      team2Wins: json['team2Wins'] as int? ?? 0,
+      teamAWins: json['teamAWins'] as int? ?? 0,
+      teamBWins: json['teamBWins'] as int? ?? 0,
       draws: json['draws'] as int? ?? 0,
     );
   }

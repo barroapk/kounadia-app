@@ -36,7 +36,12 @@ class MatchDetailScreen extends StatefulWidget {
 class _MatchDetailScreenState extends State<MatchDetailScreen>
     with SingleTickerProviderStateMixin {
   final ApiService _apiService = ApiService();
-  late Future<MatchAnalysis> _analysisFuture;
+
+  MatchAnalysis? _analysis;
+  Object? _loadError;
+  bool _isInitialLoading = true;
+  bool _isRefreshing = false;
+
   Future<StandingsResponse?>? _standingsFuture;
   StandingsResponse? _standingsCache;
 
@@ -45,15 +50,31 @@ class _MatchDetailScreenState extends State<MatchDetailScreen>
   Timer? _liveRefreshTimer;
   String? _lastKnownStatus;
 
-  Future<MatchAnalysis> _fetchAnalysis() {
-    return _apiService.getMatchAnalysis(widget.matchId, provider: widget.provider).then((analysis) {
+  /// Recharge en arrière-plan sans jamais effacer l'écran : les données
+  /// précédentes restent visibles pendant qu'on récupère les nouvelles.
+  Future<void> _fetchAnalysis({bool isInitial = false}) async {
+    if (!isInitial) setState(() => _isRefreshing = true);
+
+    try {
+      final analysis = await _apiService.getMatchAnalysis(widget.matchId, provider: widget.provider);
       _updateRefreshStrategy(analysis.status ?? '');
-      return analysis;
-    });
+      if (!mounted) return;
+      setState(() {
+        _analysis = analysis;
+        _loadError = null;
+        _isInitialLoading = false;
+        _isRefreshing = false;
+      });
+    } catch (e) {
+      if (!mounted) return;
+      setState(() {
+        if (isInitial) _loadError = e;
+        _isInitialLoading = false;
+        _isRefreshing = false;
+      });
+    }
   }
 
-  /// Décide de la fréquence de rafraîchissement selon le statut réel du match :
-  /// jamais pour un match à venir ou terminé, seulement pendant qu'il se joue.
   void _updateRefreshStrategy(String status) {
     if (_lastKnownStatus == status) return;
     _lastKnownStatus = status;
@@ -69,14 +90,14 @@ class _MatchDetailScreenState extends State<MatchDetailScreen>
     }
 
     if (interval != null) {
-      _liveRefreshTimer = Timer.periodic(interval, (_) => _reloadAnalysis());
+      _liveRefreshTimer = Timer.periodic(interval, (_) => _fetchAnalysis());
     }
   }
 
   @override
   void initState() {
     super.initState();
-    _analysisFuture = _fetchAnalysis();
+    _fetchAnalysis(isInitial: true);
 
     if (widget.competitionCode != null) {
       _standingsFuture = _apiService.getStandings(widget.competitionCode!);
@@ -94,9 +115,7 @@ class _MatchDetailScreenState extends State<MatchDetailScreen>
   }
 
   void _reloadAnalysis() {
-    setState(() {
-      _analysisFuture = _fetchAnalysis();
-    });
+    _fetchAnalysis();
   }
 
   void _onSeasonChanged(String season) {
@@ -164,7 +183,7 @@ class _MatchDetailScreenState extends State<MatchDetailScreen>
                 if (!h2h.available)
                   const Text("Aucun historique de confrontation disponible.")
                 else
-                  Text("${h2h.totalMatches} match(s) : ${h2h.team1Wins}V - ${h2h.draws}N - ${h2h.team2Wins}D"),
+                  Text("${h2h.totalMatches} match(s) : ${h2h.teamAWins}V - ${h2h.draws}N - ${h2h.teamBWins}D"),
               ],
             ),
           ),
@@ -174,32 +193,21 @@ class _MatchDetailScreenState extends State<MatchDetailScreen>
   }
 
   Widget _standingsTab() {
-    if (widget.competitionCode == null) {
-      return const Center(
-        child: Padding(
-          padding: EdgeInsets.all(24),
-          child: Text("Classement non disponible pour cette compétition.", textAlign: TextAlign.center),
-        ),
-      );
-    }
-
     return FutureBuilder<StandingsResponse?>(
       future: _standingsFuture,
       builder: (context, snapshot) {
         if (snapshot.connectionState == ConnectionState.waiting) {
           return const Center(child: CircularProgressIndicator());
         }
-
         final data = snapshot.data;
         if (data == null || data.standings.isEmpty) {
           return const Center(
             child: Padding(
               padding: EdgeInsets.all(24),
-              child: Text("Classement non disponible pour cette compétition.", textAlign: TextAlign.center),
+              child: Text("Classement indisponible pour le moment.", textAlign: TextAlign.center),
             ),
           );
         }
-
         return StandingsTable(
           data: data,
           highlightHomeTeam: widget.homeTeam,
@@ -215,21 +223,20 @@ class _MatchDetailScreenState extends State<MatchDetailScreen>
     return Scaffold(
       backgroundColor: const Color(0xFFF4F5F7),
       body: SafeArea(
-        child: FutureBuilder<MatchAnalysis>(
-          future: _analysisFuture,
-          builder: (context, snapshot) {
-            if (snapshot.connectionState == ConnectionState.waiting) {
+        child: Builder(
+          builder: (context) {
+            if (_isInitialLoading) {
               return const Center(child: CircularProgressIndicator());
             }
 
-            if (snapshot.hasError) {
+            if (_analysis == null) {
               return Center(
                 child: Padding(
                   padding: const EdgeInsets.all(24.0),
                   child: Column(
                     mainAxisSize: MainAxisSize.min,
                     children: [
-                      Text("Erreur : ${snapshot.error}"),
+                      Text("Erreur : ${_loadError ?? 'inconnue'}"),
                       const SizedBox(height: 12),
                       ElevatedButton(onPressed: _reloadAnalysis, child: const Text("Réessayer")),
                     ],
@@ -238,7 +245,7 @@ class _MatchDetailScreenState extends State<MatchDetailScreen>
               );
             }
 
-            final analysis = snapshot.data!;
+            final analysis = _analysis!;
             final kickoff = analysis.utcDate != null ? DateTime.tryParse(analysis.utcDate!) : null;
             final isUpcoming = analysis.status == "TIMED" || analysis.status == "SCHEDULED";
             final isLive = analysis.status == "IN_PLAY" || analysis.status == "PAUSED";
@@ -248,8 +255,8 @@ class _MatchDetailScreenState extends State<MatchDetailScreen>
             final hasStats = analysis.statistics != null &&
                 (analysis.statistics!.home.isNotEmpty || analysis.statistics!.away.isNotEmpty);
             final hasLineups = analysis.lineups != null && analysis.lineups!.isNotEmpty;
+            final hasStandings = widget.competitionCode != null;
 
-            // Ordre des onglets selon le moment du match, comme validé.
             final tabs = <Tab>[];
             final tabViews = <Widget>[];
 
@@ -270,8 +277,10 @@ class _MatchDetailScreenState extends State<MatchDetailScreen>
                 tabViews.add(MatchLineupsView(lineups: analysis.lineups!));
               }
 
-              tabs.add(const Tab(icon: Icon(Icons.leaderboard_outlined, size: 18), text: "CLASSEMENT"));
-              tabViews.add(_standingsTab());
+              if (hasStandings) {
+                tabs.add(const Tab(icon: Icon(Icons.leaderboard_outlined, size: 18), text: "CLASSEMENT"));
+                tabViews.add(_standingsTab());
+              }
             } else {
               tabs.add(const Tab(icon: Icon(Icons.dashboard_outlined, size: 18), text: "DÉTAILS"));
               tabViews.add(MatchDetailsTab(
@@ -295,8 +304,10 @@ class _MatchDetailScreenState extends State<MatchDetailScreen>
                 tabViews.add(MatchLineupsView(lineups: analysis.lineups!));
               }
 
-              tabs.add(const Tab(icon: Icon(Icons.leaderboard_outlined, size: 18), text: "CLASSEMENT"));
-              tabViews.add(_standingsTab());
+              if (hasStandings) {
+                tabs.add(const Tab(icon: Icon(Icons.leaderboard_outlined, size: 18), text: "CLASSEMENT"));
+                tabViews.add(_standingsTab());
+              }
 
               tabs.add(const Tab(icon: Icon(Icons.show_chart, size: 18), text: "FORME"));
               tabViews.add(_formTab(analysis.home, analysis.away, analysis.headToHead, analysis.homeTeam, analysis.awayTeam));
@@ -304,42 +315,49 @@ class _MatchDetailScreenState extends State<MatchDetailScreen>
 
             _ensureTabController(tabs.length);
 
-            return NestedScrollView(
-              headerSliverBuilder: (context, innerBoxIsScrolled) {
-                return [
-                  SliverToBoxAdapter(
-                    child: MatchHeaderCard(
-                      homeTeam: analysis.homeTeam,
-                      awayTeam: analysis.awayTeam,
-                      homeTeamCrest: widget.homeTeamCrest,
-                      awayTeamCrest: widget.awayTeamCrest,
-                      homeScore: analysis.homeScore,
-                      awayScore: analysis.awayScore,
-                      competition: analysis.competition,
-                      venue: analysis.venue,
-                      referee: analysis.referee,
-                      isLive: isLive,
-                      isPaused: isPaused,
-                      isFinished: isFinished,
-                      kickoff: kickoff,
-                    ),
+            return Column(
+              children: [
+                if (_isRefreshing) const LinearProgressIndicator(minHeight: 2, color: Color(0xFF16A34A)),
+                Expanded(
+                  child: NestedScrollView(
+                    headerSliverBuilder: (context, innerBoxIsScrolled) {
+                      return [
+                        SliverToBoxAdapter(
+                          child: MatchHeaderCard(
+                            homeTeam: analysis.homeTeam,
+                            awayTeam: analysis.awayTeam,
+                            homeTeamCrest: widget.homeTeamCrest,
+                            awayTeamCrest: widget.awayTeamCrest,
+                            homeScore: analysis.homeScore,
+                            awayScore: analysis.awayScore,
+                            competition: analysis.competition,
+                            venue: analysis.venue,
+                            referee: analysis.referee,
+                            isLive: isLive,
+                            isPaused: isPaused,
+                            isFinished: isFinished,
+                            kickoff: kickoff,
+                          ),
+                        ),
+                        SliverPersistentHeader(
+                          pinned: true,
+                          delegate: _TabBarDelegate(
+                            TabBar(
+                              controller: _tabController,
+                              isScrollable: true,
+                              labelColor: const Color(0xFF16A34A),
+                              unselectedLabelColor: Colors.grey,
+                              indicatorColor: const Color(0xFF16A34A),
+                              tabs: tabs,
+                            ),
+                          ),
+                        ),
+                      ];
+                    },
+                    body: TabBarView(controller: _tabController, children: tabViews),
                   ),
-                  SliverPersistentHeader(
-                    pinned: true,
-                    delegate: _TabBarDelegate(
-                      TabBar(
-                        controller: _tabController,
-                        isScrollable: true,
-                        labelColor: const Color(0xFF16A34A),
-                        unselectedLabelColor: Colors.grey,
-                        indicatorColor: const Color(0xFF16A34A),
-                        tabs: tabs,
-                      ),
-                    ),
-                  ),
-                ];
-              },
-              body: TabBarView(controller: _tabController, children: tabViews),
+                ),
+              ],
             );
           },
         ),
@@ -348,7 +366,6 @@ class _MatchDetailScreenState extends State<MatchDetailScreen>
   }
 }
 
-/// Garde la TabBar collée en haut de l'écran pendant le scroll.
 class _TabBarDelegate extends SliverPersistentHeaderDelegate {
   final TabBar tabBar;
   _TabBarDelegate(this.tabBar);
