@@ -25,12 +25,14 @@ class MatchdaySummary {
 
 class MatchdayGroup {
   final int matchday;
+  final String? roundLabel;
   final List<Match> matches;
   final bool allFinished;
   final MatchdaySummary summary;
 
   MatchdayGroup({
     required this.matchday,
+    this.roundLabel,
     required this.matches,
     required this.allFinished,
     required this.summary,
@@ -39,6 +41,7 @@ class MatchdayGroup {
   factory MatchdayGroup.fromJson(Map<String, dynamic> json) {
     return MatchdayGroup(
       matchday: json['matchday'] as int,
+      roundLabel: json['roundLabel'] as String?,
       matches: (json['matches'] as List<dynamic>)
           .map((e) => Match.fromJson(e as Map<String, dynamic>))
           .toList(),
@@ -46,17 +49,22 @@ class MatchdayGroup {
       summary: MatchdaySummary.fromJson(json['summary'] as Map<String, dynamic>),
     );
   }
+
+  /// Libellé à afficher : le vrai round (coupes) si disponible, sinon "J{n}".
+  String get displayLabel => roundLabel ?? "J$matchday";
 }
 
 class CalendarResponse {
   final String competitionCode;
   final int currentMatchday;
+  final String? currentRoundLabel;
   final int totalMatchdays;
   final List<MatchdayGroup> matchdays;
 
   CalendarResponse({
     required this.competitionCode,
     required this.currentMatchday,
+    this.currentRoundLabel,
     required this.totalMatchdays,
     required this.matchdays,
   });
@@ -65,6 +73,7 @@ class CalendarResponse {
     return CalendarResponse(
       competitionCode: json['competitionCode'] as String? ?? '',
       currentMatchday: json['currentMatchday'] as int? ?? 1,
+      currentRoundLabel: json['currentRoundLabel'] as String?,
       totalMatchdays: json['totalMatchdays'] as int? ?? 0,
       matchdays: (json['matchdays'] as List<dynamic>)
           .map((e) => MatchdayGroup.fromJson(e as Map<String, dynamic>))

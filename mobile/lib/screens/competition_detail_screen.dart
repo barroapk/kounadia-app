@@ -218,6 +218,9 @@ class _CompetitionDetailScreenState extends State<CompetitionDetailScreen>
                                             homeTeam: match.homeTeam,
                                             awayTeam: match.awayTeam,
                                             competitionCode: match.competitionCode,
+                                            homeTeamCrest: match.homeTeamCrest,
+                                            awayTeamCrest: match.awayTeamCrest,
+                                            provider: match.provider,
                                           ),
                                         ),
                                       );

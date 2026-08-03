@@ -70,7 +70,11 @@ class _MatchdaySelectorState extends State<MatchdaySelector> {
             child: Padding(
               padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 6),
               child: ChoiceChip(
-                label: Text("J$day"),
+                label: Text(
+                  calendar.matchdays
+                      .firstWhere((g) => g.matchday == day, orElse: () => group)
+                      .displayLabel,
+                ),
                 selected: isSelected,
                 showCheckmark: false,
                 selectedColor: const Color(0xFF16A34A),
