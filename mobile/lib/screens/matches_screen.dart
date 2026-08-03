@@ -312,16 +312,22 @@ class MatchesScreenState extends State<MatchesScreen> {
           ..._matchRows(matches),
           InkWell(
             onTap: () {
-              final code = COMPETITIONS_CATALOG
-                  .firstWhere(
-                    (c) => c.name == name,
-                    orElse: () => CompetitionInfo(name: name, continent: '', country: ''),
-                  )
-                  .code;
+              final competition = COMPETITIONS_CATALOG.firstWhere(
+                (c) => c.name == name,
+                orElse: () => CompetitionInfo(name: name, continent: '', country: ''),
+              );
+
+              final code = competition.code;
+              final leagueId = competition.leagueId;
+
               Navigator.push(
                 context,
                 MaterialPageRoute(
-                  builder: (context) => CompetitionDetailScreen(name: name, code: code),
+                  builder: (context) => CompetitionDetailScreen(
+                    name: name,
+                    code: code,
+                    leagueId: leagueId,
+                  ),
                 ),
               );
             },

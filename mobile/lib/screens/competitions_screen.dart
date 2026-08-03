@@ -31,7 +31,7 @@ class _CompetitionsScreenState extends State<CompetitionsScreen> {
     Navigator.push(
       context,
       MaterialPageRoute(
-        builder: (context) => CompetitionDetailScreen(name: comp.name, code: comp.code),
+        builder: (context) => CompetitionDetailScreen(name: comp.name, code: comp.code, leagueId: comp.leagueId),
       ),
     ).then((_) => _loadLast());
   }

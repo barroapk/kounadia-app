@@ -2,13 +2,15 @@ class CompetitionInfo {
   final String name;
   final String continent;
   final String country;
-  final String? code; // Code football-data.org, requis pour /standings. null = pas de classement dispo.
+  final String? code; // Code football-data.org
+  final int? leagueId; // ID API-Football
 
   const CompetitionInfo({
     required this.name,
     required this.continent,
     required this.country,
     this.code,
+    this.leagueId,
   });
 }
 
@@ -28,54 +30,54 @@ const List<CompetitionInfo> COMPETITIONS_CATALOG = [
   CompetitionInfo(name: "FIFA World Cup", continent: "Monde", country: "International", code: "WC"),
 
   // Europe - API-Football (pas de code football-data.org, classement non disponible pour l'instant)
-  CompetitionInfo(name: "Europa League", continent: "Europe", country: "International"),
-  CompetitionInfo(name: "Conference League", continent: "Europe", country: "International"),
-  CompetitionInfo(name: "FA Cup", continent: "Europe", country: "Angleterre"),
-  CompetitionInfo(name: "Copa del Rey", continent: "Europe", country: "Espagne"),
-  CompetitionInfo(name: "Coppa Italia", continent: "Europe", country: "Italie"),
-  CompetitionInfo(name: "DFB Pokal", continent: "Europe", country: "Allemagne"),
-  CompetitionInfo(name: "Coupe de France", continent: "Europe", country: "France"),
-  CompetitionInfo(name: "Jupiler Pro League", continent: "Europe", country: "Belgique"),
-  CompetitionInfo(name: "Supercoupe d'Espagne", continent: "Europe", country: "Espagne"),
-  CompetitionInfo(name: "UEFA Super Cup", continent: "Europe", country: "International"),
-  CompetitionInfo(name: "2. Bundesliga", continent: "Europe", country: "Allemagne"),
-  CompetitionInfo(name: "Serie B (Italie)", continent: "Europe", country: "Italie"),
-  CompetitionInfo(name: "Segunda División (Espagne)", continent: "Europe", country: "Espagne"),
-  CompetitionInfo(name: "Süper Lig (Turquie)", continent: "Europe", country: "Turquie"),
+  CompetitionInfo(name: "Europa League", leagueId: 3, continent: "Europe", country: "International"),
+  CompetitionInfo(name: "Conference League", leagueId: 848, continent: "Europe", country: "International"),
+  CompetitionInfo(name: "FA Cup", leagueId: 45, continent: "Europe", country: "Angleterre"),
+  CompetitionInfo(name: "Copa del Rey", leagueId: 143, continent: "Europe", country: "Espagne"),
+  CompetitionInfo(name: "Coppa Italia", leagueId: 137, continent: "Europe", country: "Italie"),
+  CompetitionInfo(name: "DFB Pokal", leagueId: 81, continent: "Europe", country: "Allemagne"),
+  CompetitionInfo(name: "Coupe de France", leagueId: 66, continent: "Europe", country: "France"),
+  CompetitionInfo(name: "Jupiler Pro League", leagueId: 144, continent: "Europe", country: "Belgique"),
+  CompetitionInfo(name: "Supercoupe d'Espagne", leagueId: 558, continent: "Europe", country: "Espagne"),
+  CompetitionInfo(name: "UEFA Super Cup", leagueId: 531, continent: "Europe", country: "International"),
+  CompetitionInfo(name: "2. Bundesliga", leagueId: 79, continent: "Europe", country: "Allemagne"),
+  CompetitionInfo(name: "Serie B (Italie)", leagueId: 136, continent: "Europe", country: "Italie"),
+  CompetitionInfo(name: "Segunda División (Espagne)", leagueId: 141, continent: "Europe", country: "Espagne"),
+  CompetitionInfo(name: "Süper Lig (Turquie)", leagueId: 203, continent: "Europe", country: "Turquie"),
 
   // Afrique
-  CompetitionInfo(name: "CAF Champions League", continent: "Afrique", country: "International"),
-  CompetitionInfo(name: "CAF Confederation Cup", continent: "Afrique", country: "International"),
-  CompetitionInfo(name: "CAN", continent: "Afrique", country: "International"),
-  CompetitionInfo(name: "Ligue 1 Burkina Faso", continent: "Afrique", country: "Burkina Faso"),
-  CompetitionInfo(name: "Ligue 1 Côte d'Ivoire", continent: "Afrique", country: "Côte d'Ivoire"),
-  CompetitionInfo(name: "Ligue 1 Sénégal", continent: "Afrique", country: "Sénégal"),
-  CompetitionInfo(name: "Première Division Mali", continent: "Afrique", country: "Mali"),
-  CompetitionInfo(name: "Ghana Premier League", continent: "Afrique", country: "Ghana"),
-  CompetitionInfo(name: "NPFL Nigeria", continent: "Afrique", country: "Nigeria"),
-  CompetitionInfo(name: "Botola Pro", continent: "Afrique", country: "Maroc"),
-  CompetitionInfo(name: "Ligue 1 Algérie", continent: "Afrique", country: "Algérie"),
-  CompetitionInfo(name: "Ligue 1 Tunisie", continent: "Afrique", country: "Tunisie"),
-  CompetitionInfo(name: "Egyptian Premier League", continent: "Afrique", country: "Égypte"),
-  CompetitionInfo(name: "Premier Soccer League (Afrique du Sud)", continent: "Afrique", country: "Afrique du Sud"),
+  CompetitionInfo(name: "CAF Champions League", leagueId: 12, continent: "Afrique", country: "International"),
+  CompetitionInfo(name: "CAF Confederation Cup", leagueId: 20, continent: "Afrique", country: "International"),
+  CompetitionInfo(name: "CAN", leagueId: 6, continent: "Afrique", country: "International"),
+  CompetitionInfo(name: "Ligue 1 Burkina Faso", leagueId: 423, continent: "Afrique", country: "Burkina Faso"),
+  CompetitionInfo(name: "Ligue 1 Côte d'Ivoire", leagueId: 386, continent: "Afrique", country: "Côte d'Ivoire"),
+  CompetitionInfo(name: "Ligue 1 Sénégal", leagueId: 403, continent: "Afrique", country: "Sénégal"),
+  CompetitionInfo(name: "Première Division Mali", leagueId: 598, continent: "Afrique", country: "Mali"),
+  CompetitionInfo(name: "Ghana Premier League", leagueId: 570, continent: "Afrique", country: "Ghana"),
+  CompetitionInfo(name: "NPFL Nigeria", leagueId: 399, continent: "Afrique", country: "Nigeria"),
+  CompetitionInfo(name: "Botola Pro", leagueId: 200, continent: "Afrique", country: "Maroc"),
+  CompetitionInfo(name: "Ligue 1 Algérie", leagueId: 186, continent: "Afrique", country: "Algérie"),
+  CompetitionInfo(name: "Ligue 1 Tunisie", leagueId: 202, continent: "Afrique", country: "Tunisie"),
+  CompetitionInfo(name: "Egyptian Premier League", leagueId: 233, continent: "Afrique", country: "Égypte"),
+  CompetitionInfo(name: "Premier Soccer League (Afrique du Sud)", leagueId: 288, continent: "Afrique", country: "Afrique du Sud"),
 
   // Amériques
-  CompetitionInfo(name: "Copa do Brasil", continent: "Amériques", country: "Brésil"),
-  CompetitionInfo(name: "Liga Profesional Argentina", continent: "Amériques", country: "Argentine"),
-  CompetitionInfo(name: "CONMEBOL Libertadores", continent: "Amériques", country: "International"),
-  CompetitionInfo(name: "CONMEBOL Sudamericana", continent: "Amériques", country: "International"),
-  CompetitionInfo(name: "Liga MX", continent: "Amériques", country: "Mexique"),
-  CompetitionInfo(name: "MLS", continent: "Amériques", country: "États-Unis"),
-  CompetitionInfo(name: "Copa America", continent: "Amériques", country: "International"),
+  CompetitionInfo(name: "Copa do Brasil", leagueId: 73, continent: "Amériques", country: "Brésil"),
+  CompetitionInfo(name: "Liga Profesional Argentina", leagueId: 128, continent: "Amériques", country: "Argentine"),
+  CompetitionInfo(name: "CONMEBOL Libertadores", leagueId: 13, continent: "Amériques", country: "International"),
+  CompetitionInfo(name: "CONMEBOL Sudamericana", leagueId: 11, continent: "Amériques", country: "International"),
+  CompetitionInfo(name: "Liga MX", leagueId: 262, continent: "Amériques", country: "Mexique"),
+  CompetitionInfo(name: "MLS", leagueId: 253, continent: "Amériques", country: "États-Unis"),
+  CompetitionInfo(name: "Copa America", leagueId: 9, continent: "Amériques", country: "International"),
 
   // Asie / Moyen-Orient
-  CompetitionInfo(name: "Saudi Pro League", continent: "Asie", country: "Arabie Saoudite"),
-  CompetitionInfo(name: "J1 League", continent: "Asie", country: "Japon"),
-  CompetitionInfo(name: "AFC Champions League Elite", continent: "Asie", country: "International"),
-  CompetitionInfo(name: "King's Cup (Arabie Saoudite)", continent: "Asie", country: "Arabie Saoudite"),
+  CompetitionInfo(name: "Saudi Pro League", leagueId: 307, continent: "Asie", country: "Arabie Saoudite"),
+  CompetitionInfo(name: "J1 League", leagueId: 98, continent: "Asie", country: "Japon"),
+  CompetitionInfo(name: "AFC Champions League Elite", leagueId: 17, continent: "Asie", country: "International"),
+  CompetitionInfo(name: "King's Cup (Arabie Saoudite)", leagueId: 504, continent: "Asie", country: "Arabie Saoudite"),
 
   // Monde
-  CompetitionInfo(name: "FIFA Club World Cup", continent: "Monde", country: "International"),
+  CompetitionInfo(name: "FIFA Club World Cup", leagueId: 15, continent: "Monde", country: "International"),
 ];
 
 // Rang d'affichage : plus petit = affiché en premier (D1 avant D2 avant coupes).

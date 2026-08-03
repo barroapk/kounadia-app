@@ -13,6 +13,7 @@ import "match_detail_screen.dart";
 class CompetitionDetailScreen extends StatefulWidget {
   final String name;
   final String? code;
+  final int? leagueId;
   final String? highlightHomeTeam;
   final String? highlightAwayTeam;
 
@@ -20,6 +21,7 @@ class CompetitionDetailScreen extends StatefulWidget {
     super.key,
     required this.name,
     this.code,
+    this.leagueId,
     this.highlightHomeTeam,
     this.highlightAwayTeam,
   });
@@ -44,21 +46,26 @@ class _CompetitionDetailScreenState extends State<CompetitionDetailScreen>
     super.initState();
     _tabController = TabController(length: 2, vsync: this);
     _lastCompetitionService.setLast(widget.name);
-    _calendarFuture = widget.code != null ? _apiService.getCalendar(widget.code!) : null;
+    final competitionId = widget.code ?? widget.leagueId?.toString();
 
-    // Démarre l'appel du classement immédiatement (saison courante), sans attendre
-    // la lecture de la préférence locale : évite un écran vide le temps que
-    // shared_preferences s'initialise, surtout au premier lancement de l'app.
-    if (widget.code != null) {
-      _standingsFuture = _apiService.getStandings(widget.code!);
+    _calendarFuture = competitionId != null
+        ? _apiService.getCalendar(competitionId)
+        : null;
+
+    // Démarre l'appel du classement immédiatement (saison courante)
+    if (competitionId != null) {
+      _standingsFuture = _apiService.getStandings(competitionId);
     }
     _applyLastSeasonIfAny();
   }
 
   Future<void> _applyLastSeasonIfAny() async {
+    // Les préférences de saison concernent uniquement football-data.org.
     if (widget.code == null) return;
+
     final lastSeason = await _seasonPreferenceService.getLastSeason(widget.code!);
     if (!mounted || lastSeason == null) return;
+
     setState(() {
       _standingsFuture = _apiService.getStandings(widget.code!, season: lastSeason);
     });
@@ -71,6 +78,8 @@ class _CompetitionDetailScreenState extends State<CompetitionDetailScreen>
   }
 
   void _onSeasonChanged(String startYear) {
+    if (widget.code == null) return;
+
     setState(() {
       _standingsFuture = _apiService.getStandings(widget.code!, season: startYear);
     });
@@ -84,7 +93,7 @@ class _CompetitionDetailScreenState extends State<CompetitionDetailScreen>
   }
 
   Widget _standingsTab() {
-    if (widget.code == null) {
+    if (widget.code == null && widget.leagueId == null) {
       return _unavailable("Classement non disponible pour cette compétition pour l'instant.");
     }
 
@@ -133,7 +142,7 @@ class _CompetitionDetailScreenState extends State<CompetitionDetailScreen>
   }
 
   Widget _calendarTab() {
-    if (widget.code == null) {
+    if (widget.code == null && widget.leagueId == null) {
       return _unavailable("Calendrier non disponible pour cette compétition pour l'instant.");
     }
 
@@ -246,7 +255,7 @@ class _CompetitionDetailScreenState extends State<CompetitionDetailScreen>
   Widget build(BuildContext context) {
     // Sans code football-data.org, ni classement ni calendrier ne sont possibles
     // aujourd'hui : un seul message honnête plutôt que 2 onglets vides côte à côte.
-    if (widget.code == null) {
+    if (widget.code == null && widget.leagueId == null) {
       return Scaffold(
         backgroundColor: const Color(0xFFF4F5F7),
         appBar: AppBar(title: Text(widget.name)),
