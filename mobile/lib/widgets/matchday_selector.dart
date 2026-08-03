@@ -71,7 +71,7 @@ class _MatchdaySelectorState extends State<MatchdaySelector> {
               padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 6),
               child: ChoiceChip(
                 label: Text(
-                  calendar.matchdays
+                  widget.calendar.matchdays
                       .firstWhere((g) => g.matchday == day, orElse: () => group)
                       .displayLabel,
                 ),
