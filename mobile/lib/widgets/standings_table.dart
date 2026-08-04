@@ -21,6 +21,11 @@ class StandingsTable extends StatefulWidget {
   State<StandingsTable> createState() => _StandingsTableState();
 }
 
+class _GroupHeader {
+  final String title;
+  _GroupHeader(this.title);
+}
+
 class _StandingsTableState extends State<StandingsTable> {
   final ScrollController _scrollController = ScrollController();
   static const double _rowHeight = 52;
@@ -200,46 +205,81 @@ class _StandingsTableState extends State<StandingsTable> {
           ),
         ),
         Expanded(
-          child: ListView.builder(
-            controller: _scrollController,
-            itemCount: widget.data.standings.length,
-            itemBuilder: (context, index) {
-              final row = widget.data.standings[index];
-              final isHighlighted =
-                  row.teamName == widget.highlightHomeTeam || row.teamName == widget.highlightAwayTeam;
-              final zoneColor = seasonNotStarted
-                  ? null
-                  : zoneColorFor(widget.data.competitionCode, row.position, widget.data.totalTeams);
-              final barColor = isHighlighted ? const Color(0xFF16A34A) : (zoneColor ?? Colors.transparent);
+          child: Builder(
+            builder: (context) {
+              final hasGroups = widget.data.standings.any((s) => s.group != null);
 
-              return Container(
-                height: _rowHeight,
-                color: isHighlighted ? const Color(0xFF16A34A).withOpacity(0.08) : (index.isEven ? Colors.white : const Color(0xFFFAFAFA)),
-                padding: const EdgeInsets.symmetric(horizontal: 12),
-                child: Row(
-                  children: [
-                    Container(width: 4, height: 32, color: barColor),
-                    const SizedBox(width: 8),
-                    SizedBox(width: 22, child: Text("${row.position}", textAlign: TextAlign.center, style: const TextStyle(fontSize: 12))),
-                    SizedBox(width: 26, child: CachedLogo(url: row.teamCrest, size: 20)),
-                    Expanded(
-                      child: Padding(
-                        padding: const EdgeInsets.only(left: 6),
-                        child: Text(
-                          row.teamName,
-                          overflow: TextOverflow.ellipsis,
-                          style: TextStyle(fontSize: 13, fontWeight: isHighlighted ? FontWeight.bold : FontWeight.normal),
-                        ),
+              final List<dynamic> displayItems = [];
+              if (hasGroups) {
+                String? lastGroup;
+                for (final row in widget.data.standings) {
+                  if (row.group != lastGroup) {
+                    displayItems.add(_GroupHeader(row.group ?? ''));
+                    lastGroup = row.group;
+                  }
+                  displayItems.add(row);
+                }
+              } else {
+                displayItems.addAll(widget.data.standings);
+              }
+
+              return ListView.builder(
+                controller: _scrollController,
+                itemCount: displayItems.length,
+                itemBuilder: (context, index) {
+                  final item = displayItems[index];
+
+                  if (item is _GroupHeader) {
+                    return Container(
+                      width: double.infinity,
+                      color: const Color(0xFFF4F5F7),
+                      padding: const EdgeInsets.fromLTRB(12, 12, 12, 6),
+                      child: Text(
+                        item.title.toUpperCase(),
+                        style: TextStyle(fontSize: 11, fontWeight: FontWeight.bold, color: Colors.grey[600], letterSpacing: 0.5),
                       ),
+                    );
+                  }
+
+                  final row = item as StandingRow;
+                  final isHighlighted =
+                      row.teamName == widget.highlightHomeTeam || row.teamName == widget.highlightAwayTeam;
+                  final zoneColor = (seasonNotStarted || hasGroups)
+                      ? null
+                      : zoneColorFor(widget.data.competitionCode, row.position, widget.data.totalTeams);
+                  final barColor = isHighlighted ? const Color(0xFF16A34A) : (zoneColor ?? Colors.transparent);
+                  final rowIndex = displayItems.take(index).whereType<StandingRow>().length;
+
+                  return Container(
+                    height: _rowHeight,
+                    color: isHighlighted ? const Color(0xFF16A34A).withOpacity(0.08) : (rowIndex.isEven ? Colors.white : const Color(0xFFFAFAFA)),
+                    padding: const EdgeInsets.symmetric(horizontal: 12),
+                    child: Row(
+                      children: [
+                        Container(width: 4, height: 32, color: barColor),
+                        const SizedBox(width: 8),
+                        SizedBox(width: 22, child: Text("${row.position}", textAlign: TextAlign.center, style: const TextStyle(fontSize: 12))),
+                        SizedBox(width: 26, child: CachedLogo(url: row.teamCrest, size: 20)),
+                        Expanded(
+                          child: Padding(
+                            padding: const EdgeInsets.only(left: 6),
+                            child: Text(
+                              row.teamName,
+                              overflow: TextOverflow.ellipsis,
+                              style: TextStyle(fontSize: 13, fontWeight: isHighlighted ? FontWeight.bold : FontWeight.normal),
+                            ),
+                          ),
+                        ),
+                        _cell("${row.playedGames}", 26),
+                        _cell("${row.won}", 22),
+                        _cell("${row.draw}", 22),
+                        _cell("${row.lost}", 22),
+                        _cell(row.goalDifference > 0 ? "+${row.goalDifference}" : "${row.goalDifference}", 32),
+                        _cell("${row.points}", 32, bold: true),
+                      ],
                     ),
-                    _cell("${row.playedGames}", 26),
-                    _cell("${row.won}", 22),
-                    _cell("${row.draw}", 22),
-                    _cell("${row.lost}", 22),
-                    _cell(row.goalDifference > 0 ? "+${row.goalDifference}" : "${row.goalDifference}", 32),
-                    _cell("${row.points}", 32, bold: true),
-                  ],
-                ),
+                  );
+                },
               );
             },
           ),

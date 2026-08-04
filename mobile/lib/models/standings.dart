@@ -1,5 +1,6 @@
 class StandingRow {
   final int position;
+  final String? group;
   final String teamName;
   final String? teamCrest;
   final int playedGames;
@@ -13,6 +14,7 @@ class StandingRow {
 
   StandingRow({
     required this.position,
+    this.group,
     required this.teamName,
     this.teamCrest,
     required this.playedGames,
@@ -28,6 +30,7 @@ class StandingRow {
   factory StandingRow.fromJson(Map<String, dynamic> json) {
     return StandingRow(
       position: json['position'] as int,
+      group: json['group'] as String?,
       teamName: json['teamName'] as String? ?? '',
       teamCrest: json['teamCrest'] as String?,
       playedGames: json['playedGames'] as int? ?? 0,
