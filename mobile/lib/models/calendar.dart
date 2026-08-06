@@ -78,8 +78,24 @@ class MatchdayGroup {
   }
 }
 
+class CalendarSeasonInfo {
+  final String value;
+  final String label;
+
+  CalendarSeasonInfo({required this.value, required this.label});
+
+  factory CalendarSeasonInfo.fromJson(Map<String, dynamic> json) {
+    return CalendarSeasonInfo(
+      value: json['value'] as String? ?? '',
+      label: json['label'] as String? ?? '',
+    );
+  }
+}
+
 class CalendarResponse {
   final String competitionCode;
+  final String? season;
+  final List<CalendarSeasonInfo> availableSeasons;
   final int currentMatchday;
   final String? currentRoundLabel;
   final int totalMatchdays;
@@ -87,6 +103,8 @@ class CalendarResponse {
 
   CalendarResponse({
     required this.competitionCode,
+    this.season,
+    this.availableSeasons = const [],
     required this.currentMatchday,
     this.currentRoundLabel,
     required this.totalMatchdays,
@@ -96,6 +114,10 @@ class CalendarResponse {
   factory CalendarResponse.fromJson(Map<String, dynamic> json) {
     return CalendarResponse(
       competitionCode: json['competitionCode'] as String? ?? '',
+      season: json['season'] as String?,
+      availableSeasons: (json['availableSeasons'] as List<dynamic>? ?? [])
+          .map((e) => CalendarSeasonInfo.fromJson(e as Map<String, dynamic>))
+          .toList(),
       currentMatchday: json['currentMatchday'] as int? ?? 1,
       currentRoundLabel: json['currentRoundLabel'] as String?,
       totalMatchdays: json['totalMatchdays'] as int? ?? 0,

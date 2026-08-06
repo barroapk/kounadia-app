@@ -86,6 +86,16 @@ class _CompetitionDetailScreenState extends State<CompetitionDetailScreen>
     _seasonPreferenceService.setLastSeason(widget.code!, startYear);
   }
 
+  void _onCalendarSeasonChanged(String season) {
+    final competitionId = widget.code ?? widget.leagueId?.toString();
+    if (competitionId == null) return;
+
+    setState(() {
+      _selectedMatchday = null; // Repart sur la journée en cours de la nouvelle saison.
+      _calendarFuture = _apiService.getCalendar(competitionId, season: season);
+    });
+  }
+
   Widget _unavailable(String message) {
     return Center(
       child: Padding(padding: const EdgeInsets.all(24), child: Text(message, textAlign: TextAlign.center)),
@@ -141,6 +151,34 @@ class _CompetitionDetailScreenState extends State<CompetitionDetailScreen>
     return grouped;
   }
 
+  Widget _calendarSeasonSelector(CalendarResponse calendar) {
+    final currentSeason = calendar.season ??
+        (calendar.availableSeasons.isNotEmpty ? calendar.availableSeasons.first.value : null);
+
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+      child: Row(
+        children: [
+          Text("Saison : ", style: TextStyle(fontWeight: FontWeight.bold, color: Colors.grey[700], fontSize: 13)),
+          const SizedBox(width: 4),
+          DropdownButton<String>(
+            value: currentSeason,
+            underline: const SizedBox(),
+            isDense: true,
+            items: calendar.availableSeasons
+                .map((season) => DropdownMenuItem(value: season.value, child: Text(season.label, style: const TextStyle(fontSize: 13))))
+                .toList(),
+            onChanged: (value) {
+              if (value != null && value != currentSeason) {
+                _onCalendarSeasonChanged(value);
+              }
+            },
+          ),
+        ],
+      ),
+    );
+  }
+
   Widget _calendarTab() {
     if (widget.code == null && widget.leagueId == null) {
       return _unavailable("Calendrier non disponible pour cette compétition pour l'instant.");
@@ -154,8 +192,19 @@ class _CompetitionDetailScreenState extends State<CompetitionDetailScreen>
         }
 
         final calendar = snapshot.data;
-        if (calendar == null || calendar.matchdays.isEmpty) {
+        if (calendar == null) {
           return _unavailable("Calendrier indisponible pour le moment.");
+        }
+
+        if (calendar.matchdays.isEmpty) {
+          return Column(
+            children: [
+              if (calendar.availableSeasons.isNotEmpty) _calendarSeasonSelector(calendar),
+              Expanded(
+                child: _unavailable("Aucun calendrier disponible pour cette saison."),
+              ),
+            ],
+          );
         }
 
         final selectedDay = _selectedMatchday ?? calendar.currentMatchday;
@@ -177,6 +226,9 @@ class _CompetitionDetailScreenState extends State<CompetitionDetailScreen>
 
         return Column(
           children: [
+            if (calendar.availableSeasons.isNotEmpty)
+              _calendarSeasonSelector(calendar),
+
             MatchdaySelector(
               calendar: calendar,
               selectedDay: selectedDay,

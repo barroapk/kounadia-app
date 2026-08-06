@@ -103,8 +103,9 @@ class ApiService {
     );
   }
 
-  Future<CalendarResponse?> getCalendar(String competitionCode) async {
-    final response = await _getWithRetry("/calendar/$competitionCode");
+  Future<CalendarResponse?> getCalendar(String competitionCode, {String? season}) async {
+    final seasonParam = season != null ? "?season=$season" : "";
+    final response = await _getWithRetry("/calendar/$competitionCode$seasonParam");
 
     if (response.statusCode != 200) {
       return null;
