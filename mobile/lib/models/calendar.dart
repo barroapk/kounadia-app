@@ -52,6 +52,30 @@ class MatchdayGroup {
 
   /// Libellé à afficher : le vrai round (coupes) si disponible, sinon "J{n}".
   String get displayLabel => roundLabel ?? "J$matchday";
+
+  // Libellé court pour les puces compactes du sélecteur de journée.
+  // Les journées classiques ("Apertura - 5") restent inchangées : seules
+  // les phases à élimination directe connues sont raccourcies.
+  static const Map<String, String> _shortLabels = {
+    "round of 32": "1/16",
+    "round of 16": "1/8",
+    "quarter-finals": "1/4",
+    "semi-finals": "1/2",
+    "3rd place": "3e",
+    "third place": "3e",
+    "final": "Finale",
+  };
+
+  String get shortDisplayLabel {
+    final label = roundLabel;
+    if (label == null) return "J$matchday";
+
+    final normalized = label.toLowerCase();
+    for (final entry in _shortLabels.entries) {
+      if (normalized.contains(entry.key)) return entry.value;
+    }
+    return label;
+  }
 }
 
 class CalendarResponse {

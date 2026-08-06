@@ -65,29 +65,34 @@ class _MatchdaySelectorState extends State<MatchdaySelector> {
           final isSelected = day == widget.selectedDay;
           final group = widget.calendar.matchdays.firstWhere((g) => g.matchday == day);
 
-          return SizedBox(
-            width: _MatchdaySelectorState._itemWidth,
-            child: Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 6),
-              child: ChoiceChip(
-                label: Text(
-                  widget.calendar.matchdays
-                      .firstWhere((g) => g.matchday == day, orElse: () => group)
-                      .displayLabel,
+          return ConstrainedBox(
+            constraints: const BoxConstraints(minWidth: _MatchdaySelectorState._itemWidth),
+            child: IntrinsicWidth(
+              child: Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 6),
+                child: ChoiceChip(
+                  label: Text(
+                    widget.calendar.matchdays
+                        .firstWhere((g) => g.matchday == day, orElse: () => group)
+                        .shortDisplayLabel,
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                    softWrap: false,
+                  ),
+                  selected: isSelected,
+                  showCheckmark: false,
+                  selectedColor: const Color(0xFF16A34A),
+                  labelPadding: const EdgeInsets.symmetric(horizontal: 6),
+                  labelStyle: TextStyle(
+                    color: isSelected ? Colors.white : Colors.black87,
+                    fontSize: 12,
+                    fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
+                  ),
+                  avatar: group.summary.live > 0
+                      ? const CircleAvatar(backgroundColor: Color(0xFFDC2626), radius: 4)
+                      : null,
+                  onSelected: (_) => widget.onSelected(day),
                 ),
-                selected: isSelected,
-                showCheckmark: false,
-                selectedColor: const Color(0xFF16A34A),
-                labelPadding: const EdgeInsets.symmetric(horizontal: 4),
-                labelStyle: TextStyle(
-                  color: isSelected ? Colors.white : Colors.black87,
-                  fontSize: 12,
-                  fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
-                ),
-                avatar: group.summary.live > 0
-                    ? const CircleAvatar(backgroundColor: Color(0xFFDC2626), radius: 4)
-                    : null,
-                onSelected: (_) => widget.onSelected(day),
               ),
             ),
           );
