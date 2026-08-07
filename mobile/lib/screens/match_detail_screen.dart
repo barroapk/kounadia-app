@@ -341,6 +341,8 @@ class _MatchDetailScreenState extends State<MatchDetailScreen>
                             homeScore: analysis.homeScore,
                             awayScore: analysis.awayScore,
                             wonAfter: analysis.wonAfter,
+                            penaltyHomeScore: analysis.penaltyHomeScore,
+                            penaltyAwayScore: analysis.penaltyAwayScore,
                             competition: analysis.competition,
                             venue: analysis.venue,
                             referee: analysis.referee,

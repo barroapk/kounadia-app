@@ -1,6 +1,7 @@
 import "dart:async";
 import "package:flutter/material.dart";
 import "cached_logo.dart";
+import "../utils/won_after_label.dart";
 
 class MatchHeaderCard extends StatefulWidget {
   final String homeTeam;
@@ -10,6 +11,8 @@ class MatchHeaderCard extends StatefulWidget {
   final int? homeScore;
   final int? awayScore;
   final String? wonAfter;
+  final int? penaltyHomeScore;
+  final int? penaltyAwayScore;
   final String? competition;
   final String? venue;
   final String? referee;
@@ -27,6 +30,8 @@ class MatchHeaderCard extends StatefulWidget {
     this.homeScore,
     this.awayScore,
     this.wonAfter,
+    this.penaltyHomeScore,
+    this.penaltyAwayScore,
     this.competition,
     this.venue,
     this.referee,
@@ -135,7 +140,11 @@ class _MatchHeaderCardState extends State<MatchHeaderCard> {
                     Text(
                       hasScore
                           ? "${widget.homeScore} - ${widget.awayScore}"
-                            "${widget.wonAfter != null ? " (${widget.wonAfter})" : ""}"
+                            "${wonAfterLabel(
+                            wonAfter: widget.wonAfter,
+                            penaltyHomeScore: widget.penaltyHomeScore,
+                            penaltyAwayScore: widget.penaltyAwayScore,
+                          )}"
                           : "VS",
                       textAlign: TextAlign.center,
                       style: const TextStyle(

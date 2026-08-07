@@ -190,6 +190,8 @@ class MatchAnalysis {
   final String? venue;
   final String? referee;
   final String? wonAfter;
+  final int? penaltyHomeScore;
+  final int? penaltyAwayScore;
   final TeamForm home;
   final TeamForm away;
   final HeadToHead headToHead;
@@ -209,6 +211,8 @@ class MatchAnalysis {
     this.venue,
     this.referee,
     this.wonAfter,
+    this.penaltyHomeScore,
+    this.penaltyAwayScore,
     required this.home,
     required this.away,
     required this.headToHead,
@@ -230,6 +234,8 @@ class MatchAnalysis {
       venue: json['venue'] as String?,
       referee: json['referee'] as String?,
       wonAfter: json['wonAfter'] as String?,
+      penaltyHomeScore: json['penaltyHomeScore'] as int?,
+      penaltyAwayScore: json['penaltyAwayScore'] as int?,
       home: TeamForm.fromJson(json['home'] as Map<String, dynamic>),
       away: TeamForm.fromJson(json['away'] as Map<String, dynamic>),
       headToHead: HeadToHead.fromJson(

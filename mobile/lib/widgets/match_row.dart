@@ -1,6 +1,7 @@
 import "dart:async";
 import "package:flutter/material.dart";
 import "../models/match.dart";
+import "../utils/won_after_label.dart";
 import "cached_logo.dart";
 
 class MatchRow extends StatefulWidget {
@@ -154,7 +155,11 @@ class _MatchRowState extends State<MatchRow> {
                   Text(
                     hasScore
                         ? "${widget.match.homeScore} - ${widget.match.awayScore}"
-                          "${widget.match.wonAfter != null ? " (${widget.match.wonAfter})" : ""}"
+                          "${wonAfterLabel(
+                            wonAfter: widget.match.wonAfter,
+                            penaltyHomeScore: widget.match.penaltyHomeScore,
+                            penaltyAwayScore: widget.match.penaltyAwayScore,
+                          )}"
                         : "vs",
                     textAlign: TextAlign.center,
                     style: TextStyle(
