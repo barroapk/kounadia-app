@@ -154,6 +154,7 @@ class _MatchRowState extends State<MatchRow> {
                   Text(
                     hasScore
                         ? "${widget.match.homeScore} - ${widget.match.awayScore}"
+                          "${widget.match.wonAfter != null ? " (${widget.match.wonAfter})" : ""}"
                         : "vs",
                     textAlign: TextAlign.center,
                     style: TextStyle(

@@ -340,6 +340,7 @@ class _MatchDetailScreenState extends State<MatchDetailScreen>
                             awayTeamCrest: widget.awayTeamCrest,
                             homeScore: analysis.homeScore,
                             awayScore: analysis.awayScore,
+                            wonAfter: analysis.wonAfter,
                             competition: analysis.competition,
                             venue: analysis.venue,
                             referee: analysis.referee,

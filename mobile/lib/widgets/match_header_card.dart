@@ -9,6 +9,7 @@ class MatchHeaderCard extends StatefulWidget {
   final String? awayTeamCrest;
   final int? homeScore;
   final int? awayScore;
+  final String? wonAfter;
   final String? competition;
   final String? venue;
   final String? referee;
@@ -25,6 +26,7 @@ class MatchHeaderCard extends StatefulWidget {
     this.awayTeamCrest,
     this.homeScore,
     this.awayScore,
+    this.wonAfter,
     this.competition,
     this.venue,
     this.referee,
@@ -131,7 +133,10 @@ class _MatchHeaderCardState extends State<MatchHeaderCard> {
                 child: Column(
                   children: [
                     Text(
-                      hasScore ? "${widget.homeScore} - ${widget.awayScore}" : "VS",
+                      hasScore
+                          ? "${widget.homeScore} - ${widget.awayScore}"
+                            "${widget.wonAfter != null ? " (${widget.wonAfter})" : ""}"
+                          : "VS",
                       textAlign: TextAlign.center,
                       style: const TextStyle(
                         fontWeight: FontWeight.bold,
