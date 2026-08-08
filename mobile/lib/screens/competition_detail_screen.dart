@@ -37,6 +37,8 @@ class _CompetitionDetailScreenState extends State<CompetitionDetailScreen>
   final SeasonPreferenceService _seasonPreferenceService = SeasonPreferenceService();
   late TabController _tabController;
   Future<StandingsResponse?>? _standingsFuture;
+  List<SeasonInfo> _availableStandingsSeasons = [];
+  String? _selectedStandingsSeason;
   Future<CalendarResponse?>? _calendarFuture;
   int? _selectedMatchday;
   String _calendarSearch = "";
@@ -77,13 +79,24 @@ class _CompetitionDetailScreenState extends State<CompetitionDetailScreen>
     super.dispose();
   }
 
-  void _onSeasonChanged(String startYear) {
+  Future<void> _onSeasonChanged(String startYear) async {
+    final competitionId = widget.code ?? widget.leagueId?.toString();
+    if (competitionId == null) return;
+
+    final future = _apiService.getStandings(competitionId, season: startYear);
+    setState(() {
+      _standingsFuture = future;
+      _selectedStandingsSeason = startYear;
+    });
+
+    // La mémorisation de la dernière saison ne concerne que football-data.org
+    // (SeasonPreferenceService a été conçu pour ces 12 compétitions uniquement).
     if (widget.code == null) return;
 
-    setState(() {
-      _standingsFuture = _apiService.getStandings(widget.code!, season: startYear);
-    });
-    _seasonPreferenceService.setLastSeason(widget.code!, startYear);
+    final result = await future;
+    if (result != null && result.standings.isNotEmpty) {
+      _seasonPreferenceService.setLastSeason(widget.code!, startYear);
+    }
   }
 
   void _onCalendarSeasonChanged(String season) {
@@ -102,30 +115,84 @@ class _CompetitionDetailScreenState extends State<CompetitionDetailScreen>
     );
   }
 
+  Widget _standingsSeasonSelector() {
+    if (_availableStandingsSeasons.isEmpty) return const SizedBox.shrink();
+
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+      child: Row(
+        children: [
+          Text("Saison : ", style: TextStyle(fontWeight: FontWeight.bold, color: Colors.grey[700], fontSize: 13)),
+          const SizedBox(width: 4),
+          DropdownButton<String>(
+            value: _availableStandingsSeasons.any((s) => s.startYear == _selectedStandingsSeason)
+                ? _selectedStandingsSeason
+                : _availableStandingsSeasons.first.startYear,
+            underline: const SizedBox(),
+            isDense: true,
+            items: _availableStandingsSeasons
+                .map((s) => DropdownMenuItem(value: s.startYear, child: Text(s.label, style: const TextStyle(fontSize: 13))))
+                .toList(),
+            onChanged: (value) {
+              if (value != null) _onSeasonChanged(value);
+            },
+          ),
+        ],
+      ),
+    );
+  }
+
   Widget _standingsTab() {
     if (widget.code == null && widget.leagueId == null) {
       return _unavailable("Classement non disponible pour cette compétition pour l'instant.");
     }
 
-    return FutureBuilder<StandingsResponse?>(
-      future: _standingsFuture,
-      builder: (context, snapshot) {
-        if (_standingsFuture == null || snapshot.connectionState == ConnectionState.waiting) {
-          return const Center(child: CircularProgressIndicator());
-        }
+    return Column(
+      children: [
+        _standingsSeasonSelector(),
+        Expanded(
+          child: FutureBuilder<StandingsResponse?>(
+            future: _standingsFuture,
+            builder: (context, snapshot) {
+              if (_standingsFuture == null || snapshot.connectionState == ConnectionState.waiting) {
+                return const Center(child: CircularProgressIndicator());
+              }
 
-        final data = snapshot.data;
-        if (data == null || data.standings.isEmpty) {
-          return _unavailable("Classement indisponible pour le moment.");
-        }
+              final data = snapshot.data;
 
-        return StandingsTable(
-          data: data,
-          highlightHomeTeam: widget.highlightHomeTeam,
-          highlightAwayTeam: widget.highlightAwayTeam,
-          onSeasonChanged: _onSeasonChanged,
-        );
-      },
+              // Conserve la liste des saisons dès qu'on la reçoit, même si CETTE
+              // réponse précise est vide : le sélecteur doit rester utilisable.
+              if (data != null && data.availableSeasons.isNotEmpty) {
+                WidgetsBinding.instance.addPostFrameCallback((_) {
+                  if (!mounted) return;
+
+                  setState(() {
+                    _availableStandingsSeasons = data.availableSeasons;
+
+                    final backendSeason = data.season?.split('-').first;
+
+                    if (backendSeason != null &&
+                        data.availableSeasons.any((s) => s.startYear == backendSeason)) {
+                      _selectedStandingsSeason = backendSeason;
+                    }
+                  });
+                });
+              }
+
+              if (data == null || data.standings.isEmpty) {
+                return _unavailable("Classement indisponible pour cette saison.");
+              }
+
+              return StandingsTable(
+                data: data,
+                highlightHomeTeam: widget.highlightHomeTeam,
+                highlightAwayTeam: widget.highlightAwayTeam,
+                onSeasonChanged: null,
+              );
+            },
+          ),
+        ),
+      ],
     );
   }
 
