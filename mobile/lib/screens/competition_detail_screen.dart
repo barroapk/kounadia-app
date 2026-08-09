@@ -179,7 +179,15 @@ class _CompetitionDetailScreenState extends State<CompetitionDetailScreen>
                 });
               }
 
-              if (data == null || data.standings.isEmpty) {
+              if (data == null) {
+                return _unavailable("Impossible de charger le classement.");
+              }
+
+              if (data.unavailableReason != null) {
+                return _unavailable(data.unavailableReason!);
+              }
+
+              if (data.standings.isEmpty) {
                 return _unavailable("Classement indisponible pour cette saison.");
               }
 

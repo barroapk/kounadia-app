@@ -67,6 +67,7 @@ class StandingsResponse {
   final List<SeasonInfo> availableSeasons;
   final int totalTeams;
   final List<StandingRow> standings;
+  final String? unavailableReason;
 
   StandingsResponse({
     required this.competitionCode,
@@ -76,6 +77,7 @@ class StandingsResponse {
     required this.availableSeasons,
     required this.totalTeams,
     required this.standings,
+    this.unavailableReason,
   });
 
   factory StandingsResponse.fromJson(Map<String, dynamic> json) {
@@ -91,6 +93,7 @@ class StandingsResponse {
       standings: (json['standings'] as List<dynamic>)
           .map((e) => StandingRow.fromJson(e as Map<String, dynamic>))
           .toList(),
+      unavailableReason: json['unavailableReason'] as String?,
     );
   }
 }
