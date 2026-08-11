@@ -26,6 +26,7 @@ class MatchdaySummary {
 class MatchdayGroup {
   final int matchday;
   final String? roundLabel;
+  final bool isKnockout;
   final List<Match> matches;
   final bool allFinished;
   final MatchdaySummary summary;
@@ -33,6 +34,7 @@ class MatchdayGroup {
   MatchdayGroup({
     required this.matchday,
     this.roundLabel,
+    this.isKnockout = false,
     required this.matches,
     required this.allFinished,
     required this.summary,
@@ -42,6 +44,7 @@ class MatchdayGroup {
     return MatchdayGroup(
       matchday: json['matchday'] as int,
       roundLabel: json['roundLabel'] as String?,
+      isKnockout: json['isKnockout'] == true,
       matches: (json['matches'] as List<dynamic>)
           .map((e) => Match.fromJson(e as Map<String, dynamic>))
           .toList(),
@@ -50,8 +53,15 @@ class MatchdayGroup {
     );
   }
 
-  /// Libellé à afficher : le vrai round (coupes) si disponible, sinon "J{n}".
-  String get displayLabel => roundLabel ?? "J$matchday";
+  /// Libellé à afficher :
+  /// - journée classique -> J{n}
+  /// - phase à élimination directe -> vrai nom du round
+  String get displayLabel {
+    if (isKnockout && roundLabel != null && roundLabel!.isNotEmpty) {
+      return roundLabel!;
+    }
+    return "J$matchday";
+  }
 
   // Libellé court pour les puces compactes du sélecteur de journée.
   // Les journées classiques ("Apertura - 5") restent inchangées : seules
@@ -67,8 +77,10 @@ class MatchdayGroup {
   };
 
   String get shortDisplayLabel {
+    if (!isKnockout) return "J$matchday";
+
     final label = roundLabel;
-    if (label == null) return "J$matchday";
+    if (label == null || label.isEmpty) return "J$matchday";
 
     final normalized = label.toLowerCase();
     for (final entry in _shortLabels.entries) {
