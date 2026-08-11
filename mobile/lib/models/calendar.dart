@@ -79,14 +79,36 @@ class MatchdayGroup {
   String get shortDisplayLabel {
     if (!isKnockout) return "J$matchday";
 
-    final label = roundLabel;
+    final label = roundLabel?.trim();
     if (label == null || label.isEmpty) return "J$matchday";
 
-    final normalized = label.toLowerCase();
-    for (final entry in _shortLabels.entries) {
-      if (normalized.contains(entry.key)) return entry.value;
+    // Correspondance EXACTE, pas "contains" : "Quarter-finals" et
+    // "Semi-finals" contiennent tous deux le mot "final", donc un simple
+    // contains("final") les confondrait à tort avec la vraie Finale.
+    final normalized = label.toLowerCase().replaceAll(RegExp(r'\s+'), ' ').trim();
+
+    switch (normalized) {
+      case "round of 32":
+        return "1/16";
+      case "round of 16":
+        return "1/8";
+      case "quarter-finals":
+      case "quarterfinals":
+      case "quarter finals":
+        return "1/4";
+      case "semi-finals":
+      case "semifinals":
+      case "semi finals":
+        return "1/2";
+      case "3rd place":
+      case "third place":
+      case "3rd place final":
+        return "3e";
+      case "final":
+        return "Finale";
+      default:
+        return label;
     }
-    return label;
   }
 }
 
