@@ -21,26 +21,42 @@ class _MatchdaySelectorState extends State<MatchdaySelector> {
   final ScrollController _controller = ScrollController();
   static const double _itemWidth = 68;
 
+  // Une clé par journée, pour pouvoir viser précisément le bon élément avec
+  // Scrollable.ensureVisible : plus fiable qu'un calcul manuel de position,
+  // qui suppose à tort une largeur fixe alors que les puces (J1, 1/4, Finale...)
+  // ont des largeurs variables (IntrinsicWidth).
+  final Map<int, GlobalKey> _itemKeys = {};
+
+  GlobalKey _keyFor(int day) => _itemKeys.putIfAbsent(day, () => GlobalKey());
+
   @override
   void initState() {
     super.initState();
     WidgetsBinding.instance.addPostFrameCallback((_) => _scrollToCurrent());
   }
 
+  @override
+  void didUpdateWidget(covariant MatchdaySelector oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    // Le calendrier peut arriver après coup (chargement async, changement de
+    // saison) : initState() seul ne suffit pas, il faut re-tenter à chaque
+    // fois que les données changent réellement.
+    if (oldWidget.calendar != widget.calendar || oldWidget.selectedDay != widget.selectedDay) {
+      WidgetsBinding.instance.addPostFrameCallback((_) => _scrollToCurrent());
+    }
+  }
+
   void _scrollToCurrent() {
-    if (!_controller.hasClients) return;
+    if (!mounted) return;
+    final key = _itemKeys[widget.selectedDay];
+    final context = key?.currentContext;
+    if (context == null) return;
 
-    final realMatchdays = widget.calendar.matchdays.map((g) => g.matchday).toList();
-    final index = realMatchdays.indexOf(widget.calendar.currentMatchday);
-    if (index == -1) return;
-
-    // Centre approximativement la journée en cours dans la barre visible.
-    final viewportWidth = _controller.position.viewportDimension;
-    final target = (index * _itemWidth - viewportWidth / 2 + _itemWidth / 2)
-        .clamp(0, _controller.position.maxScrollExtent)
-        .toDouble();
-
-    _controller.jumpTo(target);
+    Scrollable.ensureVisible(
+      context,
+      alignment: 0.5,
+      duration: const Duration(milliseconds: 200),
+    );
   }
 
   @override
@@ -66,6 +82,7 @@ class _MatchdaySelectorState extends State<MatchdaySelector> {
           final group = widget.calendar.matchdays.firstWhere((g) => g.matchday == day);
 
           return ConstrainedBox(
+            key: _keyFor(day),
             constraints: const BoxConstraints(minWidth: _MatchdaySelectorState._itemWidth),
             child: IntrinsicWidth(
               child: Padding(
