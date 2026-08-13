@@ -162,4 +162,17 @@ class ApiService {
     final candles = data['candles'] as List<dynamic>? ?? [];
     return candles.map((e) => BrvmCandle.fromJson(e as Map<String, dynamic>)).toList();
   }
+
+  Future<List<BrvmQuote>> getBrvmQuotes() async {
+    final response = await _getWithRetry("/stocks/brvm/quotes");
+
+    if (response.statusCode != 200) {
+      throw Exception("Erreur serveur (${response.statusCode})");
+    }
+
+    final data = jsonDecode(response.body) as Map<String, dynamic>;
+    final quotes = data['quotes'] as List<dynamic>? ?? [];
+
+    return quotes.map((e) => BrvmQuote.fromJson(e as Map<String, dynamic>)).toList();
+  }
 }

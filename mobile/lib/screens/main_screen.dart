@@ -2,6 +2,7 @@ import "package:flutter/material.dart";
 import "matches_screen.dart";
 import "predictions_screen.dart";
 import "competitions_screen.dart";
+import "brvm/brvm_screen.dart";
 import "settings_screen.dart";
 import "search_screen.dart";
 import "../models/search_result.dart";
@@ -21,8 +22,9 @@ class _MainScreenState extends State<MainScreen> {
     MatchesScreen(key: _matchesKey),
     const PredictionsScreen(),
     const CompetitionsScreen(),
+    const BrvmScreen(),
   ];
-  final _titles = const ["KOUNADIA", "Prédiction", "Compétitions"];
+  final _titles = const ["KOUNADIA", "Prédiction", "Compétitions", "Bourse"];
 
   void _comingSoon(BuildContext context, String feature) {
     ScaffoldMessenger.of(context).showSnackBar(
@@ -87,6 +89,7 @@ class _MainScreenState extends State<MainScreen> {
           NavigationDestination(icon: Icon(Icons.scoreboard_outlined), label: "Scores"),
           NavigationDestination(icon: Icon(Icons.insights), label: "Prédiction"),
           NavigationDestination(icon: Icon(Icons.emoji_events_outlined), label: "Compétitions"),
+          NavigationDestination(icon: Icon(Icons.show_chart), label: "Bourse"),
         ],
       ),
     );
