@@ -1,10 +1,19 @@
 class BrvmCompany {
   final String ticker;
+  final String? name;
+  final String? country;
 
-  BrvmCompany({required this.ticker});
+  BrvmCompany({required this.ticker, this.name, this.country});
+
+  /// Nom à afficher : celui du catalogue si connu, sinon le ticker seul.
+  String get displayName => name ?? ticker;
 
   factory BrvmCompany.fromJson(Map<String, dynamic> json) {
-    return BrvmCompany(ticker: json['ticker'] as String? ?? '');
+    return BrvmCompany(
+      ticker: json['ticker'] as String? ?? '',
+      name: json['name'] as String?,
+      country: json['country'] as String?,
+    );
   }
 }
 
