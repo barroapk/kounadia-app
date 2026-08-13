@@ -185,8 +185,48 @@ class _BrvmDetailScreenState extends State<BrvmDetailScreen> {
         LineChartData(
           minY: minY - padding,
           maxY: maxY + padding,
-          gridData: const FlGridData(show: false),
-          titlesData: const FlTitlesData(show: false),
+          gridData: FlGridData(
+            show: true,
+            drawVerticalLine: false,
+            horizontalInterval: (range == 0 ? maxY.abs() * 0.1 : range / 3).clamp(1.0, double.infinity),
+            getDrawingHorizontalLine: (value) => FlLine(color: Colors.grey.withOpacity(0.15), strokeWidth: 1),
+          ),
+          titlesData: FlTitlesData(
+            show: true,
+            topTitles: const AxisTitles(sideTitles: SideTitles(showTitles: false)),
+            rightTitles: const AxisTitles(sideTitles: SideTitles(showTitles: false)),
+            leftTitles: AxisTitles(
+              sideTitles: SideTitles(
+                showTitles: true,
+                reservedSize: 44,
+                getTitlesWidget: (value, meta) {
+                  return Text(
+                    value.round().toString(),
+                    style: TextStyle(color: Colors.grey[500], fontSize: 10),
+                  );
+                },
+              ),
+            ),
+            bottomTitles: AxisTitles(
+              sideTitles: SideTitles(
+                showTitles: true,
+                reservedSize: 24,
+                // 4 repères répartis sur la période, pour ne pas surcharger l'axe.
+                interval: (candles.length / 4).clamp(1, double.infinity).floorToDouble(),
+                getTitlesWidget: (value, meta) {
+                  final index = value.toInt();
+                  if (index < 0 || index >= candles.length) return const SizedBox.shrink();
+                  return Padding(
+                    padding: const EdgeInsets.only(top: 6),
+                    child: Text(
+                      _formatDateShort(candles[index].date),
+                      style: TextStyle(color: Colors.grey[500], fontSize: 9),
+                    ),
+                  );
+                },
+              ),
+            ),
+          ),
           borderData: FlBorderData(show: false),
           lineTouchData: LineTouchData(
             touchTooltipData: LineTouchTooltipData(
