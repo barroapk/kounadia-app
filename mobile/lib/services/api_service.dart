@@ -8,6 +8,7 @@ import "../models/match_analysis.dart";
 import "../models/eligible_match.dart";
 import "../models/standings.dart";
 import "../models/calendar.dart";
+import "../models/brvm.dart";
 
 class ApiService {
   static const _serverErrorCodes = {502, 503, 504};
@@ -114,5 +115,51 @@ class ApiService {
     return CalendarResponse.fromJson(
       jsonDecode(response.body) as Map<String, dynamic>,
     );
+  }
+
+  Future<BrvmCatalog> getBrvmCatalog() async {
+    final response = await _getWithRetry("/stocks/brvm");
+
+    if (response.statusCode != 200) {
+      throw Exception("Erreur serveur (${response.statusCode})");
+    }
+
+    return BrvmCatalog.fromJson(
+      jsonDecode(response.body) as Map<String, dynamic>,
+    );
+  }
+
+  Future<BrvmQuote?> getBrvmQuote(String ticker) async {
+    final symbol = ticker.trim().toUpperCase();
+    final response = await _getWithRetry("/stocks/brvm/$symbol");
+
+    if (response.statusCode == 404) {
+      return null;
+    }
+
+    if (response.statusCode != 200) {
+      throw Exception("Erreur serveur (${response.statusCode})");
+    }
+
+    return BrvmQuote.fromJson(
+      jsonDecode(response.body) as Map<String, dynamic>,
+    );
+  }
+
+  Future<List<BrvmCandle>?> getBrvmHistory(String ticker) async {
+    final symbol = ticker.trim().toUpperCase();
+    final response = await _getWithRetry("/stocks/brvm/$symbol/history");
+
+    if (response.statusCode == 404) {
+      return null;
+    }
+
+    if (response.statusCode != 200) {
+      throw Exception("Erreur serveur (${response.statusCode})");
+    }
+
+    final data = jsonDecode(response.body) as Map<String, dynamic>;
+    final candles = data['candles'] as List<dynamic>? ?? [];
+    return candles.map((e) => BrvmCandle.fromJson(e as Map<String, dynamic>)).toList();
   }
 }
