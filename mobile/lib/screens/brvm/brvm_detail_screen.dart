@@ -258,6 +258,83 @@ class _BrvmDetailScreenState extends State<BrvmDetailScreen> {
     );
   }
 
+  Widget _volumeChart(List<BrvmCandle> candles) {
+    if (candles.length < 2) {
+      return const SizedBox.shrink();
+    }
+
+    final maxVolume = candles.map((c) => c.volume).reduce((a, b) => a > b ? a : b);
+
+    if (maxVolume <= 0) {
+      return const SizedBox(
+        height: 100,
+        child: Center(
+          child: Text(
+            "Aucun volume disponible pour cette periode.",
+            style: TextStyle(fontSize: 11, color: Colors.grey),
+          ),
+        ),
+      );
+    }
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 8),
+          child: Text(
+            "VOLUME",
+            style: TextStyle(color: Colors.grey[500], fontSize: 10, fontWeight: FontWeight.bold, letterSpacing: 0.7),
+          ),
+        ),
+        const SizedBox(height: 4),
+        SizedBox(
+          height: 100,
+          child: BarChart(
+            BarChartData(
+              minY: 0,
+              maxY: maxVolume * 1.1,
+              alignment: BarChartAlignment.spaceBetween,
+              groupsSpace: 0,
+              gridData: const FlGridData(show: false),
+              borderData: FlBorderData(show: false),
+              titlesData: const FlTitlesData(show: false),
+              barTouchData: BarTouchData(
+                enabled: true,
+                touchTooltipData: BarTouchTooltipData(
+                  getTooltipItem: (group, groupIndex, rod, rodIndex) {
+                    if (groupIndex < 0 || groupIndex >= candles.length) return null;
+                    final candle = candles[groupIndex];
+                    return BarTooltipItem(
+                      "${_formatDateShort(candle.date)}\nVolume : ${candle.volume.round()}",
+                      const TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 11),
+                    );
+                  },
+                ),
+              ),
+              barGroups: [
+                for (int i = 0; i < candles.length; i++)
+                  BarChartGroupData(
+                    x: i,
+                    barRods: [
+                      BarChartRodData(
+                        toY: candles[i].volume,
+                        width: candles.length > 100 ? 2 : 4,
+                        borderRadius: BorderRadius.zero,
+                        color: candles[i].close >= candles[i].open
+                            ? const Color(0xFF16A34A).withOpacity(0.55)
+                            : const Color(0xFFDC2626).withOpacity(0.55),
+                      ),
+                    ],
+                  ),
+              ],
+            ),
+          ),
+        ),
+      ],
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -372,6 +449,8 @@ class _BrvmDetailScreenState extends State<BrvmDetailScreen> {
                     _periodSelector(),
                     const SizedBox(height: 12),
                     _chart(periodCandles),
+                    const SizedBox(height: 8),
+                    _volumeChart(periodCandles),
                     if (periodHigh != null && periodLow != null) ...[
                       const Divider(height: 24),
                       Padding(
