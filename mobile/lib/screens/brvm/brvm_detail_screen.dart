@@ -1,6 +1,9 @@
 import "package:flutter/material.dart";
+import "package:fl_chart/fl_chart.dart";
 import "../../models/brvm.dart";
 import "../../services/api_service.dart";
+
+enum _Period { m1, m3, m6, y1, all }
 
 class BrvmDetailScreen extends StatefulWidget {
   final String ticker;
@@ -14,6 +17,7 @@ class BrvmDetailScreen extends StatefulWidget {
 class _BrvmDetailScreenState extends State<BrvmDetailScreen> {
   final ApiService _apiService = ApiService();
   Future<_BrvmDetailData>? _dataFuture;
+  _Period _selectedPeriod = _Period.m3;
 
   static const _weekdays = ["lundi", "mardi", "mercredi", "jeudi", "vendredi", "samedi", "dimanche"];
   static const _months = [
@@ -64,6 +68,55 @@ class _BrvmDetailScreenState extends State<BrvmDetailScreen> {
     return "${date.day.toString().padLeft(2, '0')}/${date.month.toString().padLeft(2, '0')}/${date.year}";
   }
 
+  // Filtre l'historique selon la période sélectionnée. "all" ne filtre rien.
+  // Toujours basé sur la dernière date DISPONIBLE dans les données (pas la
+  // date système), pour rester cohérent même si la source a du retard.
+  List<BrvmCandle> _filterByPeriod(List<BrvmCandle> history, _Period period) {
+    if (history.isEmpty || period == _Period.all) return history;
+
+    final lastDate = DateTime.tryParse(history.last.date);
+    if (lastDate == null) return history;
+
+    int days;
+    switch (period) {
+      case _Period.m1:
+        days = 30;
+        break;
+      case _Period.m3:
+        days = 90;
+        break;
+      case _Period.m6:
+        days = 182;
+        break;
+      case _Period.y1:
+        days = 365;
+        break;
+      case _Period.all:
+        return history;
+    }
+
+    final cutoff = lastDate.subtract(Duration(days: days));
+    return history.where((c) {
+      final d = DateTime.tryParse(c.date);
+      return d != null && !d.isBefore(cutoff);
+    }).toList();
+  }
+
+  String _periodLabel(_Period p) {
+    switch (p) {
+      case _Period.m1:
+        return "1M";
+      case _Period.m3:
+        return "3M";
+      case _Period.m6:
+        return "6M";
+      case _Period.y1:
+        return "1A";
+      case _Period.all:
+        return "Tout";
+    }
+  }
+
   Widget _statRow(String label, String value) {
     return Padding(
       padding: const EdgeInsets.symmetric(vertical: 6),
@@ -73,6 +126,94 @@ class _BrvmDetailScreenState extends State<BrvmDetailScreen> {
           Text(label, style: TextStyle(color: Colors.grey[600], fontSize: 13)),
           Text(value, style: const TextStyle(fontWeight: FontWeight.w600, fontSize: 13)),
         ],
+      ),
+    );
+  }
+
+  Widget _periodSelector() {
+    return Row(
+      mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+      children: _Period.values.map((p) {
+        final isSelected = p == _selectedPeriod;
+        return GestureDetector(
+          onTap: () => setState(() => _selectedPeriod = p),
+          child: Container(
+            padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 6),
+            decoration: BoxDecoration(
+              color: isSelected ? const Color(0xFF16A34A) : Colors.transparent,
+              borderRadius: BorderRadius.circular(20),
+            ),
+            child: Text(
+              _periodLabel(p),
+              style: TextStyle(
+                color: isSelected ? Colors.white : Colors.grey[700],
+                fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
+                fontSize: 13,
+              ),
+            ),
+          ),
+        );
+      }).toList(),
+    );
+  }
+
+  Widget _chart(List<BrvmCandle> candles) {
+    if (candles.length < 2) {
+      return const SizedBox(
+        height: 200,
+        child: Center(child: Text("Historique insuffisant pour cette période.")),
+      );
+    }
+
+    final spots = <FlSpot>[
+      for (int i = 0; i < candles.length; i++) FlSpot(i.toDouble(), candles[i].close),
+    ];
+
+    final minY = candles.map((c) => c.close).reduce((a, b) => a < b ? a : b);
+    final maxY = candles.map((c) => c.close).reduce((a, b) => a > b ? a : b);
+    final range = maxY - minY;
+    final padding = range == 0 ? (maxY.abs() * 0.05).clamp(1.0, double.infinity) : range * 0.1;
+
+    final firstClose = candles.first.close;
+    final lastClose = candles.last.close;
+    final periodUp = lastClose >= firstClose;
+    final lineColor = periodUp ? const Color(0xFF16A34A) : const Color(0xFFDC2626);
+
+    return SizedBox(
+      height: 220,
+      child: LineChart(
+        LineChartData(
+          minY: minY - padding,
+          maxY: maxY + padding,
+          gridData: const FlGridData(show: false),
+          titlesData: const FlTitlesData(show: false),
+          borderData: FlBorderData(show: false),
+          lineTouchData: LineTouchData(
+            touchTooltipData: LineTouchTooltipData(
+              getTooltipItems: (spots) {
+                return spots.map((spot) {
+                  final index = spot.x.toInt();
+                  if (index < 0 || index >= candles.length) return null;
+                  final candle = candles[index];
+                  return LineTooltipItem(
+                    "${_formatDateShort(candle.date)}\n${_formatFcfa(candle.close)}",
+                    const TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 12),
+                  );
+                }).toList();
+              },
+            ),
+          ),
+          lineBarsData: [
+            LineChartBarData(
+              spots: spots,
+              isCurved: false,
+              color: lineColor,
+              barWidth: 2,
+              dotData: const FlDotData(show: false),
+              belowBarData: BarAreaData(show: true, color: lineColor.withOpacity(0.1)),
+            ),
+          ],
+        ),
       ),
     );
   }
@@ -116,8 +257,19 @@ class _BrvmDetailScreenState extends State<BrvmDetailScreen> {
                   ? const Color(0xFFDC2626)
                   : Colors.grey;
 
-          // Les 30 dernières séances, les plus récentes en premier.
+          final periodCandles = _filterByPeriod(history, _selectedPeriod);
           final recentHistory = history.reversed.take(30).toList();
+
+          // Statistiques sur la période sélectionnée, dérivées directement des
+          // candles affichées (pas un indicateur "magique", juste haut/bas/variation).
+          double? periodHigh, periodLow, periodChangePercent;
+          if (periodCandles.isNotEmpty) {
+            periodHigh = periodCandles.map((c) => c.high).reduce((a, b) => a > b ? a : b);
+            periodLow = periodCandles.map((c) => c.low).reduce((a, b) => a < b ? a : b);
+            final first = periodCandles.first.close;
+            final last = periodCandles.last.close;
+            if (first != 0) periodChangePercent = ((last - first) / first) * 100;
+          }
 
           return ListView(
             padding: const EdgeInsets.all(12),
@@ -158,6 +310,48 @@ class _BrvmDetailScreenState extends State<BrvmDetailScreen> {
                       ),
                     const SizedBox(height: 4),
                     Text(_formatDate(quote.date), style: TextStyle(color: Colors.grey[500], fontSize: 12)),
+                    Text(
+                      "Dernière donnée disponible dans notre source. Peut différer de la séance en cours.",
+                      style: TextStyle(color: Colors.grey[400], fontSize: 10, fontStyle: FontStyle.italic),
+                    ),
+                  ],
+                ),
+              ),
+              const SizedBox(height: 12),
+              Container(
+                padding: const EdgeInsets.fromLTRB(8, 14, 8, 8),
+                decoration: BoxDecoration(
+                  color: Colors.white,
+                  borderRadius: BorderRadius.circular(16),
+                  boxShadow: [
+                    BoxShadow(color: Colors.black.withOpacity(0.04), blurRadius: 6, offset: const Offset(0, 2)),
+                  ],
+                ),
+                child: Column(
+                  children: [
+                    _periodSelector(),
+                    const SizedBox(height: 12),
+                    _chart(periodCandles),
+                    if (periodHigh != null && periodLow != null) ...[
+                      const Divider(height: 24),
+                      Padding(
+                        padding: const EdgeInsets.symmetric(horizontal: 8),
+                        child: Row(
+                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                          children: [
+                            _miniStat("Plus haut", _formatFcfa(periodHigh)),
+                            _miniStat("Plus bas", _formatFcfa(periodLow)),
+                            if (periodChangePercent != null)
+                              _miniStat(
+                                "Variation",
+                                "${periodChangePercent >= 0 ? '+' : ''}${periodChangePercent.toStringAsFixed(2)}%",
+                                color: periodChangePercent >= 0 ? const Color(0xFF16A34A) : const Color(0xFFDC2626),
+                              ),
+                          ],
+                        ),
+                      ),
+                      const SizedBox(height: 8),
+                    ],
                   ],
                 ),
               ),
@@ -234,6 +428,16 @@ class _BrvmDetailScreenState extends State<BrvmDetailScreen> {
           );
         },
       ),
+    );
+  }
+
+  Widget _miniStat(String label, String value, {Color? color}) {
+    return Column(
+      children: [
+        Text(label, style: TextStyle(color: Colors.grey[500], fontSize: 11)),
+        const SizedBox(height: 2),
+        Text(value, style: TextStyle(fontWeight: FontWeight.bold, fontSize: 13, color: color)),
+      ],
     );
   }
 }
