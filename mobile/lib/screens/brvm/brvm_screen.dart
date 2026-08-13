@@ -1,6 +1,7 @@
 import "package:flutter/material.dart";
 import "../../models/brvm.dart";
 import "../../services/api_service.dart";
+import "brvm_detail_screen.dart";
 
 class BrvmScreen extends StatefulWidget {
   const BrvmScreen({super.key});
@@ -84,7 +85,15 @@ class _BrvmScreenState extends State<BrvmScreen> {
               final isUp = (q.change ?? 0) >= 0;
               final changeColor = isUp ? const Color(0xFF16A34A) : const Color(0xFFDC2626);
 
-              return Container(
+              return InkWell(
+                borderRadius: BorderRadius.circular(12),
+                onTap: () {
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(builder: (_) => BrvmDetailScreen(ticker: q.ticker)),
+                  );
+                },
+                child: Container(
                 padding: const EdgeInsets.all(14),
                 decoration: BoxDecoration(
                   color: Colors.white,
@@ -128,6 +137,7 @@ class _BrvmScreenState extends State<BrvmScreen> {
                         ),
                       ),
                   ],
+                ),
                 ),
               );
             },
