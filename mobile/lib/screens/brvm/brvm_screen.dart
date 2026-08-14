@@ -74,6 +74,121 @@ class _BrvmScreenState extends State<BrvmScreen> {
     }).toList();
   }
 
+  void _showIndexInfo(String ticker) {
+    final isComposite = ticker == "BRVMC";
+
+    final title = isComposite ? "BRVM Composite" : "BRVM30";
+
+    final description = isComposite
+        ? "Le BRVM Composite donne une vision globale de l'evolution du marche de la BRVM."
+        : "Le BRVM30 est un indice compose de 30 valeurs selectionnees selon les criteres definis par la BRVM, notamment leur representativite et leur liquidite.";
+
+    final takeaway = isComposite
+        ? "A retenir : il permet de suivre la tendance generale du marche. Une hausse de l'indice ne signifie pas que toutes les actions montent."
+        : "A retenir : il permet de suivre l'evolution d'un panier de valeurs representatives du marche. Il ne reflete pas necessairement la performance de toutes les societes cotees.";
+
+    showModalBottomSheet<void>(
+      context: context,
+      backgroundColor: Colors.transparent,
+      isScrollControlled: true,
+      builder: (context) {
+        return SafeArea(
+          child: Container(
+            padding: const EdgeInsets.fromLTRB(20, 12, 20, 24),
+            decoration: const BoxDecoration(
+              color: Colors.white,
+              borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
+            ),
+            child: SingleChildScrollView(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Center(
+                    child: Container(
+                      width: 42,
+                      height: 4,
+                      decoration: BoxDecoration(
+                        color: Colors.grey.shade300,
+                        borderRadius: BorderRadius.circular(10),
+                      ),
+                    ),
+                  ),
+                  const SizedBox(height: 20),
+                  Row(
+                    children: [
+                      Container(
+                        width: 42,
+                        height: 42,
+                        decoration: BoxDecoration(
+                          color: const Color(0xFF16A34A).withOpacity(0.10),
+                          shape: BoxShape.circle,
+                        ),
+                        child: const Icon(Icons.info_outline, color: Color(0xFF16A34A)),
+                      ),
+                      const SizedBox(width: 12),
+                      Expanded(
+                        child: Text(title, style: const TextStyle(fontSize: 20, fontWeight: FontWeight.bold)),
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 20),
+                  const Text("Qu'est-ce que c'est ?", style: TextStyle(fontSize: 14, fontWeight: FontWeight.bold)),
+                  const SizedBox(height: 8),
+                  Text(description, style: TextStyle(color: Colors.grey[700], height: 1.5, fontSize: 14)),
+                  const SizedBox(height: 18),
+                  Container(
+                    width: double.infinity,
+                    padding: const EdgeInsets.all(14),
+                    decoration: BoxDecoration(
+                      color: const Color(0xFFF4F7F5),
+                      borderRadius: BorderRadius.circular(14),
+                    ),
+                    child: Row(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        const Icon(Icons.lightbulb_outline, size: 20, color: Color(0xFF16A34A)),
+                        const SizedBox(width: 10),
+                        Expanded(
+                          child: Text(
+                            takeaway,
+                            style: TextStyle(color: Colors.grey[800], height: 1.45, fontSize: 13, fontWeight: FontWeight.w500),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                  const SizedBox(height: 18),
+                  const Text("Comment lire la variation ?", style: TextStyle(fontSize: 14, fontWeight: FontWeight.bold)),
+                  const SizedBox(height: 8),
+                  Text(
+                    "La variation affichee correspond a l'evolution de l'indice par rapport a sa cloture precedente. "
+                    "Par exemple, +1,20 % signifie que l'indice a progresse de 1,20 % par rapport a la seance precedente.",
+                    style: TextStyle(color: Colors.grey[700], height: 1.5, fontSize: 14),
+                  ),
+                  const SizedBox(height: 18),
+                  Row(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Icon(Icons.warning_amber_rounded, size: 19, color: Colors.orange[700]),
+                      const SizedBox(width: 8),
+                      Expanded(
+                        child: Text(
+                          "Important : un indice mesure l'evolution d'un ensemble de valeurs. "
+                          "Il ne constitue pas, a lui seul, une recommandation d'achat ou de vente.",
+                          style: TextStyle(color: Colors.grey[700], height: 1.45, fontSize: 12),
+                        ),
+                      ),
+                    ],
+                  ),
+                ],
+              ),
+            ),
+          ),
+        );
+      },
+    );
+  }
+
   Widget _indicesRow() {
     return FutureBuilder<List<BrvmQuote>>(
       future: _indicesFuture,
@@ -109,7 +224,24 @@ class _BrvmScreenState extends State<BrvmScreen> {
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      Text(label, style: TextStyle(color: Colors.grey[600], fontSize: 11, fontWeight: FontWeight.w600)),
+                      Row(
+                        children: [
+                          Expanded(
+                            child: Text(
+                              label,
+                              style: TextStyle(color: Colors.grey[600], fontSize: 11, fontWeight: FontWeight.w600),
+                            ),
+                          ),
+                          InkWell(
+                            onTap: () => _showIndexInfo(q.ticker),
+                            borderRadius: BorderRadius.circular(20),
+                            child: const Padding(
+                              padding: EdgeInsets.all(4),
+                              child: Icon(Icons.info_outline, size: 16, color: Color(0xFF16A34A)),
+                            ),
+                          ),
+                        ],
+                      ),
                       const SizedBox(height: 4),
                       Text(_formatIndex(q.close), style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 17)),
                       const SizedBox(height: 2),
