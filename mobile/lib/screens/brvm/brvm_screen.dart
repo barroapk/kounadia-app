@@ -20,6 +20,7 @@ class BrvmScreen extends StatefulWidget {
 class _BrvmScreenState extends State<BrvmScreen> {
   final ApiService _apiService = ApiService();
   Future<List<_BrvmRow>>? _rowsFuture;
+  Future<List<BrvmQuote>>? _indicesFuture;
   String _searchQuery = "";
 
   @override
@@ -31,6 +32,7 @@ class _BrvmScreenState extends State<BrvmScreen> {
   void _load() {
     setState(() {
       _rowsFuture = _loadRows();
+      _indicesFuture = _apiService.getBrvmIndices();
     });
   }
 
@@ -45,6 +47,10 @@ class _BrvmScreenState extends State<BrvmScreen> {
 
     rows.sort((a, b) => a.company.displayName.toUpperCase().compareTo(b.company.displayName.toUpperCase()));
     return rows;
+  }
+
+  String _formatIndex(double value) {
+    return value.toStringAsFixed(2).replaceAll(".", ",");
   }
 
   String _formatFcfa(double value) {
@@ -68,10 +74,76 @@ class _BrvmScreenState extends State<BrvmScreen> {
     }).toList();
   }
 
+  Widget _indicesRow() {
+    return FutureBuilder<List<BrvmQuote>>(
+      future: _indicesFuture,
+      builder: (context, snapshot) {
+        final indices = snapshot.data;
+        if (indices == null || indices.isEmpty) return const SizedBox.shrink();
+
+        return Padding(
+          padding: const EdgeInsets.fromLTRB(12, 12, 12, 0),
+          child: Row(
+            children: indices.map((q) {
+              final change = q.change ?? 0;
+              final isUp = change > 0;
+              final isDown = change < 0;
+              final changeColor = isUp
+                  ? const Color(0xFF16A34A)
+                  : isDown
+                      ? const Color(0xFFDC2626)
+                      : Colors.grey;
+              final label = q.ticker == "BRVMC" ? "BRVM Composite" : q.ticker;
+
+              return Expanded(
+                child: Container(
+                  margin: const EdgeInsets.only(right: 8),
+                  padding: const EdgeInsets.all(12),
+                  decoration: BoxDecoration(
+                    color: Colors.white,
+                    borderRadius: BorderRadius.circular(12),
+                    boxShadow: [
+                      BoxShadow(color: Colors.black.withOpacity(0.04), blurRadius: 6, offset: const Offset(0, 2)),
+                    ],
+                  ),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(label, style: TextStyle(color: Colors.grey[600], fontSize: 11, fontWeight: FontWeight.w600)),
+                      const SizedBox(height: 4),
+                      Text(_formatIndex(q.close), style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 17)),
+                      const SizedBox(height: 2),
+                      if (q.changePercent != null)
+                        Row(
+                          children: [
+                            Icon(
+                              isUp ? Icons.arrow_upward : (isDown ? Icons.arrow_downward : Icons.remove),
+                              size: 12,
+                              color: changeColor,
+                            ),
+                            const SizedBox(width: 2),
+                            Text(
+                              "${q.changePercent! >= 0 ? '+' : ''}${q.changePercent!.toStringAsFixed(2)}%",
+                              style: TextStyle(color: changeColor, fontWeight: FontWeight.bold, fontSize: 12),
+                            ),
+                          ],
+                        ),
+                    ],
+                  ),
+                ),
+              );
+            }).toList(),
+          ),
+        );
+      },
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     return Column(
       children: [
+        _indicesRow(),
         Padding(
           padding: const EdgeInsets.fromLTRB(12, 12, 12, 4),
           child: TextField(

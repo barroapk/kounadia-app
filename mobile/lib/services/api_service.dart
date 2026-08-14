@@ -175,4 +175,17 @@ class ApiService {
 
     return quotes.map((e) => BrvmQuote.fromJson(e as Map<String, dynamic>)).toList();
   }
+
+  Future<List<BrvmQuote>> getBrvmIndices() async {
+    final response = await _getWithRetry("/stocks/brvm/indices");
+
+    if (response.statusCode != 200) {
+      throw Exception("Erreur serveur (${response.statusCode})");
+    }
+
+    final data = jsonDecode(response.body) as Map<String, dynamic>;
+    final indices = data['indices'] as List<dynamic>? ?? [];
+
+    return indices.map((e) => BrvmQuote.fromJson(e as Map<String, dynamic>)).toList();
+  }
 }
