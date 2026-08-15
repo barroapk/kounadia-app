@@ -327,6 +327,205 @@ class _BrvmDetailScreenState extends State<BrvmDetailScreen> {
     );
   }
 
+  void _showVolatilityInfo() {
+    showModalBottomSheet<void>(
+      context: context,
+      backgroundColor: Colors.transparent,
+      isScrollControlled: true,
+      builder: (context) {
+        return SafeArea(
+          child: Container(
+            padding: const EdgeInsets.fromLTRB(20, 12, 20, 24),
+            decoration: const BoxDecoration(
+              color: Colors.white,
+              borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
+            ),
+            child: SingleChildScrollView(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Center(
+                    child: Container(
+                      width: 42,
+                      height: 4,
+                      decoration: BoxDecoration(color: Colors.grey.shade300, borderRadius: BorderRadius.circular(10)),
+                    ),
+                  ),
+                  const SizedBox(height: 20),
+                  const Text("Qu'est-ce que les variations du cours ?", style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
+                  const SizedBox(height: 16),
+                  Text(
+                    "Cet indicateur mesure l'amplitude des mouvements du cours sur les 20 dernieres seances. Plus il est eleve, plus le cours bouge fortement d'un jour a l'autre.",
+                    style: TextStyle(color: Colors.grey[700], height: 1.5, fontSize: 14),
+                  ),
+                  const SizedBox(height: 18),
+                  Row(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Icon(Icons.warning_amber_rounded, size: 19, color: Colors.orange[700]),
+                      const SizedBox(width: 8),
+                      Expanded(
+                        child: Text(
+                          "Important : des variations elevees ne signifient pas forcement un risque de perte. Elles signifient que le cours peut evoluer fortement, dans un sens comme dans l'autre.",
+                          style: TextStyle(color: Colors.grey[700], height: 1.45, fontSize: 12),
+                        ),
+                      ),
+                    ],
+                  ),
+                ],
+              ),
+            ),
+          ),
+        );
+      },
+    );
+  }
+
+  void _showDrawdownInfo() {
+    showModalBottomSheet<void>(
+      context: context,
+      backgroundColor: Colors.transparent,
+      isScrollControlled: true,
+      builder: (context) {
+        return SafeArea(
+          child: Container(
+            padding: const EdgeInsets.fromLTRB(20, 12, 20, 24),
+            decoration: const BoxDecoration(
+              color: Colors.white,
+              borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
+            ),
+            child: SingleChildScrollView(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Center(
+                    child: Container(
+                      width: 42,
+                      height: 4,
+                      decoration: BoxDecoration(color: Colors.grey.shade300, borderRadius: BorderRadius.circular(10)),
+                    ),
+                  ),
+                  const SizedBox(height: 20),
+                  const Text("Qu'est-ce que la plus forte baisse ?", style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
+                  const SizedBox(height: 16),
+                  Text(
+                    "C'est la plus grosse chute observee entre un sommet du cours et le creux le plus bas qui a suivi, sur toute la periode d'historique disponible.",
+                    style: TextStyle(color: Colors.grey[700], height: 1.5, fontSize: 14),
+                  ),
+                  const SizedBox(height: 12),
+                  Text(
+                    "Cela donne une idee du risque de perte que cette action a deja connu par le passe.",
+                    style: TextStyle(color: Colors.grey[700], height: 1.5, fontSize: 14),
+                  ),
+                  const SizedBox(height: 18),
+                  Row(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Icon(Icons.warning_amber_rounded, size: 19, color: Colors.orange[700]),
+                      const SizedBox(width: 8),
+                      Expanded(
+                        child: Text(
+                          "Important : ce chiffre decrit le passe. Il ne predit pas la prochaine baisse et ne garantit pas qu'elle sera du meme ordre.",
+                          style: TextStyle(color: Colors.grey[700], height: 1.45, fontSize: 12),
+                        ),
+                      ),
+                    ],
+                  ),
+                ],
+              ),
+            ),
+          ),
+        );
+      },
+    );
+  }
+
+  Widget _simpleIndicatorCard({
+    required String title,
+    required String badge,
+    required Color badgeColor,
+    required String explanation,
+    required VoidCallback onInfoTap,
+  }) {
+    return Container(
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(16),
+        boxShadow: [
+          BoxShadow(color: Colors.black.withOpacity(0.04), blurRadius: 6, offset: const Offset(0, 2)),
+        ],
+      ),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Row(
+                  children: [
+                    Expanded(child: Text(title, style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 14))),
+                    Text(badge, style: TextStyle(fontWeight: FontWeight.bold, fontSize: 13, color: badgeColor)),
+                  ],
+                ),
+                const SizedBox(height: 4),
+                Text(explanation, style: TextStyle(color: Colors.grey[600], fontSize: 12)),
+              ],
+            ),
+          ),
+          InkWell(
+            onTap: onInfoTap,
+            borderRadius: BorderRadius.circular(20),
+            child: const Padding(
+              padding: EdgeInsets.all(4),
+              child: Icon(Icons.info_outline, size: 18, color: Colors.grey),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _volatilityCard(BrvmIndicators? indicators) {
+    if (indicators?.volatility20 == null) return const SizedBox.shrink();
+    final v = indicators!.volatility20!;
+
+    String badge;
+    Color color;
+    if (v < 20) {
+      badge = "Faibles";
+      color = const Color(0xFF16A34A);
+    } else if (v < 40) {
+      badge = "Modérées";
+      color = const Color(0xFFF59E0B);
+    } else {
+      badge = "Élevées";
+      color = const Color(0xFFDC2626);
+    }
+
+    return _simpleIndicatorCard(
+      title: "Variations du cours",
+      badge: badge,
+      badgeColor: color,
+      explanation: "Cette action connaît des variations de prix ${badge.toLowerCase()} récemment.",
+      onInfoTap: _showVolatilityInfo,
+    );
+  }
+
+  Widget _drawdownCard(BrvmIndicators? indicators) {
+    if (indicators?.maxDrawdown == null) return const SizedBox.shrink();
+    final dd = indicators!.maxDrawdown!;
+
+    return _simpleIndicatorCard(
+      title: "Plus forte baisse historique",
+      badge: "${dd.toStringAsFixed(1)}%",
+      badgeColor: const Color(0xFFDC2626),
+      explanation: "Plus grosse chute observée entre un sommet et le creux suivant sur l'historique disponible.",
+      onInfoTap: _showDrawdownInfo,
+    );
+  }
+
   Widget _pressureCard(BrvmIndicators? indicators) {
     if (indicators == null || indicators.rsi14.isEmpty) return const SizedBox.shrink();
 
@@ -787,6 +986,10 @@ class _BrvmDetailScreenState extends State<BrvmDetailScreen> {
                     _trendCard(snapshot.data!.indicators),
                     const SizedBox(height: 12),
                     _pressureCard(snapshot.data!.indicators),
+                    const SizedBox(height: 12),
+                    _volatilityCard(snapshot.data!.indicators),
+                    const SizedBox(height: 12),
+                    _drawdownCard(snapshot.data!.indicators),
                     const SizedBox(height: 12),
                     _chart(
                       periodCandles,

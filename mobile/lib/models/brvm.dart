@@ -123,20 +123,27 @@ class BrvmSmaPoint {
 
 class BrvmIndicators {
   final String ticker;
+  final String? lastDataDate;
   final List<BrvmSmaPoint> sma20;
   final List<BrvmSmaPoint> sma50;
   final List<BrvmSmaPoint> rsi14;
+  final double? volatility20;
+  final double? maxDrawdown;
 
   BrvmIndicators({
     required this.ticker,
+    this.lastDataDate,
     required this.sma20,
     required this.sma50,
     this.rsi14 = const [],
+    this.volatility20,
+    this.maxDrawdown,
   });
 
   factory BrvmIndicators.fromJson(Map<String, dynamic> json) {
     return BrvmIndicators(
       ticker: json['ticker'] as String? ?? '',
+      lastDataDate: json['lastDataDate'] as String?,
       sma20: (json['sma20'] as List<dynamic>? ?? [])
           .map((e) => BrvmSmaPoint.fromJson(e as Map<String, dynamic>))
           .toList(),
@@ -146,6 +153,8 @@ class BrvmIndicators {
       rsi14: (json['rsi14'] as List<dynamic>? ?? [])
           .map((e) => BrvmSmaPoint.fromJson(e as Map<String, dynamic>))
           .toList(),
+      volatility20: (json['volatility20'] as num?)?.toDouble(),
+      maxDrawdown: (json['maxDrawdown'] as num?)?.toDouble(),
     );
   }
 }
