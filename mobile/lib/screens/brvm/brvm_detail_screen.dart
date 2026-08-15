@@ -521,7 +521,7 @@ class _BrvmDetailScreenState extends State<BrvmDetailScreen> {
       title: "Plus forte baisse historique",
       badge: "${dd.toStringAsFixed(1)}%",
       badgeColor: const Color(0xFFDC2626),
-      explanation: "Plus grosse chute observée entre un sommet et le creux suivant sur l'historique disponible.",
+      explanation: "Baisse observée entre un sommet et le creux suivant depuis le début de l'historique disponible. Décrit le passé, ne prédit pas la prochaine baisse.",
       onInfoTap: _showDrawdownInfo,
     );
   }
