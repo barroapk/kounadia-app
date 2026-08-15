@@ -363,163 +363,167 @@ class _BrvmScreenState extends State<BrvmScreen> {
 
   @override
   Widget build(BuildContext context) {
-    return Column(
-      children: [
-        _indicesRow(),
-        _rankingsRow(),
-        Padding(
-          padding: const EdgeInsets.fromLTRB(12, 12, 12, 4),
-          child: TextField(
-            decoration: InputDecoration(
-              hintText: "Rechercher une société...",
-              prefixIcon: const Icon(Icons.search),
-              filled: true,
-              fillColor: Colors.white,
-              contentPadding: const EdgeInsets.symmetric(vertical: 0),
-              border: OutlineInputBorder(
-                borderRadius: BorderRadius.circular(12),
-                borderSide: BorderSide.none,
-              ),
-            ),
-            onChanged: (value) => setState(() => _searchQuery = value),
-          ),
-        ),
-        Expanded(
-          child: RefreshIndicator(
-            onRefresh: () async => _load(),
-            child: FutureBuilder<List<_BrvmRow>>(
-              future: _rowsFuture,
-              builder: (context, snapshot) {
-                if (snapshot.connectionState == ConnectionState.waiting) {
-                  return const Center(child: CircularProgressIndicator());
-                }
+    return RefreshIndicator(
+      onRefresh: () async => _load(),
+      child: FutureBuilder<List<_BrvmRow>>(
+        future: _rowsFuture,
+        builder: (context, snapshot) {
+          if (snapshot.connectionState == ConnectionState.waiting) {
+            return const Center(child: CircularProgressIndicator());
+          }
 
-                if (snapshot.hasError) {
-                  return ListView(
-                    physics: const AlwaysScrollableScrollPhysics(),
+          if (snapshot.hasError) {
+            return ListView(
+              physics: const AlwaysScrollableScrollPhysics(),
+              children: [
+                Padding(
+                  padding: const EdgeInsets.all(24.0),
+                  child: Column(
                     children: [
-                      Padding(
-                        padding: const EdgeInsets.all(24.0),
-                        child: Column(
-                          children: [
-                            const Text("Impossible de charger les cotations BRVM."),
-                            const SizedBox(height: 12),
-                            ElevatedButton(onPressed: _load, child: const Text("Réessayer")),
-                          ],
-                        ),
-                      ),
+                      const Text("Impossible de charger les cotations BRVM."),
+                      const SizedBox(height: 12),
+                      ElevatedButton(onPressed: _load, child: const Text("Réessayer")),
                     ],
-                  );
-                }
+                  ),
+                ),
+              ],
+            );
+          }
 
-                final rows = _filter(snapshot.data ?? []);
-                if (rows.isEmpty) {
-                  return ListView(
-                    physics: const AlwaysScrollableScrollPhysics(),
-                    children: const [
-                      Padding(
-                        padding: EdgeInsets.all(24),
-                        child: Center(child: Text("Aucun résultat.")),
+          final rows = _filter(snapshot.data ?? []);
+
+          return CustomScrollView(
+            physics: const AlwaysScrollableScrollPhysics(),
+            slivers: [
+              SliverToBoxAdapter(child: _indicesRow()),
+              SliverToBoxAdapter(child: _rankingsRow()),
+              SliverToBoxAdapter(
+                child: Padding(
+                  padding: const EdgeInsets.fromLTRB(12, 12, 12, 4),
+                  child: TextField(
+                    decoration: InputDecoration(
+                      hintText: "Rechercher une société...",
+                      prefixIcon: const Icon(Icons.search),
+                      filled: true,
+                      fillColor: Colors.white,
+                      contentPadding: const EdgeInsets.symmetric(vertical: 0),
+                      border: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(12),
+                        borderSide: BorderSide.none,
                       ),
-                    ],
-                  );
-                }
-
-                return ListView.separated(
-                  physics: const AlwaysScrollableScrollPhysics(),
+                    ),
+                    onChanged: (value) => setState(() => _searchQuery = value),
+                  ),
+                ),
+              ),
+              if (rows.isEmpty)
+                const SliverToBoxAdapter(
+                  child: Padding(
+                    padding: EdgeInsets.all(24),
+                    child: Center(child: Text("Aucun résultat.")),
+                  ),
+                )
+              else
+                SliverPadding(
                   padding: const EdgeInsets.all(12),
-                  itemCount: rows.length,
-                  separatorBuilder: (_, __) => const SizedBox(height: 8),
-                  itemBuilder: (context, index) {
-                    final row = rows[index];
-                    final q = row.quote;
-                    final change = q?.change ?? 0;
-                    final isUp = change > 0;
-                    final isDown = change < 0;
-                    final changeColor = isUp
-                        ? const Color(0xFF16A34A)
-                        : isDown
-                            ? const Color(0xFFDC2626)
-                            : Colors.grey;
+                  sliver: SliverList(
+                    delegate: SliverChildBuilderDelegate(
+                      (context, index) {
+                        final row = rows[index];
+                        final q = row.quote;
+                        final change = q?.change ?? 0;
+                        final isUp = change > 0;
+                        final isDown = change < 0;
+                        final changeColor = isUp
+                            ? const Color(0xFF16A34A)
+                            : isDown
+                                ? const Color(0xFFDC2626)
+                                : Colors.grey;
 
-                    return InkWell(
-                      borderRadius: BorderRadius.circular(12),
-                      onTap: () {
-                        Navigator.push(
-                          context,
-                          MaterialPageRoute(builder: (_) => BrvmDetailScreen(ticker: row.company.ticker)),
-                        );
-                      },
-                      child: Container(
-                        padding: const EdgeInsets.all(14),
-                        decoration: BoxDecoration(
-                          color: Colors.white,
-                          borderRadius: BorderRadius.circular(12),
-                          boxShadow: [
-                            BoxShadow(color: Colors.black.withOpacity(0.04), blurRadius: 6, offset: const Offset(0, 2)),
-                          ],
-                        ),
-                        child: Row(
-                          children: [
-                            Expanded(
-                              child: Column(
-                                crossAxisAlignment: CrossAxisAlignment.start,
+                        return Padding(
+                          padding: const EdgeInsets.only(bottom: 8),
+                          child: InkWell(
+                            borderRadius: BorderRadius.circular(12),
+                            onTap: () {
+                              Navigator.push(
+                                context,
+                                MaterialPageRoute(builder: (_) => BrvmDetailScreen(ticker: row.company.ticker)),
+                              );
+                            },
+                            child: Container(
+                              padding: const EdgeInsets.all(14),
+                              decoration: BoxDecoration(
+                                color: Colors.white,
+                                borderRadius: BorderRadius.circular(12),
+                                boxShadow: [
+                                  BoxShadow(color: Colors.black.withOpacity(0.04), blurRadius: 6, offset: const Offset(0, 2)),
+                                ],
+                              ),
+                              child: Row(
                                 children: [
-                                  Text(
-                                    row.company.displayName,
-                                    style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 14),
-                                    maxLines: 1,
-                                    overflow: TextOverflow.ellipsis,
-                                  ),
-                                  const SizedBox(height: 2),
-                                  Text(
-                                    [row.company.ticker, if (row.company.country != null) row.company.country].join(" · "),
-                                    style: TextStyle(color: Colors.grey[600], fontSize: 12),
-                                  ),
-                                  if (q != null) ...[
-                                    const SizedBox(height: 6),
-                                    Text(
-                                      _formatFcfa(q.close),
-                                      style: TextStyle(color: Colors.grey[800], fontSize: 13, fontWeight: FontWeight.w600),
+                                  Expanded(
+                                    child: Column(
+                                      crossAxisAlignment: CrossAxisAlignment.start,
+                                      children: [
+                                        Text(
+                                          row.company.displayName,
+                                          style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 14),
+                                          maxLines: 1,
+                                          overflow: TextOverflow.ellipsis,
+                                        ),
+                                        const SizedBox(height: 2),
+                                        Text(
+                                          [row.company.ticker, if (row.company.country != null) row.company.country].join(" · "),
+                                          style: TextStyle(color: Colors.grey[600], fontSize: 12),
+                                        ),
+                                        if (q != null) ...[
+                                          const SizedBox(height: 6),
+                                          Text(
+                                            _formatFcfa(q.close),
+                                            style: TextStyle(color: Colors.grey[800], fontSize: 13, fontWeight: FontWeight.w600),
+                                          ),
+                                        ],
+                                      ],
                                     ),
-                                  ],
+                                  ),
+                                  if (q?.changePercent != null)
+                                    Container(
+                                      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+                                      decoration: BoxDecoration(
+                                        color: changeColor.withOpacity(0.1),
+                                        borderRadius: BorderRadius.circular(8),
+                                      ),
+                                      child: Row(
+                                        mainAxisSize: MainAxisSize.min,
+                                        children: [
+                                          Icon(
+                                            isUp ? Icons.arrow_upward : (isDown ? Icons.arrow_downward : Icons.remove),
+                                            size: 14,
+                                            color: changeColor,
+                                          ),
+                                          const SizedBox(width: 4),
+                                          Text(
+                                            "${q!.changePercent!.abs().toStringAsFixed(2)}%",
+                                            style: TextStyle(color: changeColor, fontWeight: FontWeight.bold, fontSize: 13),
+                                          ),
+                                        ],
+                                      ),
+                                    ),
                                 ],
                               ),
                             ),
-                            if (q?.changePercent != null)
-                              Container(
-                                padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
-                                decoration: BoxDecoration(
-                                  color: changeColor.withOpacity(0.1),
-                                  borderRadius: BorderRadius.circular(8),
-                                ),
-                                child: Row(
-                                  mainAxisSize: MainAxisSize.min,
-                                  children: [
-                                    Icon(
-                                      isUp ? Icons.arrow_upward : (isDown ? Icons.arrow_downward : Icons.remove),
-                                      size: 14,
-                                      color: changeColor,
-                                    ),
-                                    const SizedBox(width: 4),
-                                    Text(
-                                      "${q!.changePercent!.abs().toStringAsFixed(2)}%",
-                                      style: TextStyle(color: changeColor, fontWeight: FontWeight.bold, fontSize: 13),
-                                    ),
-                                  ],
-                                ),
-                              ),
-                          ],
-                        ),
-                      ),
-                    );
-                  },
-                );
-              },
-            ),
-          ),
-        ),
-      ],
+                          ),
+                        );
+                      },
+                      childCount: rows.length,
+                    ),
+                  ),
+                ),
+            ],
+          );
+        },
+      ),
     );
+  }
   }
 }
