@@ -268,6 +268,140 @@ class _BrvmDetailScreenState extends State<BrvmDetailScreen> {
     );
   }
 
+  void _showPressureInfo() {
+    showModalBottomSheet<void>(
+      context: context,
+      backgroundColor: Colors.transparent,
+      isScrollControlled: true,
+      builder: (context) {
+        return SafeArea(
+          child: Container(
+            padding: const EdgeInsets.fromLTRB(20, 12, 20, 24),
+            decoration: const BoxDecoration(
+              color: Colors.white,
+              borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
+            ),
+            child: SingleChildScrollView(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Center(
+                    child: Container(
+                      width: 42,
+                      height: 4,
+                      decoration: BoxDecoration(color: Colors.grey.shade300, borderRadius: BorderRadius.circular(10)),
+                    ),
+                  ),
+                  const SizedBox(height: 20),
+                  const Text("Qu'est-ce que la pression du marché ?", style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
+                  const SizedBox(height: 16),
+                  Text(
+                    "Cet indicateur mesure la force des mouvements du cours sur les 14 dernieres seances, sur une echelle de 0 a 100.",
+                    style: TextStyle(color: Colors.grey[700], height: 1.5, fontSize: 14),
+                  ),
+                  const SizedBox(height: 12),
+                  Text(
+                    "En dessous de 30 : pression vendeuse forte.\nEntre 30 et 70 : zone normale.\nAu-dessus de 70 : pression acheteuse forte.",
+                    style: TextStyle(color: Colors.grey[700], height: 1.5, fontSize: 14),
+                  ),
+                  const SizedBox(height: 18),
+                  Row(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Icon(Icons.warning_amber_rounded, size: 19, color: Colors.orange[700]),
+                      const SizedBox(width: 8),
+                      Expanded(
+                        child: Text(
+                          "Important : un niveau eleve ne signifie pas automatiquement que le cours va baisser, ni un niveau bas qu'il va monter. C'est une mesure de la dynamique recente, pas une prediction.",
+                          style: TextStyle(color: Colors.grey[700], height: 1.45, fontSize: 12),
+                        ),
+                      ),
+                    ],
+                  ),
+                ],
+              ),
+            ),
+          ),
+        );
+      },
+    );
+  }
+
+  Widget _pressureCard(BrvmIndicators? indicators) {
+    if (indicators == null || indicators.rsi14.isEmpty) return const SizedBox.shrink();
+
+    final value = indicators.rsi14.last.value.clamp(0, 100);
+    final lastDate = indicators.rsi14.last.date;
+
+    String label;
+    Color color;
+
+    if (value < 30) {
+      label = "Faible";
+      color = const Color(0xFFDC2626);
+    } else if (value > 70) {
+      label = "Forte";
+      color = const Color(0xFFF59E0B);
+    } else {
+      label = "Normale";
+      color = const Color(0xFF16A34A);
+    }
+
+    return Container(
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(16),
+        boxShadow: [
+          BoxShadow(color: Colors.black.withOpacity(0.04), blurRadius: 6, offset: const Offset(0, 2)),
+        ],
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              Expanded(
+                child: Text("Pression du marché", style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 14)),
+              ),
+              Text(label, style: TextStyle(fontWeight: FontWeight.bold, fontSize: 13, color: color)),
+              const SizedBox(width: 4),
+              InkWell(
+                onTap: _showPressureInfo,
+                borderRadius: BorderRadius.circular(20),
+                child: const Padding(
+                  padding: EdgeInsets.all(4),
+                  child: Icon(Icons.info_outline, size: 18, color: Colors.grey),
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 10),
+          ClipRRect(
+            borderRadius: BorderRadius.circular(6),
+            child: Stack(
+              children: [
+                Container(height: 10, color: Colors.grey[200]),
+                FractionallySizedBox(
+                  widthFactor: value / 100,
+                  child: Container(height: 10, color: color),
+                ),
+              ],
+            ),
+          ),
+          const SizedBox(height: 6),
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              Text("${value.toStringAsFixed(0)}/100", style: TextStyle(color: Colors.grey[500], fontSize: 11)),
+              Text("Donnée du $lastDate", style: TextStyle(color: Colors.grey[400], fontSize: 10)),
+            ],
+          ),
+        ],
+      ),
+    );
+  }
+
   Widget _trendCard(BrvmIndicators? indicators) {
     if (indicators == null || indicators.sma20.isEmpty || indicators.sma50.isEmpty) {
       return const SizedBox.shrink();
@@ -651,6 +785,8 @@ class _BrvmDetailScreenState extends State<BrvmDetailScreen> {
                     _periodSelector(),
                     const SizedBox(height: 12),
                     _trendCard(snapshot.data!.indicators),
+                    const SizedBox(height: 12),
+                    _pressureCard(snapshot.data!.indicators),
                     const SizedBox(height: 12),
                     _chart(
                       periodCandles,

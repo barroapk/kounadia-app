@@ -125,8 +125,14 @@ class BrvmIndicators {
   final String ticker;
   final List<BrvmSmaPoint> sma20;
   final List<BrvmSmaPoint> sma50;
+  final List<BrvmSmaPoint> rsi14;
 
-  BrvmIndicators({required this.ticker, required this.sma20, required this.sma50});
+  BrvmIndicators({
+    required this.ticker,
+    required this.sma20,
+    required this.sma50,
+    this.rsi14 = const [],
+  });
 
   factory BrvmIndicators.fromJson(Map<String, dynamic> json) {
     return BrvmIndicators(
@@ -135,6 +141,9 @@ class BrvmIndicators {
           .map((e) => BrvmSmaPoint.fromJson(e as Map<String, dynamic>))
           .toList(),
       sma50: (json['sma50'] as List<dynamic>? ?? [])
+          .map((e) => BrvmSmaPoint.fromJson(e as Map<String, dynamic>))
+          .toList(),
+      rsi14: (json['rsi14'] as List<dynamic>? ?? [])
           .map((e) => BrvmSmaPoint.fromJson(e as Map<String, dynamic>))
           .toList(),
     );
