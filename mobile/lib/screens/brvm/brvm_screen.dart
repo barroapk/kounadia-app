@@ -526,4 +526,3 @@ class _BrvmScreenState extends State<BrvmScreen> {
     );
   }
   }
-}
