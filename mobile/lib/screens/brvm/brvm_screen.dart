@@ -189,6 +189,96 @@ class _BrvmScreenState extends State<BrvmScreen> {
     );
   }
 
+  Widget _rankingsRow() {
+    return FutureBuilder<List<_BrvmRow>>(
+      future: _rowsFuture,
+      builder: (context, snapshot) {
+        final rows = (snapshot.data ?? []).where((r) => r.quote?.changePercent != null).toList();
+        if (rows.isEmpty) return const SizedBox.shrink();
+
+        final gainers = List<_BrvmRow>.from(rows)
+          ..sort((a, b) => b.quote!.changePercent!.compareTo(a.quote!.changePercent!));
+        final losers = List<_BrvmRow>.from(rows)
+          ..sort((a, b) => a.quote!.changePercent!.compareTo(b.quote!.changePercent!));
+        final byVolume = List<_BrvmRow>.from(rows)
+          ..sort((a, b) => b.quote!.volume.compareTo(a.quote!.volume));
+
+        return Padding(
+          padding: const EdgeInsets.fromLTRB(12, 12, 12, 0),
+          child: SizedBox(
+            height: 190,
+            child: Row(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Expanded(child: _rankingCard("Plus fortes hausses", gainers.take(3).toList(), isVolume: false)),
+                const SizedBox(width: 8),
+                Expanded(child: _rankingCard("Plus fortes baisses", losers.take(3).toList(), isVolume: false)),
+                const SizedBox(width: 8),
+                Expanded(child: _rankingCard("Plus gros volumes", byVolume.take(3).toList(), isVolume: true)),
+              ],
+            ),
+          ),
+        );
+      },
+    );
+  }
+
+  Widget _rankingCard(String title, List<_BrvmRow> rows, {required bool isVolume}) {
+    return Container(
+      padding: const EdgeInsets.all(10),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(12),
+        boxShadow: [
+          BoxShadow(color: Colors.black.withOpacity(0.04), blurRadius: 6, offset: const Offset(0, 2)),
+        ],
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(title, style: TextStyle(color: Colors.grey[600], fontSize: 10, fontWeight: FontWeight.w700)),
+          const SizedBox(height: 8),
+          ...rows.map((r) {
+            final q = r.quote!;
+            final isUp = (q.changePercent ?? 0) >= 0;
+            final color = isVolume
+                ? Colors.grey[800]
+                : (isUp ? const Color(0xFF16A34A) : const Color(0xFFDC2626));
+
+            return InkWell(
+              onTap: () {
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(builder: (_) => BrvmDetailScreen(ticker: r.company.ticker)),
+                );
+              },
+              child: Padding(
+                padding: const EdgeInsets.symmetric(vertical: 4),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      r.company.ticker,
+                      style: const TextStyle(fontSize: 11, fontWeight: FontWeight.bold),
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                    ),
+                    Text(
+                      isVolume
+                          ? q.volume.round().toString()
+                          : "${isUp ? '+' : ''}${q.changePercent!.toStringAsFixed(2)}%",
+                      style: TextStyle(fontSize: 11, fontWeight: FontWeight.w600, color: color),
+                    ),
+                  ],
+                ),
+              ),
+            );
+          }),
+        ],
+      ),
+    );
+  }
+
   Widget _indicesRow() {
     return FutureBuilder<List<BrvmQuote>>(
       future: _indicesFuture,
@@ -276,6 +366,7 @@ class _BrvmScreenState extends State<BrvmScreen> {
     return Column(
       children: [
         _indicesRow(),
+        _rankingsRow(),
         Padding(
           padding: const EdgeInsets.fromLTRB(12, 12, 12, 4),
           child: TextField(
