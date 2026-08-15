@@ -121,6 +121,56 @@ class BrvmSmaPoint {
   }
 }
 
+class BrvmScoreComponents {
+  final double trend;
+  final double pressure;
+  final double momentum;
+  final double stability;
+
+  BrvmScoreComponents({
+    required this.trend,
+    required this.pressure,
+    required this.momentum,
+    required this.stability,
+  });
+
+  factory BrvmScoreComponents.fromJson(Map<String, dynamic> json) {
+    double toDouble(dynamic v) => (v as num?)?.toDouble() ?? 0;
+    return BrvmScoreComponents(
+      trend: toDouble(json['trend']),
+      pressure: toDouble(json['pressure']),
+      momentum: toDouble(json['momentum']),
+      stability: toDouble(json['stability']),
+    );
+  }
+}
+
+class BrvmKounadiaScore {
+  final double score;
+  final double dataReliability;
+  final BrvmScoreComponents components;
+  final String direction; // "haussiere" | "baissiere" | "neutre"
+  final double? momentum20Percent;
+
+  BrvmKounadiaScore({
+    required this.score,
+    required this.dataReliability,
+    required this.components,
+    required this.direction,
+    this.momentum20Percent,
+  });
+
+  factory BrvmKounadiaScore.fromJson(Map<String, dynamic> json) {
+    return BrvmKounadiaScore(
+      score: (json['score'] as num?)?.toDouble() ?? 0,
+      dataReliability: (json['dataReliability'] as num?)?.toDouble() ?? 0,
+      components: BrvmScoreComponents.fromJson(json['components'] as Map<String, dynamic>? ?? {}),
+      direction: json['direction'] as String? ?? 'neutre',
+      momentum20Percent: (json['momentum20Percent'] as num?)?.toDouble(),
+    );
+  }
+}
+
 class BrvmIndicators {
   final String ticker;
   final String? lastDataDate;
@@ -129,6 +179,7 @@ class BrvmIndicators {
   final List<BrvmSmaPoint> rsi14;
   final double? volatility20;
   final double? maxDrawdown;
+  final BrvmKounadiaScore? kounadiaScore;
 
   BrvmIndicators({
     required this.ticker,
@@ -138,6 +189,7 @@ class BrvmIndicators {
     this.rsi14 = const [],
     this.volatility20,
     this.maxDrawdown,
+    this.kounadiaScore,
   });
 
   factory BrvmIndicators.fromJson(Map<String, dynamic> json) {
@@ -155,6 +207,9 @@ class BrvmIndicators {
           .toList(),
       volatility20: (json['volatility20'] as num?)?.toDouble(),
       maxDrawdown: (json['maxDrawdown'] as num?)?.toDouble(),
+      kounadiaScore: json['kounadiaScore'] != null
+          ? BrvmKounadiaScore.fromJson(json['kounadiaScore'] as Map<String, dynamic>)
+          : null,
     );
   }
 }

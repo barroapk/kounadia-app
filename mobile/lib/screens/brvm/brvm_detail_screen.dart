@@ -601,6 +601,222 @@ class _BrvmDetailScreenState extends State<BrvmDetailScreen> {
     );
   }
 
+  String _directionLabel(String direction) {
+    switch (direction) {
+      case "haussiere":
+        return "Haussière";
+      case "baissiere":
+        return "Baissière";
+      default:
+        return "Neutre";
+    }
+  }
+
+  IconData _directionIcon(String direction) {
+    switch (direction) {
+      case "haussiere":
+        return Icons.north_east;
+      case "baissiere":
+        return Icons.south_east;
+      default:
+        return Icons.east;
+    }
+  }
+
+  Color _directionColor(String direction) {
+    switch (direction) {
+      case "haussiere":
+        return const Color(0xFF16A34A);
+      case "baissiere":
+        return const Color(0xFFDC2626);
+      default:
+        return Colors.grey[600]!;
+    }
+  }
+
+  String _scoreLabel(double score) {
+    if (score >= 70) return "Configuration solide";
+    if (score >= 50) return "Configuration modérée";
+    if (score >= 30) return "Configuration limitée";
+    return "Configuration faible";
+  }
+
+  Color _scoreColor(double score) {
+    if (score >= 70) return const Color(0xFF16A34A);
+    if (score >= 50) return const Color(0xFFF59E0B);
+    return const Color(0xFFDC2626);
+  }
+
+  // Interpretations deterministes basees sur des seuils fixes, pas une IA
+  // qui invente une analyse : chaque phrase correspond a une condition
+  // verifiable dans les chiffres deja affiches.
+  List<String> _computeStrengths(BrvmScoreComponents c) {
+    final strengths = <String>[];
+    if (c.trend >= 65) strengths.add("Tendance favorable");
+    if (c.momentum >= 65) strengths.add("Momentum positif");
+    if (c.stability >= 65) strengths.add("Variations contenues");
+    if (c.pressure <= 35) strengths.add("Intensité du mouvement modérée");
+    return strengths;
+  }
+
+  List<String> _computeWarnings(BrvmScoreComponents c) {
+    final warnings = <String>[];
+    if (c.trend <= 35) warnings.add("Tendance défavorable");
+    if (c.momentum <= 35) warnings.add("Momentum négatif");
+    if (c.stability <= 40) warnings.add("Variations importantes");
+    if (c.pressure >= 65) warnings.add("Intensité du mouvement forte");
+    return warnings;
+  }
+
+  void _showScoreInfo() {
+    showModalBottomSheet<void>(
+      context: context,
+      backgroundColor: Colors.transparent,
+      isScrollControlled: true,
+      builder: (context) {
+        return SafeArea(
+          child: Container(
+            padding: const EdgeInsets.fromLTRB(20, 12, 20, 24),
+            decoration: const BoxDecoration(
+              color: Colors.white,
+              borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
+            ),
+            child: SingleChildScrollView(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Center(
+                    child: Container(
+                      width: 42,
+                      height: 4,
+                      decoration: BoxDecoration(color: Colors.grey.shade300, borderRadius: BorderRadius.circular(10)),
+                    ),
+                  ),
+                  const SizedBox(height: 20),
+                  const Text("Qu'est-ce que le KOUNADIA SCORE ?", style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
+                  const SizedBox(height: 16),
+                  Text(
+                    "C'est une synthese sur 100 points de 4 caracteristiques techniques observees actuellement : la tendance, la pression du marche, le momentum et la stabilite des variations.",
+                    style: TextStyle(color: Colors.grey[700], height: 1.5, fontSize: 14),
+                  ),
+                  const SizedBox(height: 12),
+                  Text(
+                    "Formule : Tendance (25%) + Pression (20%) + Momentum (20%) + Stabilite (20%), normalise sur 100.",
+                    style: TextStyle(color: Colors.grey[700], height: 1.5, fontSize: 14),
+                  ),
+                  const SizedBox(height: 18),
+                  Row(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Icon(Icons.warning_amber_rounded, size: 19, color: Colors.orange[700]),
+                      const SizedBox(width: 8),
+                      Expanded(
+                        child: Text(
+                          "Important : ce score decrit la configuration technique actuelle. Ce n'est ni une probabilite de hausse, ni une recommandation d'achat ou de vente.",
+                          style: TextStyle(color: Colors.grey[700], height: 1.45, fontSize: 12),
+                        ),
+                      ),
+                    ],
+                  ),
+                ],
+              ),
+            ),
+          ),
+        );
+      },
+    );
+  }
+
+  Widget _kounadiaScoreCard(BrvmIndicators? indicators) {
+    final ks = indicators?.kounadiaScore;
+    if (ks == null) return const SizedBox.shrink();
+
+    final scoreColor = _scoreColor(ks.score);
+    final strengths = _computeStrengths(ks.components);
+    final warnings = _computeWarnings(ks.components);
+
+    return Container(
+      padding: const EdgeInsets.all(18),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(color: scoreColor.withOpacity(0.3), width: 1.5),
+        boxShadow: [
+          BoxShadow(color: Colors.black.withOpacity(0.05), blurRadius: 8, offset: const Offset(0, 2)),
+        ],
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              Expanded(
+                child: Text("KOUNADIA SCORE", style: TextStyle(fontWeight: FontWeight.bold, fontSize: 12, letterSpacing: 0.8, color: Colors.grey[600])),
+              ),
+              InkWell(
+                onTap: _showScoreInfo,
+                borderRadius: BorderRadius.circular(20),
+                child: const Padding(
+                  padding: EdgeInsets.all(4),
+                  child: Icon(Icons.info_outline, size: 18, color: Colors.grey),
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 8),
+          Row(
+            crossAxisAlignment: CrossAxisAlignment.end,
+            children: [
+              Text(ks.score.toStringAsFixed(1), style: TextStyle(fontWeight: FontWeight.bold, fontSize: 40, color: scoreColor)),
+              Padding(
+                padding: const EdgeInsets.only(bottom: 8, left: 4),
+                child: Text("/ 100", style: TextStyle(color: Colors.grey[500], fontSize: 14)),
+              ),
+            ],
+          ),
+          Text(_scoreLabel(ks.score), style: TextStyle(fontWeight: FontWeight.w600, fontSize: 14, color: scoreColor)),
+          const SizedBox(height: 12),
+          Row(
+            children: [
+              Icon(_directionIcon(ks.direction), size: 16, color: _directionColor(ks.direction)),
+              const SizedBox(width: 6),
+              Text("Direction observée : ", style: TextStyle(color: Colors.grey[600], fontSize: 12)),
+              Text(_directionLabel(ks.direction), style: TextStyle(fontWeight: FontWeight.bold, fontSize: 12, color: _directionColor(ks.direction))),
+            ],
+          ),
+          if (strengths.isNotEmpty || warnings.isNotEmpty) ...[
+            const Divider(height: 24),
+            ...strengths.map((s) => Padding(
+                  padding: const EdgeInsets.symmetric(vertical: 2),
+                  child: Row(
+                    children: [
+                      const Icon(Icons.check_circle, size: 14, color: Color(0xFF16A34A)),
+                      const SizedBox(width: 6),
+                      Expanded(child: Text(s, style: TextStyle(fontSize: 12, color: Colors.grey[700]))),
+                    ],
+                  ),
+                )),
+            ...warnings.map((w) => Padding(
+                  padding: const EdgeInsets.symmetric(vertical: 2),
+                  child: Row(
+                    children: [
+                      Icon(Icons.warning_amber_rounded, size: 14, color: Colors.orange[700]),
+                      const SizedBox(width: 6),
+                      Expanded(child: Text(w, style: TextStyle(fontSize: 12, color: Colors.grey[700]))),
+                    ],
+                  ),
+                )),
+          ],
+          const SizedBox(height: 10),
+          Text(
+            "Ce score décrit le marché. Il ne prédit pas l'avenir.",
+            style: TextStyle(color: Colors.grey[400], fontSize: 10, fontStyle: FontStyle.italic),
+          ),
+        ],
+      ),
+    );
+  }
+
   Widget _trendCard(BrvmIndicators? indicators) {
     if (indicators == null || indicators.sma20.isEmpty || indicators.sma50.isEmpty) {
       return const SizedBox.shrink();
@@ -982,6 +1198,8 @@ class _BrvmDetailScreenState extends State<BrvmDetailScreen> {
                 child: Column(
                   children: [
                     _periodSelector(),
+                    const SizedBox(height: 12),
+                    _kounadiaScoreCard(snapshot.data!.indicators),
                     const SizedBox(height: 12),
                     _trendCard(snapshot.data!.indicators),
                     const SizedBox(height: 12),
