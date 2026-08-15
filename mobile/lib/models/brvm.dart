@@ -106,3 +106,37 @@ class BrvmCandle {
     );
   }
 }
+
+class BrvmSmaPoint {
+  final String date;
+  final double value;
+
+  BrvmSmaPoint({required this.date, required this.value});
+
+  factory BrvmSmaPoint.fromJson(Map<String, dynamic> json) {
+    return BrvmSmaPoint(
+      date: json['date'] as String? ?? '',
+      value: (json['value'] as num?)?.toDouble() ?? 0,
+    );
+  }
+}
+
+class BrvmIndicators {
+  final String ticker;
+  final List<BrvmSmaPoint> sma20;
+  final List<BrvmSmaPoint> sma50;
+
+  BrvmIndicators({required this.ticker, required this.sma20, required this.sma50});
+
+  factory BrvmIndicators.fromJson(Map<String, dynamic> json) {
+    return BrvmIndicators(
+      ticker: json['ticker'] as String? ?? '',
+      sma20: (json['sma20'] as List<dynamic>? ?? [])
+          .map((e) => BrvmSmaPoint.fromJson(e as Map<String, dynamic>))
+          .toList(),
+      sma50: (json['sma50'] as List<dynamic>? ?? [])
+          .map((e) => BrvmSmaPoint.fromJson(e as Map<String, dynamic>))
+          .toList(),
+    );
+  }
+}

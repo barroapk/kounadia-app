@@ -40,7 +40,15 @@ class _BrvmDetailScreenState extends State<BrvmDetailScreen> {
   Future<_BrvmDetailData> _loadData() async {
     final quote = await _apiService.getBrvmQuote(widget.ticker);
     final history = await _apiService.getBrvmHistory(widget.ticker);
-    return _BrvmDetailData(quote: quote, history: history ?? []);
+    // Les indicateurs ne doivent jamais bloquer l'affichage du reste de la
+    // fiche si leur calcul echoue : on les charge separement, en best-effort.
+    BrvmIndicators? indicators;
+    try {
+      indicators = await _apiService.getBrvmIndicators(widget.ticker);
+    } catch (_) {
+      indicators = null;
+    }
+    return _BrvmDetailData(quote: quote, history: history ?? [], indicators: indicators);
   }
 
   String _formatFcfa(double value) {
@@ -157,7 +165,185 @@ class _BrvmDetailScreenState extends State<BrvmDetailScreen> {
     );
   }
 
-  Widget _chart(List<BrvmCandle> candles) {
+  // Convertit une liste de points SMA en points de graphique alignes sur
+  // l'index des candles affichees (par date), pas sur leur propre index :
+  // la SMA peut avoir moins de points que les candles (periode de calcul).
+  List<FlSpot> _smaSpots(List<BrvmCandle> candles, List<BrvmSmaPoint> sma) {
+    if (sma.isEmpty) return [];
+
+    final dateToIndex = <String, int>{
+      for (int i = 0; i < candles.length; i++) candles[i].date: i,
+    };
+
+    final spots = <FlSpot>[];
+    for (final point in sma) {
+      final index = dateToIndex[point.date];
+      if (index != null) {
+        spots.add(FlSpot(index.toDouble(), point.value));
+      }
+    }
+    return spots;
+  }
+
+  // Ne garde que les points SMA dont la date existe dans les candles de la
+  // periode selectionnee (evite d'envoyer des points inutiles au graphique).
+  List<BrvmSmaPoint> _filterSmaByPeriod(List<BrvmSmaPoint> sma, List<BrvmCandle> periodCandles) {
+    if (sma.isEmpty || periodCandles.isEmpty) return [];
+    final validDates = periodCandles.map((c) => c.date).toSet();
+    return sma.where((p) => validDates.contains(p.date)).toList();
+  }
+
+  Widget _legendDot(Color color, String label) {
+    return Row(
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        Container(width: 10, height: 3, color: color),
+        const SizedBox(width: 4),
+        Text(label, style: TextStyle(fontSize: 11, color: Colors.grey[600])),
+      ],
+    );
+  }
+
+  void _showTrendInfo() {
+    showModalBottomSheet<void>(
+      context: context,
+      backgroundColor: Colors.transparent,
+      isScrollControlled: true,
+      builder: (context) {
+        return SafeArea(
+          child: Container(
+            padding: const EdgeInsets.fromLTRB(20, 12, 20, 24),
+            decoration: const BoxDecoration(
+              color: Colors.white,
+              borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
+            ),
+            child: SingleChildScrollView(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Center(
+                    child: Container(
+                      width: 42,
+                      height: 4,
+                      decoration: BoxDecoration(color: Colors.grey.shade300, borderRadius: BorderRadius.circular(10)),
+                    ),
+                  ),
+                  const SizedBox(height: 20),
+                  const Text("Comment ça marche ?", style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold)),
+                  const SizedBox(height: 16),
+                  Text(
+                    "Une moyenne mobile calcule le cours moyen d'une action sur une periode recente, ce qui rend la tendance plus facile a lire qu'en regardant seulement le cours du jour.",
+                    style: TextStyle(color: Colors.grey[700], height: 1.5, fontSize: 14),
+                  ),
+                  const SizedBox(height: 12),
+                  Text(
+                    "Moyenne courte : moyenne des 20 dernieres seances.\nMoyenne longue : moyenne des 50 dernieres seances.",
+                    style: TextStyle(color: Colors.grey[700], height: 1.5, fontSize: 14),
+                  ),
+                  const SizedBox(height: 12),
+                  Text(
+                    "Quand la moyenne courte passe au-dessus de la moyenne longue, cela peut indiquer que la dynamique recente devient plus forte. L'inverse peut indiquer un ralentissement.",
+                    style: TextStyle(color: Colors.grey[700], height: 1.5, fontSize: 14),
+                  ),
+                  const SizedBox(height: 18),
+                  Row(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Icon(Icons.warning_amber_rounded, size: 19, color: Colors.orange[700]),
+                      const SizedBox(width: 8),
+                      Expanded(
+                        child: Text(
+                          "Important : ceci n'est pas une garantie que le cours va monter ou baisser. C'est une lecture de tendance passee, pas une prediction.",
+                          style: TextStyle(color: Colors.grey[700], height: 1.45, fontSize: 12),
+                        ),
+                      ),
+                    ],
+                  ),
+                ],
+              ),
+            ),
+          ),
+        );
+      },
+    );
+  }
+
+  Widget _trendCard(BrvmIndicators? indicators) {
+    if (indicators == null || indicators.sma20.isEmpty || indicators.sma50.isEmpty) {
+      return const SizedBox.shrink();
+    }
+
+    final lastSma20 = indicators.sma20.last.value;
+    final lastSma50 = indicators.sma50.last.value;
+    final diff = lastSma20 - lastSma50;
+    // Seuil de 0.5% pour eviter d'afficher "positive/negative" sur un ecart
+    // negligeable qui serait en realite un signal neutre.
+    final threshold = lastSma50.abs() * 0.005;
+
+    String label;
+    Color color;
+    IconData icon;
+    String explanation;
+
+    if (diff > threshold) {
+      label = "Tendance positive";
+      color = const Color(0xFF16A34A);
+      icon = Icons.trending_up;
+      explanation = "La tendance recente est plus forte que la tendance de fond.";
+    } else if (diff < -threshold) {
+      label = "Tendance negative";
+      color = const Color(0xFFDC2626);
+      icon = Icons.trending_down;
+      explanation = "La tendance recente est plus faible que la tendance de fond.";
+    } else {
+      label = "Tendance neutre";
+      color = Colors.grey[600]!;
+      icon = Icons.trending_flat;
+      explanation = "Le marche ne montre pas encore une direction clairement etablie.";
+    }
+
+    return Container(
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(16),
+        boxShadow: [
+          BoxShadow(color: Colors.black.withOpacity(0.04), blurRadius: 6, offset: const Offset(0, 2)),
+        ],
+      ),
+      child: Row(
+        children: [
+          Container(
+            width: 44,
+            height: 44,
+            decoration: BoxDecoration(color: color.withOpacity(0.1), shape: BoxShape.circle),
+            child: Icon(icon, color: color),
+          ),
+          const SizedBox(width: 12),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(label, style: TextStyle(fontWeight: FontWeight.bold, fontSize: 15, color: color)),
+                const SizedBox(height: 2),
+                Text(explanation, style: TextStyle(color: Colors.grey[600], fontSize: 12)),
+              ],
+            ),
+          ),
+          InkWell(
+            onTap: _showTrendInfo,
+            borderRadius: BorderRadius.circular(20),
+            child: const Padding(
+              padding: EdgeInsets.all(4),
+              child: Icon(Icons.info_outline, size: 18, color: Colors.grey),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _chart(List<BrvmCandle> candles, {List<BrvmSmaPoint> sma20 = const [], List<BrvmSmaPoint> sma50 = const []}) {
     if (candles.length < 2) {
       return const SizedBox(
         height: 200,
@@ -252,6 +438,22 @@ class _BrvmDetailScreenState extends State<BrvmDetailScreen> {
               dotData: const FlDotData(show: false),
               belowBarData: BarAreaData(show: true, color: lineColor.withOpacity(0.1)),
             ),
+            if (_smaSpots(candles, sma20).isNotEmpty)
+              LineChartBarData(
+                spots: _smaSpots(candles, sma20),
+                isCurved: false,
+                color: const Color(0xFF2563EB),
+                barWidth: 1.5,
+                dotData: const FlDotData(show: false),
+              ),
+            if (_smaSpots(candles, sma50).isNotEmpty)
+              LineChartBarData(
+                spots: _smaSpots(candles, sma50),
+                isCurved: false,
+                color: const Color(0xFFF59E0B),
+                barWidth: 1.5,
+                dotData: const FlDotData(show: false),
+              ),
           ],
         ),
       ),
@@ -448,7 +650,28 @@ class _BrvmDetailScreenState extends State<BrvmDetailScreen> {
                   children: [
                     _periodSelector(),
                     const SizedBox(height: 12),
-                    _chart(periodCandles),
+                    _trendCard(snapshot.data!.indicators),
+                    const SizedBox(height: 12),
+                    _chart(
+                      periodCandles,
+                      sma20: _filterSmaByPeriod(snapshot.data!.indicators?.sma20 ?? [], periodCandles),
+                      sma50: _filterSmaByPeriod(snapshot.data!.indicators?.sma50 ?? [], periodCandles),
+                    ),
+                    if ((snapshot.data!.indicators?.sma20.isNotEmpty ?? false) ||
+                        (snapshot.data!.indicators?.sma50.isNotEmpty ?? false))
+                      Padding(
+                        padding: const EdgeInsets.only(top: 8),
+                        child: Row(
+                          mainAxisAlignment: MainAxisAlignment.center,
+                          children: [
+                            _legendDot(const Color(0xFF16A34A), "Prix"),
+                            const SizedBox(width: 12),
+                            _legendDot(const Color(0xFF2563EB), "Moyenne courte"),
+                            const SizedBox(width: 12),
+                            _legendDot(const Color(0xFFF59E0B), "Moyenne longue"),
+                          ],
+                        ),
+                      ),
                     const SizedBox(height: 8),
                     _volumeChart(periodCandles),
                     if (periodHigh != null && periodLow != null) ...[
@@ -564,6 +787,7 @@ class _BrvmDetailScreenState extends State<BrvmDetailScreen> {
 class _BrvmDetailData {
   final BrvmQuote? quote;
   final List<BrvmCandle> history;
+  final BrvmIndicators? indicators;
 
-  _BrvmDetailData({required this.quote, required this.history});
+  _BrvmDetailData({required this.quote, required this.history, this.indicators});
 }

@@ -163,6 +163,21 @@ class ApiService {
     return candles.map((e) => BrvmCandle.fromJson(e as Map<String, dynamic>)).toList();
   }
 
+  Future<BrvmIndicators?> getBrvmIndicators(String ticker) async {
+    final symbol = ticker.trim().toUpperCase();
+    final response = await _getWithRetry("/stocks/brvm/$symbol/indicators");
+
+    if (response.statusCode == 404) {
+      return null;
+    }
+
+    if (response.statusCode != 200) {
+      throw Exception("Erreur serveur (${response.statusCode})");
+    }
+
+    return BrvmIndicators.fromJson(jsonDecode(response.body) as Map<String, dynamic>);
+  }
+
   Future<List<BrvmQuote>> getBrvmQuotes() async {
     final response = await _getWithRetry("/stocks/brvm/quotes");
 
