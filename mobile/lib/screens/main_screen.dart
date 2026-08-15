@@ -48,10 +48,21 @@ class _MainScreenState extends State<MainScreen> {
     }
   }
 
+  bool get _isBrvmTab => _currentIndex == 3;
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
+      endDrawer: _isBrvmTab ? _buildBrvmDrawer() : null,
       appBar: AppBar(
+        leading: _isBrvmTab
+            ? Builder(
+                builder: (context) => IconButton(
+                  icon: const Icon(Icons.menu),
+                  onPressed: () => Scaffold.of(context).openEndDrawer(),
+                ),
+              )
+            : null,
         title: Text(
           _titles[_currentIndex],
           style: const TextStyle(fontWeight: FontWeight.bold),
@@ -91,6 +102,61 @@ class _MainScreenState extends State<MainScreen> {
           NavigationDestination(icon: Icon(Icons.emoji_events_outlined), label: "Compétitions"),
           NavigationDestination(icon: Icon(Icons.show_chart), label: "Bourse"),
         ],
+      ),
+    );
+  }
+
+  Widget _buildBrvmDrawer() {
+    return Drawer(
+      child: SafeArea(
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Padding(
+              padding: const EdgeInsets.fromLTRB(20, 16, 20, 8),
+              child: Text(
+                "Bourse BRVM",
+                style: TextStyle(fontWeight: FontWeight.bold, fontSize: 18, color: Colors.grey[800]),
+              ),
+            ),
+            const Divider(),
+            ListTile(
+              leading: const Icon(Icons.dashboard_outlined),
+              title: const Text("Tableau de bord"),
+              subtitle: const Text("Indices, classements, actions"),
+              onTap: () => Navigator.pop(context),
+            ),
+            ListTile(
+              leading: const Icon(Icons.show_chart),
+              title: const Text("Toutes les actions"),
+              subtitle: const Text("48 sociétés cotées"),
+              onTap: () => Navigator.pop(context),
+            ),
+            const Divider(),
+            Padding(
+              padding: const EdgeInsets.fromLTRB(20, 8, 20, 4),
+              child: Text(
+                "À venir",
+                style: TextStyle(fontSize: 12, color: Colors.grey[500], fontWeight: FontWeight.bold),
+              ),
+            ),
+            ListTile(
+              enabled: false,
+              leading: Icon(Icons.compare_arrows, color: Colors.grey[400]),
+              title: Text("Comparateur d'actions", style: TextStyle(color: Colors.grey[400])),
+            ),
+            ListTile(
+              enabled: false,
+              leading: Icon(Icons.star_border, color: Colors.grey[400]),
+              title: Text("Favoris", style: TextStyle(color: Colors.grey[400])),
+            ),
+            ListTile(
+              enabled: false,
+              leading: Icon(Icons.school_outlined, color: Colors.grey[400]),
+              title: Text("Guide du débutant", style: TextStyle(color: Colors.grey[400])),
+            ),
+          ],
+        ),
       ),
     );
   }
