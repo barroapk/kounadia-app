@@ -3,6 +3,7 @@ import "matches_screen.dart";
 import "predictions_screen.dart";
 import "competitions_screen.dart";
 import "brvm/brvm_screen.dart";
+import "brvm/brvm_compare_screen.dart";
 import "settings_screen.dart";
 import "search_screen.dart";
 import "../models/search_result.dart";
@@ -141,10 +142,16 @@ class _MainScreenState extends State<MainScreen> {
               subtitle: Text("Actions que je surveille", style: TextStyle(color: Colors.grey[350])),
             ),
             ListTile(
-              enabled: false,
-              leading: Icon(Icons.compare_arrows, color: Colors.grey[400]),
-              title: Text("Comparer des actions", style: TextStyle(color: Colors.grey[400])),
-              subtitle: Text("Comparer plusieurs sociétés", style: TextStyle(color: Colors.grey[350])),
+              leading: const Icon(Icons.compare_arrows),
+              title: const Text("Comparer des actions"),
+              subtitle: const Text("Comparer plusieurs sociétés"),
+              onTap: () {
+                Navigator.pop(context);
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(builder: (_) => const BrvmCompareScreen()),
+                );
+              },
             ),
             ListTile(
               enabled: false,
