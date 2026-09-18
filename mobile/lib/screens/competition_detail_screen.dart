@@ -271,7 +271,11 @@ class _CompetitionDetailScreenState extends State<CompetitionDetailScreen>
           return _unavailable("Calendrier indisponible pour le moment.");
         }
 
-        if (calendar.matchdays.isEmpty) {
+        if (calendar.unavailableReason != null) {
+        return _unavailable(calendar.unavailableReason!);
+      }
+
+      if (calendar.matchdays.isEmpty) {
           return Column(
             children: [
               if (calendar.availableSeasons.isNotEmpty) _calendarSeasonSelector(calendar),

@@ -134,6 +134,7 @@ class CalendarResponse {
   final String? currentRoundLabel;
   final int totalMatchdays;
   final List<MatchdayGroup> matchdays;
+  final String? unavailableReason;
 
   CalendarResponse({
     required this.competitionCode,
@@ -143,6 +144,7 @@ class CalendarResponse {
     this.currentRoundLabel,
     required this.totalMatchdays,
     required this.matchdays,
+    this.unavailableReason,
   });
 
   factory CalendarResponse.fromJson(Map<String, dynamic> json) {
@@ -158,6 +160,7 @@ class CalendarResponse {
       matchdays: (json['matchdays'] as List<dynamic>)
           .map((e) => MatchdayGroup.fromJson(e as Map<String, dynamic>))
           .toList(),
+      unavailableReason: json['unavailableReason'] as String?,
     );
   }
 }
