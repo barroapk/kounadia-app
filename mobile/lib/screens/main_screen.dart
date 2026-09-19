@@ -22,10 +22,9 @@ class _MainScreenState extends State<MainScreen> {
   late final List<Widget> _screens = [
     MatchesScreen(key: _matchesKey),
     const PredictionsScreen(),
-    const CompetitionsScreen(),
     const BrvmScreen(),
   ];
-  final _titles = const ["KOUNADIA", "Prédiction", "Compétitions", "Bourse"];
+  final _titles = const ["KOUNADIA", "Prédiction", "Bourse"];
 
   void _comingSoon(BuildContext context, String feature) {
     ScaffoldMessenger.of(context).showSnackBar(
@@ -49,7 +48,7 @@ class _MainScreenState extends State<MainScreen> {
     }
   }
 
-  bool get _isBrvmTab => _currentIndex == 3;
+  bool get _isBrvmTab => _currentIndex == 2;
 
   @override
   Widget build(BuildContext context) {
@@ -100,7 +99,6 @@ class _MainScreenState extends State<MainScreen> {
         destinations: const [
           NavigationDestination(icon: Icon(Icons.scoreboard_outlined), label: "Scores"),
           NavigationDestination(icon: Icon(Icons.insights), label: "Prédiction"),
-          NavigationDestination(icon: Icon(Icons.emoji_events_outlined), label: "Compétitions"),
           NavigationDestination(icon: Icon(Icons.show_chart), label: "Bourse"),
         ],
       ),
