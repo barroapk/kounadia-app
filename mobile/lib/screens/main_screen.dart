@@ -7,6 +7,8 @@ import "brvm/brvm_compare_screen.dart";
 import "settings_screen.dart";
 import "search_screen.dart";
 import "../models/search_result.dart";
+import "knd/deposit_screen.dart";
+import "knd/withdrawal_screen.dart";
 
 class MainScreen extends StatefulWidget {
   const MainScreen({super.key});
@@ -50,6 +52,45 @@ class _MainScreenState extends State<MainScreen> {
 
   bool get _isBrvmTab => _currentIndex == 2;
 
+  void _showKndMenu(BuildContext context) {
+    showModalBottomSheet(
+      context: context,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+      ),
+      builder: (context) => SafeArea(
+        child: Wrap(
+          children: [
+            ListTile(
+              leading: const Icon(Icons.arrow_downward, color: Colors.green),
+              title: const Text("Dépôt"),
+              subtitle: const Text("Alimenter mon compte 1xBet"),
+              onTap: () {
+                Navigator.pop(context);
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(builder: (_) => const DepositScreen()),
+                );
+              },
+            ),
+            ListTile(
+              leading: const Icon(Icons.arrow_upward, color: Colors.orange),
+              title: const Text("Retrait"),
+              subtitle: const Text("Retirer depuis mon compte 1xBet"),
+              onTap: () {
+                Navigator.pop(context);
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(builder: (_) => const WithdrawalScreen()),
+                );
+              },
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -91,6 +132,13 @@ class _MainScreenState extends State<MainScreen> {
         index: _currentIndex,
         children: _screens,
       ),
+      floatingActionButton: _isBrvmTab
+          ? null
+          : FloatingActionButton.extended(
+              onPressed: () => _showKndMenu(context),
+              icon: const Icon(Icons.account_balance_wallet_outlined),
+              label: const Text("Dépôt / Retrait"),
+            ),
       bottomNavigationBar: NavigationBar(
         selectedIndex: _currentIndex,
         onDestinationSelected: (index) {
