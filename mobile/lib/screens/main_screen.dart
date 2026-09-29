@@ -134,10 +134,15 @@ class _MainScreenState extends State<MainScreen> {
       ),
       floatingActionButton: _isBrvmTab
           ? null
-          : FloatingActionButton.extended(
-              onPressed: () => _showKndMenu(context),
-              icon: const Icon(Icons.account_balance_wallet_outlined),
-              label: const Text("Dépôt / Retrait"),
+          : SafeArea(
+              child: Padding(
+                padding: const EdgeInsets.only(bottom: 8),
+                child: FloatingActionButton.extended(
+                  onPressed: () => _showKndMenu(context),
+                  icon: const Icon(Icons.account_balance_wallet_outlined),
+                  label: const Text("Dépôt / Retrait"),
+                ),
+              ),
             ),
       bottomNavigationBar: NavigationBar(
         selectedIndex: _currentIndex,

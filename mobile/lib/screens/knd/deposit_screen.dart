@@ -10,15 +10,13 @@ class DepositScreen extends StatefulWidget {
 }
 
 class _DepositScreenState extends State<DepositScreen> {
+  static const _minDeposit = 200;
+  static const _quickAmounts = [200, 500, 1000, 2000, 5000, 10000];
+
   final _kndApi = KndApiService();
   final _amountController = TextEditingController();
   final _playerIdController = TextEditingController();
   final _phoneController = TextEditingController();
-
-  // Indicatif uniquement (UX) : le serveur reste la seule autorite sur le
-  // bonus reel applique au depot. Ne jamais utiliser cette valeur pour
-  // afficher un credit final "garanti".
-  static const _indicativeBonusPercent = 0;
 
   String? _verifiedPlayerName;
   bool _verifying = false;
@@ -37,10 +35,14 @@ class _DepositScreenState extends State<DepositScreen> {
 
   int? get _amount => int.tryParse(_amountController.text.trim());
 
-  int get _indicativeBonus {
+  bool get _amountBelowMinimum {
     final amount = _amount;
-    if (amount == null) return 0;
-    return (amount * _indicativeBonusPercent / 100).floor();
+    return amount != null && amount < _minDeposit;
+  }
+
+  void _selectQuickAmount(int amount) {
+    _amountController.text = amount.toString();
+    setState(() {});
   }
 
   Future<void> _verifyPlayer() async {
@@ -75,8 +77,6 @@ class _DepositScreenState extends State<DepositScreen> {
   }
 
   void _onPlayerIdChanged(String _) {
-    // Toute modification de l'ID invalide une verification precedente :
-    // on ne doit jamais laisser un ancien nom verifie associe a un ID modifie.
     if (_verifiedPlayerName != null || _verifyError != null) {
       setState(() {
         _verifiedPlayerName = null;
@@ -89,7 +89,7 @@ class _DepositScreenState extends State<DepositScreen> {
     final amount = _amount;
     final phone = _phoneController.text.trim();
     return amount != null &&
-        amount >= 100 &&
+        amount >= _minDeposit &&
         _verifiedPlayerName != null &&
         phone.length >= 8 &&
         !_creating;
@@ -128,143 +128,246 @@ class _DepositScreenState extends State<DepositScreen> {
     }
   }
 
+  Widget _sectionCard({required Widget child}) {
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.all(18),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(16),
+        boxShadow: [
+          BoxShadow(color: Colors.black.withValues(alpha: 0.05), blurRadius: 12, offset: const Offset(0, 4)),
+        ],
+      ),
+      child: child,
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
+    const primaryColor = Color(0xFF1A56DB);
+
     return Scaffold(
-      appBar: AppBar(title: const Text("Dépôt")),
+      backgroundColor: const Color(0xFFF5F7FA),
+      appBar: AppBar(
+        title: const Text("Dépôt", style: TextStyle(fontWeight: FontWeight.bold)),
+        backgroundColor: Colors.white,
+        foregroundColor: Colors.black87,
+        elevation: 0,
+      ),
       body: SingleChildScrollView(
-        padding: const EdgeInsets.all(20),
+        padding: const EdgeInsets.all(16),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
-            const Text(
-              "Alimenter mon compte 1xBet",
-              style: TextStyle(fontSize: 16, color: Colors.grey),
-            ),
-            const SizedBox(height: 24),
-
-            const Text("Montant (FCFA)", style: TextStyle(fontWeight: FontWeight.bold)),
-            const SizedBox(height: 8),
-            TextField(
-              controller: _amountController,
-              keyboardType: TextInputType.number,
-              onChanged: (_) => setState(() {}),
-              decoration: const InputDecoration(
-                border: OutlineInputBorder(),
-                hintText: "Ex : 1000",
-              ),
-            ),
-
-            const SizedBox(height: 24),
-            const Divider(),
-            const SizedBox(height: 8),
-
-            const Text("Compte 1xBet", style: TextStyle(fontWeight: FontWeight.bold)),
-            const SizedBox(height: 8),
-            Row(
-              children: [
-                Expanded(
-                  child: TextField(
-                    controller: _playerIdController,
-                    keyboardType: TextInputType.number,
-                    onChanged: _onPlayerIdChanged,
-                    decoration: const InputDecoration(
-                      border: OutlineInputBorder(),
-                      hintText: "ID 1xBet",
-                    ),
-                  ),
-                ),
-                const SizedBox(width: 12),
-                ElevatedButton(
-                  onPressed: _verifying ? null : _verifyPlayer,
-                  child: _verifying
-                      ? const SizedBox(
-                          width: 18,
-                          height: 18,
-                          child: CircularProgressIndicator(strokeWidth: 2),
-                        )
-                      : const Text("Vérifier"),
-                ),
-              ],
-            ),
-            if (_verifiedPlayerName != null) ...[
-              const SizedBox(height: 8),
-              Row(
-                children: [
-                  const Icon(Icons.check_circle, color: Colors.green, size: 20),
-                  const SizedBox(width: 6),
-                  Text(_verifiedPlayerName!, style: const TextStyle(color: Colors.green)),
-                ],
-              ),
-            ],
-            if (_verifyError != null) ...[
-              const SizedBox(height: 8),
-              Text(_verifyError!, style: const TextStyle(color: Colors.red)),
-            ],
-
-            const SizedBox(height: 24),
-            const Divider(),
-            const SizedBox(height: 8),
-
-            const Text("Numéro Orange Money", style: TextStyle(fontWeight: FontWeight.bold)),
-            const Text(
-              "Le numéro qui servira à effectuer le paiement",
-              style: TextStyle(fontSize: 12, color: Colors.grey),
-            ),
-            const SizedBox(height: 8),
-            TextField(
-              controller: _phoneController,
-              keyboardType: TextInputType.phone,
-              onChanged: (_) => setState(() {}),
-              decoration: const InputDecoration(
-                border: OutlineInputBorder(),
-                hintText: "07 XX XX XX",
-              ),
-            ),
-
-            const SizedBox(height: 24),
-            const Divider(),
-            const SizedBox(height: 16),
-
+            // Bandeau d'accroche
             Container(
               padding: const EdgeInsets.all(16),
               decoration: BoxDecoration(
-                color: Colors.grey[100],
-                borderRadius: BorderRadius.circular(12),
+                gradient: LinearGradient(colors: [primaryColor, primaryColor.withValues(alpha: 0.8)]),
+                borderRadius: BorderRadius.circular(16),
               ),
-              child: Column(
+              child: const Row(
                 children: [
-                  Text(
-                    "${(_amount ?? 0) + _indicativeBonus} FCFA",
-                    style: const TextStyle(fontSize: 28, fontWeight: FontWeight.bold),
-                  ),
-                  const SizedBox(height: 4),
-                  const Text(
-                    "Le montant exact du bonus est confirmé à l'étape suivante",
-                    style: TextStyle(fontSize: 11, color: Colors.grey),
-                    textAlign: TextAlign.center,
+                  Icon(Icons.bolt, color: Colors.white, size: 28),
+                  SizedBox(width: 12),
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          "Dépôt rapide et sécurisé",
+                          style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 15),
+                        ),
+                        SizedBox(height: 2),
+                        Text(
+                          "Ton paiement est suivi automatiquement",
+                          style: TextStyle(color: Colors.white70, fontSize: 12),
+                        ),
+                      ],
+                    ),
                   ),
                 ],
               ),
             ),
+            const SizedBox(height: 16),
+
+            // Montant
+            _sectionCard(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  const Text("Combien veux-tu déposer ?", style: TextStyle(fontWeight: FontWeight.bold, fontSize: 15)),
+                  const SizedBox(height: 12),
+                  TextField(
+                    controller: _amountController,
+                    keyboardType: TextInputType.number,
+                    style: const TextStyle(fontSize: 22, fontWeight: FontWeight.bold),
+                    onChanged: (_) => setState(() {}),
+                    decoration: InputDecoration(
+                      suffixText: "FCFA",
+                      filled: true,
+                      fillColor: const Color(0xFFF5F7FA),
+                      border: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: BorderSide.none),
+                      contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+                    ),
+                  ),
+                  const SizedBox(height: 6),
+                  Text(
+                    "Montant minimum : $_minDeposit FCFA",
+                    style: TextStyle(
+                      fontSize: 12,
+                      fontWeight: _amountBelowMinimum ? FontWeight.bold : FontWeight.normal,
+                      color: _amountBelowMinimum ? Colors.red : Colors.grey[600],
+                    ),
+                  ),
+                  const SizedBox(height: 14),
+                  Wrap(
+                    spacing: 8,
+                    runSpacing: 8,
+                    children: _quickAmounts.map((amount) {
+                      final selected = _amount == amount;
+                      return GestureDetector(
+                        onTap: () => _selectQuickAmount(amount),
+                        child: Container(
+                          padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
+                          decoration: BoxDecoration(
+                            color: selected ? primaryColor : const Color(0xFFF0F2F5),
+                            borderRadius: BorderRadius.circular(20),
+                          ),
+                          child: Text(
+                            amount >= 1000 ? "${amount ~/ 1000}K" : amount.toString(),
+                            style: TextStyle(
+                              color: selected ? Colors.white : Colors.black87,
+                              fontWeight: FontWeight.w600,
+                              fontSize: 13,
+                            ),
+                          ),
+                        ),
+                      );
+                    }).toList(),
+                  ),
+                ],
+              ),
+            ),
+            const SizedBox(height: 16),
+
+            // Compte 1xBet
+            _sectionCard(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  const Text("Ton compte 1xBet", style: TextStyle(fontWeight: FontWeight.bold, fontSize: 15)),
+                  const SizedBox(height: 12),
+                  Row(
+                    children: [
+                      Expanded(
+                        child: TextField(
+                          controller: _playerIdController,
+                          keyboardType: TextInputType.number,
+                          onChanged: _onPlayerIdChanged,
+                          decoration: InputDecoration(
+                            hintText: "ID joueur",
+                            filled: true,
+                            fillColor: const Color(0xFFF5F7FA),
+                            border: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: BorderSide.none),
+                            contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+                          ),
+                        ),
+                      ),
+                      const SizedBox(width: 10),
+                      ElevatedButton(
+                        onPressed: _verifying ? null : _verifyPlayer,
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: primaryColor,
+                          foregroundColor: Colors.white,
+                          padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 16),
+                          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                        ),
+                        child: _verifying
+                            ? const SizedBox(
+                                width: 18, height: 18,
+                                child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white))
+                            : const Text("Vérifier"),
+                      ),
+                    ],
+                  ),
+                  if (_verifiedPlayerName != null) ...[
+                    const SizedBox(height: 12),
+                    Container(
+                      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+                      decoration: BoxDecoration(color: Colors.green[50], borderRadius: BorderRadius.circular(10)),
+                      child: Row(
+                        children: [
+                          const Icon(Icons.check_circle, color: Colors.green, size: 20),
+                          const SizedBox(width: 8),
+                          Expanded(
+                            child: Text(_verifiedPlayerName!,
+                                style: const TextStyle(color: Colors.green, fontWeight: FontWeight.w600)),
+                          ),
+                        ],
+                      ),
+                    ),
+                    const SizedBox(height: 4),
+                    Text("Vérifie bien le nom avant de continuer",
+                        style: TextStyle(fontSize: 11, color: Colors.grey[600])),
+                  ],
+                  if (_verifyError != null) ...[
+                    const SizedBox(height: 8),
+                    Text(_verifyError!, style: const TextStyle(color: Colors.red, fontSize: 13)),
+                  ],
+                ],
+              ),
+            ),
+            const SizedBox(height: 16),
+
+            // Orange Money
+            _sectionCard(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  const Text("Numéro Orange Money", style: TextStyle(fontWeight: FontWeight.bold, fontSize: 15)),
+                  Text("Le numéro qui servira à effectuer le paiement",
+                      style: TextStyle(fontSize: 12, color: Colors.grey[600])),
+                  const SizedBox(height: 12),
+                  TextField(
+                    controller: _phoneController,
+                    keyboardType: TextInputType.phone,
+                    onChanged: (_) => setState(() {}),
+                    decoration: InputDecoration(
+                      hintText: "07 XX XX XX",
+                      filled: true,
+                      fillColor: const Color(0xFFF5F7FA),
+                      border: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: BorderSide.none),
+                      contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+            const SizedBox(height: 20),
 
             if (_createError != null) ...[
-              const SizedBox(height: 16),
               Text(_createError!, style: const TextStyle(color: Colors.red), textAlign: TextAlign.center),
+              const SizedBox(height: 12),
             ],
 
-            const SizedBox(height: 20),
-            ElevatedButton(
-              onPressed: _canContinue ? _createDeposit : null,
-              style: ElevatedButton.styleFrom(padding: const EdgeInsets.symmetric(vertical: 16)),
-              child: _creating
-                  ? const SizedBox(
-                      width: 20,
-                      height: 20,
-                      child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white),
-                    )
-                  : const Text("Continuer"),
+            SizedBox(
+              height: 54,
+              child: ElevatedButton(
+                onPressed: _canContinue ? _createDeposit : null,
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: primaryColor,
+                  foregroundColor: Colors.white,
+                  disabledBackgroundColor: Colors.grey[300],
+                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
+                ),
+                child: _creating
+                    ? const SizedBox(width: 22, height: 22, child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white))
+                    : const Text("Continuer →", style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
+              ),
             ),
+            const SizedBox(height: 24),
           ],
         ),
       ),
