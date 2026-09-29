@@ -21,8 +21,8 @@ class _SearchScreenState extends State<SearchScreen> {
   @override
   void initState() {
     super.initState();
-    _continents = COMPETITIONS_CATALOG.map((c) => c.continent).toSet().toList();
-    _countries = COMPETITIONS_CATALOG
+    _continents = VISIBLE_COMPETITIONS_CATALOG.map((c) => c.continent).toSet().toList();
+    _countries = VISIBLE_COMPETITIONS_CATALOG
         .map((c) => c.country)
         .where((c) => c != "International")
         .toSet()
@@ -55,7 +55,7 @@ class _SearchScreenState extends State<SearchScreen> {
         : widget.availableTeams.where(_matches).toList();
     final matchingCompetitions = _query.isEmpty
         ? <CompetitionInfo>[]
-        : COMPETITIONS_CATALOG.where((c) => _matches(c.name)).toList();
+        : VISIBLE_COMPETITIONS_CATALOG.where((c) => _matches(c.name)).toList();
     final matchingCountries = _query.isEmpty
         ? <String>[]
         : _countries.where(_matches).toList();

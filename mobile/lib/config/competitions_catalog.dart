@@ -14,6 +14,13 @@ class CompetitionInfo {
   });
 }
 
+// TEMPORAIRE : abonnement API-Football Pro expire, retombe sur le plan
+// gratuit qui ne couvre plus les 51 competitions a leagueId. On masque ces
+// competitions plutot que d'afficher un message d'indisponibilite partout.
+// A SUPPRIMER (et utiliser COMPETITIONS_CATALOG directement) une fois
+// l'abonnement renouvele.
+const bool API_FOOTBALL_PRO_ACTIVE = false;
+
 const List<CompetitionInfo> COMPETITIONS_CATALOG = [
   // Europe - football-data.org (avec code, classement disponible)
   CompetitionInfo(name: "Premier League", continent: "Europe", country: "Angleterre", code: "PL"),
@@ -79,6 +86,12 @@ const List<CompetitionInfo> COMPETITIONS_CATALOG = [
   // Monde
   CompetitionInfo(name: "FIFA Club World Cup", leagueId: 15, continent: "Monde", country: "International"),
 ];
+
+// Liste effectivement affichee dans l'app : masque les competitions
+// API-Football (leagueId) tant que API_FOOTBALL_PRO_ACTIVE est false.
+final List<CompetitionInfo> VISIBLE_COMPETITIONS_CATALOG = API_FOOTBALL_PRO_ACTIVE
+    ? COMPETITIONS_CATALOG
+    : COMPETITIONS_CATALOG.where((c) => c.leagueId == null).toList();
 
 // Rang d'affichage : plus petit = affiché en premier (D1 avant D2 avant coupes).
 const Map<String, int> COMPETITION_DISPLAY_RANK = {

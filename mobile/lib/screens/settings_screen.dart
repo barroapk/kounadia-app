@@ -48,7 +48,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
     }
 
     final Map<String, Map<String, List<CompetitionInfo>>> grouped = {};
-    for (final comp in COMPETITIONS_CATALOG) {
+    for (final comp in VISIBLE_COMPETITIONS_CATALOG) {
       grouped.putIfAbsent(comp.continent, () => {});
       grouped[comp.continent]!.putIfAbsent(comp.country, () => []);
       grouped[comp.continent]![comp.country]!.add(comp);

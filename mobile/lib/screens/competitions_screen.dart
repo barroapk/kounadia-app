@@ -39,7 +39,7 @@ class _CompetitionsScreenState extends State<CompetitionsScreen> {
   @override
   Widget build(BuildContext context) {
     final Map<String, Map<String, List<CompetitionInfo>>> tree = {};
-    for (final comp in COMPETITIONS_CATALOG) {
+    for (final comp in VISIBLE_COMPETITIONS_CATALOG) {
       tree.putIfAbsent(comp.continent, () => {});
       tree[comp.continent]!.putIfAbsent(comp.country, () => []).add(comp);
     }
@@ -48,7 +48,7 @@ class _CompetitionsScreenState extends State<CompetitionsScreen> {
     CompetitionInfo? lastCompetitionInfo;
     if (_lastCompetition != null) {
       try {
-        lastCompetitionInfo = COMPETITIONS_CATALOG.firstWhere((c) => c.name == _lastCompetition);
+        lastCompetitionInfo = VISIBLE_COMPETITIONS_CATALOG.firstWhere((c) => c.name == _lastCompetition);
       } catch (_) {
         lastCompetitionInfo = null;
       }
