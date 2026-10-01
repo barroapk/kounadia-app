@@ -1,5 +1,6 @@
 import "package:flutter/material.dart";
 import "../../services/knd/knd_api_service.dart";
+import "../../services/knd/player_cache_service.dart";
 import "payment_screen.dart";
 
 class DepositScreen extends StatefulWidget {
@@ -14,6 +15,8 @@ class _DepositScreenState extends State<DepositScreen> {
   static const _quickAmounts = [200, 500, 1000, 2000, 5000, 10000];
 
   final _kndApi = KndApiService();
+  final _playerCache = PlayerCacheService();
+  List<Map<String, String>> _recentPlayers = [];
   final _amountController = TextEditingController();
   final _playerIdController = TextEditingController();
   final _phoneController = TextEditingController();
@@ -24,6 +27,18 @@ class _DepositScreenState extends State<DepositScreen> {
 
   bool _creating = false;
   String? _createError;
+
+  @override
+  void initState() {
+    super.initState();
+    _loadRecentPlayers();
+  }
+
+  Future<void> _loadRecentPlayers() async {
+    final players = await _playerCache.getPlayers();
+    if (!mounted) return;
+    setState(() => _recentPlayers = players);
+  }
 
   @override
   void dispose() {
@@ -68,6 +83,16 @@ class _DepositScreenState extends State<DepositScreen> {
           _verifyError = "Compte 1xBet introuvable. Vérifiez l'ID.";
         }
       });
+
+      if (valid && name != null) {
+        try {
+          await _playerCache.savePlayer(playerId, name);
+          await _loadRecentPlayers();
+        } catch (_) {
+          // Le cache est une commodité locale : une erreur de cache ne
+          // doit jamais invalider une vérification NafaCash réussie.
+        }
+      }
     } catch (e) {
       setState(() {
         _verifying = false;
@@ -257,7 +282,10 @@ class _DepositScreenState extends State<DepositScreen> {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  const Text("Ton compte 1xBet", style: TextStyle(fontWeight: FontWeight.bold, fontSize: 15)),
+                  const Text(
+                    "Ton compte 1xBet",
+                    style: TextStyle(fontWeight: FontWeight.bold, fontSize: 15),
+                  ),
                   const SizedBox(height: 12),
                   Row(
                     children: [
@@ -270,8 +298,14 @@ class _DepositScreenState extends State<DepositScreen> {
                             hintText: "ID joueur",
                             filled: true,
                             fillColor: const Color(0xFFF5F7FA),
-                            border: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: BorderSide.none),
-                            contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+                            border: OutlineInputBorder(
+                              borderRadius: BorderRadius.circular(12),
+                              borderSide: BorderSide.none,
+                            ),
+                           contentPadding: const EdgeInsets.symmetric(
+                              horizontal: 16,
+                              vertical: 14,
+                            ),
                           ),
                         ),
                       ),
@@ -281,40 +315,123 @@ class _DepositScreenState extends State<DepositScreen> {
                         style: ElevatedButton.styleFrom(
                           backgroundColor: primaryColor,
                           foregroundColor: Colors.white,
-                          padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 16),
-                          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: 18,
+                            vertical: 16,
+                          ),
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(12),
+                          ),
                         ),
                         child: _verifying
                             ? const SizedBox(
-                                width: 18, height: 18,
-                                child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white))
+                                width: 18,
+                                height: 18,
+                                child: CircularProgressIndicator(
+                                  strokeWidth: 2,
+                                  color: Colors.white,
+                                ),
+                              )
                             : const Text("Vérifier"),
                       ),
                     ],
                   ),
+                  if (_recentPlayers.isNotEmpty &&
+                      _playerIdController.text.trim().isNotEmpty &&
+                      _verifiedPlayerName == null) ...[
+                    const SizedBox(height: 10),
+                    Text(
+                      "Comptes récents",
+                      style: TextStyle(
+                        fontSize: 12,
+                        color: Colors.grey[600],
+                        fontWeight: FontWeight.w600,
+                      ),
+                    ),
+                    const SizedBox(height: 6),
+                    Wrap(
+                      spacing: 8,
+                      runSpacing: 8,
+                      children: _recentPlayers.map((player) {
+                        return GestureDetector(
+                          onTap: () {
+                            _playerIdController.text = player["id"] ?? "";
+                            setState(() {
+                              _verifiedPlayerName = null;
+                              _verifyError = null;
+                            });
+                          },
+                          child: Container(
+                            padding: const EdgeInsets.symmetric(
+                              horizontal: 12,
+                              vertical: 8,
+                            ),
+                            decoration: BoxDecoration(
+                              color: const Color(0xFFF0F2F5),
+                              borderRadius: BorderRadius.circular(20),
+                            ),
+                            child: Text(
+                              "${player["id"]} · ${player["name"]}",
+                              style: const TextStyle(
+                                fontSize: 12,
+                                fontWeight: FontWeight.w600,
+                                color: Colors.black87,
+                              ),
+                            ),
+                          ),
+                        );
+                      }).toList(),
+                    ),
+                  ],
                   if (_verifiedPlayerName != null) ...[
                     const SizedBox(height: 12),
                     Container(
-                      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
-                      decoration: BoxDecoration(color: Colors.green[50], borderRadius: BorderRadius.circular(10)),
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 12,
+                        vertical: 10,
+                      ),
+                      decoration: BoxDecoration(
+                        color: Colors.green[50],
+                        borderRadius: BorderRadius.circular(10),
+                      ),
                       child: Row(
                         children: [
-                          const Icon(Icons.check_circle, color: Colors.green, size: 20),
+                          const Icon(
+                            Icons.check_circle,
+                            color: Colors.green,
+                            size: 20,
+                          ),
                           const SizedBox(width: 8),
                           Expanded(
-                            child: Text(_verifiedPlayerName!,
-                                style: const TextStyle(color: Colors.green, fontWeight: FontWeight.w600)),
+                            child: Text(
+                              _verifiedPlayerName!,
+                              style: const TextStyle(
+                                color: Colors.green,
+                                fontWeight: FontWeight.w600,
+                              ),
+                            ),
                           ),
                         ],
                       ),
                     ),
                     const SizedBox(height: 4),
-                    Text("Vérifie bien le nom avant de continuer",
-                        style: TextStyle(fontSize: 11, color: Colors.grey[600])),
+                    Text(
+                      "Vérifie bien le nom avant de continuer",
+                      style: TextStyle(
+                        fontSize: 11,
+                        color: Colors.grey[600],
+                      ),
+                    ),
                   ],
                   if (_verifyError != null) ...[
                     const SizedBox(height: 8),
-                    Text(_verifyError!, style: const TextStyle(color: Colors.red, fontSize: 13)),
+                    Text(
+                      _verifyError!,
+                      style: const TextStyle(
+                        color: Colors.red,
+                        fontSize: 13,
+                      ),
+                    ),
                   ],
                 ],
               ),
