@@ -28,6 +28,10 @@ class _DepositScreenState extends State<DepositScreen> {
   bool _creating = false;
   String? _createError;
 
+  bool _previewing = false;
+  String? _previewError;
+  Map<String, dynamic>? _preview;
+
   @override
   void initState() {
     super.initState();
@@ -117,7 +121,42 @@ class _DepositScreenState extends State<DepositScreen> {
         amount >= _minDeposit &&
         _verifiedPlayerName != null &&
         phone.length >= 8 &&
-        !_creating;
+        !_creating &&
+        !_previewing;
+  }
+
+  Future<void> _previewDeposit() async {
+    final amount = _amount;
+    final playerId = _playerIdController.text.trim();
+
+    if (amount == null) return;
+
+    setState(() {
+      _previewing = true;
+      _previewError = null;
+      _createError = null;
+    });
+
+    try {
+      final preview = await _kndApi.previewDeposit(
+        playerId: playerId,
+        amount: amount,
+      );
+
+      if (!mounted) return;
+
+      setState(() {
+        _previewing = false;
+        _preview = preview;
+      });
+    } catch (e) {
+      if (!mounted) return;
+
+      setState(() {
+        _previewing = false;
+        _previewError = e.toString();
+      });
+    }
   }
 
   Future<void> _createDeposit() async {
@@ -127,6 +166,7 @@ class _DepositScreenState extends State<DepositScreen> {
     if (amount == null) return;
 
     setState(() {
+      _preview = null;
       _creating = true;
       _createError = null;
     });
@@ -168,9 +208,182 @@ class _DepositScreenState extends State<DepositScreen> {
     );
   }
 
+  Widget _buildConfirmation(BuildContext context, Color primaryColor) {
+    final preview = _preview!;
+
+    final playerName = preview["playerName"]?.toString() ?? "";
+    final playerId = preview["playerId"]?.toString() ?? "";
+    final amount = (preview["amount"] as num?)?.toInt() ?? 0;
+    final bonusPercentage =
+        (preview["bonusPercentage"] as num?)?.toDouble() ?? 0;
+    final bonusAmount = (preview["bonusAmount"] as num?)?.toInt() ?? 0;
+    final totalCredit = (preview["totalCredit"] as num?)?.toInt() ?? 0;
+
+    return Scaffold(
+      backgroundColor: const Color(0xFFF5F7FA),
+      appBar: AppBar(
+        title: const Text(
+          "Confirmation",
+          style: TextStyle(fontWeight: FontWeight.bold),
+        ),
+        backgroundColor: Colors.white,
+        foregroundColor: Colors.black87,
+        elevation: 0,
+        leading: IconButton(
+          icon: const Icon(Icons.arrow_back),
+          onPressed: _creating ? null : () {
+            setState(() {
+              _preview = null;
+              _previewError = null;
+            });
+          },
+        ),
+      ),
+      body: SingleChildScrollView(
+        padding: const EdgeInsets.all(16),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            _sectionCard(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  const Text(
+                    "Vérifie ton dépôt",
+                    style: TextStyle(
+                      fontWeight: FontWeight.bold,
+                      fontSize: 18,
+                    ),
+                  ),
+                  const SizedBox(height: 18),
+
+                  _confirmationRow("Compte", playerName),
+                  _confirmationRow("ID 1xBet", playerId),
+                  _confirmationRow(
+                    "Montant",
+                    "$amount FCFA",
+                  ),
+                  _confirmationRow(
+                    "Bonus",
+                    "$bonusAmount FCFA (${bonusPercentage.toStringAsFixed(0)} %)",
+                  ),
+
+                  const Divider(height: 28),
+
+                  _confirmationRow(
+                    "Crédit total",
+                    "$totalCredit FCFA",
+                    bold: true,
+                  ),
+                ],
+              ),
+            ),
+
+            const SizedBox(height: 16),
+
+            if (_previewError != null) ...[
+              Text(
+                _previewError!,
+                style: const TextStyle(color: Colors.red),
+                textAlign: TextAlign.center,
+              ),
+              const SizedBox(height: 12),
+            ],
+
+            SizedBox(
+              height: 54,
+              child: ElevatedButton(
+                onPressed: _creating ? null : _createDeposit,
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: primaryColor,
+                  foregroundColor: Colors.white,
+                  disabledBackgroundColor: Colors.grey[300],
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(14),
+                  ),
+                ),
+                child: _creating
+                    ? const SizedBox(
+                        width: 22,
+                        height: 22,
+                        child: CircularProgressIndicator(
+                          strokeWidth: 2,
+                          color: Colors.white,
+                        ),
+                      )
+                    : const Text(
+                        "Continuer au paiement →",
+                        style: TextStyle(
+                          fontSize: 16,
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
+              ),
+            ),
+
+            const SizedBox(height: 12),
+
+            TextButton(
+              onPressed: _creating
+                  ? null
+                  : () {
+                      setState(() {
+                        _preview = null;
+                        _previewError = null;
+                      });
+                    },
+              child: const Text("Modifier"),
+            ),
+
+            const SizedBox(height: 20),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _confirmationRow(
+    String label,
+    String value, {
+    bool bold = false,
+  }) {
+    return Padding(
+      padding: const EdgeInsets.symmetric(vertical: 7),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Expanded(
+            child: Text(
+              label,
+              style: TextStyle(
+                color: Colors.grey[600],
+                fontSize: 14,
+              ),
+            ),
+          ),
+          const SizedBox(width: 12),
+          Flexible(
+            child: Text(
+              value,
+              textAlign: TextAlign.right,
+              style: TextStyle(
+                fontWeight: bold ? FontWeight.bold : FontWeight.w600,
+                fontSize: bold ? 17 : 14,
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     const primaryColor = Color(0xFF1A56DB);
+
+    if (_preview != null) {
+      return _buildConfirmation(context, primaryColor);
+    }
 
     return Scaffold(
       backgroundColor: const Color(0xFFF5F7FA),
@@ -464,22 +677,22 @@ class _DepositScreenState extends State<DepositScreen> {
             ),
             const SizedBox(height: 20),
 
-            if (_createError != null) ...[
-              Text(_createError!, style: const TextStyle(color: Colors.red), textAlign: TextAlign.center),
+            if (_previewError != null) ...[
+              Text(_previewError!, style: const TextStyle(color: Colors.red), textAlign: TextAlign.center),
               const SizedBox(height: 12),
             ],
 
             SizedBox(
               height: 54,
               child: ElevatedButton(
-                onPressed: _canContinue ? _createDeposit : null,
+                onPressed: _canContinue ? _previewDeposit : null,
                 style: ElevatedButton.styleFrom(
                   backgroundColor: primaryColor,
                   foregroundColor: Colors.white,
                   disabledBackgroundColor: Colors.grey[300],
                   shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
                 ),
-                child: _creating
+                child: _previewing
                     ? const SizedBox(width: 22, height: 22, child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white))
                     : const Text("Continuer →", style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
               ),

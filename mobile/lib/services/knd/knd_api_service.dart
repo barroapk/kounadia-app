@@ -92,6 +92,19 @@ class KndApiService {
     return _getWithRetry("/player-verification/verify?playerId=$playerId");
   }
 
+  Future<Map<String, dynamic>> previewDeposit({
+    required String playerId,
+    required int amount,
+  }) {
+    return _postOnce(
+      "/deposits/preview",
+      body: {
+        "playerId": playerId,
+        "amount": amount,
+      },
+    );
+  }
+
   Future<Map<String, dynamic>> createDeposit({
     required String playerId,
     required int amount,
