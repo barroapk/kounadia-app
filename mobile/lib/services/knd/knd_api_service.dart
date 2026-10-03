@@ -92,6 +92,20 @@ class KndApiService {
     return _getWithRetry("/player-verification/verify?playerId=$playerId");
   }
 
+  Future<Map<String, dynamic>> bonusInfo({
+    required String playerId,
+    required int amount,
+  }) {
+    final query = Uri(
+      queryParameters: {
+        "playerId": playerId,
+        "amount": amount.toString(),
+      },
+    ).query;
+
+    return _getWithRetry("/deposits/bonus-info?$query");
+  }
+
   Future<Map<String, dynamic>> previewDeposit({
     required String playerId,
     required int amount,

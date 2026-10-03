@@ -1,3 +1,4 @@
+import "dart:async";
 import "package:flutter/material.dart";
 import "../../services/knd/knd_api_service.dart";
 import "../../services/knd/player_cache_service.dart";
@@ -34,6 +35,11 @@ class _DepositScreenState extends State<DepositScreen> {
   bool _previewing = false;
   String? _previewError;
   Map<String, dynamic>? _preview;
+
+  Timer? _bonusInfoTimer;
+  Map<String, dynamic>? _bonusInfo;
+  String? _lastBonusInfoKey;
+  int _bonusInfoRequestId = 0;
 
   @override
   void initState() {
@@ -92,6 +98,7 @@ class _DepositScreenState extends State<DepositScreen> {
 
   @override
   void dispose() {
+    _bonusInfoTimer?.cancel();
     _amountController.dispose();
     _playerIdController.dispose();
     _phoneController.dispose();
@@ -107,7 +114,73 @@ class _DepositScreenState extends State<DepositScreen> {
 
   void _selectQuickAmount(int amount) {
     _amountController.text = amount.toString();
-    setState(() {});
+    _onAmountChanged();
+  }
+
+  void _onAmountChanged() {
+    _bonusInfoTimer?.cancel();
+    _bonusInfoRequestId++;
+
+    final amount = _amount;
+    final playerId = _playerIdController.text.trim();
+
+    setState(() {
+      _bonusInfo = null;
+      _lastBonusInfoKey = null;
+    });
+
+    if (_verifiedPlayerName == null ||
+        playerId.isEmpty ||
+        amount == null ||
+        amount < _minDeposit) {
+      return;
+    }
+
+    final key = "$playerId:$amount";
+
+    _bonusInfoTimer = Timer(const Duration(milliseconds: 700), () {
+      _loadBonusInfo(playerId, amount, key);
+    });
+  }
+
+  Future<void> _loadBonusInfo(
+    String playerId,
+    int amount,
+    String key,
+  ) async {
+    if (_verifiedPlayerName == null || _lastBonusInfoKey == key) {
+      return;
+    }
+
+    final requestId = ++_bonusInfoRequestId;
+
+    try {
+      final result = await _kndApi.bonusInfo(
+        playerId: playerId,
+        amount: amount,
+      );
+
+      if (!mounted ||
+          requestId != _bonusInfoRequestId ||
+          _playerIdController.text.trim() != playerId ||
+          _amount != amount) {
+        return;
+      }
+
+      setState(() {
+        _bonusInfo = result;
+        _lastBonusInfoKey = key;
+      });
+    } catch (_) {
+      if (!mounted || requestId != _bonusInfoRequestId) {
+        return;
+      }
+
+      setState(() {
+        _bonusInfo = null;
+        _lastBonusInfoKey = null;
+      });
+    }
   }
 
   Future<bool> _verifyPlayer() async {
@@ -143,6 +216,8 @@ class _DepositScreenState extends State<DepositScreen> {
           // Le cache est une commodité locale : une erreur de cache ne
           // doit jamais invalider une vérification NafaCash réussie.
         }
+
+        _onAmountChanged();
         return true;
       }
       return false;
@@ -156,10 +231,17 @@ class _DepositScreenState extends State<DepositScreen> {
   }
 
   void _onPlayerIdChanged(String _) {
-    if (_verifiedPlayerName != null || _verifyError != null) {
+    _bonusInfoTimer?.cancel();
+    _bonusInfoRequestId++;
+
+    if (_verifiedPlayerName != null ||
+        _verifyError != null ||
+        _bonusInfo != null) {
       setState(() {
         _verifiedPlayerName = null;
         _verifyError = null;
+        _bonusInfo = null;
+        _lastBonusInfoKey = null;
       });
     }
   }
@@ -273,6 +355,71 @@ class _DepositScreenState extends State<DepositScreen> {
         _createError = e.toString();
       });
     }
+  }
+
+  Widget _buildBonusMarketing() {
+    final bonus = _bonusInfo;
+
+    if (bonus == null) {
+      return const SizedBox.shrink();
+    }
+
+    final bonusAmount = (bonus["bonusAmount"] as num?)?.toInt() ?? 0;
+    final totalCredit = (bonus["totalCredit"] as num?)?.toInt() ?? 0;
+    final percentage =
+        (bonus["bonusPercentage"] as num?)?.toDouble() ?? 0;
+    final minDeposit = (bonus["minDeposit"] as num?)?.toInt();
+
+    if (bonusAmount <= 0) {
+      if (minDeposit == null || minDeposit <= 0) {
+        return const SizedBox.shrink();
+      }
+
+      return Container(
+        width: double.infinity,
+        padding: const EdgeInsets.symmetric(
+          horizontal: 12,
+          vertical: 10,
+        ),
+        decoration: BoxDecoration(
+          color: Colors.orange[50],
+          borderRadius: BorderRadius.circular(10),
+        ),
+        child: Text(
+          "🎁 Bonus dès $minDeposit FCFA",
+          style: TextStyle(
+            color: Colors.orange[900],
+            fontWeight: FontWeight.w600,
+            fontSize: 13,
+          ),
+        ),
+      );
+    }
+
+    final firstDeposit = bonus["isFirstDeposit"] == true;
+    final label = firstDeposit ? "Premier dépôt" : "Dépôt suivant";
+
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.symmetric(
+        horizontal: 12,
+        vertical: 10,
+      ),
+      decoration: BoxDecoration(
+        color: Colors.green[50],
+        borderRadius: BorderRadius.circular(10),
+      ),
+      child: Text(
+        "🎁 $label : +$bonusAmount FCFA de bonus "
+        "(${percentage.toStringAsFixed(0)} %) → "
+        "$totalCredit FCFA crédités",
+        style: TextStyle(
+          color: Colors.green[800],
+          fontWeight: FontWeight.w600,
+          fontSize: 13,
+        ),
+      ),
+    );
   }
 
   Widget _sectionCard({required Widget child}) {
@@ -536,7 +683,7 @@ class _DepositScreenState extends State<DepositScreen> {
                     controller: _amountController,
                     keyboardType: TextInputType.number,
                     style: const TextStyle(fontSize: 22, fontWeight: FontWeight.bold),
-                    onChanged: (_) => setState(() {}),
+                    onChanged: (_) => _onAmountChanged(),
                     decoration: InputDecoration(
                       suffixText: "FCFA",
                       filled: true,
@@ -554,6 +701,8 @@ class _DepositScreenState extends State<DepositScreen> {
                       color: _amountBelowMinimum ? Colors.red : Colors.grey[600],
                     ),
                   ),
+                  const SizedBox(height: 8),
+                  _buildBonusMarketing(),
                   const SizedBox(height: 14),
                   Wrap(
                     spacing: 8,
