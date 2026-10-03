@@ -114,13 +114,28 @@ class _DepositScreenState extends State<DepositScreen> {
     }
   }
 
+  bool _isValidOrangePhone(String raw) {
+    final digits = raw.replaceAll(RegExp(r'\D'), '');
+
+    if (digits.length == 8) {
+      return RegExp(r'^\d[4567]\d{6}$').hasMatch(digits);
+    }
+
+    if (digits.length == 11 && digits.startsWith('226')) {
+      final local = digits.substring(3);
+      return RegExp(r'^\d[4567]\d{6}$').hasMatch(local);
+    }
+
+    return false;
+  }
+
   bool get _canContinue {
     final amount = _amount;
     final phone = _phoneController.text.trim();
     return amount != null &&
         amount >= _minDeposit &&
         _verifiedPlayerName != null &&
-        phone.length >= 8 &&
+        _isValidOrangePhone(phone) &&
         !_creating &&
         !_previewing;
   }
@@ -558,7 +573,6 @@ class _DepositScreenState extends State<DepositScreen> {
                     ],
                   ),
                   if (_recentPlayers.isNotEmpty &&
-                      _playerIdController.text.trim().isNotEmpty &&
                       _verifiedPlayerName == null) ...[
                     const SizedBox(height: 10),
                     Text(
@@ -679,6 +693,11 @@ class _DepositScreenState extends State<DepositScreen> {
                       border: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: BorderSide.none),
                       contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
                     ),
+                  ),
+                  const SizedBox(height: 6),
+                  Text(
+                    "8 chiffres • 2e chiffre : 4, 5, 6 ou 7 • Exemple : 74 12 34 56",
+                    style: TextStyle(fontSize: 11, color: Colors.grey[600]),
                   ),
                 ],
               ),
