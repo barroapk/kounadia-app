@@ -1,6 +1,7 @@
 import "package:flutter/material.dart";
 import "../../services/knd/knd_api_service.dart";
 import "../../services/knd/player_cache_service.dart";
+import "package:shared_preferences/shared_preferences.dart";
 import "payment_screen.dart";
 
 class DepositScreen extends StatefulWidget {
@@ -13,6 +14,8 @@ class DepositScreen extends StatefulWidget {
 class _DepositScreenState extends State<DepositScreen> {
   static const _minDeposit = 200;
   static const _quickAmounts = [200, 500, 1000, 2000, 5000, 10000];
+  static const _lastPlayerIdKey = "knd_last_valid_player_id";
+  static const _lastPhoneKey = "knd_last_valid_orange_phone";
 
   final _kndApi = KndApiService();
   final _playerCache = PlayerCacheService();
@@ -36,12 +39,55 @@ class _DepositScreenState extends State<DepositScreen> {
   void initState() {
     super.initState();
     _loadRecentPlayers();
+    _loadLastValidInputs();
   }
 
   Future<void> _loadRecentPlayers() async {
     final players = await _playerCache.getPlayers();
     if (!mounted) return;
     setState(() => _recentPlayers = players);
+  }
+
+  /// Preremplit l'ID 1xBet et le numero Orange Money avec les dernieres
+  /// valeurs reellement validees (jamais une simple saisie non verifiee).
+  Future<void> _loadLastValidInputs() async {
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      final lastPlayerId = prefs.getString(_lastPlayerIdKey);
+      final lastPhone = prefs.getString(_lastPhoneKey);
+
+      if (!mounted) return;
+
+      setState(() {
+        if (lastPlayerId != null && lastPlayerId.isNotEmpty) {
+          _playerIdController.text = lastPlayerId;
+        }
+        if (lastPhone != null && lastPhone.isNotEmpty) {
+          _phoneController.text = lastPhone;
+        }
+      });
+    } catch (_) {
+      // Prefill est une commodite locale : une erreur ici ne doit jamais
+      // bloquer l'ouverture de l'ecran.
+    }
+  }
+
+  Future<void> _saveLastValidPlayerId(String playerId) async {
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      await prefs.setString(_lastPlayerIdKey, playerId);
+    } catch (_) {
+      // Pas bloquant : commodite locale uniquement.
+    }
+  }
+
+  Future<void> _saveLastValidPhone(String phone) async {
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      await prefs.setString(_lastPhoneKey, phone);
+    } catch (_) {
+      // Pas bloquant : commodite locale uniquement.
+    }
   }
 
   @override
@@ -64,9 +110,9 @@ class _DepositScreenState extends State<DepositScreen> {
     setState(() {});
   }
 
-  Future<void> _verifyPlayer() async {
+  Future<bool> _verifyPlayer() async {
     final playerId = _playerIdController.text.trim();
-    if (playerId.isEmpty) return;
+    if (playerId.isEmpty) return false;
 
     setState(() {
       _verifying = true;
@@ -92,16 +138,20 @@ class _DepositScreenState extends State<DepositScreen> {
         try {
           await _playerCache.savePlayer(playerId, name);
           await _loadRecentPlayers();
+          await _saveLastValidPlayerId(playerId);
         } catch (_) {
           // Le cache est une commodité locale : une erreur de cache ne
           // doit jamais invalider une vérification NafaCash réussie.
         }
+        return true;
       }
+      return false;
     } catch (e) {
       setState(() {
         _verifying = false;
         _verifyError = e.toString();
       });
+      return false;
     }
   }
 
@@ -132,17 +182,20 @@ class _DepositScreenState extends State<DepositScreen> {
   bool get _canContinue {
     final amount = _amount;
     final phone = _phoneController.text.trim();
+    final playerId = _playerIdController.text.trim();
     return amount != null &&
         amount >= _minDeposit &&
-        _verifiedPlayerName != null &&
+        playerId.isNotEmpty &&
         _isValidOrangePhone(phone) &&
         !_creating &&
-        !_previewing;
+        !_previewing &&
+        !_verifying;
   }
 
   Future<void> _previewDeposit() async {
     final amount = _amount;
     final playerId = _playerIdController.text.trim();
+    final phone = _phoneController.text.trim();
 
     if (amount == null) return;
 
@@ -151,6 +204,21 @@ class _DepositScreenState extends State<DepositScreen> {
       _previewError = null;
       _createError = null;
     });
+
+    // Verification automatique : l'utilisateur n'a pas besoin d'appuyer
+    // sur "Vérifier" au prealable si l'ID n'a pas deja ete valide.
+    if (_verifiedPlayerName == null) {
+      final verified = await _verifyPlayer();
+      if (!mounted) return;
+      if (!verified) {
+        setState(() => _previewing = false);
+        return;
+      }
+    }
+
+    if (_isValidOrangePhone(phone)) {
+      await _saveLastValidPhone(phone);
+    }
 
     try {
       final preview = await _kndApi.previewDeposit(
@@ -273,6 +341,10 @@ class _DepositScreenState extends State<DepositScreen> {
 
                   _confirmationRow("Compte", playerName),
                   _confirmationRow("ID 1xBet", playerId),
+                  _confirmationRow(
+                    "Numéro Orange Money",
+                    _phoneController.text.trim(),
+                  ),
                   _confirmationRow(
                     "Montant",
                     "$amount FCFA",
@@ -694,11 +766,14 @@ class _DepositScreenState extends State<DepositScreen> {
                       contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
                     ),
                   ),
-                  const SizedBox(height: 6),
-                  Text(
-                    "8 chiffres • 2e chiffre : 4, 5, 6 ou 7 • Exemple : 74 12 34 56",
-                    style: TextStyle(fontSize: 11, color: Colors.grey[600]),
-                  ),
+                  if (_phoneController.text.trim().isNotEmpty &&
+                      !_isValidOrangePhone(_phoneController.text)) ...[
+                    const SizedBox(height: 6),
+                    const Text(
+                      "Numéro Orange incorrect",
+                      style: TextStyle(fontSize: 12, color: Colors.red),
+                    ),
+                  ],
                 ],
               ),
             ),
