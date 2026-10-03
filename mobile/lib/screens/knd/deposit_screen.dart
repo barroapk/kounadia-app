@@ -166,7 +166,6 @@ class _DepositScreenState extends State<DepositScreen> {
     if (amount == null) return;
 
     setState(() {
-      _preview = null;
       _creating = true;
       _createError = null;
     });
@@ -284,6 +283,15 @@ class _DepositScreenState extends State<DepositScreen> {
             if (_previewError != null) ...[
               Text(
                 _previewError!,
+                style: const TextStyle(color: Colors.red),
+                textAlign: TextAlign.center,
+              ),
+              const SizedBox(height: 12),
+            ],
+
+            if (_createError != null) ...[
+              Text(
+                _createError!,
                 style: const TextStyle(color: Colors.red),
                 textAlign: TextAlign.center,
               ),
