@@ -868,7 +868,7 @@ class _PaymentScreenState extends State<PaymentScreen> {
             style: TextStyle(
               color: _success,
               fontWeight: FontWeight.bold,
-              fontSize: 20,
+              fontSize: 16,
             ),
           ),
           const SizedBox(height: 6),
@@ -876,7 +876,7 @@ class _PaymentScreenState extends State<PaymentScreen> {
             "${_formatAmount(_totalCredit)} FCFA",
             style: const TextStyle(
               fontWeight: FontWeight.bold,
-              fontSize: 26,
+              fontSize: 16,
             ),
           ),
           const SizedBox(height: 4),
@@ -919,7 +919,7 @@ class _PaymentScreenState extends State<PaymentScreen> {
                         Text(
                           _statusTitle,
                           style: const TextStyle(
-                            fontSize: 20,
+                            fontSize: 16,
                             fontWeight: FontWeight.bold,
                           ),
                         ),

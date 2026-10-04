@@ -1,5 +1,6 @@
 import "package:flutter/material.dart";
 import "../../services/knd/deposit_history_service.dart";
+import "../../services/knd/knd_api_service.dart";
 
 class HistoryScreen extends StatefulWidget {
   const HistoryScreen({super.key});
@@ -10,6 +11,8 @@ class HistoryScreen extends StatefulWidget {
 
 class _HistoryScreenState extends State<HistoryScreen> {
   final _historyService = DepositHistoryService();
+  final _kndApi = KndApiService();
+  bool _cancelling = false;
 
   List<Map<String, dynamic>> _entries = [];
   bool _loading = true;
@@ -124,16 +127,62 @@ class _HistoryScreenState extends State<HistoryScreen> {
     return status == "CANCELLED" || status == "REJECTED";
   }
 
+  Future<void> _cancelDeposit(Map<String, dynamic> entry, void Function(void Function()) sheetSetState) async {
+    final id = entry["id"]?.toString();
+    if (id == null || id.isEmpty) return;
+
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text("Annuler le dépôt ?"),
+        content: const Text(
+          "Si tu as déjà effectué le paiement Orange Money, n'annule pas cette opération.",
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context, false),
+            child: const Text("Retour"),
+          ),
+          TextButton(
+            onPressed: () => Navigator.pop(context, true),
+            child: const Text("Annuler le dépôt", style: TextStyle(color: Colors.red)),
+          ),
+        ],
+      ),
+    );
+
+    if (confirmed != true) return;
+
+    sheetSetState(() => _cancelling = true);
+
+    try {
+      final updated = await _kndApi.cancelDeposit(id);
+      await _historyService.saveEntry({...entry, ...updated});
+
+      if (!mounted) return;
+      Navigator.pop(context);
+      _loadHistory();
+    } catch (_) {
+      sheetSetState(() => _cancelling = false);
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text("Impossible d'annuler ce dépôt. Réessaie.")),
+      );
+    }
+  }
+
   void _openDetail(Map<String, dynamic> entry) {
     showModalBottomSheet(
       context: context,
       isScrollControlled: true,
       backgroundColor: Colors.transparent,
-      builder: (_) => _buildDetailSheet(entry),
+      builder: (_) => StatefulBuilder(
+        builder: (context, sheetSetState) => _buildDetailSheet(entry, sheetSetState),
+      ),
     );
   }
 
-  Widget _buildDetailSheet(Map<String, dynamic> entry) {
+  Widget _buildDetailSheet(Map<String, dynamic> entry, void Function(void Function()) sheetSetState) {
     final amount = _fcfa(entry["amount"]);
     final bonus = _fcfa(entry["bonusAmount"]);
     final total = _fcfa(entry["totalCredit"]);
@@ -192,7 +241,7 @@ class _HistoryScreenState extends State<HistoryScreen> {
                     child: Text(
                       "Dépôt 1xBet",
                       style: TextStyle(
-                        fontSize: 22,
+                        fontSize: 18,
                         fontWeight: FontWeight.bold,
                       ),
                     ),
@@ -206,7 +255,7 @@ class _HistoryScreenState extends State<HistoryScreen> {
                 child: Text(
                   "+$amount F",
                   style: const TextStyle(
-                    fontSize: 30,
+                    fontSize: 18,
                     fontWeight: FontWeight.bold,
                     color: Colors.green,
                   ),
@@ -321,6 +370,34 @@ class _HistoryScreenState extends State<HistoryScreen> {
 
               const SizedBox(height: 25),
 
+              if (entry["status"]?.toString() == "PAYMENT_PENDING") ...[
+                SizedBox(
+                  width: double.infinity,
+                  height: 52,
+                  child: ElevatedButton(
+                    onPressed: _cancelling ? null : () => _cancelDeposit(entry, sheetSetState),
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: Colors.red[50],
+                      foregroundColor: Colors.red[800],
+                      elevation: 0,
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(14),
+                      ),
+                    ),
+                    child: _cancelling
+                        ? const SizedBox(
+                            width: 20,
+                            height: 20,
+                            child: CircularProgressIndicator(strokeWidth: 2),
+                          )
+                        : const Text(
+                            "Annuler ce dépôt",
+                            style: TextStyle(fontWeight: FontWeight.w600),
+                          ),
+                  ),
+                ),
+                const SizedBox(height: 10),
+              ],
               SizedBox(
                 width: double.infinity,
                 height: 52,

@@ -39,6 +39,7 @@ class DepositHistoryService {
     entries.removeWhere((e) => e["reference"] == reference);
 
     entries.insert(0, {
+      "id": deposit["id"],
       "reference": reference,
       "playerId": deposit["playerId"],
       "playerName": deposit["playerName"],

@@ -36,17 +36,39 @@ class _DepositScreenState extends State<DepositScreen> {
   String? _previewError;
   Map<String, dynamic>? _preview;
 
-  Timer? _bonusInfoTimer;
-  Map<String, dynamic>? _bonusInfo;
-  String? _lastBonusInfoKey;
-  int _bonusInfoRequestId = 0;
+  // Config de la campagne, chargee une seule fois (pas a chaque frappe).
+  double? _bonusPercentage;
+  int? _bonusMinDeposit;
+  int? _bonusMaxBonus;
+  bool _bonusConfigLoaded = false;
   bool _isFirstDeposit = false;
+  double? _firstDepositPercentage;
 
   @override
   void initState() {
     super.initState();
     _loadRecentPlayers();
     _loadLastValidInputs();
+    _loadBonusConfig();
+  }
+
+  /// Charge le taux/seuil de la campagne une seule fois a l'ouverture de
+  /// l'ecran. Le calcul affiche ensuite a chaque frappe est local (aucun
+  /// appel reseau), donc instantane.
+  Future<void> _loadBonusConfig() async {
+    try {
+      final result = await _kndApi.bonusOrdinary(amount: _minDeposit);
+      if (!mounted) return;
+      setState(() {
+        _bonusPercentage = (result["bonusPercentage"] as num?)?.toDouble() ?? 0;
+        _bonusMinDeposit = (result["minDeposit"] as num?)?.toInt();
+        _bonusMaxBonus = (result["maxBonus"] as num?)?.toInt();
+        _bonusConfigLoaded = true;
+      });
+    } catch (_) {
+      if (!mounted) return;
+      setState(() => _bonusConfigLoaded = true);
+    }
   }
 
   Future<void> _loadRecentPlayers() async {
@@ -99,7 +121,6 @@ class _DepositScreenState extends State<DepositScreen> {
 
   @override
   void dispose() {
-    _bonusInfoTimer?.cancel();
     _amountController.dispose();
     _playerIdController.dispose();
     _phoneController.dispose();
@@ -115,62 +136,7 @@ class _DepositScreenState extends State<DepositScreen> {
 
   void _selectQuickAmount(int amount) {
     _amountController.text = amount.toString();
-    _onAmountChanged();
-  }
-
-  void _onAmountChanged() {
-    _bonusInfoTimer?.cancel();
-    _bonusInfoRequestId++;
-
-    final amount = _amount;
-
-    setState(() {
-      _bonusInfo = null;
-      _lastBonusInfoKey = null;
-    });
-
-    if (amount == null || amount < _minDeposit) {
-      return;
-    }
-
-    final key = "$amount";
-
-    // Debounce court : le bonus ordinaire ne depend pas de NafaCash,
-    // donc l'appel est rapide, mais on evite quand meme une requete
-    // par caractere tape.
-    _bonusInfoTimer = Timer(const Duration(milliseconds: 250), () {
-      _loadBonusOrdinary(amount, key);
-    });
-  }
-
-  Future<void> _loadBonusOrdinary(int amount, String key) async {
-    if (_lastBonusInfoKey == key) {
-      return;
-    }
-
-    final requestId = ++_bonusInfoRequestId;
-
-    try {
-      final result = await _kndApi.bonusOrdinary(amount: amount);
-
-      if (!mounted || requestId != _bonusInfoRequestId || _amount != amount) {
-        return;
-      }
-
-      setState(() {
-        _bonusInfo = result;
-        _lastBonusInfoKey = key;
-      });
-    } catch (_) {
-      if (!mounted || requestId != _bonusInfoRequestId) {
-        return;
-      }
-
-      setState(() {
-        _bonusInfo = null;
-        _lastBonusInfoKey = null;
-      });
-    }
+    setState(() {});
   }
 
   Future<bool> _verifyPlayer() async {
@@ -209,6 +175,8 @@ class _DepositScreenState extends State<DepositScreen> {
 
         setState(() {
           _isFirstDeposit = result["isFirstDeposit"] == true;
+          _firstDepositPercentage =
+              (result["firstDepositPercentage"] as num?)?.toDouble();
         });
         return true;
       }
@@ -230,6 +198,7 @@ class _DepositScreenState extends State<DepositScreen> {
         _verifiedPlayerName = null;
         _verifyError = null;
         _isFirstDeposit = false;
+        _firstDepositPercentage = null;
       });
     }
   }
@@ -345,30 +314,31 @@ class _DepositScreenState extends State<DepositScreen> {
     }
   }
 
+  /// Calcul 100% local et instantane : aucun appel reseau par frappe.
+  /// La campagne (taux/seuil/plafond) a ete chargee une seule fois via
+  /// _loadBonusConfig(). Le serveur recalcule de toute facon le bonus
+  /// reel au moment de previewDeposit()/createDeposit().
   Widget _buildBonusMarketing() {
-    final bonus = _bonusInfo;
-
-    if (bonus == null) {
+    if (!_bonusConfigLoaded) {
       return const SizedBox.shrink();
     }
 
-    final bonusAmount = (bonus["bonusAmount"] as num?)?.toInt() ?? 0;
-    final totalCredit = (bonus["totalCredit"] as num?)?.toInt() ?? 0;
-    final percentage =
-        (bonus["bonusPercentage"] as num?)?.toDouble() ?? 0;
-    final minDeposit = (bonus["minDeposit"] as num?)?.toInt();
+    final percentage = _bonusPercentage ?? 0;
+    final minDeposit = _bonusMinDeposit;
+    final amount = _amount;
 
-    if (bonusAmount <= 0) {
-      if (minDeposit == null || minDeposit <= 0) {
-        return const SizedBox.shrink();
-      }
+    if (percentage <= 0) {
+      return const SizedBox.shrink();
+    }
 
+    if (amount == null) {
+      return const SizedBox.shrink();
+    }
+
+    if (minDeposit != null && amount < minDeposit) {
       return Container(
         width: double.infinity,
-        padding: const EdgeInsets.symmetric(
-          horizontal: 12,
-          vertical: 10,
-        ),
+        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
         decoration: BoxDecoration(
           color: Colors.orange[50],
           borderRadius: BorderRadius.circular(10),
@@ -378,18 +348,22 @@ class _DepositScreenState extends State<DepositScreen> {
           style: TextStyle(
             color: Colors.orange[900],
             fontWeight: FontWeight.w600,
-            fontSize: 13,
+            fontSize: 12,
           ),
         ),
       );
     }
 
+    var bonusAmount = (amount * percentage / 100).floor();
+    final maxBonus = _bonusMaxBonus;
+    if (maxBonus != null && bonusAmount > maxBonus) {
+      bonusAmount = maxBonus;
+    }
+    final totalCredit = amount + bonusAmount;
+
     return Container(
       width: double.infinity,
-      padding: const EdgeInsets.symmetric(
-        horizontal: 12,
-        vertical: 10,
-      ),
+      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
       decoration: BoxDecoration(
         color: Colors.green[50],
         borderRadius: BorderRadius.circular(10),
@@ -401,7 +375,7 @@ class _DepositScreenState extends State<DepositScreen> {
         style: TextStyle(
           color: Colors.green[800],
           fontWeight: FontWeight.w600,
-          fontSize: 13,
+          fontSize: 12,
         ),
       ),
     );
@@ -667,8 +641,8 @@ class _DepositScreenState extends State<DepositScreen> {
                   TextField(
                     controller: _amountController,
                     keyboardType: TextInputType.number,
-                    style: const TextStyle(fontSize: 22, fontWeight: FontWeight.bold),
-                    onChanged: (_) => _onAmountChanged(),
+                    style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+                    onChanged: (_) => setState(() {}),
                     decoration: InputDecoration(
                       suffixText: "FCFA",
                       filled: true,
@@ -741,7 +715,9 @@ class _DepositScreenState extends State<DepositScreen> {
                         borderRadius: BorderRadius.circular(10),
                       ),
                       child: Text(
-                        "🎉 Première recharge : bonus spécial applicable",
+                        _firstDepositPercentage != null
+                            ? "🎉 Première recharge : +${_firstDepositPercentage!.toStringAsFixed(0)}% de bonus"
+                            : "🎉 Première recharge : bonus spécial applicable",
                         style: TextStyle(
                           color: Colors.purple[800],
                           fontWeight: FontWeight.w600,
