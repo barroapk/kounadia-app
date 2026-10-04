@@ -106,6 +106,12 @@ class KndApiService {
     return _getWithRetry("/deposits/bonus-info?$query");
   }
 
+  Future<Map<String, dynamic>> bonusOrdinary({
+    required int amount,
+  }) {
+    return _getWithRetry("/deposits/bonus-ordinary?amount=$amount");
+  }
+
   Future<Map<String, dynamic>> previewDeposit({
     required String playerId,
     required int amount,

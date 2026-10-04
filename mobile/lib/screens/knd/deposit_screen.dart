@@ -40,6 +40,7 @@ class _DepositScreenState extends State<DepositScreen> {
   Map<String, dynamic>? _bonusInfo;
   String? _lastBonusInfoKey;
   int _bonusInfoRequestId = 0;
+  bool _isFirstDeposit = false;
 
   @override
   void initState() {
@@ -122,48 +123,37 @@ class _DepositScreenState extends State<DepositScreen> {
     _bonusInfoRequestId++;
 
     final amount = _amount;
-    final playerId = _playerIdController.text.trim();
 
     setState(() {
       _bonusInfo = null;
       _lastBonusInfoKey = null;
     });
 
-    if (_verifiedPlayerName == null ||
-        playerId.isEmpty ||
-        amount == null ||
-        amount < _minDeposit) {
+    if (amount == null || amount < _minDeposit) {
       return;
     }
 
-    final key = "$playerId:$amount";
+    final key = "$amount";
 
-    _bonusInfoTimer = Timer(const Duration(milliseconds: 700), () {
-      _loadBonusInfo(playerId, amount, key);
+    // Debounce court : le bonus ordinaire ne depend pas de NafaCash,
+    // donc l'appel est rapide, mais on evite quand meme une requete
+    // par caractere tape.
+    _bonusInfoTimer = Timer(const Duration(milliseconds: 250), () {
+      _loadBonusOrdinary(amount, key);
     });
   }
 
-  Future<void> _loadBonusInfo(
-    String playerId,
-    int amount,
-    String key,
-  ) async {
-    if (_verifiedPlayerName == null || _lastBonusInfoKey == key) {
+  Future<void> _loadBonusOrdinary(int amount, String key) async {
+    if (_lastBonusInfoKey == key) {
       return;
     }
 
     final requestId = ++_bonusInfoRequestId;
 
     try {
-      final result = await _kndApi.bonusInfo(
-        playerId: playerId,
-        amount: amount,
-      );
+      final result = await _kndApi.bonusOrdinary(amount: amount);
 
-      if (!mounted ||
-          requestId != _bonusInfoRequestId ||
-          _playerIdController.text.trim() != playerId ||
-          _amount != amount) {
+      if (!mounted || requestId != _bonusInfoRequestId || _amount != amount) {
         return;
       }
 
@@ -217,7 +207,9 @@ class _DepositScreenState extends State<DepositScreen> {
           // doit jamais invalider une vérification NafaCash réussie.
         }
 
-        _onAmountChanged();
+        setState(() {
+          _isFirstDeposit = result["isFirstDeposit"] == true;
+        });
         return true;
       }
       return false;
@@ -231,17 +223,13 @@ class _DepositScreenState extends State<DepositScreen> {
   }
 
   void _onPlayerIdChanged(String _) {
-    _bonusInfoTimer?.cancel();
-    _bonusInfoRequestId++;
-
     if (_verifiedPlayerName != null ||
         _verifyError != null ||
-        _bonusInfo != null) {
+        _isFirstDeposit) {
       setState(() {
         _verifiedPlayerName = null;
         _verifyError = null;
-        _bonusInfo = null;
-        _lastBonusInfoKey = null;
+        _isFirstDeposit = false;
       });
     }
   }
@@ -396,9 +384,6 @@ class _DepositScreenState extends State<DepositScreen> {
       );
     }
 
-    final firstDeposit = bonus["isFirstDeposit"] == true;
-    final label = firstDeposit ? "Premier dépôt" : "Dépôt suivant";
-
     return Container(
       width: double.infinity,
       padding: const EdgeInsets.symmetric(
@@ -410,7 +395,7 @@ class _DepositScreenState extends State<DepositScreen> {
         borderRadius: BorderRadius.circular(10),
       ),
       child: Text(
-        "🎁 $label : +$bonusAmount FCFA de bonus "
+        "🎁 Bonus : +$bonusAmount FCFA "
         "(${percentage.toStringAsFixed(0)} %) → "
         "$totalCredit FCFA crédités",
         style: TextStyle(
@@ -743,6 +728,28 @@ class _DepositScreenState extends State<DepositScreen> {
                     "Ton compte 1xBet",
                     style: TextStyle(fontWeight: FontWeight.bold, fontSize: 15),
                   ),
+                  if (_isFirstDeposit) ...[
+                    const SizedBox(height: 8),
+                    Container(
+                      width: double.infinity,
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 12,
+                        vertical: 10,
+                      ),
+                      decoration: BoxDecoration(
+                        color: Colors.purple[50],
+                        borderRadius: BorderRadius.circular(10),
+                      ),
+                      child: Text(
+                        "🎉 Première recharge : bonus spécial applicable",
+                        style: TextStyle(
+                          color: Colors.purple[800],
+                          fontWeight: FontWeight.w600,
+                          fontSize: 13,
+                        ),
+                      ),
+                    ),
+                  ],
                   const SizedBox(height: 12),
                   Row(
                     children: [
