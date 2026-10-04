@@ -1,6 +1,8 @@
 import "package:flutter/material.dart";
 import "../../services/knd/deposit_history_service.dart";
 import "../../services/knd/knd_api_service.dart";
+import "../../services/knd/receipt_share_service.dart";
+import "../../widgets/knd/receipt_card.dart";
 
 class HistoryScreen extends StatefulWidget {
   const HistoryScreen({super.key});
@@ -13,6 +15,9 @@ class _HistoryScreenState extends State<HistoryScreen> {
   final _historyService = DepositHistoryService();
   final _kndApi = KndApiService();
   bool _cancelling = false;
+  final _receiptService = ReceiptShareService();
+  final GlobalKey _receiptKey = GlobalKey();
+  Map<String, dynamic>? _entryToShare;
 
   List<Map<String, dynamic>> _entries = [];
   bool _loading = true;
@@ -125,6 +130,25 @@ class _HistoryScreenState extends State<HistoryScreen> {
     final status = entry["status"]?.toString();
 
     return status == "CANCELLED" || status == "REJECTED";
+  }
+
+  Future<void> _shareReceipt(Map<String, dynamic> entry) async {
+    setState(() => _entryToShare = entry);
+
+    // Laisse le temps au RepaintBoundary de se dessiner avant capture.
+    await Future.delayed(const Duration(milliseconds: 100));
+
+    try {
+      await _receiptService.shareFromKey(_receiptKey);
+    } catch (_) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text("Impossible de partager le reçu.")),
+      );
+    }
+
+    if (!mounted) return;
+    setState(() => _entryToShare = null);
   }
 
   Future<void> _cancelDeposit(Map<String, dynamic> entry, void Function(void Function()) sheetSetState) async {
@@ -370,46 +394,60 @@ class _HistoryScreenState extends State<HistoryScreen> {
 
               const SizedBox(height: 25),
 
-              if (entry["status"]?.toString() == "PAYMENT_PENDING") ...[
-                SizedBox(
-                  width: double.infinity,
-                  height: 52,
-                  child: ElevatedButton(
-                    onPressed: _cancelling ? null : () => _cancelDeposit(entry, sheetSetState),
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: Colors.red[50],
-                      foregroundColor: Colors.red[800],
-                      elevation: 0,
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(14),
+              Row(
+                children: [
+                  if (entry["status"]?.toString() == "PAYMENT_PENDING") ...[
+                    Expanded(
+                      child: SizedBox(
+                        height: 52,
+                        child: ElevatedButton(
+                          onPressed: _cancelling ? null : () => _cancelDeposit(entry, sheetSetState),
+                          style: ElevatedButton.styleFrom(
+                            backgroundColor: Colors.red[50],
+                            foregroundColor: Colors.red[800],
+                            elevation: 0,
+                            padding: EdgeInsets.zero,
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(14),
+                            ),
+                          ),
+                          child: _cancelling
+                              ? const SizedBox(
+                                  width: 18,
+                                  height: 18,
+                                  child: CircularProgressIndicator(strokeWidth: 2),
+                                )
+                              : const Icon(Icons.close, size: 20),
+                        ),
                       ),
                     ),
-                    child: _cancelling
-                        ? const SizedBox(
-                            width: 20,
-                            height: 20,
-                            child: CircularProgressIndicator(strokeWidth: 2),
-                          )
-                        : const Text(
-                            "Annuler ce dépôt",
-                            style: TextStyle(fontWeight: FontWeight.w600),
-                          ),
-                  ),
-                ),
-                const SizedBox(height: 10),
-              ],
-              SizedBox(
-                width: double.infinity,
-                height: 52,
-                child: OutlinedButton(
-                  onPressed: () => Navigator.pop(context),
-                  child: const Text(
-                    "Fermer",
-                    style: TextStyle(
-                      fontWeight: FontWeight.w600,
+                    const SizedBox(width: 10),
+                  ],
+                  Expanded(
+                    child: SizedBox(
+                      height: 52,
+                      child: OutlinedButton(
+                        onPressed: () => _shareReceipt(entry),
+                        style: OutlinedButton.styleFrom(padding: EdgeInsets.zero),
+                        child: const Icon(Icons.share_outlined, size: 20),
+                      ),
                     ),
                   ),
-                ),
+                  const SizedBox(width: 10),
+                  Expanded(
+                    child: SizedBox(
+                      height: 52,
+                      child: OutlinedButton(
+                        onPressed: () => Navigator.pop(context),
+                        style: OutlinedButton.styleFrom(padding: EdgeInsets.zero),
+                        child: const Text(
+                          "Fermer",
+                          style: TextStyle(fontWeight: FontWeight.w600),
+                        ),
+                      ),
+                    ),
+                  ),
+                ],
               ),
             ],
           ),
@@ -673,8 +711,37 @@ class _HistoryScreenState extends State<HistoryScreen> {
   }
 
   @override
+  Widget _buildHiddenReceipt() {
+    final entry = _entryToShare;
+    if (entry == null) return const SizedBox.shrink();
+
+    return Offstage(
+      offstage: true,
+      child: RepaintBoundary(
+        key: _receiptKey,
+        child: Material(
+          child: ReceiptCard(
+            statusLabel: _statusLabel(entry["status"]),
+            statusColor: _statusColor(entry["status"]),
+            amount: _fcfa(entry["amount"]),
+            bonusAmount: _fcfa(entry["bonusAmount"]),
+            totalCredit: _fcfa(entry["totalCredit"]),
+            playerId: entry["playerId"]?.toString() ?? "-",
+            playerName: entry["playerName"]?.toString(),
+            phone: entry["paymentPhone"]?.toString() ?? "-",
+            reference: entry["reference"]?.toString() ?? "-",
+            date: _formatDate(entry["createdAt"]),
+          ),
+        ),
+      ),
+    );
+  }
+
+  @override
   Widget build(BuildContext context) {
-    return Scaffold(
+    return Stack(
+      children: [
+        Scaffold(
       backgroundColor: const Color(0xFFF7F7F7),
       appBar: AppBar(
         title: const Text(
@@ -749,6 +816,9 @@ class _HistoryScreenState extends State<HistoryScreen> {
                           _historyItem(_entries[index]),
                     ),
             ),
+    ),
+        _buildHiddenReceipt(),
+      ],
     );
   }
 }
