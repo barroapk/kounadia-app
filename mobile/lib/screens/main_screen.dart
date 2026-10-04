@@ -1,14 +1,12 @@
 import "package:flutter/material.dart";
 import "matches_screen.dart";
 import "predictions_screen.dart";
-import "competitions_screen.dart";
-import "brvm/brvm_screen.dart";
-import "brvm/brvm_compare_screen.dart";
 import "settings_screen.dart";
 import "search_screen.dart";
 import "../models/search_result.dart";
 import "knd/deposit_screen.dart";
 import "knd/withdrawal_screen.dart";
+import "knd/history_screen.dart";
 
 class MainScreen extends StatefulWidget {
   const MainScreen({super.key});
@@ -24,9 +22,9 @@ class _MainScreenState extends State<MainScreen> {
   late final List<Widget> _screens = [
     MatchesScreen(key: _matchesKey),
     const PredictionsScreen(),
-    const BrvmScreen(),
+    const HistoryScreen(),
   ];
-  final _titles = const ["KOUNADIA", "Prédiction", "Bourse"];
+  final _titles = const ["KOUNADIA", "Prédiction", "Historique"];
 
   void _comingSoon(BuildContext context, String feature) {
     ScaffoldMessenger.of(context).showSnackBar(
@@ -49,8 +47,6 @@ class _MainScreenState extends State<MainScreen> {
       _matchesKey.currentState?.applySearchFilter(result);
     }
   }
-
-  bool get _isBrvmTab => _currentIndex == 2;
 
   void _showKndMenu(BuildContext context) {
     showModalBottomSheet(
@@ -94,16 +90,7 @@ class _MainScreenState extends State<MainScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      endDrawer: _isBrvmTab ? _buildBrvmDrawer() : null,
       appBar: AppBar(
-        leading: _isBrvmTab
-            ? Builder(
-                builder: (context) => IconButton(
-                  icon: const Icon(Icons.menu),
-                  onPressed: () => Scaffold.of(context).openEndDrawer(),
-                ),
-              )
-            : null,
         title: Text(
           _titles[_currentIndex],
           style: const TextStyle(fontWeight: FontWeight.bold),
@@ -132,18 +119,16 @@ class _MainScreenState extends State<MainScreen> {
         index: _currentIndex,
         children: _screens,
       ),
-      floatingActionButton: _isBrvmTab
-          ? null
-          : SafeArea(
-              child: Padding(
-                padding: const EdgeInsets.only(bottom: 8),
-                child: FloatingActionButton.extended(
-                  onPressed: () => _showKndMenu(context),
-                  icon: const Icon(Icons.account_balance_wallet_outlined),
-                  label: const Text("Dépôt / Retrait"),
-                ),
-              ),
-            ),
+      floatingActionButton: SafeArea(
+        child: Padding(
+          padding: const EdgeInsets.only(bottom: 8),
+          child: FloatingActionButton.extended(
+            onPressed: () => _showKndMenu(context),
+            icon: const Icon(Icons.account_balance_wallet_outlined),
+            label: const Text("Dépôt / Retrait"),
+          ),
+        ),
+      ),
       bottomNavigationBar: NavigationBar(
         selectedIndex: _currentIndex,
         onDestinationSelected: (index) {
@@ -152,72 +137,8 @@ class _MainScreenState extends State<MainScreen> {
         destinations: const [
           NavigationDestination(icon: Icon(Icons.scoreboard_outlined), label: "Scores"),
           NavigationDestination(icon: Icon(Icons.insights), label: "Prédiction"),
-          NavigationDestination(icon: Icon(Icons.show_chart), label: "Bourse"),
+          NavigationDestination(icon: Icon(Icons.history), label: "Historique"),
         ],
-      ),
-    );
-  }
-
-  Widget _buildBrvmDrawer() {
-    return Drawer(
-      child: SafeArea(
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Padding(
-              padding: const EdgeInsets.fromLTRB(20, 16, 20, 8),
-              child: Text(
-                "Bourse BRVM",
-                style: TextStyle(fontWeight: FontWeight.bold, fontSize: 18, color: Colors.grey[800]),
-              ),
-            ),
-            const Divider(),
-            ListTile(
-              leading: const Icon(Icons.dashboard_outlined),
-              title: const Text("Tableau de bord"),
-              subtitle: const Text("Marché, indices, classements et actions"),
-              onTap: () => Navigator.pop(context),
-            ),
-            const Divider(),
-            Padding(
-              padding: const EdgeInsets.fromLTRB(20, 8, 20, 4),
-              child: Text(
-                "À venir",
-                style: TextStyle(fontSize: 12, color: Colors.grey[500], fontWeight: FontWeight.bold),
-              ),
-            ),
-            ListTile(
-              enabled: false,
-              leading: Icon(Icons.star_border, color: Colors.grey[400]),
-              title: Text("Mes favoris", style: TextStyle(color: Colors.grey[400])),
-              subtitle: Text("Actions que je surveille", style: TextStyle(color: Colors.grey[350])),
-            ),
-            ListTile(
-              leading: const Icon(Icons.compare_arrows),
-              title: const Text("Comparer des actions"),
-              subtitle: const Text("Comparer plusieurs sociétés"),
-              onTap: () {
-                Navigator.pop(context);
-                Navigator.push(
-                  context,
-                  MaterialPageRoute(builder: (_) => const BrvmCompareScreen()),
-                );
-              },
-            ),
-            ListTile(
-              enabled: false,
-              leading: Icon(Icons.school_outlined, color: Colors.grey[400]),
-              title: Text("Guide du débutant", style: TextStyle(color: Colors.grey[400])),
-              subtitle: Text("Comprendre la Bourse simplement", style: TextStyle(color: Colors.grey[350])),
-            ),
-            ListTile(
-              enabled: false,
-              leading: Icon(Icons.info_outline, color: Colors.grey[400]),
-              title: Text("Comprendre les indicateurs", style: TextStyle(color: Colors.grey[400])),
-              subtitle: Text("SMA, RSI, volatilité, drawdown", style: TextStyle(color: Colors.grey[350])),
-            ),
-          ],
-        ),
       ),
     );
   }

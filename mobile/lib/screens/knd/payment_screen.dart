@@ -3,6 +3,7 @@ import "package:flutter/material.dart";
 import "package:flutter/services.dart";
 import "package:url_launcher/url_launcher.dart";
 import "../../services/knd/knd_api_service.dart";
+import "../../services/knd/deposit_history_service.dart";
 
 class PaymentScreen extends StatefulWidget {
   final Map<String, dynamic> deposit;
@@ -23,6 +24,7 @@ class _PaymentScreenState extends State<PaymentScreen> {
   static const _background = Color(0xFFF5F7FA);
 
   final _api = KndApiService();
+  final _historyService = DepositHistoryService();
 
   late Map<String, dynamic> _deposit;
 
@@ -38,6 +40,7 @@ class _PaymentScreenState extends State<PaymentScreen> {
   void initState() {
     super.initState();
     _deposit = Map<String, dynamic>.from(widget.deposit);
+    _historyService.saveEntry(_deposit);
     _startCountdown();
     _startPolling();
   }
@@ -158,6 +161,8 @@ class _PaymentScreenState extends State<PaymentScreen> {
         _error = null;
       });
 
+      _historyService.saveEntry(_deposit);
+
       if (!_isWaiting) {
         _pollTimer?.cancel();
       }
@@ -248,6 +253,7 @@ class _PaymentScreenState extends State<PaymentScreen> {
         _cancelling = false;
       });
 
+      _historyService.saveEntry(_deposit);
       _pollTimer?.cancel();
     } catch (e) {
       if (!mounted) return;
