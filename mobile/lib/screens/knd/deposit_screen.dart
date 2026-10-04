@@ -57,7 +57,10 @@ class _DepositScreenState extends State<DepositScreen> {
   /// appel reseau), donc instantane.
   Future<void> _loadBonusConfig() async {
     try {
-      final result = await _kndApi.bonusOrdinary(amount: _minDeposit);
+      // Montant volontairement eleve (sous MAX_DEPOSIT) pour recuperer le
+      // vrai taux de la campagne, meme si son seuil (minDeposit) est
+      // superieur a notre minimum technique (_minDeposit = 200).
+      final result = await _kndApi.bonusOrdinary(amount: 500000);
       if (!mounted) return;
       setState(() {
         _bonusPercentage = (result["bonusPercentage"] as num?)?.toDouble() ?? 0;
