@@ -10,10 +10,16 @@ import "package:share_plus/share_plus.dart";
 /// galerie, etc.). Ne garde pas de copie permanente : fichier temporaire.
 class ReceiptShareService {
   Future<void> shareFromKey(GlobalKey key, {String fileName = "recu_kounadia.png"}) async {
-    final boundary = key.currentContext?.findRenderObject() as RenderRepaintBoundary?;
-    if (boundary == null) return;
+    await WidgetsBinding.instance.endOfFrame;
 
-    final image = await boundary.toImage(pixelRatio: 3.0);
+    final boundary =
+        key.currentContext?.findRenderObject() as RenderRepaintBoundary?;
+
+    if (boundary == null || !boundary.hasSize) return;
+
+    await Future<void>.delayed(const Duration(milliseconds: 100));
+
+    final image = await boundary.toImage(pixelRatio: 2.0);
     final byteData = await image.toByteData(format: ui.ImageByteFormat.png);
     if (byteData == null) return;
 
@@ -24,8 +30,14 @@ class ReceiptShareService {
     await file.writeAsBytes(bytes);
 
     await Share.shareXFiles(
-      [XFile(file.path)],
+      [
+        XFile(
+          file.path,
+          mimeType: "image/png",
+        ),
+      ],
       text: "Mon reçu de dépôt KOUNADIA",
+      subject: "Reçu de dépôt KOUNADIA",
     );
   }
 }

@@ -30,16 +30,41 @@ class _WithdrawalScreenState extends State<WithdrawalScreen> {
     final amount = _amountController.text.trim();
     final phone = _phoneController.text.trim();
 
-    final message = Uri.encodeComponent(
-      "Bonjour, je souhaite effectuer un retrait KOUNADIA.\n"
-      "Montant : $amount FCFA\n"
-      "Numéro Orange Money pour recevoir le retrait : $phone",
+    final message =
+        "Bonjour, je souhaite effectuer un retrait KOUNADIA.\n"
+        "Montant : $amount FCFA\n"
+        "Numéro Orange Money pour recevoir le retrait : $phone";
+
+    final uri = Uri(
+      scheme: "https",
+      host: "wa.me",
+      path: "/$_whatsappNumber",
+      queryParameters: {
+        "text": message,
+      },
     );
 
-    final uri = Uri.parse("https://wa.me/$_whatsappNumber?text=$message");
+    try {
+      final launched = await launchUrl(
+        uri,
+        mode: LaunchMode.externalApplication,
+      );
 
-    if (await canLaunchUrl(uri)) {
-      await launchUrl(uri, mode: LaunchMode.externalApplication);
+      if (!launched && mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text("Impossible d'ouvrir WhatsApp."),
+          ),
+        );
+      }
+    } catch (_) {
+      if (!mounted) return;
+
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text("Impossible d'ouvrir WhatsApp."),
+        ),
+      );
     }
   }
 

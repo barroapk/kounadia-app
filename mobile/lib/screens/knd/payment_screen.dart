@@ -175,6 +175,7 @@ class _PaymentScreenState extends State<PaymentScreen> {
   Future<void> _copyUssd() async {
     await Clipboard.setData(ClipboardData(text: _ussdCode));
     if (!mounted) return;
+
     ScaffoldMessenger.of(context).showSnackBar(
       const SnackBar(
         content: Text("Code copié dans le presse-papiers."),
@@ -183,19 +184,63 @@ class _PaymentScreenState extends State<PaymentScreen> {
     );
   }
 
+  Future<void> _openUssd() async {
+    final code = _ussdCode.trim();
+
+    if (code.isEmpty || code == "—") return;
+
+    final uri = Uri(
+      scheme: "tel",
+      path: code,
+    );
+
+    try {
+      final launched = await launchUrl(
+        uri,
+        mode: LaunchMode.externalApplication,
+      );
+
+      if (!launched && mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text("Impossible d'ouvrir l'application Téléphone."),
+          ),
+        );
+      }
+    } catch (_) {
+      if (!mounted) return;
+
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text("Impossible d'ouvrir l'application Téléphone."),
+        ),
+      );
+    }
+  }
+
   Future<void> _openWhatsapp() async {
     if (_supportWhatsapp.isEmpty) return;
 
     final phone = _supportWhatsapp.replaceAll(RegExp(r"[^0-9+]"), "");
 
-    final uri = Uri.parse(
-      "https://wa.me/$phone",
+    final uri = Uri(
+      scheme: "https",
+      host: "wa.me",
+      path: "/$phone",
     );
 
-    if (await canLaunchUrl(uri)) {
+    try {
       await launchUrl(
         uri,
         mode: LaunchMode.externalApplication,
+      );
+    } catch (_) {
+      if (!mounted) return;
+
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text("Impossible d'ouvrir WhatsApp."),
+        ),
       );
     }
   }
@@ -548,23 +593,40 @@ class _PaymentScreenState extends State<PaymentScreen> {
           ),
           const SizedBox(height: 14),
 
-          Container(
-            width: double.infinity,
-            padding: const EdgeInsets.symmetric(
-              horizontal: 12,
-              vertical: 16,
-            ),
-            decoration: BoxDecoration(
-              color: const Color(0xFFFFD9A8),
-              borderRadius: BorderRadius.circular(14),
-            ),
-            child: SelectableText(
-              _ussdCode,
-              textAlign: TextAlign.center,
-              style: const TextStyle(
-                color: Color(0xFFB74B00),
-                fontWeight: FontWeight.bold,
-                fontSize: 19,
+          InkWell(
+            onTap: _openUssd,
+            borderRadius: BorderRadius.circular(14),
+            child: Container(
+              width: double.infinity,
+              padding: const EdgeInsets.symmetric(
+                horizontal: 12,
+                vertical: 16,
+              ),
+              decoration: BoxDecoration(
+                color: const Color(0xFFFFD9A8),
+                borderRadius: BorderRadius.circular(14),
+              ),
+              child: Column(
+                children: [
+                  Text(
+                    _ussdCode,
+                    textAlign: TextAlign.center,
+                    style: const TextStyle(
+                      color: Color(0xFFB74B00),
+                      fontWeight: FontWeight.bold,
+                      fontSize: 19,
+                    ),
+                  ),
+                  const SizedBox(height: 5),
+                  const Text(
+                    "Appuie ici pour lancer le paiement",
+                    style: TextStyle(
+                      color: Color(0xFF8A5A35),
+                      fontSize: 11,
+                      fontWeight: FontWeight.w500,
+                    ),
+                  ),
+                ],
               ),
             ),
           ),
