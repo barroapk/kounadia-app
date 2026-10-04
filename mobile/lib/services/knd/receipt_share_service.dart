@@ -1,6 +1,6 @@
 import "dart:io";
-import "dart:typed_data";
 import "dart:ui" as ui;
+import "package:flutter/material.dart";
 import "package:flutter/rendering.dart";
 import "package:path_provider/path_provider.dart";
 import "package:share_plus/share_plus.dart";
@@ -23,11 +23,9 @@ class ReceiptShareService {
     final file = File("${dir.path}/$fileName");
     await file.writeAsBytes(bytes);
 
-    await SharePlus.instance.share(
-      ShareParams(
-        files: [XFile(file.path)],
-        text: "Mon reçu de dépôt KOUNADIA",
-      ),
+    await Share.shareXFiles(
+      [XFile(file.path)],
+      text: "Mon reçu de dépôt KOUNADIA",
     );
   }
 }
