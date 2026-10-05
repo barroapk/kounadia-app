@@ -715,8 +715,9 @@ class _HistoryScreenState extends State<HistoryScreen> {
     final entry = _entryToShare;
     if (entry == null) return const SizedBox.shrink();
 
-    return Offstage(
-      offstage: true,
+    return Positioned(
+      left: -2000,
+      top: 0,
       child: RepaintBoundary(
         key: _receiptKey,
         child: Material(

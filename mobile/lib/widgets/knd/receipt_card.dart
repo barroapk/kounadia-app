@@ -1,7 +1,7 @@
 import "package:flutter/material.dart";
 
 /// Carte visuelle du reçu KOUNADIA, destinee a etre capturee en image
-/// et partagee. Format compact pour tenir sur un ecran sans surcharge.
+/// et partagee. Format compact, inspire des recus de transaction mobile.
 class ReceiptCard extends StatelessWidget {
   final String statusLabel;
   final Color statusColor;
@@ -28,18 +28,18 @@ class ReceiptCard extends StatelessWidget {
     required this.date,
   });
 
-  Widget _row(String label, String value, {bool bold = false}) {
+  Widget _row(String label, String value) {
     return Padding(
-      padding: const EdgeInsets.symmetric(vertical: 3),
+      padding: const EdgeInsets.symmetric(vertical: 4),
       child: Row(
         mainAxisAlignment: MainAxisAlignment.spaceBetween,
         children: [
-          Text(label, style: TextStyle(color: Colors.grey[600], fontSize: 11)),
-          Text(
-            value,
-            style: TextStyle(
-              fontSize: bold ? 14 : 11,
-              fontWeight: bold ? FontWeight.bold : FontWeight.w600,
+          Text(label, style: TextStyle(color: Colors.grey[600], fontSize: 12)),
+          Flexible(
+            child: Text(
+              value,
+              textAlign: TextAlign.right,
+              style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w600),
             ),
           ),
         ],
@@ -49,63 +49,124 @@ class ReceiptCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Container(
-      width: 300,
-      padding: const EdgeInsets.fromLTRB(16, 12, 16, 12),
-      decoration: BoxDecoration(
+    const primary = Color(0xFF1A56DB);
+
+    return ClipRRect(
+      borderRadius: BorderRadius.circular(18),
+      child: Container(
+        width: 320,
         color: Colors.white,
-        borderRadius: BorderRadius.circular(16),
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.stretch,
-        children: [
-          const Center(
-            child: Text(
-              "KOUNADIA",
-              style: TextStyle(fontSize: 15, fontWeight: FontWeight.bold, letterSpacing: 1),
-            ),
-          ),
-          const SizedBox(height: 2),
-          const Center(
-            child: Text(
-              "Reçu de dépôt 1xBet",
-              style: TextStyle(fontSize: 10, color: Colors.grey),
-            ),
-          ),
-          const SizedBox(height: 8),
-          Center(
-            child: Container(
-              padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
-              decoration: BoxDecoration(
-                color: statusColor.withValues(alpha: 0.12),
-                borderRadius: BorderRadius.circular(20),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            // En-tete colore
+            Container(
+              padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 14),
+              decoration: const BoxDecoration(
+                gradient: LinearGradient(colors: [primary, Color(0xFF123F9E)]),
               ),
-              child: Text(
-                statusLabel,
-                style: TextStyle(color: statusColor, fontWeight: FontWeight.bold, fontSize: 11),
+              child: Row(
+                children: [
+                  const Text(
+                    "KOUNADIA",
+                    style: TextStyle(
+                      color: Colors.white,
+                      fontSize: 16,
+                      fontWeight: FontWeight.bold,
+                      letterSpacing: 0.5,
+                    ),
+                  ),
+                  const Spacer(),
+                  Text(
+                    "REÇU",
+                    style: TextStyle(
+                      color: Colors.white.withValues(alpha: 0.85),
+                      fontSize: 10,
+                      fontWeight: FontWeight.bold,
+                      letterSpacing: 1,
+                    ),
+                  ),
+                ],
               ),
             ),
-          ),
-          const SizedBox(height: 10),
-          const Divider(height: 16),
-          _row("Compte 1xBet", playerId),
-          if (playerName != null && playerName!.isNotEmpty) _row("Nom", playerName!),
-          _row("Orange Money", phone),
-          _row("Date et heure", date),
-          _row("Référence", reference),
-          const Divider(height: 16),
-          _row("Montant du dépôt", "$amount FCFA"),
-          _row("Bonus KOUNADIA", "+$bonusAmount FCFA"),
-          const SizedBox(height: 2),
-          _row("Crédit total", "$totalCredit FCFA", bold: true),
-          const SizedBox(height: 6),
-          const Center(
-            child: Text(
-              "Merci d'utiliser KOUNADIA",
-              style: TextStyle(fontSize: 9, color: Colors.grey),
+
+            Padding(
+              padding: const EdgeInsets.fromLTRB(18, 14, 18, 14),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.stretch,
+                children: [
+                  const Center(
+                    child: Text(
+                      "DÉPÔT · 1XBET",
+                      style: TextStyle(
+                        fontSize: 10,
+                        fontWeight: FontWeight.bold,
+                        color: Colors.grey,
+                        letterSpacing: 1,
+                      ),
+                    ),
+                  ),
+                  const SizedBox(height: 6),
+                  Center(
+                    child: RichText(
+                      text: TextSpan(
+                        children: [
+                          const TextSpan(
+                            text: "+",
+                            style: TextStyle(color: Colors.green, fontSize: 24, fontWeight: FontWeight.bold),
+                          ),
+                          TextSpan(
+                            text: amount,
+                            style: const TextStyle(color: Colors.green, fontSize: 24, fontWeight: FontWeight.bold),
+                          ),
+                          const TextSpan(
+                            text: " FCFA",
+                            style: TextStyle(color: Colors.grey, fontSize: 13, fontWeight: FontWeight.w600),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ),
+                  const SizedBox(height: 8),
+                  Center(
+                    child: Container(
+                      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
+                      decoration: BoxDecoration(
+                        color: statusColor.withValues(alpha: 0.12),
+                        borderRadius: BorderRadius.circular(20),
+                      ),
+                      child: Text(
+                        statusLabel,
+                        style: TextStyle(color: statusColor, fontWeight: FontWeight.bold, fontSize: 11),
+                      ),
+                    ),
+                  ),
+                  const SizedBox(height: 12),
+                  const Divider(height: 1),
+                  const SizedBox(height: 8),
+                  _row("Compte joueur", playerId),
+                  if (playerName != null && playerName!.isNotEmpty) _row("Nom", playerName!),
+                  _row("Moyen de paiement", "Orange Money ($phone)"),
+                  _row("Bonus", "+$bonusAmount FCFA"),
+                  _row("Crédit total", "$totalCredit FCFA"),
+                  _row("Référence", reference),
+                  _row("Date", date),
+                  const SizedBox(height: 10),
+                  const Divider(height: 1),
+                  const SizedBox(height: 8),
+                  const Center(
+                    child: Text(
+                      "Dépose et retire sur 1xBet avec KOUNADIA",
+                      textAlign: TextAlign.center,
+                      style: TextStyle(fontSize: 10, color: Colors.grey, fontWeight: FontWeight.w600),
+                    ),
+                  ),
+                ],
+              ),
             ),
-          ),
-        ],
+          ],
+        ),
       ),
     );
   }
