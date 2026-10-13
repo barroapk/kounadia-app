@@ -1,9 +1,6 @@
-import "package:flutter/material.dart";
-import "../models/eligible_match.dart";
-import "../services/api_service.dart";
-import "../widgets/empty_state.dart";
-import "../widgets/loading_skeleton.dart";
-import "match_detail_screen.dart";
+import 'package:flutter/material.dart';
+import '../models/tip.dart';
+import '../services/tips_service.dart';
 
 class PredictionsScreen extends StatefulWidget {
   const PredictionsScreen({super.key});
@@ -13,146 +10,176 @@ class PredictionsScreen extends StatefulWidget {
 }
 
 class _PredictionsScreenState extends State<PredictionsScreen> {
-  final ApiService _apiService = ApiService();
-  late Future<List<EligibleMatch>> _predictionsFuture;
+  final _service = TipsService();
+  double _min = 0.6;
+  late Future<({List<Tip> tips, String source})> _future;
+
+  static const _leagues = {
+    'premier-league': 'Premier League',
+    'la-liga': 'LaLiga',
+    'serie-a': 'Serie A',
+    'bundesliga': 'Bundesliga',
+    'ligue-1': 'Ligue 1',
+  };
 
   @override
   void initState() {
     super.initState();
-    _predictionsFuture = _apiService.getTodaysPredictions();
+    _future = _service.getTips(min: _min);
   }
 
   void _reload() {
     setState(() {
-      _predictionsFuture = _apiService.getTodaysPredictions();
+      _future = _service.getTips(min: _min);
     });
   }
 
-  Color _sideColor(String side) {
-    if (side == 'balanced') return Colors.grey[600]!;
-    return const Color(0xFF16A34A);
+  String _two(int n) => n.toString().padLeft(2, '0');
+
+  String _fmtDate(DateTime d) {
+    const j = ['lun.', 'mar.', 'mer.', 'jeu.', 'ven.', 'sam.', 'dim.'];
+    return '${j[d.weekday - 1]} ${_two(d.day)}/${_two(d.month)} · '
+        '${_two(d.hour)}:${_two(d.minute)}';
   }
 
-  IconData _sideIcon(String side) {
-    if (side == 'home') return Icons.arrow_back;
-    if (side == 'away') return Icons.arrow_forward;
-    return Icons.balance;
+  String _pct(double p) => '${(p * 100).round()} %';
+
+  String _pickLabel(Tip t) {
+    switch (t.pick) {
+      case 'home':
+        return '1 · ${t.home} gagne';
+      case 'away':
+        return '2 · ${t.away} gagne';
+      default:
+        return 'N · Match nul';
+    }
+  }
+
+  Widget _tipCard(BuildContext context, Tip t) {
+    final theme = Theme.of(context);
+    final color = theme.colorScheme.primary;
+    return Card(
+      margin: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+      child: Padding(
+        padding: const EdgeInsets.all(16),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text('${_leagues[t.league] ?? t.league} · ${_fmtDate(t.date)}',
+                style: theme.textTheme.bodySmall),
+            const SizedBox(height: 6),
+            Text('${t.home} – ${t.away}',
+                style: theme.textTheme.titleMedium
+                    ?.copyWith(fontWeight: FontWeight.bold)),
+            const SizedBox(height: 8),
+            Row(
+              children: [
+                Expanded(
+                  child: Text(_pickLabel(t),
+                      style: TextStyle(
+                          color: color, fontWeight: FontWeight.w600)),
+                ),
+                Text(_pct(t.prob),
+                    style: theme.textTheme.titleMedium?.copyWith(
+                        color: color, fontWeight: FontWeight.bold)),
+              ],
+            ),
+            const SizedBox(height: 6),
+            ClipRRect(
+              borderRadius: BorderRadius.circular(4),
+              child: LinearProgressIndicator(value: t.prob, minHeight: 6),
+            ),
+            const SizedBox(height: 6),
+            Text(
+                '1 : ${_pct(t.pHome)}   N : ${_pct(t.pDraw)}   2 : ${_pct(t.pAway)}',
+                style: theme.textTheme.bodySmall),
+          ],
+        ),
+      ),
+    );
   }
 
   @override
   Widget build(BuildContext context) {
-    return Container(
-      color: const Color(0xFFF4F5F7),
-      child: FutureBuilder<List<EligibleMatch>>(
-      future: _predictionsFuture,
-      builder: (context, snapshot) {
-        if (snapshot.connectionState == ConnectionState.waiting) {
-          return const LoadingSkeleton();
-        }
-
-        if (snapshot.hasError) {
-          return Center(
-            child: Padding(
-              padding: const EdgeInsets.all(24.0),
-              child: Column(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  Text("Erreur : ${snapshot.error}"),
-                  const SizedBox(height: 12),
-                  ElevatedButton(onPressed: _reload, child: const Text("Réessayer")),
-                ],
-              ),
-            ),
-          );
-        }
-
-        final predictions = snapshot.data ?? [];
-
-        if (predictions.isEmpty) {
-          return const EmptyState(
-            icon: Icons.insights,
-            message:
-                "Pas assez de données historiques aujourd'hui pour proposer une analyse fiable.\nRevenez bientôt : la base s'enrichit chaque jour.",
-          );
-        }
-
-        return RefreshIndicator(
-          onRefresh: () async {
-            _reload();
-            await _predictionsFuture;
-          },
-          child: ListView.builder(
-            padding: const EdgeInsets.all(12),
-            itemCount: predictions.length,
-            itemBuilder: (context, index) {
-              final p = predictions[index];
-              return Card(
-                margin: const EdgeInsets.only(bottom: 10),
-                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-                child: InkWell(
-                  borderRadius: BorderRadius.circular(12),
-                  onTap: () {
-                    Navigator.push(
-                      context,
-                      MaterialPageRoute(
-                        builder: (context) => MatchDetailScreen(
-                          matchId: p.matchId,
-                          homeTeam: p.homeTeam,
-                          awayTeam: p.awayTeam,
-                        ),
-                      ),
-                    );
+    return Scaffold(
+      appBar: AppBar(title: const Text('Pronostics')),
+      body: Column(
+        children: [
+          Padding(
+            padding: const EdgeInsets.fromLTRB(12, 8, 12, 4),
+            child: Wrap(
+              spacing: 8,
+              children: [0.6, 0.7, 0.8].map((v) {
+                return ChoiceChip(
+                  label: Text('≥ ${(v * 100).round()} %'),
+                  selected: _min == v,
+                  onSelected: (_) {
+                    _min = v;
+                    _reload();
                   },
-                  child: Padding(
-                    padding: const EdgeInsets.all(14),
+                );
+              }).toList(),
+            ),
+          ),
+          Expanded(
+            child: FutureBuilder<({List<Tip> tips, String source})>(
+              future: _future,
+              builder: (context, snap) {
+                if (snap.connectionState != ConnectionState.done) {
+                  return const Center(child: CircularProgressIndicator());
+                }
+                if (snap.hasError) {
+                  return Center(
                     child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
+                      mainAxisSize: MainAxisSize.min,
                       children: [
-                        Text(
-                          p.competition,
-                          style: TextStyle(color: Colors.grey[600], fontSize: 12),
-                        ),
-                        const SizedBox(height: 6),
-                        Row(
-                          children: [
-                            Expanded(
-                              child: Text(
-                                "${p.homeTeam} vs ${p.awayTeam}",
-                                style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 15),
-                              ),
-                            ),
-                            Icon(_sideIcon(p.favoredSide), size: 18, color: _sideColor(p.favoredSide)),
-                          ],
-                        ),
-                        const SizedBox(height: 4),
-                        Text(
-                          "Indice de force : ${p.homeElo} · ${p.awayElo}",
-                          style: TextStyle(color: Colors.grey[500], fontSize: 11),
-                        ),
+                        const Text('Pronostics indisponibles'),
                         const SizedBox(height: 8),
-                        Container(
-                          padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
-                          decoration: BoxDecoration(
-                            color: _sideColor(p.favoredSide).withOpacity(0.1),
-                            borderRadius: BorderRadius.circular(8),
-                          ),
-                          child: Text(
-                            p.note,
-                            style: TextStyle(
-                              color: _sideColor(p.favoredSide),
-                              fontSize: 13,
-                            ),
-                          ),
-                        ),
+                        FilledButton(
+                            onPressed: _reload,
+                            child: const Text('Réessayer')),
                       ],
                     ),
+                  );
+                }
+                final tips = snap.data!.tips;
+                final source = snap.data!.source;
+                if (tips.isEmpty) {
+                  return Center(
+                    child: Padding(
+                      padding: const EdgeInsets.all(24),
+                      child: Text(
+                        'Aucun favori à ${_pct(_min)} ou plus '
+                        'dans les 7 prochains jours.',
+                        textAlign: TextAlign.center,
+                      ),
+                    ),
+                  );
+                }
+                return RefreshIndicator(
+                  onRefresh: () async {
+                    _reload();
+                    await _future;
+                  },
+                  child: ListView.builder(
+                    itemCount: tips.length + 1,
+                    itemBuilder: (context, i) {
+                      if (i == tips.length) {
+                        return Padding(
+                          padding: const EdgeInsets.all(16),
+                          child: Text('Source : $source',
+                              textAlign: TextAlign.center,
+                              style: Theme.of(context).textTheme.bodySmall),
+                        );
+                      }
+                      return _tipCard(context, tips[i]);
+                    },
                   ),
-                ),
-              );
-            },
+                );
+              },
+            ),
           ),
-        );
-      },
+        ],
       ),
     );
   }
