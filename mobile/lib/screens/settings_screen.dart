@@ -8,7 +8,7 @@ import '../config/api_config.dart';
 import 'competitions_settings_screen.dart';
 
 const _appVersion = '1.0.0';
-const _supportEmail = 'TON_EMAIL@gmail.com';
+const _supportEmail = 'pierreclavers56@gmail.com';
 
 class _C {
   static const bg = Color(0xFFEEF0F3);
