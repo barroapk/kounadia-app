@@ -129,7 +129,7 @@ class _PredictionsScreenState extends State<PredictionsScreen> {
                     child: Padding(
                       padding: const EdgeInsets.symmetric(
                           horizontal: 12, vertical: 14),
-                      child: Text(_pickLabel(t),
+                      child: Text(t.label.isNotEmpty ? t.label : _pickLabel(t),
                           textAlign: TextAlign.center,
                           style: const TextStyle(
                               color: _lime,

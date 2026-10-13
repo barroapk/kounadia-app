@@ -7,6 +7,7 @@ class Tip {
   final double pDraw;
   final double pAway;
   final String pick;
+  final String label;
   final double prob;
 
   Tip({
@@ -18,6 +19,7 @@ class Tip {
     required this.pDraw,
     required this.pAway,
     required this.pick,
+    required this.label,
     required this.prob,
   });
 
@@ -30,6 +32,7 @@ class Tip {
         pDraw: (j['pDraw'] as num).toDouble(),
         pAway: (j['pAway'] as num).toDouble(),
         pick: j['pick'],
+        label: j['label'] ?? '',
         prob: (j['prob'] as num).toDouble(),
       );
 }
