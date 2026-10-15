@@ -37,7 +37,6 @@ class _SettingsScreenState extends State<SettingsScreen> {
   @override
   void initState() {
     super.initState();
-    _checkServer();
   }
 
   void _set(VoidCallback f) {
@@ -180,27 +179,6 @@ class _SettingsScreenState extends State<SettingsScreen> {
             ),
           ]),
           _section('Application', [
-            _tile(
-              icon: Icons.cloud_outlined,
-              iconColor: _C.blue,
-              title: 'État du serveur',
-              subtitle: _server,
-              subColor: _serverColor,
-              trailing: _checking
-                  ? const SizedBox(
-                      width: 18,
-                      height: 18,
-                      child: CircularProgressIndicator(strokeWidth: 2, color: _C.green))
-                  : const Icon(Icons.refresh, color: _C.muted),
-              onTap: _checking ? null : _checkServer,
-            ),
-            _tile(
-              icon: Icons.cleaning_services_outlined,
-              iconColor: _C.amber,
-              title: 'Vider le cache',
-              subtitle: 'Libère de l\'espace sur ton téléphone',
-              onTap: _clearCache,
-            ),
             _tile(
               icon: Icons.share_outlined,
               title: 'Partager KOUNADIA',

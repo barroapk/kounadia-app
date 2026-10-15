@@ -98,14 +98,6 @@ class _MainScreenState extends State<MainScreen> {
         ),
         actions: [
           IconButton(
-            icon: const Icon(Icons.search),
-            onPressed: _openSearch,
-          ),
-          IconButton(
-            icon: const Icon(Icons.notifications_outlined),
-            onPressed: () => _comingSoon(context, "Notifications"),
-          ),
-          IconButton(
             icon: const Icon(Icons.settings_outlined),
             onPressed: () {
               Navigator.push(
