@@ -26,7 +26,7 @@ class HistoryData {
 }
 
 class KounadiaData {
-  static const _base = 'https://raw.githubusercontent.com/barroapk/kounadia-data/main/data';
+  static const _base = 'https://raw.githubusercontent.com/barroapk/kounadia-data/pronos';
 
   static String _friendly(Object e) {
     if (e is SocketException || e is TimeoutException || e is http.ClientException) {
