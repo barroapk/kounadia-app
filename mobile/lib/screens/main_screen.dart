@@ -6,7 +6,7 @@ import "search_screen.dart";
 import "../models/search_result.dart";
 import "knd/deposit_screen.dart";
 import "knd/withdrawal_screen.dart";
-import "knd/history_screen.dart";
+import "tip_history_screen.dart";
 
 class MainScreen extends StatefulWidget {
   const MainScreen({super.key});
@@ -22,7 +22,7 @@ class _MainScreenState extends State<MainScreen> {
   late final List<Widget> _screens = [
     MatchesScreen(key: _matchesKey),
     const PredictionsScreen(),
-    const HistoryScreen(),
+    const TipHistoryScreen(),
   ];
   final _titles = const ["KOUNADIA", "Prédiction", "Historique"];
 
