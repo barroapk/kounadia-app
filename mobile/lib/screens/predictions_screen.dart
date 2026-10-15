@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import '../models/forecast.dart';
 import '../services/kounadia_data_service.dart';
 import '../widgets/forecast_card.dart';
+import '../widgets/knd_banner.dart';
 
 class PredictionsScreen extends StatefulWidget {
   const PredictionsScreen({super.key});
@@ -93,10 +94,14 @@ class _PredictionsScreenState extends State<PredictionsScreen> {
     if (items.isEmpty) {
       children.addAll([const SizedBox(height: 80), kMessage(empty)]);
     } else {
+      children.add(const KndBanner());
+      var n = 0;
       for (final f in items) {
+        n++;
         children
           ..add(ForecastCard(f: f))
-          ..add(const SizedBox(height: 14));
+          ..add(const SizedBox(height: 14))
+          ..add(KndBanner(afterCards: n, total: items.length));
       }
     }
     return RefreshIndicator(
