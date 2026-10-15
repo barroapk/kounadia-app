@@ -94,7 +94,6 @@ class ForecastCard extends StatelessWidget {
     final meta = [
       frDay(f.date),
       if (f.hasTime) hm(f.date),
-      if (f.league.isNotEmpty) f.league,
     ].join(' • ');
 
     return Container(
@@ -105,8 +104,28 @@ class ForecastCard extends StatelessWidget {
       ),
       child: Column(
         children: [
+          if (f.league.isNotEmpty)
+            Padding(
+              padding: const EdgeInsets.fromLTRB(18, 14, 18, 0),
+              child: Row(
+                children: [
+                  const Icon(Icons.emoji_events_outlined, color: K.amber, size: 16),
+                  const SizedBox(width: 8),
+                  Expanded(
+                    child: Text(f.league.toUpperCase(),
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                        style: const TextStyle(
+                            color: K.text,
+                            fontSize: 13,
+                            fontWeight: FontWeight.w800,
+                            letterSpacing: 0.6)),
+                  ),
+                ],
+              ),
+            ),
           Padding(
-            padding: const EdgeInsets.fromLTRB(18, 18, 14, 18),
+            padding: const EdgeInsets.fromLTRB(18, 12, 14, 18),
             child: IntrinsicHeight(
               child: Row(
                 crossAxisAlignment: CrossAxisAlignment.stretch,
