@@ -1,5 +1,6 @@
 import "package:flutter/material.dart";
 import "matches_screen.dart";
+import "scores_screen.dart";
 import "predictions_screen.dart";
 import "settings_screen.dart";
 import "search_screen.dart";
@@ -20,7 +21,7 @@ class _MainScreenState extends State<MainScreen> {
   final _matchesKey = GlobalKey<MatchesScreenState>();
 
   late final List<Widget> _screens = [
-    MatchesScreen(key: _matchesKey),
+    const ScoresScreen(),
     const PredictionsScreen(),
     const TipHistoryScreen(),
   ];
