@@ -57,6 +57,7 @@ class VipCoupon {
             .toList();
 
   String get status {
+    if (legs.isEmpty) return 'na';
     final r = legs.map((l) => l.result).toList();
     if (r.contains('lost')) return 'lost';
     if (r.every((x) => x == 'won' || x == 'void')) return 'won';

@@ -134,7 +134,7 @@ class _VipScreenState extends State<VipScreen> {
             Text(
               date == null
                   ? 'Publié chaque matin à 6h · matchs de 8h à 4h'
-                  : '${frDay(date)} · ${d!.analyzed} matchs analysés · 3 coupons sélectionnés',
+                  : '${frDay(date)} · ${d!.analyzed} matchs analysés · ${d!.coupons.length} coupons',
               style: TextStyle(color: Color(0xDDFFFFFF), fontSize: 12.5, height: 1.35),
             ),
           ]),
@@ -216,6 +216,7 @@ class _VipCouponCardState extends State<VipCouponCard> {
   List<Color> get _grad => switch (widget.coupon.tier) {
         2 => [Color(0xFF059669), Color(0xFF0D9488)],
         5 => [Color(0xFF4F46E5), Color(0xFF7C3AED)],
+        99 => [Color(0xFF831843), Color(0xFFBE123C)],
         _ => [Color(0xFFD97706), Color(0xFFDC2626)],
       };
 
@@ -328,6 +329,7 @@ class _VipCouponCardState extends State<VipCouponCard> {
       'won' => ('Gagné', K.green),
       'lost' => ('Perdu', K.red),
       'live' => ('En cours', K.amber),
+      'na' => ('Indisponible', Colors.white),
       _ => ('En attente', Colors.white),
     };
     final rows = <Widget>[];
@@ -358,7 +360,7 @@ class _VipCouponCardState extends State<VipCouponCard> {
                   Row(children: [
                     Icon(Icons.workspace_premium_rounded, color: Colors.white, size: 18),
                     SizedBox(width: 6),
-                    Text('COUPON COTE ${c.tier}',
+                    Text(c.tier == 99 ? 'GROSSES COTES' : 'COUPON COTE ${c.tier}',
                         style: TextStyle(color: Colors.white, fontSize: 14.5, fontWeight: FontWeight.w900, letterSpacing: 0.6)),
                   ]),
                   SizedBox(height: 4),
@@ -367,7 +369,7 @@ class _VipCouponCardState extends State<VipCouponCard> {
                 ]),
               ),
               Column(crossAxisAlignment: CrossAxisAlignment.end, children: [
-                Text('×${fx(c.total)}', style: TextStyle(color: Colors.white, fontSize: 22, fontWeight: FontWeight.w900)),
+                Text(c.legs.isEmpty ? '—' : '×${fx(c.total)}', style: TextStyle(color: Colors.white, fontSize: 22, fontWeight: FontWeight.w900)),
                 Container(
                   margin: EdgeInsets.only(top: 3),
                   padding: EdgeInsets.symmetric(horizontal: 8, vertical: 2),
@@ -379,8 +381,22 @@ class _VipCouponCardState extends State<VipCouponCard> {
             ]),
           ),
         ),
+        if (c.legs.isEmpty)
+          Padding(
+            padding: EdgeInsets.all(16),
+            child: Text("Coupon indisponible aujourd'hui : moins de 5 sélections solides à grosse cote. Nous préférons ne pas compléter artificiellement.",
+                style: TextStyle(color: K.muted, fontSize: 13, height: 1.4)),
+          ),
+        if (c.tier == 99 && c.legs.isNotEmpty && _open)
+          Container(
+            width: double.infinity,
+            color: K.amber.withAlpha(30),
+            padding: EdgeInsets.fromLTRB(14, 10, 14, 10),
+            child: Text('⚠️ Grosse cote = gain élevé mais probabilité de réussite faible. Misez prudemment.',
+                style: TextStyle(color: K.amber, fontSize: 12.5, fontWeight: FontWeight.w700, height: 1.35)),
+          ),
         ...rows,
-        if (_open) ...[
+        if (_open && c.legs.isNotEmpty) ...[
           Container(height: 1, color: K.border),
           Padding(
             padding: EdgeInsets.fromLTRB(14, 2, 4, 2),
