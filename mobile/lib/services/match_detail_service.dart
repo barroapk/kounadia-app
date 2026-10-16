@@ -242,7 +242,7 @@ class MatchDetailService {
     return out;
   }
 
-  static List<StandRow> _standing(String t) {
+  static List<StandRow> standing(String t) {
     final rows = <StandRow>[];
     for (final r in RegExp(r'<tr[^>]*>([\s\S]*?)</tr>').allMatches(t)) {
       final row = r[1]!;
@@ -320,7 +320,7 @@ class MatchDetailService {
           break;
         case 'standing':
           if (table.isEmpty) {
-            table = _standing(body);
+            table = standing(body);
             tableTitle = title.replaceFirst(RegExp(r'^Table\s+'), '');
           }
           break;
