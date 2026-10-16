@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import '../models/live_match.dart';
 import '../services/match_detail_service.dart';
+import '../services/analytics.dart';
 import '../services/logo_cache.dart';
 import '../widgets/forecast_card.dart' show K, kMessage, hm;
 import '../widgets/jersey.dart';
@@ -15,6 +16,12 @@ class PtMatchScreen extends StatefulWidget {
 
 class _PtMatchScreenState extends State<PtMatchScreen> {
   late Future<MatchDetail> _f = MatchDetailService.load(widget.match);
+
+  @override
+  void initState() {
+    super.initState();
+    Analytics.log('match_open', {'league': widget.match.leagueLabel});
+  }
 
   LiveMatch get m => widget.match;
 

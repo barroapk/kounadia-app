@@ -3,11 +3,13 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'screens/main_screen.dart';
 import 'services/theme_controller.dart';
+import 'services/analytics.dart';
 import 'widgets/forecast_card.dart' show K;
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
   await ThemeCtl.init();
+  Analytics.init();
   K.dark = ThemeCtl.isDark;
   runApp(KounadiaApp());
 }
@@ -41,6 +43,7 @@ class _KounadiaAppState extends State<KounadiaApp> with WidgetsBindingObserver {
   @override
   void didChangeAppLifecycleState(AppLifecycleState state) {
     if (state == AppLifecycleState.resumed) _check();
+    if (state == AppLifecycleState.paused) Analytics.flush();
   }
 
   void _check() {

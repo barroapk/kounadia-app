@@ -5,6 +5,7 @@ import 'package:flutter/rendering.dart';
 import 'package:path_provider/path_provider.dart';
 import 'package:share_plus/share_plus.dart';
 import '../models/coupon.dart';
+import '../services/analytics.dart';
 import 'forecast_card.dart' show K, hm, two;
 
 /// Reçu visuel d'un coupon (partagé en image).
@@ -173,6 +174,7 @@ Future<void> _shareImage(GlobalKey key, Coupon c) async {
 
 /// Ouvre l'aperçu du reçu, puis partage en image (ou en texte).
 Future<void> shareCoupon(BuildContext context, Coupon c) async {
+  Analytics.log('coupon_share', {'legs': c.legs.length});
   final key = GlobalKey();
   await showDialog<void>(
     context: context,

@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:url_launcher/url_launcher.dart';
+import '../../services/analytics.dart';
 import '../../services/knd/player_cache_service.dart';
 import '../../widgets/forecast_card.dart' show K;
 
@@ -96,6 +97,7 @@ class _DepositScreenState extends State<DepositScreen> {
 
     setState(() => _sending = true);
     try {
+      Analytics.log('deposit_whatsapp');
       final ok = await launchUrl(uri, mode: LaunchMode.externalApplication);
       if (ok) {
         final known = _recent.firstWhere((p) => p['id'] == id, orElse: () => {'name': ''});

@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:url_launcher/url_launcher.dart';
+import '../../services/analytics.dart';
 import '../../widgets/forecast_card.dart' show K;
 import 'deposit_screen.dart' show kWhatsAppNumber;
 
@@ -64,6 +65,7 @@ class _WithdrawalScreenState extends State<WithdrawalScreen> {
 
     setState(() => _sending = true);
     try {
+      Analytics.log('withdraw_whatsapp');
       final ok = await launchUrl(uri, mode: LaunchMode.externalApplication);
       if (!ok) _snack("WhatsApp n'est pas disponible sur ce téléphone.");
     } catch (_) {

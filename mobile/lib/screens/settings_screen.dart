@@ -3,6 +3,7 @@ import 'package:share_plus/share_plus.dart';
 import 'package:url_launcher/url_launcher.dart';
 import '../widgets/forecast_card.dart' show K;
 import '../widgets/k_ui.dart';
+import '../services/analytics.dart';
 import '../widgets/theme_selector.dart';
 import '../widgets/welcome_card.dart';
 import 'football/facts_screen.dart';
@@ -16,7 +17,10 @@ final _supportEmail = 'pierreclavers56@gmail.com';
 class SettingsScreen extends StatelessWidget {
   SettingsScreen({super.key});
 
-  void _open(BuildContext c, Widget w) => Navigator.push(c, MaterialPageRoute(builder: (_) => w));
+  void _open(BuildContext c, Widget w) {
+    Analytics.log('settings_open', {'page': w.runtimeType.toString()});
+    Navigator.push(c, MaterialPageRoute(builder: (_) => w));
+  }
 
   void _snack(BuildContext c, String m) =>
       ScaffoldMessenger.of(c).showSnackBar(SnackBar(content: Text(m)));

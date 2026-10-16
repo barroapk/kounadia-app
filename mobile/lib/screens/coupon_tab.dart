@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 import '../models/coupon.dart';
 import '../models/live_match.dart';
 import '../services/coupon_engine.dart';
+import '../services/analytics.dart';
 import '../services/coupon_store.dart';
 import '../services/scores_service.dart';
 import '../services/markets_service.dart';
@@ -135,6 +136,7 @@ class _CouponTabState extends State<CouponTab> with AutomaticKeepAliveClientMixi
     if (!more) _shown.clear();
     final res = CouponEngine.generate(cands, _c, exclude: _shown);
     _shown.addAll(res.map((c) => c.signature));
+    Analytics.log('coupon_generate', {'preset': _preset, 'period': _c.period, 'found': res.length});
     if (!mounted) return;
     setState(() {
       _busy = false;
@@ -152,6 +154,7 @@ class _CouponTabState extends State<CouponTab> with AutomaticKeepAliveClientMixi
 
   Future<void> _save(Coupon c) async {
     final r = await CouponStore.add(c);
+    Analytics.log('coupon_save', {'result': r});
     final l = await CouponStore.all();
     if (mounted) setState(() => _saved = l);
     _snack(r == 'ok'

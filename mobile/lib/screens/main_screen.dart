@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import '../widgets/forecast_card.dart' show K;
+import '../services/analytics.dart';
 import 'knd/deposit_screen.dart';
 import 'knd/withdrawal_screen.dart';
 import 'predictions_screen.dart';
@@ -146,7 +147,10 @@ class _MainScreenState extends State<MainScreen> {
         elevation: 6,
         child: InkWell(
           customBorder: StadiumBorder(),
-          onTap: _openKnd,
+          onTap: () {
+            Analytics.log('knd_menu');
+            _openKnd();
+          },
           child: Padding(
             padding: EdgeInsets.fromLTRB(12, 9, 10, 9),
             child: Row(mainAxisSize: MainAxisSize.min, children: [
@@ -182,7 +186,10 @@ class _MainScreenState extends State<MainScreen> {
           ),
           child: NavigationBar(
             selectedIndex: _i,
-            onDestinationSelected: (i) => setState(() => _i = i),
+            onDestinationSelected: (i) {
+              setState(() => _i = i);
+              Analytics.log('tab_view', {'tab': _titles[i]});
+            },
             destinations: [
               NavigationDestination(
                   icon: Icon(Icons.sports_soccer_outlined), selectedIcon: Icon(Icons.sports_soccer), label: 'Matchs'),
