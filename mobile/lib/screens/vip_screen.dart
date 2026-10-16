@@ -6,6 +6,7 @@ import '../widgets/coupon_receipt.dart';
 import '../widgets/forecast_card.dart' show K, hm, two, frDay, kMessage, kOfflineBanner;
 import '../widgets/jersey.dart';
 import '../widgets/knd_banner.dart';
+import '../widgets/vip_reliability.dart';
 
 class VipScreen extends StatefulWidget {
   final bool standalone;
@@ -146,7 +147,7 @@ class _VipScreenState extends State<VipScreen> {
   List<Widget> _today(VipDay? d) {
     final now = DateTime.now();
     final ymd = '${now.year}-${two(now.month)}-${two(now.day)}';
-    final children = <Widget>[_hero(d), SizedBox(height: 14), KndBanner()];
+    final children = <Widget>[_hero(d), SizedBox(height: 12), VipReliability(), SizedBox(height: 14), KndBanner()];
     if (d == null || d.coupons.isEmpty) {
       children.addAll([
         SizedBox(height: 30),
@@ -384,7 +385,7 @@ class _VipCouponCardState extends State<VipCouponCard> {
         if (c.legs.isEmpty)
           Padding(
             padding: EdgeInsets.all(16),
-            child: Text("Coupon indisponible aujourd'hui : moins de 5 sélections solides à grosse cote. Nous préférons ne pas compléter artificiellement.",
+            child: Text("Coupon indisponible aujourd'hui : moins de 3 sélections solides à grosse cote. Nous préférons ne pas compléter artificiellement.",
                 style: TextStyle(color: K.muted, fontSize: 13, height: 1.4)),
           ),
         if (c.tier == 99 && c.legs.isNotEmpty && _open)
