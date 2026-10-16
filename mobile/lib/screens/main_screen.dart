@@ -6,6 +6,7 @@ import 'predictions_screen.dart';
 import 'scores_screen.dart';
 import 'settings_screen.dart';
 import 'tip_history_screen.dart';
+import 'vip_screen.dart';
 import '../widgets/welcome_card.dart';
 
 final k1xBet = Color(0xFF1A5BA6);
@@ -27,8 +28,8 @@ class _MainScreenState extends State<MainScreen> {
       if (mounted) maybeShowWelcome(context);
     });
   }
-  static List<Widget> _screens = [ScoresScreen(), PredictionsScreen(), TipHistoryScreen()];
-  static final _titles = ['Matchs', 'Prédictions', 'Historique'];
+  static List<Widget> _screens = [ScoresScreen(), PredictionsScreen(), VipScreen(), TipHistoryScreen()];
+  static final _titles = ['Matchs', 'Prédictions', 'Coupon VIP', 'Historique'];
 
   void _push(Widget w) => Navigator.push(context, MaterialPageRoute(builder: (_) => w));
 
@@ -187,6 +188,8 @@ class _MainScreenState extends State<MainScreen> {
                   icon: Icon(Icons.sports_soccer_outlined), selectedIcon: Icon(Icons.sports_soccer), label: 'Matchs'),
               NavigationDestination(
                   icon: Icon(Icons.insights_outlined), selectedIcon: Icon(Icons.insights), label: 'Prédictions'),
+              NavigationDestination(
+                  icon: Icon(Icons.workspace_premium_outlined), selectedIcon: Icon(Icons.workspace_premium), label: 'VIP'),
               NavigationDestination(
                   icon: Icon(Icons.history_rounded), selectedIcon: Icon(Icons.history), label: 'Historique'),
             ],
