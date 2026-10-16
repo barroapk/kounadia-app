@@ -10,16 +10,16 @@ class ScoresService {
   static const _live = 'https://primatips.com/liveresults?day=0';
   static const _ua = {'User-Agent': 'KOUNADIA-App/1.0 (+https://github.com/barroapk/kounadia-data)'};
 
-  static Future<(List<LiveMatch>, bool)> load() async {
+  static Future<(Map<String, List<LiveMatch>>, bool)> load() async {
     final prefs = await SharedPreferences.getInstance();
     try {
       final bust = DateTime.now().millisecondsSinceEpoch ~/ 60000;
       final r = await http.get(Uri.parse('$_url?v=$bust')).timeout(const Duration(seconds: 20));
       if (r.statusCode != 200) throw Exception('indisponible');
       final body = utf8.decode(r.bodyBytes);
-      final list = _parse(body);
+      final days = _parse(body);
       await prefs.setString('kscores', body);
-      return (list, false);
+      return (days, false);
     } catch (e) {
       final cached = prefs.getString('kscores');
       if (cached != null) {
@@ -32,11 +32,17 @@ class ScoresService {
     }
   }
 
-  static List<LiveMatch> _parse(String body) {
+  static List<LiveMatch> _list(dynamic v) => ((v as List?) ?? [])
+      .map((e) => LiveMatch.fromJson(e as Map<String, dynamic>))
+      .toList();
+
+  static Map<String, List<LiveMatch>> _parse(String body) {
     final d = jsonDecode(body) as Map<String, dynamic>;
-    return ((d['matches'] as List?) ?? [])
-        .map((e) => LiveMatch.fromJson(e as Map<String, dynamic>))
-        .toList();
+    final days = d['days'];
+    if (days is Map<String, dynamic>) {
+      return days.map((k, v) => MapEntry(k, _list(v)));
+    }
+    return {(d['date'] ?? '').toString(): _list(d['matches'])};
   }
 
   static Future<List<Map<String, dynamic>>> live() async {
