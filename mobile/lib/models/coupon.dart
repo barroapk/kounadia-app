@@ -141,12 +141,14 @@ class Coupon {
       final l = legs[i];
       final d = l.date;
       final t = d == null ? '' : '${_two(d.day)}/${_two(d.month)} ${_two(d.hour)}:${_two(d.minute)} · ';
-      b.writeln('${i + 1}. $t${l.home} – ${l.away}');
+      b.writeln('${i + 1}. ${l.league}');
+      b.writeln('   $t${l.home} – ${l.away}');
       b.writeln('   ➜ ${l.label} @${fx(l.odd)}');
     }
     b.writeln('\nProbabilité estimée ≈ ${pctText()}');
     b.writeln('📲 Pronostics gratuits sur KOUNADIA');
     b.writeln('🎁 Code promo 1xBet : 99KND');
+    b.writeln('💬 Dépôt / retrait 1xBet : KOUNADIA SERVICE sur WhatsApp +226 55 33 77 82');
     b.write('18+ · Jouez de manière responsable.');
     return b.toString();
   }

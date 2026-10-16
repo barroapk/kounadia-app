@@ -27,6 +27,7 @@ class _ScoresScreenState extends State<ScoresScreen> with WidgetsBindingObserver
   String? _error;
   Set<int> _fav = {};
   final Set<String> _collapsed = {};
+  final Map<String, String> _logos = {};
   String _filter = 'all';
   Timer? _liveTimer;
   Timer? _fullTimer;
@@ -124,13 +125,13 @@ class _ScoresScreenState extends State<ScoresScreen> with WidgetsBindingObserver
         for (final m in l) {
           final x = mk[m.id];
           if (x == null) continue;
-          if (x.hl != null && LogoCache.get(m.home) == null) map[m.home] = x.hl!;
-          if (x.al != null && LogoCache.get(m.away) == null) map[m.away] = x.al!;
+          if (x.hl != null) map[m.home] = x.hl!;
+          if (x.al != null) map[m.away] = x.al!;
         }
       }
       if (map.isNotEmpty) {
+        if (mounted) setState(() => _logos.addAll(map));
         await LogoCache.putAll(map);
-        if (mounted) setState(() {});
       }
     } catch (_) {}
   }
@@ -421,7 +422,7 @@ class _ScoresScreenState extends State<ScoresScreen> with WidgetsBindingObserver
   Widget _team(String name, int? goals, bool win) {
     return Row(
       children: [
-        TeamCrest(name: name, logo: LogoCache.get(name), size: 16),
+        TeamCrest(name: name, logo: _logos[name] ?? LogoCache.get(name), size: 16),
         const SizedBox(width: 7),
         Expanded(
           child: Text(name,

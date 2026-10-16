@@ -92,7 +92,7 @@ class CouponEngine {
     if (cands.length < c.countMin) return [];
     final rnd = Random(DateTime.now().microsecondsSinceEpoch);
     final found = <String, Coupon>{};
-    for (var attempt = 0; attempt < 4000 && found.length < 80; attempt++) {
+    for (var attempt = 0; attempt < 8000 && found.length < 300; attempt++) {
       final keyed = [
         for (final e in cands)
           (e, e.map((l) => l.prob).reduce((a, b) => a > b ? a : b) * (0.35 + rnd.nextDouble()))
@@ -116,15 +116,14 @@ class CouponEngine {
     }
     final sorted = found.values.toList()..sort((a, b) => b.prob.compareTo(a.prob));
     final picked = <Coupon>[];
+    final used = <int, int>{};
     for (final cp in sorted) {
       if (picked.length >= max) break;
-      final ids = cp.legs.map((l) => l.matchId).toSet();
-      final close = picked.any((p) => p.legs.where((l) => ids.contains(l.matchId)).length * 2 > ids.length);
-      if (!close) picked.add(cp);
-    }
-    for (final cp in sorted) {
-      if (picked.length >= max) break;
-      if (!picked.contains(cp)) picked.add(cp);
+      if (cp.legs.any((l) => (used[l.matchId] ?? 0) >= 2)) continue;
+      picked.add(cp);
+      for (final l in cp.legs) {
+        used[l.matchId] = (used[l.matchId] ?? 0) + 1;
+      }
     }
     return picked;
   }

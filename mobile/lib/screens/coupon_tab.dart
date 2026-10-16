@@ -1,6 +1,5 @@
 import 'dart:math' as math;
 import 'package:flutter/material.dart';
-import 'package:share_plus/share_plus.dart';
 import '../models/coupon.dart';
 import '../models/live_match.dart';
 import '../services/coupon_engine.dart';
@@ -10,6 +9,7 @@ import '../services/markets_service.dart';
 import '../widgets/forecast_card.dart' show K, hm, two, kMessage;
 import '../widgets/k_ui.dart';
 import '../widgets/knd_banner.dart';
+import '../widgets/coupon_receipt.dart';
 import 'pt_match_screen.dart';
 
 class CouponTab extends StatefulWidget {
@@ -438,7 +438,7 @@ class _CouponTabState extends State<CouponTab> with AutomaticKeepAliveClientMixi
               coupon: _results[i],
               title: 'Coupon ${i + 1}',
               saved: false,
-              onShare: () => Share.share(_results[i].shareText()),
+              onShare: () => shareCoupon(context, _results[i]),
               onAction: () => _save(_results[i]),
               onOpen: _open,
             ),
@@ -492,7 +492,7 @@ class _CouponTabState extends State<CouponTab> with AutomaticKeepAliveClientMixi
           coupon: c,
           title: 'Créé le ${two(c.created.day)}/${two(c.created.month)} à ${hm(c.created)}',
           saved: true,
-          onShare: () => Share.share(c.shareText()),
+          onShare: () => shareCoupon(context, c),
           onAction: () => _delete(c),
           onOpen: _open,
         ),

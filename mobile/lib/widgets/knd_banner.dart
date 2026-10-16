@@ -157,7 +157,7 @@ class _CarouselState extends State<_Carousel> {
   @override
   Widget build(BuildContext context) {
     return SizedBox(
-      height: 92,
+      height: 100,
       child: Stack(
         children: [
           PageView.builder(
@@ -235,7 +235,7 @@ class _CarouselState extends State<_Carousel> {
               ),
             ),
             Padding(
-              padding: const EdgeInsets.fromLTRB(16, 12, 12, 16),
+              padding: const EdgeInsets.fromLTRB(14, 10, 10, 16),
               child: Row(
                 children: [
                   Expanded(
@@ -255,14 +255,14 @@ class _CarouselState extends State<_Carousel> {
                             overflow: TextOverflow.ellipsis,
                             style: const TextStyle(
                                 color: Colors.white,
-                                fontSize: 16,
+                                fontSize: 15,
                                 fontWeight: FontWeight.w800)),
                         const SizedBox(height: 2),
                         Text(s.text,
                             maxLines: 2,
                             overflow: TextOverflow.ellipsis,
                             style: const TextStyle(
-                                color: Color(0xE6FFFFFF), fontSize: 12.5, height: 1.25)),
+                                color: Color(0xE6FFFFFF), fontSize: 12, height: 1.2)),
                       ],
                     ),
                   ),
@@ -282,7 +282,8 @@ class _CarouselState extends State<_Carousel> {
                   if (s.cta.isNotEmpty && s.link.isNotEmpty) ...[
                     const SizedBox(width: 10),
                     Container(
-                      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                      padding: const EdgeInsets.symmetric(horizontal: 9, vertical: 6),
+                      constraints: const BoxConstraints(maxWidth: 92),
                       decoration: BoxDecoration(
                         color: Colors.white,
                         borderRadius: BorderRadius.circular(20),
@@ -290,11 +291,14 @@ class _CarouselState extends State<_Carousel> {
                       child: Row(
                         mainAxisSize: MainAxisSize.min,
                         children: [
-                          Text(s.cta,
+                          Flexible(
+                            child: Text(s.cta,
+                              maxLines: 1,
+                              overflow: TextOverflow.ellipsis,
                               style: TextStyle(
-                                  color: c1, fontSize: 12, fontWeight: FontWeight.w800)),
+                                  color: c1, fontSize: 11, fontWeight: FontWeight.w800))),
                           const SizedBox(width: 4),
-                          Icon(Icons.arrow_forward_rounded, color: c1, size: 14),
+                          Icon(Icons.arrow_forward_rounded, color: c1, size: 12),
                         ],
                       ),
                     ),
