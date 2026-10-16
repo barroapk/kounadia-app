@@ -8,6 +8,7 @@ import '../widgets/forecast_card.dart' show K, kMessage, kOfflineBanner, hm, two
 import '../widgets/jersey.dart';
 import '../widgets/knd_banner.dart';
 import '../services/logo_cache.dart';
+import '../services/markets_service.dart';
 import 'pt_match_screen.dart';
 import '../services/primatips_service.dart' show frLeague;
 
@@ -105,6 +106,7 @@ class _ScoresScreenState extends State<ScoresScreen> with WidgetsBindingObserver
         _error = null;
       });
       _pollLive();
+      _applyLogos();
     } catch (e) {
       if (!mounted) return;
       setState(() {
@@ -112,6 +114,25 @@ class _ScoresScreenState extends State<ScoresScreen> with WidgetsBindingObserver
         if (_days.isEmpty) _error = e.toString();
       });
     }
+  }
+
+  Future<void> _applyLogos() async {
+    try {
+      final mk = await MarketsService.load();
+      final map = <String, String>{};
+      for (final l in _days.values) {
+        for (final m in l) {
+          final x = mk[m.id];
+          if (x == null) continue;
+          if (x.hl != null && LogoCache.get(m.home) == null) map[m.home] = x.hl!;
+          if (x.al != null && LogoCache.get(m.away) == null) map[m.away] = x.al!;
+        }
+      }
+      if (map.isNotEmpty) {
+        await LogoCache.putAll(map);
+        if (mounted) setState(() {});
+      }
+    } catch (_) {}
   }
 
   bool get _hasLive {

@@ -6,6 +6,7 @@ import '../models/live_match.dart';
 import '../services/coupon_engine.dart';
 import '../services/coupon_store.dart';
 import '../services/scores_service.dart';
+import '../services/markets_service.dart';
 import '../widgets/forecast_card.dart' show K, hm, two, kMessage;
 import '../widgets/k_ui.dart';
 import '../widgets/knd_banner.dart';
@@ -33,6 +34,7 @@ class _CouponTabState extends State<CouponTab> with AutomaticKeepAliveClientMixi
   final Set<String> _shown = {};
   List<Coupon> _saved = [];
   Map<String, List<LiveMatch>> _days = {};
+  Map<int, MatchMarkets> _mk = {};
 
   static const _oMin = 1.5;
   static const _oMax = 50.0;
@@ -56,6 +58,9 @@ class _CouponTabState extends State<CouponTab> with AutomaticKeepAliveClientMixi
   Future<void> _fetch() async {
     final (d, _) = await ScoresService.load();
     _days = d;
+    try {
+      _mk = await MarketsService.load();
+    } catch (_) {}
   }
 
   Future<void> _loadSaved() async {
@@ -115,7 +120,7 @@ class _CouponTabState extends State<CouponTab> with AutomaticKeepAliveClientMixi
             ? [_key(1)]
             : [_key(0), _key(1)];
     final matches = keys.expand((k) => _days[k] ?? const <LiveMatch>[]).toList();
-    final cands = CouponEngine.candidates(matches, _c);
+    final cands = CouponEngine.candidates(matches, _c, _mk);
     if (!more) _shown.clear();
     final res = CouponEngine.generate(cands, _c, exclude: _shown);
     _shown.addAll(res.map((c) => c.signature));
@@ -358,6 +363,8 @@ class _CouponTabState extends State<CouponTab> with AutomaticKeepAliveClientMixi
                 if (_c.draw && !_c.win && !_c.dc) return;
                 _edit(() => _c.draw = !_c.draw);
               }),
+              _toggle('Plus/Moins de buts', _c.goals, () => _edit(() => _c.goals = !_c.goals)),
+              _toggle('Les deux marquent', _c.btts, () => _edit(() => _c.btts = !_c.btts)),
               _toggle('Double chance', _c.dc, () {
                 if (_c.dc && !_c.win && !_c.draw) return;
                 _edit(() => _c.dc = !_c.dc);

@@ -7,7 +7,7 @@ class CouponCriteria {
   int countMin, countMax;
   double oddMin, oddMax;
   int probMin, probMax;
-  bool win, draw, dc;
+  bool win, draw, dc, goals, btts;
 
   CouponCriteria({
     this.period = 0,
@@ -22,14 +22,18 @@ class CouponCriteria {
     this.win = true,
     this.draw = false,
     this.dc = true,
+    this.goals = true,
+    this.btts = true,
   });
 
   factory CouponCriteria.safe() => CouponCriteria(
-      totalMin: 1.8, totalMax: 3, countMin: 2, countMax: 3, oddMin: 1.15, oddMax: 1.8, probMin: 65, probMax: 95);
+      totalMin: 1.8, totalMax: 3, countMin: 2, countMax: 3, oddMin: 1.15, oddMax: 1.8, probMin: 65, probMax: 95,
+      btts: false);
   factory CouponCriteria.balanced() => CouponCriteria(
       totalMin: 4, totalMax: 8, countMin: 3, countMax: 5, oddMin: 1.3, oddMax: 2.2, probMin: 55, probMax: 90);
   factory CouponCriteria.bold() => CouponCriteria(
-      totalMin: 15, totalMax: 30, countMin: 5, countMax: 8, oddMin: 1.5, oddMax: 3.0, probMin: 40, probMax: 85, draw: true);
+      totalMin: 15, totalMax: 30, countMin: 5, countMax: 8, oddMin: 1.5, oddMax: 3.0, probMin: 40, probMax: 85,
+      draw: true);
 }
 
 class Leg {
@@ -67,7 +71,13 @@ class Leg {
         return '$away ou nul';
       case '12':
         return 'Pas de match nul';
+      case 'BTS':
+        return 'Les deux équipes marquent';
+      case 'OTS':
+        return 'Une équipe ne marque pas';
     }
+    final g = RegExp(r'^([OU])(\d)(\d)$').firstMatch(pick);
+    if (g != null) return '${g[1] == 'O' ? 'Plus' : 'Moins'} de ${g[2]},${g[3]} buts';
     return pick;
   }
 

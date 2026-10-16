@@ -1,6 +1,7 @@
 import 'dart:math';
 import '../models/coupon.dart';
 import '../models/live_match.dart';
+import 'markets_service.dart' show MatchMarkets;
 import 'primatips_service.dart' show frLeague;
 
 class CouponEngine {
@@ -17,30 +18,50 @@ class CouponEngine {
       );
 
   /// Pour chaque match à venir : la liste des paris qui respectent les critères.
-  static List<List<Leg>> candidates(Iterable<LiveMatch> matches, CouponCriteria c) {
+  static List<List<Leg>> candidates(Iterable<LiveMatch> matches, CouponCriteria c,
+      [Map<int, MatchMarkets> markets = const {}]) {
     final limit = DateTime.now().add(const Duration(minutes: 10));
     final out = <List<Leg>>[];
     for (final m in matches) {
       if (m.status != 'upcoming' || m.date == null || m.date!.isBefore(limit)) continue;
+      final ev = <Leg>[];
       final p = m.probs;
       final o = m.odds;
-      if (p == null || o == null || p.length != 3 || o.length != 3) continue;
-      final ev = <Leg>[];
-      if (c.win) {
-        ev.add(legOf(m, '1', o[0], p[0]));
-        ev.add(legOf(m, '2', o[2], p[2]));
+      if (p != null && o != null && p.length == 3 && o.length == 3) {
+        if (c.win) {
+          ev.add(legOf(m, '1', o[0], p[0]));
+          ev.add(legOf(m, '2', o[2], p[2]));
+        }
+        if (c.draw) ev.add(legOf(m, 'X', o[1], p[1]));
+        if (c.dc && m.tipOdd != null) {
+          final t = m.tip.toUpperCase();
+          final pr = t == '1X'
+              ? p[0] + p[1]
+              : t == 'X2'
+                  ? p[1] + p[2]
+                  : t == '12'
+                      ? p[0] + p[2]
+                      : null;
+          if (pr != null) ev.add(legOf(m, t, m.tipOdd!, pr));
+        }
       }
-      if (c.draw) ev.add(legOf(m, 'X', o[1], p[1]));
-      if (c.dc && m.tipOdd != null) {
-        final t = m.tip.toUpperCase();
-        final pr = t == '1X'
-            ? p[0] + p[1]
-            : t == 'X2'
-                ? p[1] + p[2]
-                : t == '12'
-                    ? p[0] + p[2]
-                    : null;
-        if (pr != null) ev.add(legOf(m, t, m.tipOdd!, pr));
+      final mk = markets[m.id];
+      if (mk != null) {
+        if (c.goals) {
+          for (final (key, code) in const [('ou15', '15'), ('ou25', '25'), ('ou35', '35')]) {
+            final x = mk.m[key];
+            if (x == null) continue;
+            ev.add(legOf(m, 'O$code', x.$1[0], x.$2[0]));
+            ev.add(legOf(m, 'U$code', x.$1[1], x.$2[1]));
+          }
+        }
+        if (c.btts) {
+          final x = mk.m['btts'];
+          if (x != null) {
+            ev.add(legOf(m, 'BTS', x.$1[0], x.$2[0]));
+            ev.add(legOf(m, 'OTS', x.$1[1], x.$2[1]));
+          }
+        }
       }
       final ok = ev
           .where((l) =>
@@ -122,6 +143,15 @@ class CouponEngine {
         return a >= h;
       case '12':
         return h != a;
+      case 'BTS':
+        return h > 0 && a > 0;
+      case 'OTS':
+        return h == 0 || a == 0;
+    }
+    final g = RegExp(r'^([OU])(\d)(\d)$').firstMatch(pick);
+    if (g != null) {
+      final line = int.parse(g[2]!) + int.parse(g[3]!) / 10;
+      return g[1] == 'O' ? h + a > line : h + a < line;
     }
     return false;
   }
