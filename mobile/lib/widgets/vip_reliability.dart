@@ -17,7 +17,13 @@ String _n(num v) {
   return b.toString();
 }
 
-/// Carte « Fiabilité mesurée » : résultats du backtest + résultats réels.
+String _p(num? v) => v == null ? '—' : '${v.toStringAsFixed(1).replaceAll('.', ',')} %';
+String _d(String? iso) {
+  final p = (iso ?? '').split('-');
+  return p.length == 3 ? '${p[2]}/${p[1]}/${p[0]}' : '—';
+}
+
+/// Carte « Fiabilité mesurée » : backtest indépendant + résultats réels.
 class VipReliability extends StatefulWidget {
   VipReliability({super.key});
 
@@ -52,13 +58,28 @@ class _VipReliabilityState extends State<VipReliability> {
   Future<(Map<String, dynamic>?, Map<String, dynamic>?)> _load() async =>
       (await _get(_bt, 'krel_bt'), await _get(_st, 'krel_st'));
 
-  Widget _line(String label, String value, {Color? color}) => Padding(
+  Widget _title(String t) => Padding(
+        padding: EdgeInsets.only(top: 12, bottom: 2),
+        child: Text(t, style: TextStyle(color: K.text, fontSize: 12.5, fontWeight: FontWeight.w800)),
+      );
+
+  Widget _line(String label, String value, {Color? color, String? sub}) => Padding(
         padding: EdgeInsets.only(top: 6),
-        child: Row(children: [
-          Expanded(child: Text(label, style: TextStyle(color: K.muted, fontSize: 12.5))),
-          Text(value, style: TextStyle(color: color ?? K.text, fontSize: 12.5, fontWeight: FontWeight.w800)),
+        child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+          Row(crossAxisAlignment: CrossAxisAlignment.start, children: [
+            Expanded(child: Text(label, style: TextStyle(color: K.muted, fontSize: 12.5))),
+            SizedBox(width: 8),
+            Text(value, style: TextStyle(color: color ?? K.text, fontSize: 12.5, fontWeight: FontWeight.w800)),
+          ]),
+          if (sub != null) Text(sub, style: TextStyle(color: K.muted, fontSize: 11)),
         ]),
       );
+
+  String? _ic(Map? m) {
+    final ic = m?['ic'];
+    if (ic is! List || ic.length != 2 || ic[0] == null) return null;
+    return 'Marge d\'erreur : entre ${_p(ic[0] as num)} et ${_p(ic[1] as num)}';
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -68,22 +89,14 @@ class _VipReliabilityState extends State<VipReliability> {
         final bt = snap.data?.$1;
         final st = snap.data?.$2;
         if (bt == null) return SizedBox.shrink();
+        final per = (bt['periodes'] as Map?) ?? {};
         final e = (bt['evaluationFinale'] as Map?) ?? {};
-        final p1 = ((e['paris1x2'] as Map?)?['c70'] as Map?) ?? {};
-        final pb = ((e['parisButs'] as Map?)?['c70'] as Map?) ?? {};
-        final n1 = (p1['n'] as num?) ?? 0;
-        final nb = (pb['n'] as num?) ?? 0;
-        final h1 = (p1['hit'] as num?) ?? 0;
-        final hb = (pb['hit'] as num?) ?? 0;
-        final n = n1 + nb;
-        final hit = n == 0 ? 0 : (h1 * n1 + hb * nb) / n;
-        final jours = ((bt['periodes'] as Map?)?['joursEvaluation'] as num?) ?? 40;
+        final p1 = (e['paris1x2'] as Map?)?['c70'] as Map?;
+        final pb = (e['parisButs'] as Map?)?['c70'] as Map?;
+        final br = (e['brier1x2'] as Map?) ?? {};
         final coupons = ((e['coupons'] as List?) ?? const []).map((x) => Map<String, dynamic>.from(x as Map)).toList();
-        final vipReal = (st?['vip'] as Map?) ?? {};
-        final legs = (vipReal['legs'] as num?) ?? 0;
-        final legsWon = (vipReal['legsWon'] as num?) ?? 0;
-        final cps = (vipReal['coupons'] as num?) ?? 0;
-        final cpsWon = (vipReal['couponsWon'] as num?) ?? 0;
+        final real = (st?['vip'] as Map?) ?? {};
+        final legs = (real['legs'] as num?) ?? 0;
 
         return Container(
           decoration: BoxDecoration(
@@ -108,12 +121,8 @@ class _VipReliabilityState extends State<VipReliability> {
                     child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
                       Text('Fiabilité mesurée', style: TextStyle(color: K.text, fontSize: 14.5, fontWeight: FontWeight.w800)),
                       SizedBox(height: 2),
-                      Text(
-                        n == 0
-                            ? 'Mesure en cours…'
-                            : 'Paris VIP à 70 % et plus : ${hit.toStringAsFixed(0)} % gagnés sur ${_n(n)} paris testés',
-                        style: TextStyle(color: K.muted, fontSize: 12.5, height: 1.3),
-                      ),
+                      Text('Paris à 70 % et plus — 1X2 : ${_p(p1?['hit'] as num?)} · Buts : ${_p(pb?['hit'] as num?)}',
+                          style: TextStyle(color: K.muted, fontSize: 12.5, height: 1.3)),
                     ]),
                   ),
                   Icon(_open ? Icons.expand_less_rounded : Icons.expand_more_rounded, color: K.muted),
@@ -126,21 +135,28 @@ class _VipReliabilityState extends State<VipReliability> {
                 child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
                   Container(height: 1, color: K.border),
                   SizedBox(height: 8),
-                  Text('Test sur $jours jours de matchs passés, jamais vus par le modèle',
-                      style: TextStyle(color: K.text, fontSize: 12.5, fontWeight: FontWeight.w700)),
+                  Text('Test du ${_d(per['evalDu'] as String?)} au ${_d(per['evalAu'] as String?)} (${per['joursEvaluation'] ?? '—'} jours), sur des matchs jamais vus par le modèle',
+                      style: TextStyle(color: K.text, fontSize: 12.5, fontWeight: FontWeight.w700, height: 1.35)),
+                  _title('Paris individuels (confiance 70 % et plus)'),
+                  _line('1X2 et double chance', '${_p(p1?['hit'] as num?)} · ${_n((p1?['n'] as num?) ?? 0)} paris', sub: _ic(p1)),
+                  _line('Plus/Moins de buts, les deux marquent', '${_p(pb?['hit'] as num?)} · ${_n((pb?['n'] as num?) ?? 0)} paris', sub: _ic(pb)),
+                  _line('Précision 1X2 (Brier, plus bas = mieux)',
+                      'KOUNADIA ${br['kounadiaFormule'] ?? '—'} · marché ${br['marche'] ?? '—'}'),
+                  _title('Coupons sur la période de test'),
                   for (final c in coupons)
-                    _line('${c['coupon']}',
-                        (c['jours'] as num? ?? 0) == 0 ? '—' : '${c['gagnes']}/${c['jours']} gagnés (${c['reussite']} %)'),
+                    _line(
+                      '${c['coupon']}${c['coupon'] == 'Grosses cotes' ? ' (suspendu)' : ''}',
+                      (c['jours'] as num? ?? 0) == 0 ? '—' : '${c['gagnes']}/${c['jours']} gagnés (${_p(c['reussite'] as num?)})',
+                      sub: (c['jours'] as num? ?? 0) < 30 ? 'Échantillon insuffisant pour conclure' : null,
+                    ),
                   if (legs > 0) ...[
-                    SizedBox(height: 10),
-                    Text('En réel depuis le lancement',
-                        style: TextStyle(color: K.text, fontSize: 12.5, fontWeight: FontWeight.w700)),
-                    _line('Matchs VIP', '${_n(legsWon)}/${_n(legs)} gagnés', color: K.green),
-                    _line('Coupons VIP', '${_n(cpsWon)}/${_n(cps)} gagnés', color: K.green),
+                    _title('En réel depuis le lancement'),
+                    _line('Matchs VIP', '${_n((real['legsWon'] as num?) ?? 0)}/${_n(legs)} gagnés', color: K.green),
+                    _line('Coupons VIP', '${_n((real['couponsWon'] as num?) ?? 0)}/${_n((real['coupons'] as num?) ?? 0)} gagnés', color: K.green),
                   ],
-                  SizedBox(height: 10),
-                  Text('Résultats passés : aucune garantie de gain. Pariez prudemment. 18+',
-                      style: TextStyle(color: K.amber, fontSize: 11.5, fontWeight: FontWeight.w700)),
+                  SizedBox(height: 12),
+                  Text("Perdre plusieurs coupons d'affilée est normal. Résultats passés : aucune garantie de gain. 18+",
+                      style: TextStyle(color: K.amber, fontSize: 11.5, fontWeight: FontWeight.w700, height: 1.35)),
                 ]),
               ),
           ]),
