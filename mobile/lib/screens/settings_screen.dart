@@ -160,13 +160,14 @@ class SettingsScreen extends StatelessWidget {
                 'Scores en direct, classements, statistiques et pronostics de football.\n\n'
                     'Les pronostics sont fournis à titre informatif uniquement. '
                     'Ils ne constituent ni une garantie de résultat ni un conseil financier.\n\n'
-                    'Développé au Burkina Faso 🇧🇫',
+                    'Fondateur & PDG : Pierre Clavers BARRO\nKOUNADIA SERVICE\n\nDéveloppé au Burkina Faso 🇧🇫',
               ),
             ),
           ]),
           const SizedBox(height: 24),
           const Center(
-            child: Text('KOUNADIA v$kAppVersion · Fait au Burkina Faso 🇧🇫',
+            child: Text('KOUNADIA SERVICE · v$kAppVersion\nPierre Clavers BARRO, fondateur & PDG\nFait au Burkina Faso 🇧🇫',
+                textAlign: TextAlign.center,
                 style: TextStyle(color: K.muted, fontSize: 12)),
           ),
         ],
