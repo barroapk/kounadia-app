@@ -72,7 +72,29 @@ class KounadiaData {
         .where((f) => _isToday(f.date))
         .toList()
       ..sort((a, b) => a.date.compareTo(b.date));
-    return TodayData(parse('ia', 'ia'), parse('expert', 'expert'), offline);
+    var ia = parse('ia', 'ia');
+    var ex = parse('expert', 'expert');
+    try {
+      final (h, _) = await _get('history.json');
+      final res = <String, Map<String, dynamic>>{};
+      for (final e in (h is List ? h : const [])) {
+        if (e is Map && e['id'] != null) res[e['id'].toString()] = Map<String, dynamic>.from(e);
+      }
+      Forecast merge(Forecast f) {
+        final r = res[f.id];
+        if (r == null || r['won'] is! bool) return f;
+        return Forecast(
+          id: f.id, source: f.source, date: f.date, hasTime: f.hasTime, league: f.league,
+          home: f.home, away: f.away, homeLogo: f.homeLogo, awayLogo: f.awayLogo,
+          homeColors: f.homeColors, awayColors: f.awayColors, tipFr: f.tipFr, predicted: f.predicted,
+          confidence: f.confidence, agree: f.agree, models: f.models,
+          score: r['score']?.toString(), won: r['won'] as bool,
+        );
+      }
+      ia = ia.map(merge).toList();
+      ex = ex.map(merge).toList();
+    } catch (_) {}
+    return TodayData(ia, ex, offline);
   }
 
   static Future<HistoryData> history() async {

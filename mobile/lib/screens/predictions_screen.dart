@@ -82,7 +82,7 @@ class _PredictionsScreenState extends State<PredictionsScreen> {
     if (!collapsed) {
       for (var i = 0; i < list.length; i++) {
         if (i > 0) rows.add(Container(height: 1, color: K.border));
-        rows.add(ForecastCard(f: list[i], grouped: true));
+        rows.add(ForecastCard(f: list[i], grouped: true, result: list[i].won != null));
       }
     }
     return Container(
