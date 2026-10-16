@@ -105,11 +105,11 @@ class ForecastCard extends StatelessWidget {
       time = Text(f.hasTime ? hm(f.date) : '--:--',
           style: TextStyle(color: K.text, fontSize: 13, fontWeight: FontWeight.w700));
     } else if (now.isBefore(f.date.add(Duration(minutes: 115)))) {
-      time = const Text('En\ncours',
+      time = Text('En\ncours',
           textAlign: TextAlign.center,
           style: TextStyle(color: K.amber, fontSize: 11, fontWeight: FontWeight.w800, height: 1.1));
     } else {
-      time = const Text('Fin', style: TextStyle(color: K.muted, fontSize: 12.5, fontWeight: FontWeight.w700));
+      time = Text('Fin', style: TextStyle(color: K.muted, fontSize: 12.5, fontWeight: FontWeight.w700));
     }
 
     final parts = <String>[
