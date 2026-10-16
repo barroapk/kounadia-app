@@ -162,6 +162,11 @@ class _VipScreenState extends State<VipScreen> {
             style: TextStyle(color: K.amber, fontSize: 12.5, fontWeight: FontWeight.w700)),
       ));
     }
+    if (d.singles.isNotEmpty) {
+      children
+        ..add(VipSinglesCard(legs: d.singles))
+        ..add(SizedBox(height: 12));
+    }
     for (final c in d.coupons) {
       children
         ..add(VipCouponCard(coupon: c, expanded: true))
@@ -192,6 +197,11 @@ class _VipScreenState extends State<VipScreen> {
           ),
         ]),
       ));
+      if (d.singles.isNotEmpty) {
+        out
+          ..add(VipSinglesCard(legs: d.singles, expanded: false))
+          ..add(SizedBox(height: 10));
+      }
       for (final c in d.coupons) {
         out
           ..add(VipCouponCard(coupon: c, expanded: false))
@@ -416,6 +426,166 @@ class _VipCouponCardState extends State<VipCouponCard> {
             ]),
           ),
         ],
+      ]),
+    );
+  }
+}
+
+class VipSinglesCard extends StatefulWidget {
+  final List<VipLeg> legs;
+  final bool expanded;
+  VipSinglesCard({super.key, required this.legs, this.expanded = true});
+
+  @override
+  State<VipSinglesCard> createState() => _VipSinglesCardState();
+}
+
+class _VipSinglesCardState extends State<VipSinglesCard> {
+  late bool _open = widget.expanded;
+
+  Widget _row(VipLeg l) {
+    final rc = l.result == 'won'
+        ? K.green
+        : l.result == 'lost'
+            ? K.red
+            : l.result == 'live'
+                ? K.amber
+                : K.muted;
+    final d = l.date;
+    return Container(
+      color: (l.result == 'won' || l.result == 'lost') ? rc.withAlpha(30) : null,
+      padding: EdgeInsets.fromLTRB(12, 10, 12, 10),
+      child: Row(crossAxisAlignment: CrossAxisAlignment.start, children: [
+        SizedBox(
+          width: 44,
+          child: Column(children: [
+            Text(d == null ? '--:--' : hm(d), style: TextStyle(color: K.text, fontSize: 13, fontWeight: FontWeight.w700)),
+            Text(d == null ? '' : '${two(d.day)}/${two(d.month)}', style: TextStyle(color: K.muted, fontSize: 10.5)),
+            if (l.result != 'pending')
+              Padding(
+                padding: EdgeInsets.only(top: 3),
+                child: Icon(
+                  l.result == 'won'
+                      ? Icons.check_circle_rounded
+                      : l.result == 'lost'
+                          ? Icons.cancel_rounded
+                          : l.result == 'void'
+                              ? Icons.remove_circle_outline_rounded
+                              : Icons.radio_button_checked_rounded,
+                  color: rc,
+                  size: 16,
+                ),
+              ),
+          ]),
+        ),
+        SizedBox(width: 6),
+        Expanded(
+          child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+            Text(l.league, maxLines: 1, overflow: TextOverflow.ellipsis, style: TextStyle(color: K.muted, fontSize: 11)),
+            SizedBox(height: 4),
+            Row(children: [
+              TeamCrest(name: l.home, logo: l.hl, size: 16),
+              SizedBox(width: 6),
+              Expanded(
+                child: Text(l.home,
+                    maxLines: 1, overflow: TextOverflow.ellipsis,
+                    style: TextStyle(color: K.text, fontSize: 13.5, fontWeight: FontWeight.w600)),
+              ),
+            ]),
+            SizedBox(height: 3),
+            Row(children: [
+              TeamCrest(name: l.away, logo: l.al, size: 16),
+              SizedBox(width: 6),
+              Expanded(
+                child: Text(l.away,
+                    maxLines: 1, overflow: TextOverflow.ellipsis,
+                    style: TextStyle(color: K.text, fontSize: 13.5, fontWeight: FontWeight.w600)),
+              ),
+            ]),
+            SizedBox(height: 5),
+            Text(l.label,
+                style: TextStyle(
+                    color: (l.result == 'won' || l.result == 'lost') ? rc : K.indigoText,
+                    fontSize: 13.5,
+                    fontWeight: FontWeight.w800)),
+            if (l.reasons.isNotEmpty)
+              Padding(
+                padding: EdgeInsets.only(top: 3),
+                child: Row(crossAxisAlignment: CrossAxisAlignment.start, children: [
+                  Padding(padding: EdgeInsets.only(top: 1), child: Icon(Icons.lightbulb_outline_rounded, size: 13, color: K.amber)),
+                  SizedBox(width: 5),
+                  Expanded(child: Text(l.reasons.first, style: TextStyle(color: K.muted, fontSize: 11.5, height: 1.3))),
+                ]),
+              ),
+          ]),
+        ),
+        SizedBox(width: 8),
+        Column(crossAxisAlignment: CrossAxisAlignment.end, children: [
+          Text('@${fx(l.odd)}', style: TextStyle(color: K.text, fontSize: 14.5, fontWeight: FontWeight.w800)),
+          SizedBox(height: 4),
+          Container(
+            padding: EdgeInsets.symmetric(horizontal: 7, vertical: 2),
+            decoration: BoxDecoration(color: K.indigoSoft, borderRadius: BorderRadius.circular(8)),
+            child: Text('${l.conf.round()} %', style: TextStyle(color: K.indigoText, fontSize: 11.5, fontWeight: FontWeight.w800)),
+          ),
+          if (l.score != null)
+            Padding(
+              padding: EdgeInsets.only(top: 4),
+              child: Text(l.score!.replaceAll('-', ' - '), style: TextStyle(color: K.text, fontSize: 12, fontWeight: FontWeight.w700)),
+            ),
+        ]),
+      ]),
+    );
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final legs = widget.legs;
+    final done = legs.where((l) => l.result == 'won' || l.result == 'lost').length;
+    final won = legs.where((l) => l.result == 'won').length;
+    final rows = <Widget>[];
+    if (_open) {
+      for (var i = 0; i < legs.length; i++) {
+        if (i > 0) rows.add(Container(height: 1, color: K.border));
+        rows.add(_row(legs[i]));
+      }
+    }
+    return Container(
+      clipBehavior: Clip.antiAlias,
+      decoration: BoxDecoration(color: K.card, borderRadius: BorderRadius.circular(16), border: Border.all(color: K.border)),
+      child: Column(children: [
+        InkWell(
+          onTap: () => setState(() => _open = !_open),
+          child: Container(
+            padding: EdgeInsets.fromLTRB(14, 12, 10, 12),
+            decoration: BoxDecoration(
+              gradient: LinearGradient(colors: [Color(0xFF0E7490), Color(0xFF0D9488)], begin: Alignment.topLeft, end: Alignment.bottomRight),
+            ),
+            child: Row(children: [
+              Expanded(
+                child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+                  Row(children: [
+                    Icon(Icons.star_rounded, color: Colors.white, size: 18),
+                    SizedBox(width: 6),
+                    Text('TOP 5 DES PARIS SÛRS',
+                        style: TextStyle(color: Colors.white, fontSize: 14.5, fontWeight: FontWeight.w900, letterSpacing: 0.6)),
+                  ]),
+                  SizedBox(height: 4),
+                  Text('Paris individuels, confiance ≥ 70 % · à jouer séparément',
+                      style: TextStyle(color: Color(0xDDFFFFFF), fontSize: 12)),
+                ]),
+              ),
+              Container(
+                padding: EdgeInsets.symmetric(horizontal: 9, vertical: 3),
+                decoration: BoxDecoration(color: Color(0x33000000), borderRadius: BorderRadius.circular(10)),
+                child: Text(done == 0 ? '${legs.length} paris' : '$won/$done gagnés',
+                    style: TextStyle(color: Colors.white, fontSize: 12, fontWeight: FontWeight.w800)),
+              ),
+              Icon(_open ? Icons.expand_less_rounded : Icons.expand_more_rounded, color: Colors.white),
+            ]),
+          ),
+        ),
+        ...rows,
       ]),
     );
   }

@@ -54,8 +54,8 @@ class VipService {
       final (days, _) = await ScoresService.load();
       final byId = {for (final l in days.values) for (final m in l) m.id: m};
       for (final d in [if (today != null) today, ...hist.take(2)]) {
-        for (final c in d.coupons) {
-          for (final l in c.legs) {
+        for (final legs in [...d.coupons.map((c) => c.legs), d.singles]) {
+          for (final l in legs) {
             if (l.result == 'won' || l.result == 'lost' || l.result == 'void') continue;
             final m = byId[l.id];
             if (m == null) continue;

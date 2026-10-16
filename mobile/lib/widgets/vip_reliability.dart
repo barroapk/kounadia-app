@@ -140,18 +140,24 @@ class _VipReliabilityState extends State<VipReliability> {
                   _title('Paris individuels (confiance 70 % et plus)'),
                   _line('1X2 et double chance', '${_p(p1?['hit'] as num?)} · ${_n((p1?['n'] as num?) ?? 0)} paris', sub: _ic(p1)),
                   _line('Plus/Moins de buts, les deux marquent', '${_p(pb?['hit'] as num?)} · ${_n((pb?['n'] as num?) ?? 0)} paris', sub: _ic(pb)),
+                  if (e['top5'] is Map)
+                    _line('Top 5 des paris sûrs (chaque jour)',
+                        '${_p((e['top5'] as Map)['hit'] as num?)} · ${_n(((e['top5'] as Map)['n'] as num?) ?? 0)} paris',
+                        sub: _ic(e['top5'] as Map)),
                   _line('Précision 1X2 (Brier, plus bas = mieux)',
                       'KOUNADIA ${br['kounadiaFormule'] ?? '—'} · marché ${br['marche'] ?? '—'}'),
                   _title('Coupons sur la période de test'),
                   for (final c in coupons)
                     _line(
-                      '${c['coupon']}${c['coupon'] == 'Grosses cotes' ? ' (suspendu)' : ''}',
+                      '${c['coupon']}',
                       (c['jours'] as num? ?? 0) == 0 ? '—' : '${c['gagnes']}/${c['jours']} gagnés (${_p(c['reussite'] as num?)})',
                       sub: (c['jours'] as num? ?? 0) < 30 ? 'Échantillon insuffisant pour conclure' : null,
                     ),
                   if (legs > 0) ...[
                     _title('En réel depuis le lancement'),
                     _line('Matchs VIP', '${_n((real['legsWon'] as num?) ?? 0)}/${_n(legs)} gagnés', color: K.green),
+                    if (st?['top5'] is Map && (((st!['top5'] as Map)['n'] as num?) ?? 0) > 0)
+                      _line('Top 5 paris sûrs', '${_n(((st['top5'] as Map)['won'] as num?) ?? 0)}/${_n(((st['top5'] as Map)['n'] as num?) ?? 0)} gagnés', color: K.green),
                     _line('Coupons VIP', '${_n((real['couponsWon'] as num?) ?? 0)}/${_n((real['coupons'] as num?) ?? 0)} gagnés', color: K.green),
                   ],
                   SizedBox(height: 12),

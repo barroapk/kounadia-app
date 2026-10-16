@@ -74,12 +74,16 @@ class VipDay {
   final String date;
   final int analyzed;
   final List<VipCoupon> coupons;
+  final List<VipLeg> singles;
 
   VipDay.fromJson(Map<String, dynamic> j)
       : date = (j['date'] ?? '').toString(),
         analyzed = ((j['analyzed'] ?? 0) as num).toInt(),
         coupons = ((j['coupons'] as List?) ?? const [])
             .map((e) => VipCoupon.fromJson(Map<String, dynamic>.from(e as Map)))
+            .toList(),
+        singles = ((j['singles'] as List?) ?? const [])
+            .map((e) => VipLeg.fromJson(Map<String, dynamic>.from(e as Map)))
             .toList();
 
   int get won => coupons.where((c) => c.status == 'won').length;
