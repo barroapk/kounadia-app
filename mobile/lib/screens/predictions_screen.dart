@@ -3,6 +3,7 @@ import '../models/forecast.dart';
 import '../services/kounadia_data_service.dart';
 import '../widgets/forecast_card.dart';
 import '../widgets/knd_banner.dart';
+import 'coupon_tab.dart';
 
 class PredictionsScreen extends StatefulWidget {
   const PredictionsScreen({super.key});
@@ -25,7 +26,7 @@ class _PredictionsScreenState extends State<PredictionsScreen> {
   @override
   Widget build(BuildContext context) {
     return DefaultTabController(
-      length: 2,
+      length: 3,
       child: Scaffold(
         backgroundColor: K.bg,
         body: Column(
@@ -43,35 +44,37 @@ class _PredictionsScreenState extends State<PredictionsScreen> {
                   indicator: BoxDecoration(color: K.indigo, borderRadius: BorderRadius.circular(9)),
                   indicatorSize: TabBarIndicatorSize.tab,
                   indicatorPadding: const EdgeInsets.all(3),
+                  labelPadding: EdgeInsets.zero,
                   dividerColor: Colors.transparent,
                   labelColor: Colors.white,
                   unselectedLabelColor: K.muted,
-                  labelStyle: const TextStyle(fontSize: 14, fontWeight: FontWeight.w800),
-                  tabs: const [Tab(text: 'Kounadia IA'), Tab(text: 'Expert')],
+                  labelStyle: const TextStyle(fontSize: 13.5, fontWeight: FontWeight.w800),
+                  tabs: const [Tab(text: 'Kounadia IA'), Tab(text: 'Expert'), Tab(text: 'Coupons')],
                 ),
               ),
             ),
             Expanded(
-              child: FutureBuilder<TodayData>(
-                future: _f,
-                builder: (context, snap) {
-                  if (snap.connectionState != ConnectionState.done) {
-                    return const Center(child: CircularProgressIndicator(color: K.indigo));
-                  }
-                  if (snap.hasError) return kMessage(snap.error.toString(), onRetry: _refresh);
-                  final d = snap.data!;
-                  return TabBarView(children: [
-                    _list('ia', d.ia, d.offline, "Aucun pronostic Kounadia IA pour aujourd'hui."),
-                    _list('ex', d.expert, d.offline, "Aucun pronostic Expert pour aujourd'hui."),
-                  ]);
-                },
-              ),
+              child: TabBarView(children: [_tab(true), _tab(false), const CouponTab()]),
             ),
           ],
         ),
       ),
     );
   }
+
+  Widget _tab(bool ia) => FutureBuilder<TodayData>(
+        future: _f,
+        builder: (context, snap) {
+          if (snap.connectionState != ConnectionState.done) {
+            return const Center(child: CircularProgressIndicator(color: K.indigo));
+          }
+          if (snap.hasError) return kMessage(snap.error.toString(), onRetry: _refresh);
+          final d = snap.data!;
+          return ia
+              ? _list('ia', d.ia, d.offline, "Aucun pronostic Kounadia IA pour aujourd'hui.")
+              : _list('ex', d.expert, d.offline, "Aucun pronostic Expert pour aujourd'hui.");
+        },
+      );
 
   Widget _group(String key, String title, List<Forecast> list) {
     final collapsed = _collapsed.contains(key);
