@@ -126,7 +126,17 @@ const _namesFr = {
   'European Championship Qualification': 'Qualif. Euro', 'UEFA Nations League': 'Ligue des nations',
 };
 
-String frName(String s) => _namesFr[s.trim()] ?? s.trim();
+String frName(String s) {
+  final t = s.trim();
+  if (t == "Cote d'Ivoire") return "Côte d'Ivoire";
+  if (t == 'Bosnia&Herz.') return 'Bosnie-Herzégovine';
+  return _namesFr[t] ?? t;
+}
+
+String frLeague(String l) {
+  final i = l.indexOf(' - ');
+  return i < 0 ? l : frName(l.substring(0, i)) + ' - ' + l.substring(i + 3);
+}
 
 String _frSection(String t) {
   final s = t.toLowerCase();
@@ -190,6 +200,7 @@ class PrimaTipsService {
       .replaceAll('&nbsp;', ' ')
       .replaceAll('&amp;', '&')
       .replaceAll('&#39;', "'")
+      .replaceAllMapped(RegExp(r'&#(\d+);'), (m) => String.fromCharCode(int.parse(m[1]!)))
       .replaceAll(RegExp(r'\s+'), ' ')
       .trim();
 

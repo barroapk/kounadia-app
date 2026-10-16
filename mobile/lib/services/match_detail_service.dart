@@ -160,6 +160,7 @@ class MatchDetailService {
       .replaceAll(RegExp(r'<[^>]+>'), '')
       .replaceAll('&nbsp;', ' ')
       .replaceAll('&amp;', '&')
+      .replaceAllMapped(RegExp(r'&#(\d+);'), (m) => String.fromCharCode(int.parse(m[1]!)))
       .replaceAll(RegExp(r'\s+'), ' ')
       .trim();
 

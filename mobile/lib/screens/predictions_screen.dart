@@ -110,7 +110,7 @@ class _PredictionsScreenState extends State<PredictionsScreen> {
       onRefresh: _refresh,
       child: ListView(
         physics: const AlwaysScrollableScrollPhysics(),
-        padding: const EdgeInsets.fromLTRB(16, 8, 16, 32),
+        padding: const EdgeInsets.fromLTRB(16, 8, 16, 96),
         children: children,
       ),
     );

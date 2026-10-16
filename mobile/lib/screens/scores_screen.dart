@@ -9,6 +9,7 @@ import '../widgets/jersey.dart';
 import '../widgets/knd_banner.dart';
 import '../services/logo_cache.dart';
 import 'pt_match_screen.dart';
+import '../services/primatips_service.dart' show frLeague;
 
 class ScoresScreen extends StatefulWidget {
   const ScoresScreen({super.key});
@@ -306,7 +307,7 @@ class _ScoresScreenState extends State<ScoresScreen> with WidgetsBindingObserver
       onRefresh: () => _load(),
       child: ListView(
         physics: const AlwaysScrollableScrollPhysics(),
-        padding: const EdgeInsets.fromLTRB(12, 0, 12, 32),
+        padding: const EdgeInsets.fromLTRB(12, 0, 12, 96),
         children: children,
       ),
     );
@@ -353,7 +354,7 @@ class _ScoresScreenState extends State<ScoresScreen> with WidgetsBindingObserver
                     const SizedBox(width: 8),
                   ],
                   Expanded(
-                    child: Text(title,
+                    child: Text(frLeague(title),
                         maxLines: 1,
                         overflow: TextOverflow.ellipsis,
                         style: const TextStyle(
