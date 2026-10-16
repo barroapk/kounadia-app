@@ -117,7 +117,7 @@ class _PredictionsScreenState extends State<PredictionsScreen> {
   Widget _list(String tab, List<Forecast> items, bool offline, String empty) {
     final children = <Widget>[if (offline) kOfflineBanner()];
     if (items.isEmpty) {
-      children.addAll([const SizedBox(height: 80), kMessage(empty)]);
+      children.addAll([const KndBanner(), const SizedBox(height: 50), kMessage(empty)]);
     } else {
       final sorted = [...items]..sort((a, b) => a.date.compareTo(b.date));
       final groups = <String, List<Forecast>>{};

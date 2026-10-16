@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import '../models/forecast.dart';
 import '../services/kounadia_data_service.dart';
 import '../widgets/forecast_card.dart';
+import '../widgets/knd_banner.dart';
 
 class TipHistoryScreen extends StatefulWidget {
   const TipHistoryScreen({super.key});
@@ -12,9 +13,9 @@ class TipHistoryScreen extends StatefulWidget {
 
 class _TipHistoryScreenState extends State<TipHistoryScreen> {
   late Future<HistoryData> _f = KounadiaData.history();
-  String _period = 'all';
+  int? _day; // 0 = aujourd'hui, 1 = hier (null = automatique)
   String _src = 'all';
-  String _res = 'all';
+  final Set<String> _collapsed = {};
 
   Future<void> _refresh() async {
     setState(() => _f = KounadiaData.history());
@@ -25,22 +26,7 @@ class _TipHistoryScreenState extends State<TipHistoryScreen> {
 
   int _dayDiff(DateTime d) {
     final n = DateTime.now();
-    return DateTime(n.year, n.month, n.day)
-        .difference(DateTime(d.year, d.month, d.day))
-        .inDays;
-  }
-
-  String _dayLabel(DateTime d) {
-    switch (_dayDiff(d)) {
-      case 0:
-        return "Aujourd'hui";
-      case 1:
-        return 'Hier';
-      case 2:
-        return 'Avant-hier';
-      default:
-        return frDay(d);
-    }
+    return DateTime(n.year, n.month, n.day).difference(DateTime(d.year, d.month, d.day)).inDays;
   }
 
   @override
@@ -53,52 +39,56 @@ class _TipHistoryScreenState extends State<TipHistoryScreen> {
           if (snap.connectionState != ConnectionState.done) {
             return const Center(child: CircularProgressIndicator(color: K.indigo));
           }
-          if (snap.hasError) {
-            return kMessage(snap.error.toString(), onRetry: _refresh);
-          }
+          if (snap.hasError) return kMessage(snap.error.toString(), onRetry: _refresh);
           final data = snap.data!;
-          final items = data.items.where((f) {
-            final dd = _dayDiff(f.date);
-            final okPeriod = _period == 'all' ? dd <= 2 : dd == int.parse(_period);
-            final okSrc = _src == 'all' || f.source == _src;
-            final okRes = _res == 'all' || (_res == 'won') == (f.won == true);
-            return okPeriod && okSrc && okRes;
+
+          final wins = data.items.where((f) {
+            final d = _dayDiff(f.date);
+            return f.won == true && d >= 0 && d <= 1;
           }).toList();
+          final today = wins.where((f) => _dayDiff(f.date) == 0).toList();
+          final yesterday = wins.where((f) => _dayDiff(f.date) == 1).toList();
+          final day = _day ?? (today.isNotEmpty ? 0 : 1);
+          final ofDay = day == 0 ? today : yesterday;
+          final items = ofDay.where((f) => _src == 'all' || f.source == _src).toList()
+            ..sort((a, b) => a.date.compareTo(b.date));
 
           final children = <Widget>[
             if (data.offline) kOfflineBanner(),
-            _chips([('all', '3 jours'), ('0', "Aujourd'hui"), ('1', 'Hier'), ('2', 'Avant-hier')],
-                _period, (v) => _period = v),
-            const SizedBox(height: 8),
-            _chips([('all', 'Toutes sources'), ('ia', 'Kounadia IA'), ('expert', 'Expert')],
-                _src, (v) => _src = v),
-            const SizedBox(height: 8),
-            _chips([('all', 'Tous'), ('won', 'Validés'), ('lost', 'Perdus')], _res, (v) => _res = v),
+            _daySwitch(day, yesterday.length, today.length),
+            const SizedBox(height: 10),
+            _srcChips(ofDay),
             const SizedBox(height: 14),
-            _perf(items),
+            _hero(ofDay, day),
+            const SizedBox(height: 14),
+            const KndBanner(),
           ];
 
           if (items.isEmpty) {
             children.addAll([
-              const SizedBox(height: 40),
-              kMessage('Aucun résultat pour ces filtres.'),
+              const SizedBox(height: 30),
+              kMessage(ofDay.isEmpty
+                  ? (day == 0
+                      ? "Les pronostics gagnants du jour s'afficheront ici dès la fin des matchs."
+                      : "Aucun pronostic validé hier.")
+                  : 'Aucun pronostic validé pour cette source.'),
             ]);
           } else {
-            String? day;
+            final groups = <String, List<Forecast>>{};
             for (final f in items) {
-              final label = _dayLabel(f.date);
-              if (label != day) {
-                day = label;
-                children.add(Padding(
-                  padding: const EdgeInsets.fromLTRB(4, 22, 4, 12),
-                  child: Text(label,
-                      style: const TextStyle(
-                          color: K.text, fontSize: 17, fontWeight: FontWeight.w800)),
-                ));
-              }
+              groups.putIfAbsent(f.league.isEmpty ? 'Autres compétitions' : f.league, () => []).add(f);
+            }
+            var rows = 0;
+            var block = 0;
+            for (final e in groups.entries) {
               children
-                ..add(ForecastCard(f: f, result: true))
-                ..add(const SizedBox(height: 14));
+                ..add(_group('$day|$_src|${e.key}', e.key, e.value))
+                ..add(const SizedBox(height: 10));
+              rows += e.value.length;
+              if (rows ~/ 10 > block) {
+                block = rows ~/ 10;
+                children.add(KndBanner(afterCards: block * 10, total: items.length));
+              }
             }
           }
 
@@ -108,7 +98,7 @@ class _TipHistoryScreenState extends State<TipHistoryScreen> {
             onRefresh: _refresh,
             child: ListView(
               physics: const AlwaysScrollableScrollPhysics(),
-              padding: const EdgeInsets.fromLTRB(16, 16, 16, 32),
+              padding: const EdgeInsets.fromLTRB(12, 12, 12, 96),
               children: children,
             ),
           );
@@ -117,106 +107,177 @@ class _TipHistoryScreenState extends State<TipHistoryScreen> {
     );
   }
 
-  Widget _chips(List<(String, String)> opts, String selected, void Function(String) onPick) {
-    return SingleChildScrollView(
-      scrollDirection: Axis.horizontal,
-      child: Row(
-        children: [
-          for (final (value, label) in opts)
-            Padding(
-              padding: const EdgeInsets.only(right: 8),
-              child: GestureDetector(
-                onTap: () => setState(() => onPick(value)),
-                child: AnimatedContainer(
-                  duration: const Duration(milliseconds: 150),
-                  padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
-                  decoration: BoxDecoration(
-                    color: selected == value ? K.indigo : K.card,
-                    borderRadius: BorderRadius.circular(20),
-                    border: Border.all(color: selected == value ? K.indigo : K.border),
-                  ),
-                  child: Text(label,
-                      style: TextStyle(
-                        color: selected == value ? Colors.white : K.muted,
-                        fontWeight: FontWeight.w700,
-                        fontSize: 13,
-                      )),
-                ),
-              ),
+  Widget _daySwitch(int day, int nYesterday, int nToday) {
+    Widget half(String label, int value, int count) {
+      final sel = day == value;
+      return Expanded(
+        child: GestureDetector(
+          onTap: () => setState(() => _day = value),
+          child: AnimatedContainer(
+            duration: const Duration(milliseconds: 160),
+            height: 40,
+            alignment: Alignment.center,
+            decoration: BoxDecoration(
+              color: sel ? K.indigo : Colors.transparent,
+              borderRadius: BorderRadius.circular(10),
             ),
-        ],
-      ),
-    );
-  }
+            child: Text('$label · $count',
+                style: TextStyle(
+                    color: sel ? Colors.white : K.muted, fontSize: 14, fontWeight: FontWeight.w800)),
+          ),
+        ),
+      );
+    }
 
-  Widget _legend(Color c, String text) {
-    return Row(
-      mainAxisSize: MainAxisSize.min,
-      children: [
-        Container(width: 10, height: 10, decoration: BoxDecoration(color: c, shape: BoxShape.circle)),
-        const SizedBox(width: 6),
-        Text(text, style: const TextStyle(color: K.muted, fontSize: 13)),
-      ],
-    );
-  }
-
-  Widget _perf(List<Forecast> list) {
-    final total = list.length;
-    final won = list.where((f) => f.won == true).length;
-    final rate = total == 0 ? 0.0 : won / total;
-    final c = rate >= 0.6 ? K.green : rate >= 0.45 ? K.amber : K.red;
     return Container(
-      padding: const EdgeInsets.all(18),
+      padding: const EdgeInsets.all(3),
       decoration: BoxDecoration(
         color: K.card,
-        borderRadius: BorderRadius.circular(22),
+        borderRadius: BorderRadius.circular(13),
         border: Border.all(color: K.border),
       ),
-      child: Column(
-        children: [
-          Row(
-            children: [
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    const Text('TAUX DE RÉUSSITE',
+      child: Row(children: [
+        half('Hier', 1, nYesterday),
+        half("Aujourd'hui", 0, nToday),
+      ]),
+    );
+  }
+
+  Widget _srcChips(List<Forecast> ofDay) {
+    final opts = [
+      ('all', 'Tous', ofDay.length),
+      ('ia', 'Kounadia IA', ofDay.where((f) => f.source == 'ia').length),
+      ('expert', 'Expert', ofDay.where((f) => f.source == 'expert').length),
+    ];
+    return Row(children: [
+      for (final (value, label, count) in opts)
+        Expanded(
+          child: Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 3),
+            child: GestureDetector(
+              onTap: () => setState(() => _src = value),
+              child: AnimatedContainer(
+                duration: const Duration(milliseconds: 150),
+                height: 34,
+                alignment: Alignment.center,
+                decoration: BoxDecoration(
+                  color: _src == value ? K.indigoSoft : K.card,
+                  borderRadius: BorderRadius.circular(10),
+                  border: Border.all(color: _src == value ? K.indigoText : K.border),
+                ),
+                child: FittedBox(
+                  fit: BoxFit.scaleDown,
+                  child: Padding(
+                    padding: const EdgeInsets.symmetric(horizontal: 6),
+                    child: Text('$label · $count',
                         style: TextStyle(
-                            color: K.muted,
-                            fontSize: 11,
-                            fontWeight: FontWeight.w700,
-                            letterSpacing: 1)),
-                    const SizedBox(height: 4),
-                    Text(total == 0 ? 'Aucun résultat' : '$won validés sur $total',
-                        style: const TextStyle(
-                            color: K.text, fontSize: 16, fontWeight: FontWeight.w700)),
-                  ],
+                            color: _src == value ? K.text : K.muted,
+                            fontSize: 12.5,
+                            fontWeight: FontWeight.w700)),
+                  ),
                 ),
               ),
-              Text(total == 0 ? '—' : '${(rate * 100).round()} %',
-                  style: TextStyle(color: c, fontSize: 30, fontWeight: FontWeight.w800)),
-            ],
-          ),
-          const SizedBox(height: 14),
-          ClipRRect(
-            borderRadius: BorderRadius.circular(6),
-            child: LinearProgressIndicator(
-              value: rate,
-              minHeight: 10,
-              backgroundColor: const Color(0x33EF4444),
-              color: c,
             ),
           ),
-          const SizedBox(height: 12),
-          Row(
-            children: [
-              _legend(K.green, '$won validés'),
-              const SizedBox(width: 18),
-              _legend(K.red, '${total - won} perdus'),
-            ],
-          ),
-        ],
+        ),
+    ]);
+  }
+
+  Widget _hero(List<Forecast> list, int day) {
+    final n = list.length;
+    final s = n > 1 ? 's' : '';
+    final ia = list.where((f) => f.source == 'ia').length;
+    final ex = list.where((f) => f.source == 'expert').length;
+    final when = day == 0 ? 'du jour' : "d'hier";
+    Widget mini(String label, int v) => Container(
+          margin: const EdgeInsets.only(right: 8),
+          padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
+          decoration: BoxDecoration(color: const Color(0x33FFFFFF), borderRadius: BorderRadius.circular(20)),
+          child: Text('$label : $v',
+              style: const TextStyle(color: Colors.white, fontSize: 12, fontWeight: FontWeight.w700)),
+        );
+    return Container(
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        gradient: const LinearGradient(
+          colors: [Color(0xFF16A34A), Color(0xFF0D9488)],
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+        ),
+        borderRadius: BorderRadius.circular(18),
       ),
+      child: Row(crossAxisAlignment: CrossAxisAlignment.start, children: [
+        Container(
+          width: 50,
+          height: 50,
+          decoration: const BoxDecoration(color: Color(0x33FFFFFF), shape: BoxShape.circle),
+          child: const Icon(Icons.emoji_events_rounded, color: Colors.white, size: 28),
+        ),
+        const SizedBox(width: 14),
+        Expanded(
+          child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+            Text(n == 0 ? 'Résultats à venir' : '$n pronostic$s validé$s',
+                style: const TextStyle(color: Colors.white, fontSize: 20, fontWeight: FontWeight.w900)),
+            const SizedBox(height: 4),
+            Text(
+              n == 0
+                  ? 'Nos pronostics gagnants $when apparaîtront ici dès la fin des matchs.'
+                  : 'Sur nos pronostics $when Kounadia IA et Expert, au total $n pronostic$s validé$s.',
+              style: const TextStyle(color: Color(0xEEFFFFFF), fontSize: 13, height: 1.35),
+            ),
+            if (n > 0) ...[
+              const SizedBox(height: 10),
+              Wrap(runSpacing: 6, children: [mini('Kounadia IA', ia), mini('Expert', ex)]),
+            ],
+          ]),
+        ),
+      ]),
+    );
+  }
+
+  Widget _group(String key, String title, List<Forecast> list) {
+    final collapsed = _collapsed.contains(key);
+    final rows = <Widget>[];
+    if (!collapsed) {
+      for (var i = 0; i < list.length; i++) {
+        if (i > 0) rows.add(Container(height: 1, color: K.border));
+        rows.add(ForecastCard(f: list[i], result: true, grouped: true));
+      }
+    }
+    return Container(
+      clipBehavior: Clip.antiAlias,
+      decoration: BoxDecoration(
+        color: K.card,
+        borderRadius: BorderRadius.circular(14),
+        border: Border.all(color: K.border),
+      ),
+      child: Column(children: [
+        InkWell(
+          onTap: () => setState(() => collapsed ? _collapsed.remove(key) : _collapsed.add(key)),
+          child: Container(
+            color: K.groupHead,
+            padding: const EdgeInsets.fromLTRB(12, 10, 8, 10),
+            child: Row(children: [
+              const Icon(Icons.emoji_events_outlined, color: K.amber, size: 15),
+              const SizedBox(width: 8),
+              Expanded(
+                child: Text(title,
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                    style: const TextStyle(color: K.text, fontSize: 13, fontWeight: FontWeight.w700)),
+              ),
+              Container(
+                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+                decoration: BoxDecoration(color: const Color(0x3322C55E), borderRadius: BorderRadius.circular(10)),
+                child: Text('${list.length} ✓',
+                    style: const TextStyle(color: K.green, fontSize: 12, fontWeight: FontWeight.w800)),
+              ),
+              Icon(collapsed ? Icons.expand_more_rounded : Icons.expand_less_rounded, color: K.muted, size: 22),
+            ]),
+          ),
+        ),
+        ...rows,
+      ]),
     );
   }
 }
