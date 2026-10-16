@@ -14,7 +14,7 @@ class ReceiptCard extends StatelessWidget {
   final String reference;
   final String date;
 
-  const ReceiptCard({
+  ReceiptCard({
     super.key,
     required this.statusLabel,
     required this.statusColor,
@@ -30,7 +30,7 @@ class ReceiptCard extends StatelessWidget {
 
   Widget _row(String label, String value) {
     return Padding(
-      padding: const EdgeInsets.symmetric(vertical: 4),
+      padding: EdgeInsets.symmetric(vertical: 4),
       child: Row(
         mainAxisAlignment: MainAxisAlignment.spaceBetween,
         children: [
@@ -39,7 +39,7 @@ class ReceiptCard extends StatelessWidget {
             child: Text(
               value,
               textAlign: TextAlign.right,
-              style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w600),
+              style: TextStyle(fontSize: 12, fontWeight: FontWeight.w600),
             ),
           ),
         ],
@@ -49,7 +49,7 @@ class ReceiptCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    const primary = Color(0xFF1A56DB);
+    final primary = Color(0xFF1A56DB);
 
     return ClipRRect(
       borderRadius: BorderRadius.circular(18),
@@ -62,13 +62,13 @@ class ReceiptCard extends StatelessWidget {
           children: [
             // En-tete colore
             Container(
-              padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 14),
-              decoration: const BoxDecoration(
+              padding: EdgeInsets.symmetric(horizontal: 18, vertical: 14),
+              decoration: BoxDecoration(
                 gradient: LinearGradient(colors: [primary, Color(0xFF123F9E)]),
               ),
               child: Row(
                 children: [
-                  const Text(
+                  Text(
                     "KOUNADIA",
                     style: TextStyle(
                       color: Colors.white,
@@ -77,7 +77,7 @@ class ReceiptCard extends StatelessWidget {
                       letterSpacing: 0.5,
                     ),
                   ),
-                  const Spacer(),
+                  Spacer(),
                   Text(
                     "REÇU",
                     style: TextStyle(
@@ -92,11 +92,11 @@ class ReceiptCard extends StatelessWidget {
             ),
 
             Padding(
-              padding: const EdgeInsets.fromLTRB(18, 14, 18, 14),
+              padding: EdgeInsets.fromLTRB(18, 14, 18, 14),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.stretch,
                 children: [
-                  const Center(
+                  Center(
                     child: Text(
                       "DÉPÔT · 1XBET",
                       style: TextStyle(
@@ -107,20 +107,20 @@ class ReceiptCard extends StatelessWidget {
                       ),
                     ),
                   ),
-                  const SizedBox(height: 6),
+                  SizedBox(height: 6),
                   Center(
                     child: RichText(
                       text: TextSpan(
                         children: [
-                          const TextSpan(
+                          TextSpan(
                             text: "+",
                             style: TextStyle(color: Colors.green, fontSize: 24, fontWeight: FontWeight.bold),
                           ),
                           TextSpan(
                             text: amount,
-                            style: const TextStyle(color: Colors.green, fontSize: 24, fontWeight: FontWeight.bold),
+                            style: TextStyle(color: Colors.green, fontSize: 24, fontWeight: FontWeight.bold),
                           ),
-                          const TextSpan(
+                          TextSpan(
                             text: " FCFA",
                             style: TextStyle(color: Colors.grey, fontSize: 13, fontWeight: FontWeight.w600),
                           ),
@@ -128,10 +128,10 @@ class ReceiptCard extends StatelessWidget {
                       ),
                     ),
                   ),
-                  const SizedBox(height: 8),
+                  SizedBox(height: 8),
                   Center(
                     child: Container(
-                      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
+                      padding: EdgeInsets.symmetric(horizontal: 12, vertical: 4),
                       decoration: BoxDecoration(
                         color: statusColor.withValues(alpha: 0.12),
                         borderRadius: BorderRadius.circular(20),
@@ -142,9 +142,9 @@ class ReceiptCard extends StatelessWidget {
                       ),
                     ),
                   ),
-                  const SizedBox(height: 12),
-                  const Divider(height: 1),
-                  const SizedBox(height: 8),
+                  SizedBox(height: 12),
+                  Divider(height: 1),
+                  SizedBox(height: 8),
                   _row("Compte joueur", playerId),
                   if (playerName != null && playerName!.isNotEmpty) _row("Nom", playerName!),
                   _row("Moyen de paiement", "Orange Money ($phone)"),
@@ -152,10 +152,10 @@ class ReceiptCard extends StatelessWidget {
                   _row("Crédit total", "$totalCredit FCFA"),
                   _row("Référence", reference),
                   _row("Date", date),
-                  const SizedBox(height: 10),
-                  const Divider(height: 1),
-                  const SizedBox(height: 8),
-                  const Center(
+                  SizedBox(height: 10),
+                  Divider(height: 1),
+                  SizedBox(height: 8),
+                  Center(
                     child: Text(
                       "Dépose et retire sur 1xBet avec KOUNADIA",
                       textAlign: TextAlign.center,

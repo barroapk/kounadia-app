@@ -13,7 +13,7 @@ import 'pt_match_screen.dart';
 import '../services/primatips_service.dart' show frLeague;
 
 class ScoresScreen extends StatefulWidget {
-  const ScoresScreen({super.key});
+  ScoresScreen({super.key});
 
   @override
   State<ScoresScreen> createState() => _ScoresScreenState();
@@ -42,8 +42,8 @@ class _ScoresScreenState extends State<ScoresScreen> with WidgetsBindingObserver
     LogoCache.load().then((_) {
       if (mounted) setState(() {});
     });
-    _fullTimer = Timer.periodic(const Duration(minutes: 5), (_) => _load(silent: true));
-    _liveTimer = Timer.periodic(const Duration(seconds: 30), (_) => _pollLive());
+    _fullTimer = Timer.periodic(Duration(minutes: 5), (_) => _load(silent: true));
+    _liveTimer = Timer.periodic(Duration(seconds: 30), (_) => _pollLive());
   }
 
   @override
@@ -65,7 +65,7 @@ class _ScoresScreenState extends State<ScoresScreen> with WidgetsBindingObserver
     return '${d.year}-${two(d.month)}-${two(d.day)}';
   }
 
-  List<LiveMatch> _listFor(int off) => _days[_key(off)] ?? const [];
+  List<LiveMatch> _listFor(int off) => _days[_key(off)] ?? [];
 
   Future<void> _loadFav() async {
     try {
@@ -81,7 +81,7 @@ class _ScoresScreenState extends State<ScoresScreen> with WidgetsBindingObserver
     ScaffoldMessenger.of(context)
       ..hideCurrentSnackBar()
       ..showSnackBar(SnackBar(
-        duration: const Duration(seconds: 1),
+        duration: Duration(seconds: 1),
         content: Text(added ? '⭐ Ajouté aux favoris' : 'Retiré des favoris'),
       ));
     try {
@@ -193,7 +193,7 @@ class _ScoresScreenState extends State<ScoresScreen> with WidgetsBindingObserver
       body: Column(
         children: [
           Padding(
-            padding: const EdgeInsets.fromLTRB(12, 10, 12, 8),
+            padding: EdgeInsets.fromLTRB(12, 10, 12, 8),
             child: Row(
               children: [
                 _navBtn(Icons.chevron_left_rounded,
@@ -203,7 +203,7 @@ class _ScoresScreenState extends State<ScoresScreen> with WidgetsBindingObserver
                     child: FittedBox(
                       fit: BoxFit.scaleDown,
                       child: Text('$label (${two(day.day)}/${two(day.month)})',
-                          style: const TextStyle(
+                          style: TextStyle(
                               color: K.text, fontSize: 16, fontWeight: FontWeight.w800)),
                     ),
                   ),
@@ -214,16 +214,16 @@ class _ScoresScreenState extends State<ScoresScreen> with WidgetsBindingObserver
             ),
           ),
           Padding(
-            padding: const EdgeInsets.fromLTRB(12, 0, 12, 10),
+            padding: EdgeInsets.fromLTRB(12, 0, 12, 10),
             child: Row(
               children: [
                 Expanded(child: _seg('all', 'Tous', all.length)),
-                const SizedBox(width: 6),
+                SizedBox(width: 6),
                 Expanded(
                     child: _seg('live', 'Direct',
                         all.where((m) => m.status == 'live').length,
                         dot: all.any((m) => m.status == 'live'))),
-                const SizedBox(width: 6),
+                SizedBox(width: 6),
                 Expanded(child: _seg('fav', 'Favoris', all.where((m) => _fav.contains(m.id)).length)),
               ],
             ),
@@ -237,9 +237,9 @@ class _ScoresScreenState extends State<ScoresScreen> with WidgetsBindingObserver
   Widget _navBtn(IconData icon, VoidCallback? onTap) {
     return Material(
       color: K.card,
-      shape: const CircleBorder(side: BorderSide(color: K.border)),
+      shape: CircleBorder(side: BorderSide(color: K.border)),
       child: InkWell(
-        customBorder: const CircleBorder(),
+        customBorder: CircleBorder(),
         onTap: onTap,
         child: SizedBox(
           width: 36,
@@ -255,7 +255,7 @@ class _ScoresScreenState extends State<ScoresScreen> with WidgetsBindingObserver
     return GestureDetector(
       onTap: () => setState(() => _filter = value),
       child: AnimatedContainer(
-        duration: const Duration(milliseconds: 150),
+        duration: Duration(milliseconds: 150),
         height: 36,
         alignment: Alignment.center,
         decoration: BoxDecoration(
@@ -266,14 +266,14 @@ class _ScoresScreenState extends State<ScoresScreen> with WidgetsBindingObserver
         child: FittedBox(
           fit: BoxFit.scaleDown,
           child: Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 6),
+            padding: EdgeInsets.symmetric(horizontal: 6),
             child: Row(mainAxisSize: MainAxisSize.min, children: [
               if (dot) ...[
                 Container(
                     width: 7,
                     height: 7,
-                    decoration: const BoxDecoration(color: K.red, shape: BoxShape.circle)),
-                const SizedBox(width: 5),
+                    decoration: BoxDecoration(color: K.red, shape: BoxShape.circle)),
+                SizedBox(width: 5),
               ],
               Text('$label · $count',
                   style: TextStyle(
@@ -288,7 +288,7 @@ class _ScoresScreenState extends State<ScoresScreen> with WidgetsBindingObserver
   }
 
   Widget _body(List<LiveMatch> all) {
-    if (_loading) return const Center(child: CircularProgressIndicator(color: K.indigo));
+    if (_loading) return Center(child: CircularProgressIndicator(color: K.indigo));
     if (_error != null) return kMessage(_error!, onRetry: _load);
 
     final items = _filtered(all);
@@ -300,7 +300,7 @@ class _ScoresScreenState extends State<ScoresScreen> with WidgetsBindingObserver
     final children = <Widget>[if (_offline) kOfflineBanner()];
     if (items.isEmpty) {
       children.addAll([
-        const SizedBox(height: 60),
+        SizedBox(height: 60),
         kMessage(_filter == 'live'
             ? 'Aucun match en direct pour le moment.'
             : _filter == 'fav'
@@ -308,13 +308,13 @@ class _ScoresScreenState extends State<ScoresScreen> with WidgetsBindingObserver
                 : 'Aucun match pour ce jour.'),
       ]);
     } else {
-      children.add(const KndBanner());
+      children.add(KndBanner());
       var rows = 0;
       var block = 0;
       for (final e in groups.entries) {
         children
           ..add(_group(e.key, e.value))
-          ..add(const SizedBox(height: 10));
+          ..add(SizedBox(height: 10));
         rows += e.value.length;
         if (rows ~/ 10 > block) {
           block = rows ~/ 10;
@@ -328,8 +328,8 @@ class _ScoresScreenState extends State<ScoresScreen> with WidgetsBindingObserver
       backgroundColor: K.card,
       onRefresh: () => _load(),
       child: ListView(
-        physics: const AlwaysScrollableScrollPhysics(),
-        padding: const EdgeInsets.fromLTRB(12, 0, 12, 96),
+        physics: AlwaysScrollableScrollPhysics(),
+        padding: EdgeInsets.fromLTRB(12, 0, 12, 96),
         children: children,
       ),
     );
@@ -358,8 +358,8 @@ class _ScoresScreenState extends State<ScoresScreen> with WidgetsBindingObserver
           InkWell(
             onTap: () => setState(() => collapsed ? _collapsed.remove(title) : _collapsed.add(title)),
             child: Container(
-              color: const Color(0xFF1F2440),
-              padding: const EdgeInsets.fromLTRB(12, 10, 8, 10),
+              color: K.groupHead,
+              padding: EdgeInsets.fromLTRB(12, 10, 8, 10),
               child: Row(
                 children: [
                   if (flag.isNotEmpty) ...[
@@ -370,26 +370,26 @@ class _ScoresScreenState extends State<ScoresScreen> with WidgetsBindingObserver
                         width: 18,
                         height: 13,
                         fit: BoxFit.cover,
-                        errorWidget: (_, __, ___) => const SizedBox(width: 18),
+                        errorWidget: (_, __, ___) => SizedBox(width: 18),
                       ),
                     ),
-                    const SizedBox(width: 8),
+                    SizedBox(width: 8),
                   ],
                   Expanded(
                     child: Text(frLeague(title),
                         maxLines: 1,
                         overflow: TextOverflow.ellipsis,
-                        style: const TextStyle(
+                        style: TextStyle(
                             color: K.text, fontSize: 13, fontWeight: FontWeight.w700)),
                   ),
                   if (hasLive) ...[
                     Container(
                         width: 7,
                         height: 7,
-                        decoration: const BoxDecoration(color: K.red, shape: BoxShape.circle)),
-                    const SizedBox(width: 6),
+                        decoration: BoxDecoration(color: K.red, shape: BoxShape.circle)),
+                    SizedBox(width: 6),
                   ],
-                  Text('${list.length}', style: const TextStyle(color: K.muted, fontSize: 12)),
+                  Text('${list.length}', style: TextStyle(color: K.muted, fontSize: 12)),
                   Icon(collapsed ? Icons.expand_more_rounded : Icons.expand_less_rounded,
                       color: K.muted, size: 22),
                 ],
@@ -406,16 +406,16 @@ class _ScoresScreenState extends State<ScoresScreen> with WidgetsBindingObserver
     switch (m.status) {
       case 'live':
         return Text(m.minute ?? 'Live',
-            style: const TextStyle(color: K.red, fontSize: 13, fontWeight: FontWeight.w800));
+            style: TextStyle(color: K.red, fontSize: 13, fontWeight: FontWeight.w800));
       case 'finished':
-        return const Text('Fin',
+        return Text('Fin',
             style: TextStyle(color: K.muted, fontSize: 12.5, fontWeight: FontWeight.w700));
       case 'postponed':
-        return const Text('Rep.',
+        return Text('Rep.',
             style: TextStyle(color: K.amber, fontSize: 12, fontWeight: FontWeight.w700));
       default:
         return Text(m.date != null ? hm(m.date!) : '--:--',
-            style: const TextStyle(color: K.text, fontSize: 13, fontWeight: FontWeight.w700));
+            style: TextStyle(color: K.text, fontSize: 13, fontWeight: FontWeight.w700));
     }
   }
 
@@ -423,7 +423,7 @@ class _ScoresScreenState extends State<ScoresScreen> with WidgetsBindingObserver
     return Row(
       children: [
         TeamCrest(name: name, logo: _logos[name] ?? LogoCache.get(name), size: 16),
-        const SizedBox(width: 7),
+        SizedBox(width: 7),
         Expanded(
           child: Text(name,
               maxLines: 1,
@@ -433,7 +433,7 @@ class _ScoresScreenState extends State<ScoresScreen> with WidgetsBindingObserver
                   fontSize: 13.5,
                   fontWeight: win ? FontWeight.w800 : FontWeight.w500)),
         ),
-        const SizedBox(width: 6),
+        SizedBox(width: 6),
         Text(goals?.toString() ?? '',
             style: TextStyle(
                 color: m_scoreColor(goals),
@@ -464,8 +464,8 @@ class _ScoresScreenState extends State<ScoresScreen> with WidgetsBindingObserver
       }),
       onLongPress: () => _toggleFav(m),
       child: Container(
-        color: m.status == 'live' ? const Color(0x14EF4444) : null,
-        padding: const EdgeInsets.fromLTRB(10, 8, 10, 8),
+        color: m.status == 'live' ? Color(0x14EF4444) : null,
+        padding: EdgeInsets.fromLTRB(10, 8, 10, 8),
         child: Row(
           children: [
             SizedBox(
@@ -474,7 +474,7 @@ class _ScoresScreenState extends State<ScoresScreen> with WidgetsBindingObserver
                 mainAxisSize: MainAxisSize.min,
                 children: [
                   _timeCell(m),
-                  if (fav) const Icon(Icons.star_rounded, color: K.amber, size: 13),
+                  if (fav) Icon(Icons.star_rounded, color: K.amber, size: 13),
                 ],
               ),
             ),
@@ -482,12 +482,12 @@ class _ScoresScreenState extends State<ScoresScreen> with WidgetsBindingObserver
               child: Column(
                 children: [
                   _team(m.home, h, has && h > a),
-                  const SizedBox(height: 5),
+                  SizedBox(height: 5),
                   _team(m.away, a, has && a > h),
                 ],
               ),
             ),
-            const SizedBox(width: 10),
+            SizedBox(width: 10),
             SizedBox(
               width: 72,
               child: Column(
@@ -502,7 +502,7 @@ class _ScoresScreenState extends State<ScoresScreen> with WidgetsBindingObserver
                       style: TextStyle(color: color, fontSize: 11, fontWeight: FontWeight.w600)),
                   if (m.tipOdd != null)
                     Text('@${m.tipOdd!.toStringAsFixed(2)}',
-                        style: const TextStyle(color: K.muted, fontSize: 10.5)),
+                        style: TextStyle(color: K.muted, fontSize: 10.5)),
                 ],
               ),
             ),

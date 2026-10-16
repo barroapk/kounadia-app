@@ -1,7 +1,7 @@
 import "package:flutter/material.dart";
 
 class LoadingSkeleton extends StatelessWidget {
-  const LoadingSkeleton({super.key});
+  LoadingSkeleton({super.key});
 
   Widget _bar(double width, double height) {
     return Container(
@@ -16,16 +16,16 @@ class LoadingSkeleton extends StatelessWidget {
 
   Widget _skeletonCard() {
     return Card(
-      margin: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+      margin: EdgeInsets.symmetric(horizontal: 12, vertical: 6),
       child: Padding(
-        padding: const EdgeInsets.all(14),
+        padding: EdgeInsets.all(14),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             _bar(100, 12),
-            const SizedBox(height: 12),
+            SizedBox(height: 12),
             _bar(180, 14),
-            const SizedBox(height: 8),
+            SizedBox(height: 8),
             _bar(160, 14),
           ],
         ),
@@ -36,7 +36,7 @@ class LoadingSkeleton extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return ListView(
-      padding: const EdgeInsets.symmetric(vertical: 8),
+      padding: EdgeInsets.symmetric(vertical: 8),
       children: List.generate(4, (_) => _skeletonCard()),
     );
   }

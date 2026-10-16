@@ -16,14 +16,14 @@ import "match_detail_screen.dart";
 import "competition_detail_screen.dart";
 
 class MatchesScreen extends StatefulWidget {
-  const MatchesScreen({super.key});
+  MatchesScreen({super.key});
 
   @override
   State<MatchesScreen> createState() => MatchesScreenState();
 }
 
 class MatchesScreenState extends State<MatchesScreen> {
-  static const _liveStatuses = ["LIVE", "IN_PLAY", "PAUSED"];
+  static final _liveStatuses = ["LIVE", "IN_PLAY", "PAUSED"];
 
   final ApiService _apiService = ApiService();
   final CompetitionPreferences _competitionPrefs = CompetitionPreferences();
@@ -40,7 +40,7 @@ class MatchesScreenState extends State<MatchesScreen> {
   void initState() {
     super.initState();
     _loadInitial();
-    _backgroundTimer = Timer.periodic(const Duration(seconds: 25), (_) {
+    _backgroundTimer = Timer.periodic(Duration(seconds: 25), (_) {
       _silentRefreshIfLive();
     });
   }
@@ -191,7 +191,7 @@ class MatchesScreenState extends State<MatchesScreen> {
             match: match,
             onTap: () => _openMatch(match),
           ),
-          if (entry.key < matches.length - 1) const Divider(height: 1, indent: 56),
+          if (entry.key < matches.length - 1) Divider(height: 1, indent: 56),
         ],
       );
     }).toList();
@@ -225,18 +225,18 @@ class MatchesScreenState extends State<MatchesScreen> {
 
     final widgets = <Widget>[
       Padding(
-        padding: const EdgeInsets.fromLTRB(16, 12, 16, 6),
+        padding: EdgeInsets.fromLTRB(16, 12, 16, 6),
         child: Row(
           children: [
             Container(
               width: 8,
               height: 8,
-              margin: const EdgeInsets.only(right: 8),
-              decoration: const BoxDecoration(color: Color(0xFFDC2626), shape: BoxShape.circle),
+              margin: EdgeInsets.only(right: 8),
+              decoration: BoxDecoration(color: Color(0xFFDC2626), shape: BoxShape.circle),
             ),
             Text(
               "EN DIRECT (${liveMatches.length})",
-              style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 13),
+              style: TextStyle(fontWeight: FontWeight.bold, fontSize: 13),
             ),
           ],
         ),
@@ -247,19 +247,19 @@ class MatchesScreenState extends State<MatchesScreen> {
       final matches = byCompetition[competition]!;
       widgets.add(
         Padding(
-          padding: const EdgeInsets.fromLTRB(16, 8, 16, 2),
+          padding: EdgeInsets.fromLTRB(16, 8, 16, 2),
           child: Row(
             children: [
               CachedLogo(
                 url: matches.first.competitionEmblem,
                 size: 16,
                 fallbackIcon: Icons.emoji_events,
-                fallbackColor: const Color(0xFF16A34A),
+                fallbackColor: Color(0xFF16A34A),
               ),
-              const SizedBox(width: 6),
+              SizedBox(width: 6),
               Text(
                 "$competition (${matches.length})",
-                style: const TextStyle(fontWeight: FontWeight.w600, fontSize: 13),
+                style: TextStyle(fontWeight: FontWeight.w600, fontSize: 13),
               ),
             ],
           ),
@@ -268,7 +268,7 @@ class MatchesScreenState extends State<MatchesScreen> {
       widgets.addAll(_matchRows(matches));
     }
 
-    widgets.add(const Padding(
+    widgets.add(Padding(
       padding: EdgeInsets.symmetric(vertical: 8),
       child: Divider(height: 1, thickness: 4),
     ));
@@ -282,28 +282,28 @@ class MatchesScreenState extends State<MatchesScreen> {
       data: ThemeData(dividerColor: Colors.transparent),
       child: ExpansionTile(
         initiallyExpanded: true,
-        tilePadding: const EdgeInsets.fromLTRB(4, 0, 4, 0),
+        tilePadding: EdgeInsets.fromLTRB(4, 0, 4, 0),
         childrenPadding: EdgeInsets.zero,
         title: Row(
           children: [
             if (hasLive)
               Padding(
-                padding: const EdgeInsets.only(right: 6),
+                padding: EdgeInsets.only(right: 6),
                 child: Container(
                   width: 7,
                   height: 7,
-                  decoration: const BoxDecoration(color: Color(0xFFDC2626), shape: BoxShape.circle),
+                  decoration: BoxDecoration(color: Color(0xFFDC2626), shape: BoxShape.circle),
                 ),
               ),
             CachedLogo(
               url: matches.first.competitionEmblem,
               size: 16,
               fallbackIcon: Icons.emoji_events,
-              fallbackColor: const Color(0xFF16A34A),
+              fallbackColor: Color(0xFF16A34A),
             ),
-            const SizedBox(width: 6),
+            SizedBox(width: 6),
             Expanded(
-              child: Text(name, style: const TextStyle(fontWeight: FontWeight.w600, fontSize: 13)),
+              child: Text(name, style: TextStyle(fontWeight: FontWeight.w600, fontSize: 13)),
             ),
             Text("${matches.length}", style: TextStyle(color: Colors.grey[500], fontSize: 12)),
           ],
@@ -332,11 +332,11 @@ class MatchesScreenState extends State<MatchesScreen> {
               );
             },
             child: Padding(
-              padding: const EdgeInsets.symmetric(vertical: 10),
+              padding: EdgeInsets.symmetric(vertical: 10),
               child: Center(
                 child: Text(
                   "Voir la compétition",
-                  style: TextStyle(color: const Color(0xFF16A34A), fontSize: 12, fontWeight: FontWeight.w600),
+                  style: TextStyle(color: Color(0xFF16A34A), fontSize: 12, fontWeight: FontWeight.w600),
                 ),
               ),
             ),
@@ -348,7 +348,7 @@ class MatchesScreenState extends State<MatchesScreen> {
 
   Widget _sectionLabel(String text) {
     return Padding(
-      padding: const EdgeInsets.fromLTRB(16, 16, 16, 6),
+      padding: EdgeInsets.fromLTRB(16, 16, 16, 6),
       child: Text(
         text,
         style: TextStyle(
@@ -423,18 +423,18 @@ class MatchesScreenState extends State<MatchesScreen> {
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             Padding(
-              padding: const EdgeInsets.fromLTRB(16, 12, 16, 4),
-              child: Text(continent, style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 15)),
+              padding: EdgeInsets.fromLTRB(16, 12, 16, 4),
+              child: Text(continent, style: TextStyle(fontWeight: FontWeight.bold, fontSize: 15)),
             ),
             if (international != null)
               Container(
-                margin: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-                padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                margin: EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                padding: EdgeInsets.symmetric(horizontal: 12, vertical: 8),
                 decoration: BoxDecoration(
                   color: Colors.white,
                   borderRadius: BorderRadius.circular(16),
                   boxShadow: [
-                    BoxShadow(color: Colors.black.withOpacity(0.04), blurRadius: 6, offset: const Offset(0, 2)),
+                    BoxShadow(color: Colors.black.withOpacity(0.04), blurRadius: 6, offset: Offset(0, 2)),
                   ],
                 ),
                 child: Column(children: competitionTiles(international)),
@@ -470,7 +470,7 @@ class MatchesScreenState extends State<MatchesScreen> {
   @override
   Widget build(BuildContext context) {
     return Container(
-      color: const Color(0xFFF4F5F7),
+      color: Color(0xFFF4F5F7),
       child: Column(
         children: [
           DateSelectorBar(
@@ -479,12 +479,12 @@ class MatchesScreenState extends State<MatchesScreen> {
           ),
           if (_activeFilter != null)
             Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+              padding: EdgeInsets.symmetric(horizontal: 12, vertical: 6),
               child: Align(
                 alignment: Alignment.centerLeft,
                 child: Chip(
                   label: Text(_activeFilter!.label),
-                  deleteIcon: const Icon(Icons.close, size: 16),
+                  deleteIcon: Icon(Icons.close, size: 16),
                   onDeleted: clearFilter,
                 ),
               ),
@@ -493,19 +493,19 @@ class MatchesScreenState extends State<MatchesScreen> {
             child: Builder(
               builder: (context) {
                 if (_isInitialLoading) {
-                  return const LoadingSkeleton();
+                  return LoadingSkeleton();
                 }
 
                 if (_errorMessage != null && _matches == null) {
                   return Center(
                     child: Padding(
-                      padding: const EdgeInsets.all(24.0),
+                      padding: EdgeInsets.all(24.0),
                       child: Column(
                         mainAxisSize: MainAxisSize.min,
                         children: [
                           Text("Erreur : $_errorMessage"),
-                          const SizedBox(height: 12),
-                          ElevatedButton(onPressed: _manualReload, child: const Text("Réessayer")),
+                          SizedBox(height: 12),
+                          ElevatedButton(onPressed: _manualReload, child: Text("Réessayer")),
                         ],
                       ),
                     ),
@@ -515,7 +515,7 @@ class MatchesScreenState extends State<MatchesScreen> {
                 final matches = _applyFilters(_matches ?? []);
 
                 if (matches.isEmpty) {
-                  return const EmptyState(message: "Aucun match ne correspond.");
+                  return EmptyState(message: "Aucun match ne correspond.");
                 }
 
                 final liveMatches = _isToday
@@ -525,7 +525,7 @@ class MatchesScreenState extends State<MatchesScreen> {
                 return RefreshIndicator(
                   onRefresh: _manualReload,
                   child: ListView(
-                    padding: const EdgeInsets.only(bottom: 16),
+                    padding: EdgeInsets.only(bottom: 16),
                     children: [
                       ..._buildLiveSection(liveMatches),
                       ..._buildHierarchySection(matches),

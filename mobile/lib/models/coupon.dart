@@ -158,7 +158,7 @@ class Coupon {
 
   factory Coupon.fromJson(Map<String, dynamic> j) => Coupon(
         DateTime.tryParse((j['created'] ?? '').toString()) ?? DateTime.now(),
-        ((j['legs'] as List?) ?? const [])
+        ((j['legs'] as List?) ?? [])
             .map((e) => Leg.fromJson(Map<String, dynamic>.from(e as Map)))
             .toList(),
       );

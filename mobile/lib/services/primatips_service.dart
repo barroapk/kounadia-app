@@ -10,31 +10,31 @@ class PtLink {
   final String name;
   final String path;
   final String img;
-  const PtLink(this.name, this.path, this.img);
+  PtLink(this.name, this.path, this.img);
 }
 
 class PtSection {
   final String title;
   final List<PtLink> items;
-  const PtSection(this.title, this.items);
+  PtSection(this.title, this.items);
 }
 
 class PtTable {
   final String title;
   final List<StandRow> rows;
-  const PtTable(this.title, this.rows);
+  PtTable(this.title, this.rows);
 }
 
 class PtFormRow {
   final int pos;
   final String team, league, value, played, pct;
-  const PtFormRow(this.pos, this.team, this.league, this.value, this.played, this.pct);
+  PtFormRow(this.pos, this.team, this.league, this.value, this.played, this.pct);
 }
 
 class PtFormTable {
   final String title;
   final List<PtFormRow> rows;
-  const PtFormTable(this.title, this.rows);
+  PtFormTable(this.title, this.rows);
 }
 
 class PtFact {
@@ -44,7 +44,7 @@ class PtFact {
   final List<double> odds;
   final List<String> facts;
 
-  const PtFact({
+  PtFact({
     required this.id,
     required this.url,
     required this.day,
@@ -105,7 +105,7 @@ class PtFact {
   }
 }
 
-const _namesFr = {
+final _namesFr = {
   'England': 'Angleterre', 'Germany': 'Allemagne', 'Italy': 'Italie', 'Spain': 'Espagne',
   'Netherlands': 'Pays-Bas', 'Belgium': 'Belgique', 'Scotland': 'Écosse', 'Switzerland': 'Suisse',
   'Turkey': 'Turquie', 'Greece': 'Grèce', 'Austria': 'Autriche', 'Denmark': 'Danemark',
@@ -159,7 +159,7 @@ String _sub(String s, String re, String tpl) => s.replaceAllMapped(RegExp(re, ca
       return t;
     });
 
-const _factRules = <(String, String)>[
+final _factRules = <(String, String)>[
   (r' as home team ', ' à domicile : '),
   (r' as away team ', " à l'extérieur : "),
   (r'no loss(?:es)? (?:from|in) (\d+) matches', 'aucune défaite en {1} matchs'),
@@ -191,8 +191,8 @@ String frFact(String s) {
 }
 
 class PrimaTipsService {
-  static const base = 'https://primatips.com';
-  static const _ua = {'User-Agent': 'KOUNADIA-App/1.0 (+https://github.com/barroapk/kounadia-data)'};
+  static final base = 'https://primatips.com';
+  static final _ua = {'User-Agent': 'KOUNADIA-App/1.0 (+https://github.com/barroapk/kounadia-data)'};
   static final Map<String, (DateTime, String)> _cache = {};
 
   static String txt(String s) => s
@@ -208,11 +208,11 @@ class PrimaTipsService {
 
   static Future<String> _get(String path) async {
     final c = _cache[path];
-    if (c != null && DateTime.now().difference(c.$1) < const Duration(minutes: 10)) return c.$2;
+    if (c != null && DateTime.now().difference(c.$1) < Duration(minutes: 10)) return c.$2;
     try {
-      final r = await http.get(Uri.parse('$base$path'), headers: _ua).timeout(const Duration(seconds: 20));
+      final r = await http.get(Uri.parse('$base$path'), headers: _ua).timeout(Duration(seconds: 20));
       if (r.statusCode != 200) {
-        throw const FriendlyError('Cette rubrique est momentanément indisponible. Réessayez dans un instant.');
+        throw FriendlyError('Cette rubrique est momentanément indisponible. Réessayez dans un instant.');
       }
       final h = utf8.decode(r.bodyBytes).replaceAll(RegExp(r'\s+'), ' ');
       _cache[path] = (DateTime.now(), h);
@@ -221,9 +221,9 @@ class PrimaTipsService {
       rethrow;
     } catch (e) {
       if (e is SocketException || e is TimeoutException || e is http.ClientException) {
-        throw const FriendlyError('Vous êtes hors connexion. Vérifiez votre connexion internet puis réessayez.');
+        throw FriendlyError('Vous êtes hors connexion. Vérifiez votre connexion internet puis réessayez.');
       }
-      throw const FriendlyError('Cette rubrique est momentanément indisponible. Réessayez dans un instant.');
+      throw FriendlyError('Cette rubrique est momentanément indisponible. Réessayez dans un instant.');
     }
   }
 

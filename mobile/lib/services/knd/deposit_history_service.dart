@@ -6,8 +6,8 @@ import "package:shared_preferences/shared_preferences.dart";
 /// des operations. Donnees affichables/masquables : montant, bonus,
 /// compte 1xBet, telephone, statut, date/heure.
 class DepositHistoryService {
-  static const _key = "knd_deposit_history";
-  static const _maxEntries = 200;
+  static final _key = "knd_deposit_history";
+  static final _maxEntries = 200;
 
   Future<List<Map<String, dynamic>>> getHistory() async {
     final prefs = await SharedPreferences.getInstance();

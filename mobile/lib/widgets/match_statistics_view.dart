@@ -6,7 +6,7 @@ class MatchStatisticsView extends StatelessWidget {
   final String homeTeam;
   final String awayTeam;
 
-  const MatchStatisticsView({
+  MatchStatisticsView({
     super.key,
     required this.statistics,
     required this.homeTeam,
@@ -14,21 +14,21 @@ class MatchStatisticsView extends StatelessWidget {
   });
 
   // Ces 4 indicateurs sont mis en avant dans des cartes dédiées.
-  static const List<String> _keyStats = [
+  static List<String> _keyStats = [
     "Ball Possession",
     "expected_goals",
     "Total Shots",
     "Shots on Goal",
   ];
 
-  static const Map<String, String> _keyLabels = {
+  static Map<String, String> _keyLabels = {
     "Ball Possession": "Possession",
     "expected_goals": "xG (buts attendus)",
     "Total Shots": "Tirs",
     "Shots on Goal": "Tirs cadrés",
   };
 
-  static const List<String> _secondaryOrder = [
+  static List<String> _secondaryOrder = [
     "Shots off Goal",
     "Blocked Shots",
     "Shots insidebox",
@@ -57,13 +57,13 @@ class MatchStatisticsView extends StatelessWidget {
     final homeRatio = total > 0 ? homeNum / total : 0.5;
 
     return Container(
-      margin: const EdgeInsets.only(bottom: 10),
-      padding: const EdgeInsets.all(14),
+      margin: EdgeInsets.only(bottom: 10),
+      padding: EdgeInsets.all(14),
       decoration: BoxDecoration(
         color: Colors.white,
         borderRadius: BorderRadius.circular(14),
         boxShadow: [
-          BoxShadow(color: Colors.black.withOpacity(0.04), blurRadius: 6, offset: const Offset(0, 2)),
+          BoxShadow(color: Colors.black.withOpacity(0.04), blurRadius: 6, offset: Offset(0, 2)),
         ],
       ),
       child: Column(
@@ -74,23 +74,23 @@ class MatchStatisticsView extends StatelessWidget {
             children: [
               Text(
                 "${homeValue ?? '-'}",
-                style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 18, color: Color(0xFF16A34A)),
+                style: TextStyle(fontWeight: FontWeight.bold, fontSize: 18, color: Color(0xFF16A34A)),
               ),
               Text(label, style: TextStyle(color: Colors.grey[600], fontSize: 12, fontWeight: FontWeight.w600)),
               Text(
                 "${awayValue ?? '-'}",
-                style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 18),
+                style: TextStyle(fontWeight: FontWeight.bold, fontSize: 18),
               ),
             ],
           ),
-          const SizedBox(height: 8),
+          SizedBox(height: 8),
           ClipRRect(
             borderRadius: BorderRadius.circular(6),
             child: Row(
               children: [
                 Expanded(
                   flex: (homeRatio * 100).round().clamp(1, 99),
-                  child: Container(height: 8, color: const Color(0xFF16A34A)),
+                  child: Container(height: 8, color: Color(0xFF16A34A)),
                 ),
                 Expanded(
                   flex: (100 - (homeRatio * 100).round()).clamp(1, 99),
@@ -106,16 +106,16 @@ class MatchStatisticsView extends StatelessWidget {
 
   Widget _secondaryRow(String label, dynamic homeValue, dynamic awayValue) {
     return Padding(
-      padding: const EdgeInsets.symmetric(vertical: 7),
+      padding: EdgeInsets.symmetric(vertical: 7),
       child: Row(
         children: [
-          SizedBox(width: 40, child: Text("${homeValue ?? '-'}", style: const TextStyle(fontWeight: FontWeight.w600, fontSize: 13))),
+          SizedBox(width: 40, child: Text("${homeValue ?? '-'}", style: TextStyle(fontWeight: FontWeight.w600, fontSize: 13))),
           Expanded(
             child: Text(label, textAlign: TextAlign.center, style: TextStyle(color: Colors.grey[600], fontSize: 12)),
           ),
           SizedBox(
             width: 40,
-            child: Text("${awayValue ?? '-'}", textAlign: TextAlign.right, style: const TextStyle(fontWeight: FontWeight.w600, fontSize: 13)),
+            child: Text("${awayValue ?? '-'}", textAlign: TextAlign.right, style: TextStyle(fontWeight: FontWeight.w600, fontSize: 13)),
           ),
         ],
       ),
@@ -126,7 +126,7 @@ class MatchStatisticsView extends StatelessWidget {
   Widget build(BuildContext context) {
     final allKeys = <String>{...statistics.home.keys, ...statistics.away.keys};
     if (allKeys.isEmpty) {
-      return const Center(child: Text("Statistiques indisponibles pour ce match."));
+      return Center(child: Text("Statistiques indisponibles pour ce match."));
     }
 
     final availableKeyStats = _keyStats.where((k) => allKeys.contains(k)).toList();
@@ -139,26 +139,26 @@ class MatchStatisticsView extends StatelessWidget {
     }
 
     return ListView(
-      padding: const EdgeInsets.all(12),
+      padding: EdgeInsets.all(12),
       children: [
         ...availableKeyStats.map(
           (key) => _keyStatCard(_keyLabels[key] ?? key, statistics.home[key], statistics.away[key]),
         ),
         if (secondaryKeys.isNotEmpty) ...[
           Padding(
-            padding: const EdgeInsets.symmetric(vertical: 8),
+            padding: EdgeInsets.symmetric(vertical: 8),
             child: Text(
               "AUTRES STATISTIQUES",
               style: TextStyle(color: Colors.grey[500], fontSize: 11, fontWeight: FontWeight.bold, letterSpacing: 0.5),
             ),
           ),
           Container(
-            padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 4),
+            padding: EdgeInsets.symmetric(horizontal: 14, vertical: 4),
             decoration: BoxDecoration(
               color: Colors.white,
               borderRadius: BorderRadius.circular(14),
               boxShadow: [
-                BoxShadow(color: Colors.black.withOpacity(0.04), blurRadius: 6, offset: const Offset(0, 2)),
+                BoxShadow(color: Colors.black.withOpacity(0.04), blurRadius: 6, offset: Offset(0, 2)),
               ],
             ),
             child: Column(

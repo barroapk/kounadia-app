@@ -6,7 +6,7 @@ class MatchTimelineView extends StatelessWidget {
   final String homeTeam;
   final bool shrinkWrap;
 
-  const MatchTimelineView({
+  MatchTimelineView({
     super.key,
     required this.events,
     required this.homeTeam,
@@ -29,9 +29,9 @@ class MatchTimelineView extends StatelessWidget {
   Color _colorFor(MatchEvent e) {
     switch (e.type) {
       case "Goal":
-        return const Color(0xFF16A34A);
+        return Color(0xFF16A34A);
       case "Card":
-        return e.detail == "Red Card" ? const Color(0xFFDC2626) : const Color(0xFFEAB308);
+        return e.detail == "Red Card" ? Color(0xFFDC2626) : Color(0xFFEAB308);
       case "subst":
         return Colors.grey[500]!;
       default:
@@ -51,7 +51,7 @@ class MatchTimelineView extends StatelessWidget {
         Text(
           e.player ?? "",
           textAlign: alignRight ? TextAlign.right : TextAlign.left,
-          style: const TextStyle(fontWeight: FontWeight.w600, fontSize: 12.5),
+          style: TextStyle(fontWeight: FontWeight.w600, fontSize: 12.5),
         ),
         if (e.assist != null)
           Text(
@@ -61,7 +61,7 @@ class MatchTimelineView extends StatelessWidget {
           ),
         if (e.team != null)
           Padding(
-            padding: const EdgeInsets.only(top: 2),
+            padding: EdgeInsets.only(top: 2),
             child: Text(
               e.team!,
               textAlign: alignRight ? TextAlign.right : TextAlign.left,
@@ -75,7 +75,7 @@ class MatchTimelineView extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     if (events.isEmpty) {
-      return const Center(child: Text("Aucun événement disponible pour ce match."));
+      return Center(child: Text("Aucun événement disponible pour ce match."));
     }
 
     final sorted = List<MatchEvent>.from(events)
@@ -86,9 +86,9 @@ class MatchTimelineView extends StatelessWidget {
       });
 
     return ListView.builder(
-      padding: const EdgeInsets.symmetric(vertical: 8),
+      padding: EdgeInsets.symmetric(vertical: 8),
       shrinkWrap: shrinkWrap,
-      physics: shrinkWrap ? const NeverScrollableScrollPhysics() : null,
+      physics: shrinkWrap ? NeverScrollableScrollPhysics() : null,
       itemCount: sorted.length,
       itemBuilder: (context, index) {
         final e = sorted[index];
@@ -103,10 +103,10 @@ class MatchTimelineView extends StatelessWidget {
             children: [
               Expanded(
                 child: Padding(
-                  padding: const EdgeInsets.only(right: 10),
+                  padding: EdgeInsets.only(right: 10),
                   child: Align(
                     alignment: Alignment.centerRight,
-                    child: isHome ? _eventDetails(e, alignRight: true) : const SizedBox.shrink(),
+                    child: isHome ? _eventDetails(e, alignRight: true) : SizedBox.shrink(),
                   ),
                 ),
               ),
@@ -116,7 +116,7 @@ class MatchTimelineView extends StatelessWidget {
                   children: [
                     Expanded(
                       child: isFirst
-                          ? const SizedBox()
+                          ? SizedBox()
                           : Container(width: 2, color: Colors.grey[300]),
                     ),
                     Column(
@@ -127,10 +127,10 @@ class MatchTimelineView extends StatelessWidget {
                           style: TextStyle(
                             fontSize: 10,
                             fontWeight: FontWeight.bold,
-                            color: e.extraMinute != null ? const Color(0xFFDC2626) : Colors.grey[700],
+                            color: e.extraMinute != null ? Color(0xFFDC2626) : Colors.grey[700],
                           ),
                         ),
-                        const SizedBox(height: 2),
+                        SizedBox(height: 2),
                         Container(
                           width: 26,
                           height: 26,
@@ -145,7 +145,7 @@ class MatchTimelineView extends StatelessWidget {
                     ),
                     Expanded(
                       child: isLast
-                          ? const SizedBox()
+                          ? SizedBox()
                           : Container(width: 2, color: Colors.grey[300]),
                     ),
                   ],
@@ -153,10 +153,10 @@ class MatchTimelineView extends StatelessWidget {
               ),
               Expanded(
                 child: Padding(
-                  padding: const EdgeInsets.only(left: 10),
+                  padding: EdgeInsets.only(left: 10),
                   child: Align(
                     alignment: Alignment.centerLeft,
-                    child: !isHome ? _eventDetails(e, alignRight: false) : const SizedBox.shrink(),
+                    child: !isHome ? _eventDetails(e, alignRight: false) : SizedBox.shrink(),
                   ),
                 ),
               ),

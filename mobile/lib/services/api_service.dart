@@ -10,7 +10,7 @@ import "../models/standings.dart";
 import "../models/calendar.dart";
 
 class ApiService {
-  static const _serverErrorCodes = {502, 503, 504};
+  static final _serverErrorCodes = {502, 503, 504};
   final Random _random = Random();
 
   /// Centralise tous les appels réseau : timeout + jusqu'à 3 tentatives avec
@@ -22,7 +22,7 @@ class ApiService {
 
     for (var attempt = 1; attempt <= maxAttempts; attempt++) {
       try {
-        final response = await http.get(uri).timeout(const Duration(seconds: 90));
+        final response = await http.get(uri).timeout(Duration(seconds: 90));
 
         if (_serverErrorCodes.contains(response.statusCode)) {
           throw HttpException("Serveur temporairement indisponible (${response.statusCode})");

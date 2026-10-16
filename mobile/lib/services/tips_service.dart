@@ -10,7 +10,7 @@ class TipsService {
     Object? lastError;
     for (var i = 1; i <= 3; i++) {
       try {
-        final r = await http.get(uri).timeout(const Duration(seconds: 90));
+        final r = await http.get(uri).timeout(Duration(seconds: 90));
         if (r.statusCode == 200) {
           final data = jsonDecode(r.body) as Map<String, dynamic>;
           return (

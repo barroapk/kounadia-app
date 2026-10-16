@@ -5,7 +5,7 @@ import "../../services/knd/receipt_share_service.dart";
 import "../../widgets/knd/receipt_card.dart";
 
 class HistoryScreen extends StatefulWidget {
-  const HistoryScreen({super.key});
+  HistoryScreen({super.key});
 
   @override
   State<HistoryScreen> createState() => _HistoryScreenState();
@@ -136,14 +136,14 @@ class _HistoryScreenState extends State<HistoryScreen> {
     setState(() => _entryToShare = entry);
 
     // Laisse le temps au RepaintBoundary de se dessiner avant capture.
-    await Future.delayed(const Duration(milliseconds: 100));
+    await Future.delayed(Duration(milliseconds: 100));
 
     try {
       await _receiptService.shareFromKey(_receiptKey);
     } catch (_) {
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text("Impossible de partager le reçu.")),
+        SnackBar(content: Text("Impossible de partager le reçu.")),
       );
     }
 
@@ -158,18 +158,18 @@ class _HistoryScreenState extends State<HistoryScreen> {
     final confirmed = await showDialog<bool>(
       context: context,
       builder: (context) => AlertDialog(
-        title: const Text("Annuler le dépôt ?"),
-        content: const Text(
+        title: Text("Annuler le dépôt ?"),
+        content: Text(
           "Si tu as déjà effectué le paiement Orange Money, n'annule pas cette opération.",
         ),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(context, false),
-            child: const Text("Retour"),
+            child: Text("Retour"),
           ),
           TextButton(
             onPressed: () => Navigator.pop(context, true),
-            child: const Text("Annuler le dépôt", style: TextStyle(color: Colors.red)),
+            child: Text("Annuler le dépôt", style: TextStyle(color: Colors.red)),
           ),
         ],
       ),
@@ -190,7 +190,7 @@ class _HistoryScreenState extends State<HistoryScreen> {
       sheetSetState(() => _cancelling = false);
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text("Impossible d'annuler ce dépôt. Réessaie.")),
+        SnackBar(content: Text("Impossible d'annuler ce dépôt. Réessaie.")),
       );
     }
   }
@@ -221,15 +221,15 @@ class _HistoryScreenState extends State<HistoryScreen> {
 
     return SafeArea(
       child: Container(
-        margin: const EdgeInsets.only(top: 45),
-        decoration: const BoxDecoration(
+        margin: EdgeInsets.only(top: 45),
+        decoration: BoxDecoration(
           color: Colors.white,
           borderRadius: BorderRadius.vertical(
             top: Radius.circular(26),
           ),
         ),
         child: SingleChildScrollView(
-          padding: const EdgeInsets.fromLTRB(20, 12, 20, 30),
+          padding: EdgeInsets.fromLTRB(20, 12, 20, 30),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
@@ -243,7 +243,7 @@ class _HistoryScreenState extends State<HistoryScreen> {
                   ),
                 ),
               ),
-              const SizedBox(height: 22),
+              SizedBox(height: 22),
 
               Row(
                 children: [
@@ -254,14 +254,14 @@ class _HistoryScreenState extends State<HistoryScreen> {
                       color: Colors.green.withValues(alpha: 0.12),
                       borderRadius: BorderRadius.circular(18),
                     ),
-                    child: const Icon(
+                    child: Icon(
                       Icons.arrow_downward_rounded,
                       color: Colors.green,
                       size: 32,
                     ),
                   ),
-                  const SizedBox(width: 14),
-                  const Expanded(
+                  SizedBox(width: 14),
+                  Expanded(
                     child: Text(
                       "Dépôt 1xBet",
                       style: TextStyle(
@@ -273,12 +273,12 @@ class _HistoryScreenState extends State<HistoryScreen> {
                 ],
               ),
 
-              const SizedBox(height: 24),
+              SizedBox(height: 24),
 
               Center(
                 child: Text(
                   "+$amount F",
-                  style: const TextStyle(
+                  style: TextStyle(
                     fontSize: 18,
                     fontWeight: FontWeight.bold,
                     color: Colors.green,
@@ -286,11 +286,11 @@ class _HistoryScreenState extends State<HistoryScreen> {
                 ),
               ),
 
-              const SizedBox(height: 18),
+              SizedBox(height: 18),
 
               Center(
                 child: Container(
-                  padding: const EdgeInsets.symmetric(
+                  padding: EdgeInsets.symmetric(
                     horizontal: 13,
                     vertical: 7,
                   ),
@@ -308,7 +308,7 @@ class _HistoryScreenState extends State<HistoryScreen> {
                 ),
               ),
 
-              const SizedBox(height: 25),
+              SizedBox(height: 25),
 
               _detailRow(
                 Icons.person_outline,
@@ -341,9 +341,9 @@ class _HistoryScreenState extends State<HistoryScreen> {
                 reference,
               ),
 
-              const SizedBox(height: 12),
-              const Divider(),
-              const SizedBox(height: 12),
+              SizedBox(height: 12),
+              Divider(),
+              SizedBox(height: 12),
 
               _amountRow(
                 "Montant du dépôt",
@@ -363,12 +363,12 @@ class _HistoryScreenState extends State<HistoryScreen> {
               ),
 
               if (_isCancelled(entry)) ...[
-                const SizedBox(height: 15),
+                SizedBox(height: 15),
                 Container(
                   width: double.infinity,
-                  padding: const EdgeInsets.all(14),
+                  padding: EdgeInsets.all(14),
                   decoration: BoxDecoration(
-                    color: const Color(0xFFFFF4D6),
+                    color: Color(0xFFFFF4D6),
                     borderRadius: BorderRadius.circular(14),
                   ),
                   child: Row(
@@ -377,7 +377,7 @@ class _HistoryScreenState extends State<HistoryScreen> {
                         Icons.card_giftcard_outlined,
                         color: Colors.orange[800],
                       ),
-                      const SizedBox(width: 10),
+                      SizedBox(width: 10),
                       Expanded(
                         child: Text(
                           "Bonus manqué : $bonus FCFA",
@@ -392,7 +392,7 @@ class _HistoryScreenState extends State<HistoryScreen> {
                 ),
               ],
 
-              const SizedBox(height: 25),
+              SizedBox(height: 25),
 
               Row(
                 children: [
@@ -412,16 +412,16 @@ class _HistoryScreenState extends State<HistoryScreen> {
                             ),
                           ),
                           child: _cancelling
-                              ? const SizedBox(
+                              ? SizedBox(
                                   width: 18,
                                   height: 18,
                                   child: CircularProgressIndicator(strokeWidth: 2),
                                 )
-                              : const Icon(Icons.close, size: 20),
+                              : Icon(Icons.close, size: 20),
                         ),
                       ),
                     ),
-                    const SizedBox(width: 10),
+                    SizedBox(width: 10),
                   ],
                   Expanded(
                     child: SizedBox(
@@ -429,18 +429,18 @@ class _HistoryScreenState extends State<HistoryScreen> {
                       child: OutlinedButton(
                         onPressed: () => _shareReceipt(entry),
                         style: OutlinedButton.styleFrom(padding: EdgeInsets.zero),
-                        child: const Icon(Icons.share_outlined, size: 20),
+                        child: Icon(Icons.share_outlined, size: 20),
                       ),
                     ),
                   ),
-                  const SizedBox(width: 10),
+                  SizedBox(width: 10),
                   Expanded(
                     child: SizedBox(
                       height: 52,
                       child: OutlinedButton(
                         onPressed: () => Navigator.pop(context),
                         style: OutlinedButton.styleFrom(padding: EdgeInsets.zero),
-                        child: const Text(
+                        child: Text(
                           "Fermer",
                           style: TextStyle(fontWeight: FontWeight.w600),
                         ),
@@ -462,7 +462,7 @@ class _HistoryScreenState extends State<HistoryScreen> {
     String value,
   ) {
     return Padding(
-      padding: const EdgeInsets.only(bottom: 18),
+      padding: EdgeInsets.only(bottom: 18),
       child: Row(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
@@ -471,7 +471,7 @@ class _HistoryScreenState extends State<HistoryScreen> {
             size: 21,
             color: Colors.grey[600],
           ),
-          const SizedBox(width: 12),
+          SizedBox(width: 12),
           Expanded(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
@@ -483,10 +483,10 @@ class _HistoryScreenState extends State<HistoryScreen> {
                     color: Colors.grey[600],
                   ),
                 ),
-                const SizedBox(height: 3),
+                SizedBox(height: 3),
                 Text(
                   value,
-                  style: const TextStyle(
+                  style: TextStyle(
                     fontSize: 15,
                     fontWeight: FontWeight.w600,
                   ),
@@ -506,7 +506,7 @@ class _HistoryScreenState extends State<HistoryScreen> {
     bool bold = false,
   }) {
     return Padding(
-      padding: const EdgeInsets.only(bottom: 11),
+      padding: EdgeInsets.only(bottom: 11),
       child: Row(
         mainAxisAlignment: MainAxisAlignment.spaceBetween,
         children: [
@@ -544,7 +544,7 @@ class _HistoryScreenState extends State<HistoryScreen> {
     return InkWell(
       onTap: () => _openDetail(entry),
       child: Container(
-        padding: const EdgeInsets.fromLTRB(16, 17, 16, 17),
+        padding: EdgeInsets.fromLTRB(16, 17, 16, 17),
         decoration: BoxDecoration(
           color: Colors.white,
           border: Border(
@@ -564,14 +564,14 @@ class _HistoryScreenState extends State<HistoryScreen> {
                 color: Colors.green.withValues(alpha: 0.12),
                 borderRadius: BorderRadius.circular(17),
               ),
-              child: const Icon(
+              child: Icon(
                 Icons.arrow_downward_rounded,
                 color: Colors.green,
                 size: 32,
               ),
             ),
 
-            const SizedBox(width: 14),
+            SizedBox(width: 14),
 
             Expanded(
               child: Column(
@@ -580,7 +580,7 @@ class _HistoryScreenState extends State<HistoryScreen> {
                   Row(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      const Expanded(
+                      Expanded(
                         child: Text(
                           "Dépôt 1xBet",
                           style: TextStyle(
@@ -591,7 +591,7 @@ class _HistoryScreenState extends State<HistoryScreen> {
                       ),
                       Text(
                         "+$amount F",
-                        style: const TextStyle(
+                        style: TextStyle(
                           color: Colors.green,
                           fontSize: 19,
                           fontWeight: FontWeight.w600,
@@ -600,7 +600,7 @@ class _HistoryScreenState extends State<HistoryScreen> {
                     ],
                   ),
 
-                  const SizedBox(height: 3),
+                  SizedBox(height: 3),
 
                   Row(
                     crossAxisAlignment: CrossAxisAlignment.start,
@@ -617,7 +617,7 @@ class _HistoryScreenState extends State<HistoryScreen> {
                           overflow: TextOverflow.ellipsis,
                         ),
                       ),
-                      const SizedBox(width: 8),
+                      SizedBox(width: 8),
                       Text(
                         _formatShortDate(entry["createdAt"]),
                         style: TextStyle(
@@ -628,12 +628,12 @@ class _HistoryScreenState extends State<HistoryScreen> {
                     ],
                   ),
 
-                  const SizedBox(height: 10),
+                  SizedBox(height: 10),
 
                   Row(
                     children: [
                       Container(
-                        padding: const EdgeInsets.symmetric(
+                        padding: EdgeInsets.symmetric(
                           horizontal: 10,
                           vertical: 6,
                         ),
@@ -652,15 +652,15 @@ class _HistoryScreenState extends State<HistoryScreen> {
                       ),
 
                       if (cancelled && bonus != "0") ...[
-                        const SizedBox(width: 8),
+                        SizedBox(width: 8),
                         Flexible(
                           child: Container(
-                            padding: const EdgeInsets.symmetric(
+                            padding: EdgeInsets.symmetric(
                               horizontal: 10,
                               vertical: 6,
                             ),
                             decoration: BoxDecoration(
-                              color: const Color(0xFFF0F2F5),
+                              color: Color(0xFFF0F2F5),
                               borderRadius: BorderRadius.circular(8),
                             ),
                             child: Row(
@@ -671,7 +671,7 @@ class _HistoryScreenState extends State<HistoryScreen> {
                                   size: 17,
                                   color: Colors.grey[500],
                                 ),
-                                const SizedBox(width: 5),
+                                SizedBox(width: 5),
                                 Flexible(
                                   child: Text(
                                     "$bonus F de bonus manqués",
@@ -694,9 +694,9 @@ class _HistoryScreenState extends State<HistoryScreen> {
               ),
             ),
 
-            const SizedBox(width: 4),
+            SizedBox(width: 4),
 
-            const Padding(
+            Padding(
               padding: EdgeInsets.only(top: 20),
               child: Icon(
                 Icons.chevron_right,
@@ -713,7 +713,7 @@ class _HistoryScreenState extends State<HistoryScreen> {
   @override
   Widget _buildHiddenReceipt() {
     final entry = _entryToShare;
-    if (entry == null) return const SizedBox.shrink();
+    if (entry == null) return SizedBox.shrink();
 
     return Positioned(
       left: -2000,
@@ -743,9 +743,9 @@ class _HistoryScreenState extends State<HistoryScreen> {
     return Stack(
       children: [
         Scaffold(
-      backgroundColor: const Color(0xFFF7F7F7),
+      backgroundColor: Color(0xFFF7F7F7),
       appBar: AppBar(
-        title: const Text(
+        title: Text(
           "Historique",
           style: TextStyle(
             fontWeight: FontWeight.bold,
@@ -773,15 +773,15 @@ class _HistoryScreenState extends State<HistoryScreen> {
         ],
       ),
       body: _loading
-          ? const Center(
+          ? Center(
               child: CircularProgressIndicator(),
             )
           : RefreshIndicator(
               onRefresh: _loadHistory,
               child: _entries.isEmpty
                   ? ListView(
-                      physics: const AlwaysScrollableScrollPhysics(),
-                      children: const [
+                      physics: AlwaysScrollableScrollPhysics(),
+                      children: [
                         SizedBox(height: 130),
                         Icon(
                           Icons.history,
@@ -811,7 +811,7 @@ class _HistoryScreenState extends State<HistoryScreen> {
                       ],
                     )
                   : ListView.builder(
-                      physics: const AlwaysScrollableScrollPhysics(),
+                      physics: AlwaysScrollableScrollPhysics(),
                       itemCount: _entries.length,
                       itemBuilder: (_, index) =>
                           _historyItem(_entries[index]),

@@ -1,7 +1,7 @@
 import "package:shared_preferences/shared_preferences.dart";
 
 class CompetitionPreferences {
-  static const _key = "disabled_competitions";
+  static final _key = "disabled_competitions";
 
   Future<Set<String>> getDisabled() async {
     final prefs = await SharedPreferences.getInstance();

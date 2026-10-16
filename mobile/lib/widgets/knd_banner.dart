@@ -27,8 +27,8 @@ class BannerSlide {
         cta = j['cta']?.toString() ?? '',
         link = j['link']?.toString() ?? '',
         image = j['image']?.toString() ?? '',
-        colors = ((j['colors'] as List?) ?? const [])
-            .map((c) => _hex(c.toString(), const Color(0xFF4F46E5)))
+        colors = ((j['colors'] as List?) ?? [])
+            .map((c) => _hex(c.toString(), Color(0xFF4F46E5)))
             .toList();
 }
 
@@ -40,14 +40,14 @@ class BannerConfig {
   BannerConfig.fromJson(Map<String, dynamic> j)
       : active = j['active'] == true,
         every = ((j['every'] as num?)?.toInt() ?? 4).clamp(2, 50),
-        slides = ((j['slides'] as List?) ?? const [])
+        slides = ((j['slides'] as List?) ?? [])
             .map((e) => BannerSlide.fromJson(e as Map<String, dynamic>))
             .where((s) => s.title.isNotEmpty)
             .toList();
 }
 
 class BannerService {
-  static const _url =
+  static final _url =
       'https://raw.githubusercontent.com/barroapk/kounadia-data/main/data/banniere.json';
   static BannerConfig? _mem;
   static Future<BannerConfig?>? _pending;
@@ -65,7 +65,7 @@ class BannerService {
       final bust = DateTime.now().millisecondsSinceEpoch ~/ 600000;
       final r = await http
           .get(Uri.parse('$_url?v=$bust'))
-          .timeout(const Duration(seconds: 15));
+          .timeout(Duration(seconds: 15));
       if (r.statusCode == 200) {
         body = utf8.decode(r.bodyBytes);
         await prefs.setString('kbanner', body);
@@ -89,7 +89,7 @@ class BannerService {
 class KndBanner extends StatelessWidget {
   final int afterCards;
   final int total;
-  const KndBanner({super.key, this.afterCards = 0, this.total = 0});
+  KndBanner({super.key, this.afterCards = 0, this.total = 0});
 
   @override
   Widget build(BuildContext context) {
@@ -97,13 +97,13 @@ class KndBanner extends StatelessWidget {
       future: BannerService.load(),
       builder: (context, snap) {
         final c = snap.data;
-        if (c == null || !c.active || c.slides.isEmpty) return const SizedBox.shrink();
+        if (c == null || !c.active || c.slides.isEmpty) return SizedBox.shrink();
         if (afterCards > 0 && (afterCards % c.every != 0 || afterCards >= total)) {
-          return const SizedBox.shrink();
+          return SizedBox.shrink();
         }
         final start = afterCards == 0 ? 0 : afterCards ~/ c.every;
         return Padding(
-          padding: const EdgeInsets.only(bottom: 14),
+          padding: EdgeInsets.only(bottom: 14),
           child: _Carousel(slides: c.slides, start: start),
         );
       },
@@ -114,7 +114,7 @@ class KndBanner extends StatelessWidget {
 class _Carousel extends StatefulWidget {
   final List<BannerSlide> slides;
   final int start;
-  const _Carousel({required this.slides, required this.start});
+  _Carousel({required this.slides, required this.start});
 
   @override
   State<_Carousel> createState() => _CarouselState();
@@ -131,11 +131,11 @@ class _CarouselState extends State<_Carousel> {
     _index = widget.start % widget.slides.length;
     _pc = PageController(initialPage: _index);
     if (widget.slides.length > 1) {
-      _timer = Timer.periodic(const Duration(seconds: 5), (_) {
+      _timer = Timer.periodic(Duration(seconds: 5), (_) {
         if (!mounted || !_pc.hasClients) return;
         final next = (_index + 1) % widget.slides.length;
         _pc.animateToPage(next,
-            duration: const Duration(milliseconds: 600), curve: Curves.easeInOutCubic);
+            duration: Duration(milliseconds: 600), curve: Curves.easeInOutCubic);
       });
     }
   }
@@ -176,8 +176,8 @@ class _CarouselState extends State<_Carousel> {
                 children: List.generate(widget.slides.length, (i) {
                   final on = i == _index;
                   return AnimatedContainer(
-                    duration: const Duration(milliseconds: 300),
-                    margin: const EdgeInsets.symmetric(horizontal: 3),
+                    duration: Duration(milliseconds: 300),
+                    margin: EdgeInsets.symmetric(horizontal: 3),
                     width: on ? 16 : 6,
                     height: 6,
                     decoration: BoxDecoration(
@@ -194,12 +194,12 @@ class _CarouselState extends State<_Carousel> {
   }
 
   Widget _slide(BannerSlide s) {
-    final c1 = s.colors.isNotEmpty ? s.colors[0] : const Color(0xFF4F46E5);
+    final c1 = s.colors.isNotEmpty ? s.colors[0] : Color(0xFF4F46E5);
     final c2 = s.colors.length > 1 ? s.colors[1] : Color.lerp(c1, Colors.black, 0.3)!;
     return GestureDetector(
       onTap: () => _open(s),
       child: Container(
-        margin: const EdgeInsets.symmetric(horizontal: 2),
+        margin: EdgeInsets.symmetric(horizontal: 2),
         clipBehavior: Clip.antiAlias,
         decoration: BoxDecoration(
           gradient: LinearGradient(
@@ -209,7 +209,7 @@ class _CarouselState extends State<_Carousel> {
           ),
           borderRadius: BorderRadius.circular(18),
           boxShadow: [
-            BoxShadow(color: c1.withAlpha(90), blurRadius: 16, offset: const Offset(0, 6)),
+            BoxShadow(color: c1.withAlpha(90), blurRadius: 16, offset: Offset(0, 6)),
           ],
         ),
         child: Stack(
@@ -220,7 +220,7 @@ class _CarouselState extends State<_Carousel> {
               child: Container(
                 width: 120,
                 height: 120,
-                decoration: const BoxDecoration(
+                decoration: BoxDecoration(
                     shape: BoxShape.circle, color: Color(0x1FFFFFFF)),
               ),
             ),
@@ -230,12 +230,12 @@ class _CarouselState extends State<_Carousel> {
               child: Container(
                 width: 90,
                 height: 90,
-                decoration: const BoxDecoration(
+                decoration: BoxDecoration(
                     shape: BoxShape.circle, color: Color(0x14FFFFFF)),
               ),
             ),
             Padding(
-              padding: const EdgeInsets.fromLTRB(14, 10, 10, 16),
+              padding: EdgeInsets.fromLTRB(14, 10, 10, 16),
               child: Row(
                 children: [
                   Expanded(
@@ -243,31 +243,31 @@ class _CarouselState extends State<_Carousel> {
                       crossAxisAlignment: CrossAxisAlignment.start,
                       mainAxisAlignment: MainAxisAlignment.center,
                       children: [
-                        const Text('SPONSORISÉ',
+                        Text('SPONSORISÉ',
                             style: TextStyle(
                                 color: Colors.white70,
                                 fontSize: 9,
                                 fontWeight: FontWeight.w800,
                                 letterSpacing: 1.2)),
-                        const SizedBox(height: 2),
+                        SizedBox(height: 2),
                         Text(s.title,
                             maxLines: 1,
                             overflow: TextOverflow.ellipsis,
-                            style: const TextStyle(
+                            style: TextStyle(
                                 color: Colors.white,
                                 fontSize: 15,
                                 fontWeight: FontWeight.w800)),
-                        const SizedBox(height: 2),
+                        SizedBox(height: 2),
                         Text(s.text,
                             maxLines: 2,
                             overflow: TextOverflow.ellipsis,
-                            style: const TextStyle(
+                            style: TextStyle(
                                 color: Color(0xE6FFFFFF), fontSize: 12, height: 1.2)),
                       ],
                     ),
                   ),
                   if (s.image.isNotEmpty) ...[
-                    const SizedBox(width: 10),
+                    SizedBox(width: 10),
                     ClipRRect(
                       borderRadius: BorderRadius.circular(12),
                       child: CachedNetworkImage(
@@ -275,15 +275,15 @@ class _CarouselState extends State<_Carousel> {
                         width: 56,
                         height: 56,
                         fit: BoxFit.cover,
-                        errorWidget: (_, __, ___) => const SizedBox.shrink(),
+                        errorWidget: (_, __, ___) => SizedBox.shrink(),
                       ),
                     ),
                   ],
                   if (s.cta.isNotEmpty && s.link.isNotEmpty) ...[
-                    const SizedBox(width: 10),
+                    SizedBox(width: 10),
                     Container(
-                      padding: const EdgeInsets.symmetric(horizontal: 9, vertical: 6),
-                      constraints: const BoxConstraints(maxWidth: 92),
+                      padding: EdgeInsets.symmetric(horizontal: 9, vertical: 6),
+                      constraints: BoxConstraints(maxWidth: 92),
                       decoration: BoxDecoration(
                         color: Colors.white,
                         borderRadius: BorderRadius.circular(20),
@@ -297,7 +297,7 @@ class _CarouselState extends State<_Carousel> {
                               overflow: TextOverflow.ellipsis,
                               style: TextStyle(
                                   color: c1, fontSize: 11, fontWeight: FontWeight.w800))),
-                          const SizedBox(width: 4),
+                          SizedBox(width: 4),
                           Icon(Icons.arrow_forward_rounded, color: c1, size: 12),
                         ],
                       ),

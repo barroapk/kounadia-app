@@ -7,7 +7,7 @@ class MatchSummaryCard extends StatefulWidget {
   final String homeTeam;
   final String awayTeam;
 
-  const MatchSummaryCard({
+  MatchSummaryCard({
     super.key,
     this.statistics,
     this.events,
@@ -73,35 +73,35 @@ class _MatchSummaryCardState extends State<MatchSummaryCard> {
   @override
   Widget build(BuildContext context) {
     final points = _buildPoints();
-    if (points.isEmpty) return const SizedBox.shrink();
+    if (points.isEmpty) return SizedBox.shrink();
 
     final visiblePoints = _expanded ? points : points.take(1).toList();
     final hiddenCount = points.length - visiblePoints.length;
 
     return Card(
-      margin: const EdgeInsets.fromLTRB(12, 10, 12, 0),
+      margin: EdgeInsets.fromLTRB(12, 10, 12, 0),
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
       child: Padding(
-        padding: const EdgeInsets.all(12),
+        padding: EdgeInsets.all(12),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             Row(
               children: [
-                const Icon(Icons.insights_outlined, size: 16, color: Color(0xFF16A34A)),
-                const SizedBox(width: 6),
-                const Text("Résumé du match", style: TextStyle(fontWeight: FontWeight.bold, fontSize: 13)),
+                Icon(Icons.insights_outlined, size: 16, color: Color(0xFF16A34A)),
+                SizedBox(width: 6),
+                Text("Résumé du match", style: TextStyle(fontWeight: FontWeight.bold, fontSize: 13)),
               ],
             ),
-            const SizedBox(height: 6),
+            SizedBox(height: 6),
             ...visiblePoints.map((p) => Padding(
-                  padding: const EdgeInsets.symmetric(vertical: 2),
-                  child: Text("• $p", style: const TextStyle(fontSize: 12.5)),
+                  padding: EdgeInsets.symmetric(vertical: 2),
+                  child: Text("• $p", style: TextStyle(fontSize: 12.5)),
                 )),
             if (_expanded)
               InkWell(
                 onTap: () => setState(() => _expanded = false),
-                child: const Padding(
+                child: Padding(
                   padding: EdgeInsets.only(top: 4),
                   child: Text(
                     "Voir moins",
@@ -113,10 +113,10 @@ class _MatchSummaryCardState extends State<MatchSummaryCard> {
               InkWell(
                 onTap: () => setState(() => _expanded = true),
                 child: Padding(
-                  padding: const EdgeInsets.only(top: 4),
+                  padding: EdgeInsets.only(top: 4),
                   child: Text(
                     "Voir $hiddenCount de plus",
-                    style: const TextStyle(color: Color(0xFF16A34A), fontSize: 12, fontWeight: FontWeight.w600),
+                    style: TextStyle(color: Color(0xFF16A34A), fontSize: 12, fontWeight: FontWeight.w600),
                   ),
                 ),
               ),

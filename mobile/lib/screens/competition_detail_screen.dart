@@ -17,7 +17,7 @@ class CompetitionDetailScreen extends StatefulWidget {
   final String? highlightHomeTeam;
   final String? highlightAwayTeam;
 
-  const CompetitionDetailScreen({
+  CompetitionDetailScreen({
     super.key,
     required this.name,
     this.code,
@@ -111,27 +111,27 @@ class _CompetitionDetailScreenState extends State<CompetitionDetailScreen>
 
   Widget _unavailable(String message) {
     return Center(
-      child: Padding(padding: const EdgeInsets.all(24), child: Text(message, textAlign: TextAlign.center)),
+      child: Padding(padding: EdgeInsets.all(24), child: Text(message, textAlign: TextAlign.center)),
     );
   }
 
   Widget _standingsSeasonSelector() {
-    if (_availableStandingsSeasons.isEmpty) return const SizedBox.shrink();
+    if (_availableStandingsSeasons.isEmpty) return SizedBox.shrink();
 
     return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+      padding: EdgeInsets.symmetric(horizontal: 12, vertical: 8),
       child: Row(
         children: [
           Text("Saison : ", style: TextStyle(fontWeight: FontWeight.bold, color: Colors.grey[700], fontSize: 13)),
-          const SizedBox(width: 4),
+          SizedBox(width: 4),
           DropdownButton<String>(
             value: _availableStandingsSeasons.any((s) => s.startYear == _selectedStandingsSeason)
                 ? _selectedStandingsSeason
                 : _availableStandingsSeasons.first.startYear,
-            underline: const SizedBox(),
+            underline: SizedBox(),
             isDense: true,
             items: _availableStandingsSeasons
-                .map((s) => DropdownMenuItem(value: s.startYear, child: Text(s.label, style: const TextStyle(fontSize: 13))))
+                .map((s) => DropdownMenuItem(value: s.startYear, child: Text(s.label, style: TextStyle(fontSize: 13))))
                 .toList(),
             onChanged: (value) {
               if (value != null) _onSeasonChanged(value);
@@ -155,7 +155,7 @@ class _CompetitionDetailScreenState extends State<CompetitionDetailScreen>
             future: _standingsFuture,
             builder: (context, snapshot) {
               if (_standingsFuture == null || snapshot.connectionState == ConnectionState.waiting) {
-                return const Center(child: CircularProgressIndicator());
+                return Center(child: CircularProgressIndicator());
               }
 
               final data = snapshot.data;
@@ -204,8 +204,8 @@ class _CompetitionDetailScreenState extends State<CompetitionDetailScreen>
     );
   }
 
-  static const _weekdays = ["lundi", "mardi", "mercredi", "jeudi", "vendredi", "samedi", "dimanche"];
-  static const _months = [
+  static final _weekdays = ["lundi", "mardi", "mercredi", "jeudi", "vendredi", "samedi", "dimanche"];
+  static final _months = [
     "janvier", "février", "mars", "avril", "mai", "juin",
     "juillet", "août", "septembre", "octobre", "novembre", "décembre",
   ];
@@ -231,17 +231,17 @@ class _CompetitionDetailScreenState extends State<CompetitionDetailScreen>
         (calendar.availableSeasons.isNotEmpty ? calendar.availableSeasons.first.value : null);
 
     return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+      padding: EdgeInsets.symmetric(horizontal: 12, vertical: 8),
       child: Row(
         children: [
           Text("Saison : ", style: TextStyle(fontWeight: FontWeight.bold, color: Colors.grey[700], fontSize: 13)),
-          const SizedBox(width: 4),
+          SizedBox(width: 4),
           DropdownButton<String>(
             value: currentSeason,
-            underline: const SizedBox(),
+            underline: SizedBox(),
             isDense: true,
             items: calendar.availableSeasons
-                .map((season) => DropdownMenuItem(value: season.value, child: Text(season.label, style: const TextStyle(fontSize: 13))))
+                .map((season) => DropdownMenuItem(value: season.value, child: Text(season.label, style: TextStyle(fontSize: 13))))
                 .toList(),
             onChanged: (value) {
               if (value != null && value != currentSeason) {
@@ -263,7 +263,7 @@ class _CompetitionDetailScreenState extends State<CompetitionDetailScreen>
       future: _calendarFuture,
       builder: (context, snapshot) {
         if (snapshot.connectionState == ConnectionState.waiting) {
-          return const Center(child: CircularProgressIndicator());
+          return Center(child: CircularProgressIndicator());
         }
 
         final calendar = snapshot.data;
@@ -314,22 +314,22 @@ class _CompetitionDetailScreenState extends State<CompetitionDetailScreen>
               onSelected: (day) => setState(() => _selectedMatchday = day),
             ),
             Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+              padding: EdgeInsets.symmetric(horizontal: 12, vertical: 6),
               child: TextField(
                 decoration: InputDecoration(
                   hintText: "Filtrer par équipe...",
-                  prefixIcon: const Icon(Icons.search, size: 20),
+                  prefixIcon: Icon(Icons.search, size: 20),
                   isDense: true,
-                  contentPadding: const EdgeInsets.symmetric(vertical: 8),
+                  contentPadding: EdgeInsets.symmetric(vertical: 8),
                   border: OutlineInputBorder(borderRadius: BorderRadius.circular(10)),
                 ),
                 onChanged: (value) => setState(() => _calendarSearch = value),
               ),
             ),
-            const Divider(height: 1),
+            Divider(height: 1),
             Expanded(
               child: filteredMatches.isEmpty
-                  ? const Center(child: Text("Aucun match ne correspond."))
+                  ? Center(child: Text("Aucun match ne correspond."))
                   : ListView.builder(
                       itemCount: dateLabels.length,
                       itemBuilder: (context, dateIndex) {
@@ -339,8 +339,8 @@ class _CompetitionDetailScreenState extends State<CompetitionDetailScreen>
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
                             Padding(
-                              padding: const EdgeInsets.fromLTRB(16, 12, 16, 4),
-                              child: Text(label, style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 13)),
+                              padding: EdgeInsets.fromLTRB(16, 12, 16, 4),
+                              child: Text(label, style: TextStyle(fontWeight: FontWeight.bold, fontSize: 13)),
                             ),
                             ...dateMatches.asMap().entries.map((entry) {
                               final match = entry.value;
@@ -367,7 +367,7 @@ class _CompetitionDetailScreenState extends State<CompetitionDetailScreen>
                                     },
                                   ),
                                   if (entry.key < dateMatches.length - 1)
-                                    const Divider(height: 1, indent: 56),
+                                    Divider(height: 1, indent: 56),
                                 ],
                               );
                             }),
@@ -388,33 +388,33 @@ class _CompetitionDetailScreenState extends State<CompetitionDetailScreen>
     // aujourd'hui : un seul message honnête plutôt que 2 onglets vides côte à côte.
     if (widget.code == null && widget.leagueId == null) {
       return Scaffold(
-        backgroundColor: const Color(0xFFF4F5F7),
+        backgroundColor: Color(0xFFF4F5F7),
         appBar: AppBar(title: Text(widget.name)),
         body: Center(
           child: Padding(
-            padding: const EdgeInsets.all(24),
+            padding: EdgeInsets.all(24),
             child: Column(
               mainAxisSize: MainAxisSize.min,
               children: [
                 Icon(Icons.info_outline, size: 40, color: Colors.grey[400]),
-                const SizedBox(height: 12),
-                const Text(
+                SizedBox(height: 12),
+                Text(
                   "Classement et calendrier bientôt disponibles pour cette compétition.",
                   textAlign: TextAlign.center,
                   style: TextStyle(fontSize: 14),
                 ),
-                const SizedBox(height: 6),
+                SizedBox(height: 6),
                 Text(
                   "En attendant, vous pouvez suivre les matchs en direct et les résultats dans l'onglet Scores.",
                   textAlign: TextAlign.center,
                   style: TextStyle(fontSize: 12, color: Colors.grey[600]),
                 ),
-                const SizedBox(height: 20),
+                SizedBox(height: 20),
                 FilledButton.icon(
-                  style: FilledButton.styleFrom(backgroundColor: const Color(0xFF16A34A)),
+                  style: FilledButton.styleFrom(backgroundColor: Color(0xFF16A34A)),
                   onPressed: () => Navigator.pop(context),
-                  icon: const Icon(Icons.sports_soccer, size: 18),
-                  label: const Text("Retour"),
+                  icon: Icon(Icons.sports_soccer, size: 18),
+                  label: Text("Retour"),
                 ),
               ],
             ),
@@ -424,12 +424,12 @@ class _CompetitionDetailScreenState extends State<CompetitionDetailScreen>
     }
 
     return Scaffold(
-      backgroundColor: const Color(0xFFF4F5F7),
+      backgroundColor: Color(0xFFF4F5F7),
       appBar: AppBar(
         title: Text(widget.name),
         bottom: TabBar(
           controller: _tabController,
-          tabs: const [
+          tabs: [
             Tab(icon: Icon(Icons.leaderboard_outlined), text: "CLASSEMENT"),
             Tab(icon: Icon(Icons.calendar_month_outlined), text: "CALENDRIER"),
           ],

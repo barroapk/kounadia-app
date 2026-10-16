@@ -10,7 +10,7 @@ class CountryCard extends StatelessWidget {
   final List<Widget> children;
   final IconData? fallbackIcon;
 
-  const CountryCard({
+  CountryCard({
     super.key,
     required this.title,
     this.flagUrl,
@@ -24,7 +24,7 @@ class CountryCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Container(
-      margin: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+      margin: EdgeInsets.symmetric(horizontal: 12, vertical: 6),
       decoration: BoxDecoration(
         color: Colors.white,
         borderRadius: BorderRadius.circular(16),
@@ -32,7 +32,7 @@ class CountryCard extends StatelessWidget {
           BoxShadow(
             color: Colors.black.withOpacity(0.04),
             blurRadius: 6,
-            offset: const Offset(0, 2),
+            offset: Offset(0, 2),
           ),
         ],
       ),
@@ -40,29 +40,29 @@ class CountryCard extends StatelessWidget {
         data: Theme.of(context).copyWith(dividerColor: Colors.transparent),
         child: ExpansionTile(
           initiallyExpanded: initiallyExpanded,
-          tilePadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
-          shape: const RoundedRectangleBorder(borderRadius: BorderRadius.all(Radius.circular(16))),
-          collapsedShape: const RoundedRectangleBorder(borderRadius: BorderRadius.all(Radius.circular(16))),
+          tilePadding: EdgeInsets.symmetric(horizontal: 16, vertical: 4),
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.all(Radius.circular(16))),
+          collapsedShape: RoundedRectangleBorder(borderRadius: BorderRadius.all(Radius.circular(16))),
           leading: CachedLogo(
             url: flagUrl,
             size: 28,
             fallbackIcon: fallbackIcon ?? Icons.flag_outlined,
           ),
-          title: Text(title, style: const TextStyle(fontSize: 15)),
+          title: Text(title, style: TextStyle(fontSize: 15)),
           trailing: Row(
             mainAxisSize: MainAxisSize.min,
             children: [
               Icon(Icons.emoji_events, size: 13, color: Colors.grey[500]),
-              const SizedBox(width: 2),
+              SizedBox(width: 2),
               Text("$competitionCount", style: TextStyle(color: Colors.grey[500], fontSize: 12)),
               if (matchCount > 0) ...[
-                const SizedBox(width: 8),
+                SizedBox(width: 8),
                 Icon(Icons.sports_soccer, size: 13, color: Colors.grey[500]),
-                const SizedBox(width: 2),
+                SizedBox(width: 2),
                 Text("$matchCount", style: TextStyle(color: Colors.grey[500], fontSize: 12)),
               ],
-              const SizedBox(width: 4),
-              const Icon(Icons.keyboard_arrow_down, size: 18),
+              SizedBox(width: 4),
+              Icon(Icons.keyboard_arrow_down, size: 18),
             ],
           ),
           children: children,

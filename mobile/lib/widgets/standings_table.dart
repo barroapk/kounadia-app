@@ -9,7 +9,7 @@ class StandingsTable extends StatefulWidget {
   final String? highlightAwayTeam;
   final ValueChanged<String>? onSeasonChanged;
 
-  const StandingsTable({
+  StandingsTable({
     super.key,
     required this.data,
     this.highlightHomeTeam,
@@ -29,7 +29,7 @@ class _GroupHeader {
 class _StandingsTableState extends State<StandingsTable> {
   final ScrollController _scrollController = ScrollController();
   static const double _rowHeight = 52;
-  static const _roundRobinCodes = {'PL', 'PD', 'BL1', 'SA', 'FL1', 'DED', 'PPL', 'ELC', 'BSA'};
+  static final _roundRobinCodes = {'PL', 'PD', 'BL1', 'SA', 'FL1', 'DED', 'PPL', 'ELC', 'BSA'};
 
   @override
   void initState() {
@@ -63,7 +63,7 @@ class _StandingsTableState extends State<StandingsTable> {
     final target = (index * _rowHeight - 100).clamp(0, double.infinity).toDouble();
     _scrollController.animateTo(
       target,
-      duration: const Duration(milliseconds: 500),
+      duration: Duration(milliseconds: 500),
       curve: Curves.easeInOut,
     );
   }
@@ -82,16 +82,16 @@ class _StandingsTableState extends State<StandingsTable> {
 
   Widget _legend() {
     final hasZones = COMPETITION_ZONES.containsKey(widget.data.competitionCode);
-    if (!hasZones) return const SizedBox.shrink();
+    if (!hasZones) return SizedBox.shrink();
 
     Widget dot(Color color, String label) {
       return Padding(
-        padding: const EdgeInsets.only(right: 12),
+        padding: EdgeInsets.only(right: 12),
         child: Row(
           mainAxisSize: MainAxisSize.min,
           children: [
             Container(width: 8, height: 8, decoration: BoxDecoration(color: color, shape: BoxShape.circle)),
-            const SizedBox(width: 4),
+            SizedBox(width: 4),
             Text(label, style: TextStyle(fontSize: 10, color: Colors.grey[600])),
           ],
         ),
@@ -99,12 +99,12 @@ class _StandingsTableState extends State<StandingsTable> {
     }
 
     return Padding(
-      padding: const EdgeInsets.fromLTRB(16, 0, 16, 8),
+      padding: EdgeInsets.fromLTRB(16, 0, 16, 8),
       child: Wrap(
         children: [
-          dot(const Color(0xFF2563EB), "Ligue des Champions"),
-          dot(const Color(0xFFF97316), "Coupe d'Europe"),
-          dot(const Color(0xFFDC2626), "Relégation"),
+          dot(Color(0xFF2563EB), "Ligue des Champions"),
+          dot(Color(0xFFF97316), "Coupe d'Europe"),
+          dot(Color(0xFFDC2626), "Relégation"),
         ],
       ),
     );
@@ -114,7 +114,7 @@ class _StandingsTableState extends State<StandingsTable> {
     final progress = _seasonProgress;
 
     return Container(
-      padding: const EdgeInsets.fromLTRB(16, 16, 16, 4),
+      padding: EdgeInsets.fromLTRB(16, 16, 16, 4),
       color: Colors.white,
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -125,14 +125,14 @@ class _StandingsTableState extends State<StandingsTable> {
                 url: widget.data.competitionEmblem,
                 size: 32,
                 fallbackIcon: Icons.emoji_events,
-                fallbackColor: const Color(0xFF16A34A),
+                fallbackColor: Color(0xFF16A34A),
               ),
-              const SizedBox(width: 10),
+              SizedBox(width: 10),
               Expanded(
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Text(widget.data.competitionName, style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 17)),
+                    Text(widget.data.competitionName, style: TextStyle(fontWeight: FontWeight.bold, fontSize: 17)),
                     if (widget.data.season != null)
                       Text("Saison ${widget.data.season}", style: TextStyle(color: Colors.grey[600], fontSize: 12)),
                   ],
@@ -147,10 +147,10 @@ class _StandingsTableState extends State<StandingsTable> {
                           .firstWhere((s) => s.startYear == widget.data.season?.split('-').first)
                           .startYear
                       : widget.data.availableSeasons.first.startYear,
-                  underline: const SizedBox(),
+                  underline: SizedBox(),
                   isDense: true,
                   items: widget.data.availableSeasons
-                      .map((s) => DropdownMenuItem(value: s.startYear, child: Text(s.label, style: const TextStyle(fontSize: 12))))
+                      .map((s) => DropdownMenuItem(value: s.startYear, child: Text(s.label, style: TextStyle(fontSize: 12))))
                       .toList(),
                   onChanged: (value) {
                     if (value != null) widget.onSeasonChanged!(value);
@@ -158,7 +158,7 @@ class _StandingsTableState extends State<StandingsTable> {
                 ),
             ],
           ),
-          const SizedBox(height: 8),
+          SizedBox(height: 8),
         ],
       ),
     );
@@ -187,14 +187,14 @@ class _StandingsTableState extends State<StandingsTable> {
         _header(context),
         _legend(),
         Container(
-          color: const Color(0xFFF4F5F7),
-          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+          color: Color(0xFFF4F5F7),
+          padding: EdgeInsets.symmetric(horizontal: 12, vertical: 8),
           child: Row(
             children: [
-              const SizedBox(width: 4),
-              const SizedBox(width: 22),
-              const SizedBox(width: 26),
-              const Expanded(child: SizedBox()),
+              SizedBox(width: 4),
+              SizedBox(width: 22),
+              SizedBox(width: 26),
+              Expanded(child: SizedBox()),
               _columnHeaderCell("MJ", 26),
               _columnHeaderCell("G", 22),
               _columnHeaderCell("N", 22),
@@ -232,8 +232,8 @@ class _StandingsTableState extends State<StandingsTable> {
                   if (item is _GroupHeader) {
                     return Container(
                       width: double.infinity,
-                      color: const Color(0xFFF4F5F7),
-                      padding: const EdgeInsets.fromLTRB(12, 12, 12, 6),
+                      color: Color(0xFFF4F5F7),
+                      padding: EdgeInsets.fromLTRB(12, 12, 12, 6),
                       child: Text(
                         item.title.toUpperCase(),
                         style: TextStyle(fontSize: 11, fontWeight: FontWeight.bold, color: Colors.grey[600], letterSpacing: 0.5),
@@ -247,22 +247,22 @@ class _StandingsTableState extends State<StandingsTable> {
                   final zoneColor = (seasonNotStarted || hasGroups)
                       ? null
                       : zoneColorFor(widget.data.competitionCode, row.position, widget.data.totalTeams);
-                  final barColor = isHighlighted ? const Color(0xFF16A34A) : (zoneColor ?? Colors.transparent);
+                  final barColor = isHighlighted ? Color(0xFF16A34A) : (zoneColor ?? Colors.transparent);
                   final rowIndex = displayItems.take(index).whereType<StandingRow>().length;
 
                   return Container(
                     height: _rowHeight,
-                    color: isHighlighted ? const Color(0xFF16A34A).withOpacity(0.08) : (rowIndex.isEven ? Colors.white : const Color(0xFFFAFAFA)),
-                    padding: const EdgeInsets.symmetric(horizontal: 12),
+                    color: isHighlighted ? Color(0xFF16A34A).withOpacity(0.08) : (rowIndex.isEven ? Colors.white : Color(0xFFFAFAFA)),
+                    padding: EdgeInsets.symmetric(horizontal: 12),
                     child: Row(
                       children: [
                         Container(width: 4, height: 32, color: barColor),
-                        const SizedBox(width: 8),
-                        SizedBox(width: 22, child: Text("${row.position}", textAlign: TextAlign.center, style: const TextStyle(fontSize: 12))),
+                        SizedBox(width: 8),
+                        SizedBox(width: 22, child: Text("${row.position}", textAlign: TextAlign.center, style: TextStyle(fontSize: 12))),
                         SizedBox(width: 26, child: CachedLogo(url: row.teamCrest, size: 20)),
                         Expanded(
                           child: Padding(
-                            padding: const EdgeInsets.only(left: 6),
+                            padding: EdgeInsets.only(left: 6),
                             child: Text(
                               row.teamName,
                               overflow: TextOverflow.ellipsis,

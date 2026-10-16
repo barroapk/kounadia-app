@@ -6,7 +6,7 @@ class MatchdaySelector extends StatefulWidget {
   final int selectedDay;
   final ValueChanged<int> onSelected;
 
-  const MatchdaySelector({
+  MatchdaySelector({
     super.key,
     required this.calendar,
     required this.selectedDay,
@@ -55,7 +55,7 @@ class _MatchdaySelectorState extends State<MatchdaySelector> {
     Scrollable.ensureVisible(
       context,
       alignment: 0.5,
-      duration: const Duration(milliseconds: 200),
+      duration: Duration(milliseconds: 200),
     );
   }
 
@@ -74,7 +74,7 @@ class _MatchdaySelectorState extends State<MatchdaySelector> {
       child: ListView.builder(
         controller: _controller,
         scrollDirection: Axis.horizontal,
-        padding: const EdgeInsets.symmetric(horizontal: 12),
+        padding: EdgeInsets.symmetric(horizontal: 12),
         itemCount: realMatchdays.length,
         itemBuilder: (context, index) {
           final day = realMatchdays[index];
@@ -83,10 +83,10 @@ class _MatchdaySelectorState extends State<MatchdaySelector> {
 
           return ConstrainedBox(
             key: _keyFor(day),
-            constraints: const BoxConstraints(minWidth: _MatchdaySelectorState._itemWidth),
+            constraints: BoxConstraints(minWidth: _MatchdaySelectorState._itemWidth),
             child: IntrinsicWidth(
               child: Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 6),
+                padding: EdgeInsets.symmetric(horizontal: 4, vertical: 6),
                 child: ChoiceChip(
                   label: Text(
                     widget.calendar.matchdays
@@ -98,15 +98,15 @@ class _MatchdaySelectorState extends State<MatchdaySelector> {
                   ),
                   selected: isSelected,
                   showCheckmark: false,
-                  selectedColor: const Color(0xFF16A34A),
-                  labelPadding: const EdgeInsets.symmetric(horizontal: 6),
+                  selectedColor: Color(0xFF16A34A),
+                  labelPadding: EdgeInsets.symmetric(horizontal: 6),
                   labelStyle: TextStyle(
                     color: isSelected ? Colors.white : Colors.black87,
                     fontSize: 12,
                     fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
                   ),
                   avatar: group.summary.live > 0
-                      ? const CircleAvatar(backgroundColor: Color(0xFFDC2626), radius: 4)
+                      ? CircleAvatar(backgroundColor: Color(0xFFDC2626), radius: 4)
                       : null,
                   onSelected: (_) => widget.onSelected(day),
                 ),

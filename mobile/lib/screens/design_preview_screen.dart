@@ -3,7 +3,7 @@ import "../models/match.dart";
 import "../widgets/match_card.dart";
 
 class DesignPreviewScreen extends StatelessWidget {
-  const DesignPreviewScreen({super.key});
+  DesignPreviewScreen({super.key});
 
   @override
   Widget build(BuildContext context) {
@@ -44,9 +44,9 @@ class DesignPreviewScreen extends StatelessWidget {
     ];
 
     return Scaffold(
-      appBar: AppBar(title: const Text("Aperçu design (temporaire)")),
+      appBar: AppBar(title: Text("Aperçu design (temporaire)")),
       body: ListView.builder(
-        padding: const EdgeInsets.symmetric(vertical: 8),
+        padding: EdgeInsets.symmetric(vertical: 8),
         itemCount: sampleMatches.length,
         itemBuilder: (context, index) {
           return MatchCard(match: sampleMatches[index], onTap: () {});

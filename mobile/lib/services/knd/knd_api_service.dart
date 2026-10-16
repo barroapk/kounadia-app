@@ -21,7 +21,7 @@ class KndApiException implements Exception {
 /// reveil du serveur Render (jusqu'a 60s). Systeme independant de
 /// l'ApiService existant, qui ne gere que le backend KOUNADIA (scores).
 class KndApiService {
-  static const _serverErrorCodes = {502, 503, 504};
+  static final _serverErrorCodes = {502, 503, 504};
   final Random _random = Random();
 
   Map<String, dynamic> _decodeOrThrow(http.Response response) {
@@ -48,7 +48,7 @@ class KndApiService {
 
     for (var attempt = 1; attempt <= maxAttempts; attempt++) {
       try {
-        final response = await http.get(uri).timeout(const Duration(seconds: 90));
+        final response = await http.get(uri).timeout(Duration(seconds: 90));
         return _decodeOrThrow(response);
       } on KndApiException {
         rethrow;
@@ -76,7 +76,7 @@ class KndApiService {
     try {
       final response = await http
           .post(uri, headers: {"Content-Type": "application/json"}, body: jsonEncode(body ?? {}))
-          .timeout(const Duration(seconds: 90));
+          .timeout(Duration(seconds: 90));
       return _decodeOrThrow(response);
     } on KndApiException {
       rethrow;

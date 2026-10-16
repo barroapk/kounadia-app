@@ -6,7 +6,7 @@ import '../widgets/knd_banner.dart';
 import 'coupon_tab.dart';
 
 class PredictionsScreen extends StatefulWidget {
-  const PredictionsScreen({super.key});
+  PredictionsScreen({super.key});
 
   @override
   State<PredictionsScreen> createState() => _PredictionsScreenState();
@@ -32,7 +32,7 @@ class _PredictionsScreenState extends State<PredictionsScreen> {
         body: Column(
           children: [
             Padding(
-              padding: const EdgeInsets.fromLTRB(12, 10, 12, 8),
+              padding: EdgeInsets.fromLTRB(12, 10, 12, 8),
               child: Container(
                 height: 42,
                 decoration: BoxDecoration(
@@ -43,18 +43,18 @@ class _PredictionsScreenState extends State<PredictionsScreen> {
                 child: TabBar(
                   indicator: BoxDecoration(color: K.indigo, borderRadius: BorderRadius.circular(9)),
                   indicatorSize: TabBarIndicatorSize.tab,
-                  indicatorPadding: const EdgeInsets.all(3),
+                  indicatorPadding: EdgeInsets.all(3),
                   labelPadding: EdgeInsets.zero,
                   dividerColor: Colors.transparent,
                   labelColor: Colors.white,
                   unselectedLabelColor: K.muted,
-                  labelStyle: const TextStyle(fontSize: 13.5, fontWeight: FontWeight.w800),
-                  tabs: const [Tab(text: 'Kounadia IA'), Tab(text: 'Expert'), Tab(text: 'Coupons')],
+                  labelStyle: TextStyle(fontSize: 13.5, fontWeight: FontWeight.w800),
+                  tabs: [Tab(text: 'Kounadia IA'), Tab(text: 'Expert'), Tab(text: 'Coupons')],
                 ),
               ),
             ),
             Expanded(
-              child: TabBarView(children: [_tab(true), _tab(false), const CouponTab()]),
+              child: TabBarView(children: [_tab(true), _tab(false), CouponTab()]),
             ),
           ],
         ),
@@ -66,7 +66,7 @@ class _PredictionsScreenState extends State<PredictionsScreen> {
         future: _f,
         builder: (context, snap) {
           if (snap.connectionState != ConnectionState.done) {
-            return const Center(child: CircularProgressIndicator(color: K.indigo));
+            return Center(child: CircularProgressIndicator(color: K.indigo));
           }
           if (snap.hasError) return kMessage(snap.error.toString(), onRetry: _refresh);
           final d = snap.data!;
@@ -97,17 +97,17 @@ class _PredictionsScreenState extends State<PredictionsScreen> {
           onTap: () => setState(() => collapsed ? _collapsed.remove(key) : _collapsed.add(key)),
           child: Container(
             color: K.groupHead,
-            padding: const EdgeInsets.fromLTRB(12, 10, 8, 10),
+            padding: EdgeInsets.fromLTRB(12, 10, 8, 10),
             child: Row(children: [
-              const Icon(Icons.emoji_events_outlined, color: K.amber, size: 15),
-              const SizedBox(width: 8),
+              Icon(Icons.emoji_events_outlined, color: K.amber, size: 15),
+              SizedBox(width: 8),
               Expanded(
                 child: Text(title,
                     maxLines: 1,
                     overflow: TextOverflow.ellipsis,
-                    style: const TextStyle(color: K.text, fontSize: 13, fontWeight: FontWeight.w700)),
+                    style: TextStyle(color: K.text, fontSize: 13, fontWeight: FontWeight.w700)),
               ),
-              Text('${list.length}', style: const TextStyle(color: K.muted, fontSize: 12)),
+              Text('${list.length}', style: TextStyle(color: K.muted, fontSize: 12)),
               Icon(collapsed ? Icons.expand_more_rounded : Icons.expand_less_rounded, color: K.muted, size: 22),
             ]),
           ),
@@ -120,7 +120,7 @@ class _PredictionsScreenState extends State<PredictionsScreen> {
   Widget _list(String tab, List<Forecast> items, bool offline, String empty) {
     final children = <Widget>[if (offline) kOfflineBanner()];
     if (items.isEmpty) {
-      children.addAll([const KndBanner(), const SizedBox(height: 50), kMessage(empty)]);
+      children.addAll([KndBanner(), SizedBox(height: 50), kMessage(empty)]);
     } else {
       final sorted = [...items]..sort((a, b) => a.date.compareTo(b.date));
       final groups = <String, List<Forecast>>{};
@@ -128,19 +128,19 @@ class _PredictionsScreenState extends State<PredictionsScreen> {
         groups.putIfAbsent(f.league.isEmpty ? 'Autres compétitions' : f.league, () => []).add(f);
       }
       children.add(Padding(
-        padding: const EdgeInsets.fromLTRB(4, 2, 4, 10),
+        padding: EdgeInsets.fromLTRB(4, 2, 4, 10),
         child: Text(
           "${items.length} pronostic${items.length > 1 ? 's' : ''} · ${groups.length} compétition${groups.length > 1 ? 's' : ''}",
-          style: const TextStyle(color: K.muted, fontSize: 12.5, fontWeight: FontWeight.w600),
+          style: TextStyle(color: K.muted, fontSize: 12.5, fontWeight: FontWeight.w600),
         ),
       ));
-      children.add(const KndBanner());
+      children.add(KndBanner());
       var rows = 0;
       var block = 0;
       for (final e in groups.entries) {
         children
           ..add(_group('$tab|${e.key}', e.key, e.value))
-          ..add(const SizedBox(height: 10));
+          ..add(SizedBox(height: 10));
         rows += e.value.length;
         if (rows ~/ 10 > block) {
           block = rows ~/ 10;
@@ -153,8 +153,8 @@ class _PredictionsScreenState extends State<PredictionsScreen> {
       backgroundColor: K.card,
       onRefresh: _refresh,
       child: ListView(
-        physics: const AlwaysScrollableScrollPhysics(),
-        padding: const EdgeInsets.fromLTRB(12, 0, 12, 96),
+        physics: AlwaysScrollableScrollPhysics(),
+        padding: EdgeInsets.fromLTRB(12, 0, 12, 96),
         children: children,
       ),
     );

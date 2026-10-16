@@ -5,7 +5,7 @@ import '../../widgets/k_ui.dart';
 import '../pt_match_screen.dart';
 
 class FactsScreen extends StatefulWidget {
-  const FactsScreen({super.key});
+  FactsScreen({super.key});
 
   @override
   State<FactsScreen> createState() => _FactsScreenState();
@@ -32,18 +32,18 @@ class _FactsScreenState extends State<FactsScreen> {
 
   @override
   Widget build(BuildContext context) {
-    const labels = ['Hier', "Aujourd'hui", 'Demain'];
+    final labels = ['Hier', "Aujourd'hui", 'Demain'];
     return Scaffold(
       backgroundColor: K.bg,
       appBar: kAppBar('Faits du jour'),
       body: Column(children: [
         Padding(
-          padding: const EdgeInsets.fromLTRB(12, 4, 12, 10),
+          padding: EdgeInsets.fromLTRB(12, 4, 12, 10),
           child: Row(children: [
             for (var i = 0; i < 3; i++)
               Expanded(
                 child: Padding(
-                  padding: const EdgeInsets.symmetric(horizontal: 4),
+                  padding: EdgeInsets.symmetric(horizontal: 4),
                   child: kPill(labels[i], _off == i - 1, () => _go(i - 1)),
                 ),
               ),
@@ -60,7 +60,7 @@ class _FactsScreenState extends State<FactsScreen> {
               final list = snap.data!;
               if (list.isEmpty) return kMessage('Aucun fait marquant pour cette journée.');
               return ListView.builder(
-                padding: const EdgeInsets.fromLTRB(16, 0, 16, 32),
+                padding: EdgeInsets.fromLTRB(16, 0, 16, 32),
                 itemCount: list.length,
                 itemBuilder: (_, i) => _card(list[i]),
               );
@@ -72,7 +72,7 @@ class _FactsScreenState extends State<FactsScreen> {
   }
 
   Widget _status(PtFact f) {
-    const s = TextStyle(fontSize: 12.5, fontWeight: FontWeight.w800);
+    final s = TextStyle(fontSize: 12.5, fontWeight: FontWeight.w800);
     switch (f.state) {
       case 'live':
         return Text(f.status, style: s.copyWith(color: K.red));
@@ -93,36 +93,36 @@ class _FactsScreenState extends State<FactsScreen> {
 
   Widget _card(PtFact f) {
     return Padding(
-      padding: const EdgeInsets.only(bottom: 10),
+      padding: EdgeInsets.only(bottom: 10),
       child: Material(
         color: K.card,
         clipBehavior: Clip.antiAlias,
         shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(14), side: const BorderSide(color: K.border)),
+            borderRadius: BorderRadius.circular(14), side: BorderSide(color: K.border)),
         child: InkWell(
           onTap: () => Navigator.push(
               context, MaterialPageRoute(builder: (_) => PtMatchScreen(match: f.toMatch()))),
           child: Padding(
-            padding: const EdgeInsets.fromLTRB(14, 12, 14, 12),
+            padding: EdgeInsets.fromLTRB(14, 12, 14, 12),
             child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
               Row(children: [
                 PtImage(f.flag, w: 20, h: 14),
-                const SizedBox(width: 8),
+                SizedBox(width: 8),
                 Expanded(
                   child: Text('${frName(f.country)} · ${f.league}',
                       maxLines: 1,
                       overflow: TextOverflow.ellipsis,
-                      style: const TextStyle(color: K.muted, fontSize: 12, fontWeight: FontWeight.w600)),
+                      style: TextStyle(color: K.muted, fontSize: 12, fontWeight: FontWeight.w600)),
                 ),
                 _status(f),
               ]),
-              const SizedBox(height: 10),
+              SizedBox(height: 10),
               Row(children: [
                 Expanded(child: _team(f.home, f.homeWin, TextAlign.right)),
                 Container(
                   width: 58,
-                  margin: const EdgeInsets.symmetric(horizontal: 8),
-                  padding: const EdgeInsets.symmetric(vertical: 4),
+                  margin: EdgeInsets.symmetric(horizontal: 8),
+                  padding: EdgeInsets.symmetric(vertical: 4),
                   alignment: Alignment.center,
                   decoration: BoxDecoration(
                     color: f.live ? K.red.withAlpha(40) : K.bg,
@@ -135,18 +135,18 @@ class _FactsScreenState extends State<FactsScreen> {
                 Expanded(child: _team(f.away, f.awayWin, TextAlign.left)),
               ]),
               if (f.facts.isNotEmpty) ...[
-                const SizedBox(height: 10),
+                SizedBox(height: 10),
                 Container(height: 1, color: K.border),
                 ...f.facts.map((t) => Padding(
-                      padding: const EdgeInsets.only(top: 8),
+                      padding: EdgeInsets.only(top: 8),
                       child: Row(crossAxisAlignment: CrossAxisAlignment.start, children: [
-                        const Padding(
+                        Padding(
                           padding: EdgeInsets.only(top: 1),
                           child: Icon(Icons.lightbulb_outline_rounded, color: K.amber, size: 16),
                         ),
-                        const SizedBox(width: 8),
+                        SizedBox(width: 8),
                         Expanded(
-                          child: Text(t, style: const TextStyle(color: K.text, fontSize: 13, height: 1.35)),
+                          child: Text(t, style: TextStyle(color: K.text, fontSize: 13, height: 1.35)),
                         ),
                       ]),
                     )),

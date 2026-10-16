@@ -6,7 +6,7 @@ class MatchStatusWidget extends StatelessWidget {
   final int? minute;
   final String utcDate;
 
-  const MatchStatusWidget({
+  MatchStatusWidget({
     super.key,
     required this.status,
     required this.minute,
@@ -35,7 +35,7 @@ class MatchStatusWidget extends StatelessWidget {
 
     if (_isFinished) {
       return Container(
-        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+        padding: EdgeInsets.symmetric(horizontal: 8, vertical: 3),
         decoration: BoxDecoration(
           color: Colors.grey[300],
           borderRadius: BorderRadius.circular(6),

@@ -8,7 +8,7 @@ import "../../services/knd/deposit_history_service.dart";
 class PaymentScreen extends StatefulWidget {
   final Map<String, dynamic> deposit;
 
-  const PaymentScreen({
+  PaymentScreen({
     super.key,
     required this.deposit,
   });
@@ -18,10 +18,10 @@ class PaymentScreen extends StatefulWidget {
 }
 
 class _PaymentScreenState extends State<PaymentScreen> {
-  static const _primary = Color(0xFF1A56DB);
-  static const _success = Color(0xFF159947);
-  static const _orange = Color(0xFFE87900);
-  static const _background = Color(0xFFF5F7FA);
+  static final _primary = Color(0xFF1A56DB);
+  static final _success = Color(0xFF159947);
+  static final _orange = Color(0xFFE87900);
+  static final _background = Color(0xFFF5F7FA);
 
   final _api = KndApiService();
   final _historyService = DepositHistoryService();
@@ -99,7 +99,7 @@ class _PaymentScreenState extends State<PaymentScreen> {
     _updateCountdown();
 
     _countdownTimer = Timer.periodic(
-      const Duration(seconds: 1),
+      Duration(seconds: 1),
       (_) => _updateCountdown(),
     );
   }
@@ -134,7 +134,7 @@ class _PaymentScreenState extends State<PaymentScreen> {
 
   void _startPolling() {
     _pollTimer = Timer.periodic(
-      const Duration(seconds: 5),
+      Duration(seconds: 5),
       (_) => _refreshDeposit(),
     );
 
@@ -177,7 +177,7 @@ class _PaymentScreenState extends State<PaymentScreen> {
     if (!mounted) return;
 
     ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(
+      SnackBar(
         content: Text("Code copié dans le presse-papiers."),
         duration: Duration(seconds: 2),
       ),
@@ -202,7 +202,7 @@ class _PaymentScreenState extends State<PaymentScreen> {
 
       if (!launched && mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
+          SnackBar(
             content: Text("Impossible d'ouvrir l'application Téléphone."),
           ),
         );
@@ -211,7 +211,7 @@ class _PaymentScreenState extends State<PaymentScreen> {
       if (!mounted) return;
 
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
+        SnackBar(
           content: Text("Impossible d'ouvrir l'application Téléphone."),
         ),
       );
@@ -238,7 +238,7 @@ class _PaymentScreenState extends State<PaymentScreen> {
       if (!mounted) return;
 
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
+        SnackBar(
           content: Text("Impossible d'ouvrir WhatsApp."),
         ),
       );
@@ -252,22 +252,22 @@ class _PaymentScreenState extends State<PaymentScreen> {
       context: context,
       builder: (context) {
         return AlertDialog(
-          title: const Text(
+          title: Text(
             "Annuler le dépôt ?",
             style: TextStyle(fontWeight: FontWeight.bold),
           ),
-          content: const Text(
+          content: Text(
             "Si tu as déjà effectué le paiement Orange Money, "
             "n'annule pas cette opération.",
           ),
           actions: [
             TextButton(
               onPressed: () => Navigator.pop(context, false),
-              child: const Text("Continuer"),
+              child: Text("Continuer"),
             ),
             TextButton(
               onPressed: () => Navigator.pop(context, true),
-              child: const Text(
+              child: Text(
                 "Annuler le dépôt",
                 style: TextStyle(color: Colors.red),
               ),
@@ -343,11 +343,11 @@ class _PaymentScreenState extends State<PaymentScreen> {
       return Container(
         width: 64,
         height: 64,
-        decoration: const BoxDecoration(
+        decoration: BoxDecoration(
           color: Color(0xFFE8F7EE),
           shape: BoxShape.circle,
         ),
-        child: const Icon(
+        child: Icon(
           Icons.check_circle,
           color: _success,
           size: 38,
@@ -360,11 +360,11 @@ class _PaymentScreenState extends State<PaymentScreen> {
       return Container(
         width: 64,
         height: 64,
-        decoration: const BoxDecoration(
+        decoration: BoxDecoration(
           color: Color(0xFFE8F0FF),
           shape: BoxShape.circle,
         ),
-        child: const Icon(
+        child: Icon(
           Icons.sync,
           color: _primary,
           size: 34,
@@ -377,11 +377,11 @@ class _PaymentScreenState extends State<PaymentScreen> {
       return Container(
         width: 64,
         height: 64,
-        decoration: const BoxDecoration(
+        decoration: BoxDecoration(
           color: Color(0xFFFFEEEE),
           shape: BoxShape.circle,
         ),
-        child: const Icon(
+        child: Icon(
           Icons.info_outline,
           color: Colors.red,
           size: 34,
@@ -392,11 +392,11 @@ class _PaymentScreenState extends State<PaymentScreen> {
     return Container(
       width: 64,
       height: 64,
-      decoration: const BoxDecoration(
+      decoration: BoxDecoration(
         color: Color(0xFFE8F0FF),
         shape: BoxShape.circle,
       ),
-      child: const Icon(
+      child: Icon(
         Icons.account_balance_wallet_outlined,
         color: _primary,
         size: 34,
@@ -444,7 +444,7 @@ class _PaymentScreenState extends State<PaymentScreen> {
 
   Widget _summaryCard() {
     return Container(
-      padding: const EdgeInsets.all(18),
+      padding: EdgeInsets.all(18),
       decoration: BoxDecoration(
         color: Colors.white,
         borderRadius: BorderRadius.circular(16),
@@ -452,7 +452,7 @@ class _PaymentScreenState extends State<PaymentScreen> {
           BoxShadow(
             color: Colors.black.withValues(alpha: 0.05),
             blurRadius: 12,
-            offset: const Offset(0, 4),
+            offset: Offset(0, 4),
           ),
         ],
       ),
@@ -460,18 +460,18 @@ class _PaymentScreenState extends State<PaymentScreen> {
         children: [
           Row(
             children: [
-              const Text(
+              Text(
                 "Joueur",
                 style: TextStyle(
                   color: Colors.grey,
                   fontSize: 13,
                 ),
               ),
-              const SizedBox(width: 12),
+              SizedBox(width: 12),
               Expanded(
                 child: Text(
                   _playerName,
-                  style: const TextStyle(
+                  style: TextStyle(
                     fontWeight: FontWeight.bold,
                     fontSize: 14,
                   ),
@@ -481,20 +481,20 @@ class _PaymentScreenState extends State<PaymentScreen> {
             ],
           ),
           if (_playerId.isNotEmpty) ...[
-            const SizedBox(height: 8),
+            SizedBox(height: 8),
             Row(
               children: [
-                const Text(
+                Text(
                   "ID joueur",
                   style: TextStyle(
                     color: Colors.grey,
                     fontSize: 13,
                   ),
                 ),
-                const Spacer(),
+                Spacer(),
                 Text(
                   _playerId,
-                  style: const TextStyle(
+                  style: TextStyle(
                     fontWeight: FontWeight.w600,
                     fontSize: 14,
                   ),
@@ -502,17 +502,17 @@ class _PaymentScreenState extends State<PaymentScreen> {
               ],
             ),
           ],
-          const Divider(height: 24),
+          Divider(height: 24),
           Row(
             children: [
-              const Text(
+              Text(
                 "Dépôt",
                 style: TextStyle(color: Colors.grey),
               ),
-              const Spacer(),
+              Spacer(),
               Text(
                 "${_formatAmount(_amount)} FCFA",
-                style: const TextStyle(
+                style: TextStyle(
                   fontWeight: FontWeight.bold,
                   fontSize: 17,
                 ),
@@ -520,17 +520,17 @@ class _PaymentScreenState extends State<PaymentScreen> {
             ],
           ),
           if (_totalCredit != _amount) ...[
-            const SizedBox(height: 8),
+            SizedBox(height: 8),
             Row(
               children: [
-                const Text(
+                Text(
                   "Crédit prévu",
                   style: TextStyle(color: Colors.grey),
                 ),
-                const Spacer(),
+                Spacer(),
                 Text(
                   "${_formatAmount(_totalCredit)} FCFA",
-                  style: const TextStyle(
+                  style: TextStyle(
                     color: _success,
                     fontWeight: FontWeight.bold,
                     fontSize: 16,
@@ -539,17 +539,17 @@ class _PaymentScreenState extends State<PaymentScreen> {
               ],
             ),
           ],
-          const SizedBox(height: 8),
+          SizedBox(height: 8),
           Row(
             children: [
-              const Text(
+              Text(
                 "Référence",
                 style: TextStyle(color: Colors.grey),
               ),
-              const Spacer(),
+              Spacer(),
               Text(
                 _reference,
-                style: const TextStyle(
+                style: TextStyle(
                   fontWeight: FontWeight.w600,
                   fontSize: 13,
                 ),
@@ -563,9 +563,9 @@ class _PaymentScreenState extends State<PaymentScreen> {
 
   Widget _paymentCard() {
     return Container(
-      padding: const EdgeInsets.all(18),
+      padding: EdgeInsets.all(18),
       decoration: BoxDecoration(
-        color: const Color(0xFFFFF8F0),
+        color: Color(0xFFFFF8F0),
         borderRadius: BorderRadius.circular(18),
         border: Border.all(
           color: _orange,
@@ -575,7 +575,7 @@ class _PaymentScreenState extends State<PaymentScreen> {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          const Text(
+          Text(
             "1. Effectue ton paiement",
             style: TextStyle(
               fontSize: 17,
@@ -583,27 +583,27 @@ class _PaymentScreenState extends State<PaymentScreen> {
               color: Color(0xFF8A4300),
             ),
           ),
-          const SizedBox(height: 6),
-          const Text(
+          SizedBox(height: 6),
+          Text(
             "Appuie sur le code ou copie-le pour lancer ton paiement Orange Money.",
             style: TextStyle(
               color: Color(0xFF8A5A35),
               fontSize: 13,
             ),
           ),
-          const SizedBox(height: 14),
+          SizedBox(height: 14),
 
           InkWell(
             onTap: _openUssd,
             borderRadius: BorderRadius.circular(14),
             child: Container(
               width: double.infinity,
-              padding: const EdgeInsets.symmetric(
+              padding: EdgeInsets.symmetric(
                 horizontal: 12,
                 vertical: 16,
               ),
               decoration: BoxDecoration(
-                color: const Color(0xFFFFD9A8),
+                color: Color(0xFFFFD9A8),
                 borderRadius: BorderRadius.circular(14),
               ),
               child: Column(
@@ -611,14 +611,14 @@ class _PaymentScreenState extends State<PaymentScreen> {
                   Text(
                     _ussdCode,
                     textAlign: TextAlign.center,
-                    style: const TextStyle(
+                    style: TextStyle(
                       color: Color(0xFFB74B00),
                       fontWeight: FontWeight.bold,
                       fontSize: 19,
                     ),
                   ),
-                  const SizedBox(height: 5),
-                  const Text(
+                  SizedBox(height: 5),
+                  Text(
                     "Appuie ici pour lancer le paiement",
                     style: TextStyle(
                       color: Color(0xFF8A5A35),
@@ -631,42 +631,42 @@ class _PaymentScreenState extends State<PaymentScreen> {
             ),
           ),
 
-          const SizedBox(height: 12),
+          SizedBox(height: 12),
 
           Container(
-            padding: const EdgeInsets.all(12),
+            padding: EdgeInsets.all(12),
             decoration: BoxDecoration(
               color: Colors.white.withValues(alpha: 0.55),
               borderRadius: BorderRadius.circular(12),
             ),
             child: Row(
               children: [
-                const Icon(
+                Icon(
                   Icons.store_outlined,
                   color: _orange,
                 ),
-                const SizedBox(width: 10),
+                SizedBox(width: 10),
                 Expanded(
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      const Text(
+                      Text(
                         "Marchand",
                         style: TextStyle(
                           fontSize: 11,
                           color: Colors.grey,
                         ),
                       ),
-                      const SizedBox(height: 2),
+                      SizedBox(height: 2),
                       Text(
                         _merchantName,
-                        style: const TextStyle(
+                        style: TextStyle(
                           fontWeight: FontWeight.bold,
                           fontSize: 14,
                         ),
                       ),
-                      const SizedBox(height: 3),
-                      const Text(
+                      SizedBox(height: 3),
+                      Text(
                         "Vérifie ce nom avant de valider le paiement.",
                         style: TextStyle(
                           fontSize: 11,
@@ -680,18 +680,18 @@ class _PaymentScreenState extends State<PaymentScreen> {
             ),
           ),
 
-          const SizedBox(height: 12),
+          SizedBox(height: 12),
 
           SizedBox(
             width: double.infinity,
             child: OutlinedButton.icon(
               onPressed: _copyUssd,
-              icon: const Icon(Icons.copy_outlined, size: 18),
-              label: const Text("Copier le code"),
+              icon: Icon(Icons.copy_outlined, size: 18),
+              label: Text("Copier le code"),
               style: OutlinedButton.styleFrom(
                 foregroundColor: _orange,
-                side: const BorderSide(color: _orange),
-                padding: const EdgeInsets.symmetric(vertical: 13),
+                side: BorderSide(color: _orange),
+                padding: EdgeInsets.symmetric(vertical: 13),
                 shape: RoundedRectangleBorder(
                   borderRadius: BorderRadius.circular(12),
                 ),
@@ -711,7 +711,7 @@ class _PaymentScreenState extends State<PaymentScreen> {
     final finished = _status == "SUCCESS";
 
     return Container(
-      padding: const EdgeInsets.all(18),
+      padding: EdgeInsets.all(18),
       decoration: BoxDecoration(
         color: Colors.white,
         borderRadius: BorderRadius.circular(16),
@@ -719,14 +719,14 @@ class _PaymentScreenState extends State<PaymentScreen> {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          const Text(
+          Text(
             "Suivi du dépôt",
             style: TextStyle(
               fontSize: 16,
               fontWeight: FontWeight.bold,
             ),
           ),
-          const SizedBox(height: 18),
+          SizedBox(height: 18),
 
           _step(
             number: "1",
@@ -787,15 +787,15 @@ class _PaymentScreenState extends State<PaymentScreen> {
           height: 34,
           decoration: BoxDecoration(
             color: done
-                ? const Color(0xFFE8F7EE)
+                ? Color(0xFFE8F7EE)
                 : active
                     ? _primary
-                    : const Color(0xFFE8E8E8),
+                    : Color(0xFFE8E8E8),
             shape: BoxShape.circle,
           ),
           alignment: Alignment.center,
           child: done
-              ? const Icon(
+              ? Icon(
                   Icons.check,
                   color: _success,
                   size: 20,
@@ -808,7 +808,7 @@ class _PaymentScreenState extends State<PaymentScreen> {
                   ),
                 ),
         ),
-        const SizedBox(width: 12),
+        SizedBox(width: 12),
         Expanded(
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
@@ -821,7 +821,7 @@ class _PaymentScreenState extends State<PaymentScreen> {
                   fontSize: 14,
                 ),
               ),
-              const SizedBox(height: 3),
+              SizedBox(height: 3),
               Text(
                 subtitle,
                 style: TextStyle(
@@ -838,7 +838,7 @@ class _PaymentScreenState extends State<PaymentScreen> {
 
   Widget _verticalLine() {
     return Container(
-      margin: const EdgeInsets.only(left: 16),
+      margin: EdgeInsets.only(left: 16),
       width: 2,
       height: 22,
       color: Colors.grey[200],
@@ -846,12 +846,12 @@ class _PaymentScreenState extends State<PaymentScreen> {
   }
 
   Widget _waitingCard() {
-    if (!_isWaiting) return const SizedBox.shrink();
+    if (!_isWaiting) return SizedBox.shrink();
 
     return Container(
-      padding: const EdgeInsets.all(18),
+      padding: EdgeInsets.all(18),
       decoration: BoxDecoration(
-        color: const Color(0xFFEFF5FF),
+        color: Color(0xFFEFF5FF),
         borderRadius: BorderRadius.circular(16),
       ),
       child: Column(
@@ -874,7 +874,7 @@ class _PaymentScreenState extends State<PaymentScreen> {
                   _remaining.inSeconds > 0
                       ? _formatCountdown()
                       : "…",
-                  style: const TextStyle(
+                  style: TextStyle(
                     fontSize: 17,
                     fontWeight: FontWeight.bold,
                   ),
@@ -882,19 +882,19 @@ class _PaymentScreenState extends State<PaymentScreen> {
               ],
             ),
           ),
-          const SizedBox(height: 14),
+          SizedBox(height: 14),
           Text(
             _remaining.inSeconds > 0
                 ? "En attente de ton paiement Orange Money…"
                 : "Vérification par le serveur…",
             textAlign: TextAlign.center,
-            style: const TextStyle(
+            style: TextStyle(
               fontWeight: FontWeight.w600,
               color: Color(0xFF315A9E),
             ),
           ),
-          const SizedBox(height: 8),
-          const Text(
+          SizedBox(height: 8),
+          Text(
             "Si tu as déjà payé, ne repaie pas. "
             "KOUNADIA vérifie automatiquement ton paiement.",
             textAlign: TextAlign.center,
@@ -909,23 +909,23 @@ class _PaymentScreenState extends State<PaymentScreen> {
   }
 
   Widget _successCard() {
-    if (_status != "SUCCESS") return const SizedBox.shrink();
+    if (_status != "SUCCESS") return SizedBox.shrink();
 
     return Container(
-      padding: const EdgeInsets.all(22),
+      padding: EdgeInsets.all(22),
       decoration: BoxDecoration(
-        color: const Color(0xFFEAF8EF),
+        color: Color(0xFFEAF8EF),
         borderRadius: BorderRadius.circular(18),
       ),
       child: Column(
         children: [
-          const Icon(
+          Icon(
             Icons.check_circle,
             color: _success,
             size: 58,
           ),
-          const SizedBox(height: 12),
-          const Text(
+          SizedBox(height: 12),
+          Text(
             "Dépôt confirmé !",
             style: TextStyle(
               color: _success,
@@ -933,16 +933,16 @@ class _PaymentScreenState extends State<PaymentScreen> {
               fontSize: 16,
             ),
           ),
-          const SizedBox(height: 6),
+          SizedBox(height: 6),
           Text(
             "${_formatAmount(_totalCredit)} FCFA",
-            style: const TextStyle(
+            style: TextStyle(
               fontWeight: FontWeight.bold,
               fontSize: 16,
             ),
           ),
-          const SizedBox(height: 4),
-          const Text(
+          SizedBox(height: 4),
+          Text(
             "Le dépôt a été traité avec succès.",
             style: TextStyle(color: Colors.grey),
           ),
@@ -956,7 +956,7 @@ class _PaymentScreenState extends State<PaymentScreen> {
     return Scaffold(
       backgroundColor: _background,
       appBar: AppBar(
-        title: const Text(
+        title: Text(
           "Paiement",
           style: TextStyle(fontWeight: FontWeight.bold),
         ),
@@ -966,26 +966,26 @@ class _PaymentScreenState extends State<PaymentScreen> {
       ),
       body: SafeArea(
         child: SingleChildScrollView(
-          padding: const EdgeInsets.fromLTRB(16, 16, 16, 28),
+          padding: EdgeInsets.fromLTRB(16, 16, 16, 28),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
               Row(
                 children: [
                   _statusIcon(),
-                  const SizedBox(width: 14),
+                  SizedBox(width: 14),
                   Expanded(
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
                         Text(
                           _statusTitle,
-                          style: const TextStyle(
+                          style: TextStyle(
                             fontSize: 16,
                             fontWeight: FontWeight.bold,
                           ),
                         ),
-                        const SizedBox(height: 5),
+                        SizedBox(height: 5),
                         Text(
                           _statusSubtitle,
                           style: TextStyle(
@@ -999,31 +999,31 @@ class _PaymentScreenState extends State<PaymentScreen> {
                 ],
               ),
 
-              const SizedBox(height: 18),
+              SizedBox(height: 18),
 
               _summaryCard(),
 
-              const SizedBox(height: 16),
+              SizedBox(height: 16),
 
               if (_isWaiting) ...[
                 _paymentCard(),
-                const SizedBox(height: 16),
+                SizedBox(height: 16),
                 _waitingCard(),
-                const SizedBox(height: 16),
+                SizedBox(height: 16),
               ],
 
               _progressCard(),
 
-              const SizedBox(height: 16),
+              SizedBox(height: 16),
 
               _successCard(),
 
               if (_error != null) ...[
-                const SizedBox(height: 12),
+                SizedBox(height: 12),
                 Text(
                   _error!,
                   textAlign: TextAlign.center,
-                  style: const TextStyle(
+                  style: TextStyle(
                     color: Colors.red,
                     fontSize: 13,
                   ),
@@ -1031,14 +1031,14 @@ class _PaymentScreenState extends State<PaymentScreen> {
               ],
 
               if (_isWaiting && _supportWhatsapp.isNotEmpty) ...[
-                const SizedBox(height: 16),
+                SizedBox(height: 16),
                 OutlinedButton.icon(
                   onPressed: _openWhatsapp,
-                  icon: const Icon(Icons.chat_outlined),
-                  label: const Text("Besoin d'aide ? WhatsApp"),
+                  icon: Icon(Icons.chat_outlined),
+                  label: Text("Besoin d'aide ? WhatsApp"),
                   style: OutlinedButton.styleFrom(
                     foregroundColor: _primary,
-                    padding: const EdgeInsets.symmetric(vertical: 13),
+                    padding: EdgeInsets.symmetric(vertical: 13),
                     shape: RoundedRectangleBorder(
                       borderRadius: BorderRadius.circular(12),
                     ),
@@ -1047,25 +1047,25 @@ class _PaymentScreenState extends State<PaymentScreen> {
               ],
 
               if (_canCancel && _status != "PAYMENT_EXPIRED") ...[
-                const SizedBox(height: 8),
+                SizedBox(height: 8),
                 TextButton(
                   onPressed: _cancelling ? null : _cancelDeposit,
                   child: _cancelling
-                      ? const SizedBox(
+                      ? SizedBox(
                           width: 18,
                           height: 18,
                           child: CircularProgressIndicator(
                             strokeWidth: 2,
                           ),
                         )
-                      : const Text(
+                      : Text(
                           "Annuler ce dépôt",
                           style: TextStyle(color: Colors.red),
                         ),
                 ),
               ],
 
-              const SizedBox(height: 8),
+              SizedBox(height: 8),
 
               if (!_isWaiting)
                 SizedBox(
@@ -1085,7 +1085,7 @@ class _PaymentScreenState extends State<PaymentScreen> {
                       _status == "SUCCESS"
                           ? "Retour à KOUNADIA"
                           : "Retour à KOUNADIA",
-                      style: const TextStyle(
+                      style: TextStyle(
                         fontWeight: FontWeight.bold,
                         fontSize: 15,
                       ),

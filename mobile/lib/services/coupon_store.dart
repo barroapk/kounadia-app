@@ -3,7 +3,7 @@ import 'package:shared_preferences/shared_preferences.dart';
 import '../models/coupon.dart';
 
 class CouponStore {
-  static const _k = 'kounadia_coupons';
+  static final _k = 'kounadia_coupons';
 
   static Future<List<Coupon>> all() async {
     try {
@@ -19,16 +19,20 @@ class CouponStore {
   static Future<void> saveAll(List<Coupon> l) async {
     try {
       final p = await SharedPreferences.getInstance();
-      await p.setString(_k, jsonEncode(l.take(30).map((c) => c.toJson()).toList()));
+      await p.setString(_k, jsonEncode(l.take(max).map((c) => c.toJson()).toList()));
     } catch (_) {}
   }
 
-  static Future<bool> add(Coupon c) async {
+  static final max = 5;
+
+  /// 'ok', 'dup' (déjà enregistré) ou 'full' (5 coupons max).
+  static Future<String> add(Coupon c) async {
     final l = await all();
-    if (l.any((x) => x.signature == c.signature)) return false;
+    if (l.any((x) => x.signature == c.signature)) return 'dup';
+    if (l.length >= max) return 'full';
     l.insert(0, c);
     await saveAll(l);
-    return true;
+    return 'ok';
   }
 
   static Future<void> remove(Coupon c) async {

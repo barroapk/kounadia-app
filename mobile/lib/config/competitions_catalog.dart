@@ -5,7 +5,7 @@ class CompetitionInfo {
   final String? code; // Code football-data.org
   final int? leagueId; // ID API-Football
 
-  const CompetitionInfo({
+  CompetitionInfo({
     required this.name,
     required this.continent,
     required this.country,
@@ -21,7 +21,7 @@ class CompetitionInfo {
 // l'abonnement renouvele.
 const bool API_FOOTBALL_PRO_ACTIVE = false;
 
-const List<CompetitionInfo> COMPETITIONS_CATALOG = [
+List<CompetitionInfo> COMPETITIONS_CATALOG = [
   // Europe - football-data.org (avec code, classement disponible)
   CompetitionInfo(name: "Premier League", continent: "Europe", country: "Angleterre", code: "PL"),
   CompetitionInfo(name: "Championship", continent: "Europe", country: "Angleterre", code: "ELC"),
@@ -94,7 +94,7 @@ final List<CompetitionInfo> VISIBLE_COMPETITIONS_CATALOG = API_FOOTBALL_PRO_ACTI
     : COMPETITIONS_CATALOG.where((c) => c.leagueId == null).toList();
 
 // Rang d'affichage : plus petit = affiché en premier (D1 avant D2 avant coupes).
-const Map<String, int> COMPETITION_DISPLAY_RANK = {
+Map<String, int> COMPETITION_DISPLAY_RANK = {
   "Premier League": 1,
   "Primera Division": 1,
   "Bundesliga": 1,

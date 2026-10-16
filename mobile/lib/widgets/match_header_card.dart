@@ -21,7 +21,7 @@ class MatchHeaderCard extends StatefulWidget {
   final bool isFinished;
   final DateTime? kickoff;
 
-  const MatchHeaderCard({
+  MatchHeaderCard({
     super.key,
     required this.homeTeam,
     required this.awayTeam,
@@ -52,7 +52,7 @@ class _MatchHeaderCardState extends State<MatchHeaderCard> {
   void initState() {
     super.initState();
     if ((widget.isLive || (widget.kickoff != null && !widget.isFinished))) {
-      _timer = Timer.periodic(const Duration(seconds: 1), (_) {
+      _timer = Timer.periodic(Duration(seconds: 1), (_) {
         if (mounted) setState(() {});
       });
     }
@@ -89,7 +89,7 @@ class _MatchHeaderCardState extends State<MatchHeaderCard> {
       return "${elapsed < 1 ? 1 : elapsed}'";
     }
 
-    const halftimeBreak = 15;
+    final halftimeBreak = 15;
     final secondHalfMinute = elapsed - halftimeBreak;
 
     if (secondHalfMinute <= 90) {
@@ -105,13 +105,13 @@ class _MatchHeaderCardState extends State<MatchHeaderCard> {
     final minute = _estimatedMinute();
 
     return Container(
-      margin: const EdgeInsets.all(12),
-      padding: const EdgeInsets.fromLTRB(16, 16, 16, 14),
+      margin: EdgeInsets.all(12),
+      padding: EdgeInsets.fromLTRB(16, 16, 16, 14),
       decoration: BoxDecoration(
         color: Colors.white,
         borderRadius: BorderRadius.circular(16),
         boxShadow: [
-          BoxShadow(color: Colors.black.withOpacity(0.05), blurRadius: 8, offset: const Offset(0, 2)),
+          BoxShadow(color: Colors.black.withOpacity(0.05), blurRadius: 8, offset: Offset(0, 2)),
         ],
       ),
       child: Column(
@@ -123,13 +123,13 @@ class _MatchHeaderCardState extends State<MatchHeaderCard> {
                 child: Column(
                   children: [
                     CachedLogo(url: widget.homeTeamCrest, size: 64, fallbackIcon: Icons.shield_outlined),
-                    const SizedBox(height: 6),
+                    SizedBox(height: 6),
                     Text(
                       widget.homeTeam,
                       textAlign: TextAlign.center,
                       maxLines: 2,
                       overflow: TextOverflow.ellipsis,
-                      style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 12.5),
+                      style: TextStyle(fontWeight: FontWeight.bold, fontSize: 12.5),
                     ),
                   ],
                 ),
@@ -147,29 +147,29 @@ class _MatchHeaderCardState extends State<MatchHeaderCard> {
                           )}"
                           : "VS",
                       textAlign: TextAlign.center,
-                      style: const TextStyle(
+                      style: TextStyle(
                         fontWeight: FontWeight.bold,
                         fontSize: 34,
                         color: Color(0xFF16A34A),
                       ),
                     ),
-                    const SizedBox(height: 4),
+                    SizedBox(height: 4),
                     if (minute != null)
                       Container(
-                        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+                        padding: EdgeInsets.symmetric(horizontal: 8, vertical: 2),
                         decoration: BoxDecoration(
-                          color: const Color(0xFFDC2626),
+                          color: Color(0xFFDC2626),
                           borderRadius: BorderRadius.circular(10),
                         ),
                         child: Text(
                           minute,
-                          style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 12),
+                          style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 12),
                         ),
                       )
                     else if (widget.isFinished)
                       Text("Terminé", style: TextStyle(color: Colors.grey[600], fontSize: 12, fontWeight: FontWeight.w600))
                     else if (widget.kickoff != null)
-                      Text(_countdownText(), style: const TextStyle(color: Color(0xFF16A34A), fontSize: 11.5, fontWeight: FontWeight.w600)),
+                      Text(_countdownText(), style: TextStyle(color: Color(0xFF16A34A), fontSize: 11.5, fontWeight: FontWeight.w600)),
                   ],
                 ),
               ),
@@ -177,13 +177,13 @@ class _MatchHeaderCardState extends State<MatchHeaderCard> {
                 child: Column(
                   children: [
                     CachedLogo(url: widget.awayTeamCrest, size: 64, fallbackIcon: Icons.shield_outlined),
-                    const SizedBox(height: 6),
+                    SizedBox(height: 6),
                     Text(
                       widget.awayTeam,
                       textAlign: TextAlign.center,
                       maxLines: 2,
                       overflow: TextOverflow.ellipsis,
-                      style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 12.5),
+                      style: TextStyle(fontWeight: FontWeight.bold, fontSize: 12.5),
                     ),
                   ],
                 ),
@@ -191,11 +191,11 @@ class _MatchHeaderCardState extends State<MatchHeaderCard> {
             ],
           ),
           if (widget.competition != null) ...[
-            const SizedBox(height: 12),
+            SizedBox(height: 12),
             Text(widget.competition!, style: TextStyle(color: Colors.grey[600], fontSize: 12)),
           ],
           if (widget.venue != null || widget.referee != null) ...[
-            const SizedBox(height: 8),
+            SizedBox(height: 8),
             Wrap(
               alignment: WrapAlignment.center,
               spacing: 14,
@@ -203,13 +203,13 @@ class _MatchHeaderCardState extends State<MatchHeaderCard> {
                 if (widget.venue != null)
                   Row(mainAxisSize: MainAxisSize.min, children: [
                     Icon(Icons.stadium_outlined, size: 13, color: Colors.grey[500]),
-                    const SizedBox(width: 4),
+                    SizedBox(width: 4),
                     Text(widget.venue!, style: TextStyle(color: Colors.grey[600], fontSize: 11.5)),
                   ]),
                 if (widget.referee != null)
                   Row(mainAxisSize: MainAxisSize.min, children: [
                     Icon(Icons.sports_outlined, size: 13, color: Colors.grey[500]),
-                    const SizedBox(width: 4),
+                    SizedBox(width: 4),
                     Text(widget.referee!, style: TextStyle(color: Colors.grey[600], fontSize: 11.5)),
                   ]),
               ],

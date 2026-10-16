@@ -66,7 +66,7 @@ class MatchdayGroup {
   // Libellé court pour les puces compactes du sélecteur de journée.
   // Les journées classiques ("Apertura - 5") restent inchangées : seules
   // les phases à élimination directe connues sont raccourcies.
-  static const Map<String, String> _shortLabels = {
+  static Map<String, String> _shortLabels = {
     "round of 32": "1/16",
     "round of 16": "1/8",
     "quarter-finals": "1/4",

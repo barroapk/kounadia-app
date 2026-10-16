@@ -6,7 +6,7 @@ import "../widgets/country_card.dart";
 import "competition_detail_screen.dart";
 
 class CompetitionsScreen extends StatefulWidget {
-  const CompetitionsScreen({super.key});
+  CompetitionsScreen({super.key});
 
   @override
   State<CompetitionsScreen> createState() => _CompetitionsScreenState();
@@ -55,36 +55,36 @@ class _CompetitionsScreenState extends State<CompetitionsScreen> {
     }
 
     return Container(
-      color: const Color(0xFFF2F2F2),
+      color: Color(0xFFF2F2F2),
       child: ListView(
-        padding: const EdgeInsets.only(bottom: 16),
+        padding: EdgeInsets.only(bottom: 16),
         children: [
           if (lastCompetitionInfo != null)
             Padding(
-              padding: const EdgeInsets.fromLTRB(16, 16, 16, 4),
+              padding: EdgeInsets.fromLTRB(16, 16, 16, 4),
               child: InkWell(
                 onTap: () => _openCompetition(lastCompetitionInfo!),
                 borderRadius: BorderRadius.circular(12),
                 child: Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+                  padding: EdgeInsets.symmetric(horizontal: 14, vertical: 12),
                   decoration: BoxDecoration(
                     color: Colors.white,
                     borderRadius: BorderRadius.circular(12),
                     boxShadow: [
-                      BoxShadow(color: Colors.black.withOpacity(0.04), blurRadius: 6, offset: const Offset(0, 2)),
+                      BoxShadow(color: Colors.black.withOpacity(0.04), blurRadius: 6, offset: Offset(0, 2)),
                     ],
                   ),
                   child: Row(
                     children: [
-                      const Icon(Icons.history, size: 18, color: Color(0xFF16A34A)),
-                      const SizedBox(width: 8),
+                      Icon(Icons.history, size: 18, color: Color(0xFF16A34A)),
+                      SizedBox(width: 8),
                       Expanded(
                         child: Text(
                           "Dernière consultation : ${lastCompetitionInfo.name}",
-                          style: const TextStyle(fontSize: 13),
+                          style: TextStyle(fontSize: 13),
                         ),
                       ),
-                      const Icon(Icons.chevron_right, size: 18),
+                      Icon(Icons.chevron_right, size: 18),
                     ],
                   ),
                 ),
@@ -102,8 +102,8 @@ class _CompetitionsScreenState extends State<CompetitionsScreen> {
               return sorted
                   .map((c) => ListTile(
                         dense: true,
-                        title: Text(c.name, style: const TextStyle(fontSize: 13)),
-                        trailing: const Icon(Icons.chevron_right, size: 18),
+                        title: Text(c.name, style: TextStyle(fontSize: 13)),
+                        trailing: Icon(Icons.chevron_right, size: 18),
                         onTap: () => _openCompetition(c),
                       ))
                   .toList();
@@ -113,17 +113,17 @@ class _CompetitionsScreenState extends State<CompetitionsScreen> {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Padding(
-                  padding: const EdgeInsets.fromLTRB(16, 12, 16, 4),
-                  child: Text(continent, style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 15)),
+                  padding: EdgeInsets.fromLTRB(16, 12, 16, 4),
+                  child: Text(continent, style: TextStyle(fontWeight: FontWeight.bold, fontSize: 15)),
                 ),
                 if (international != null)
                   Container(
-                    margin: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                    margin: EdgeInsets.symmetric(horizontal: 12, vertical: 6),
                     decoration: BoxDecoration(
                       color: Colors.white,
                       borderRadius: BorderRadius.circular(16),
                       boxShadow: [
-                        BoxShadow(color: Colors.black.withOpacity(0.04), blurRadius: 6, offset: const Offset(0, 2)),
+                        BoxShadow(color: Colors.black.withOpacity(0.04), blurRadius: 6, offset: Offset(0, 2)),
                       ],
                     ),
                     child: Column(children: competitionTiles(international)),

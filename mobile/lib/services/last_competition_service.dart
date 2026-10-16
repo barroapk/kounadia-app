@@ -1,7 +1,7 @@
 import "package:shared_preferences/shared_preferences.dart";
 
 class LastCompetitionService {
-  static const _key = "last_competition_viewed";
+  static final _key = "last_competition_viewed";
 
   Future<String?> getLast() async {
     final prefs = await SharedPreferences.getInstance();

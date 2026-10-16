@@ -8,7 +8,7 @@ class TipResult {
   final bool won;
   final String source;
 
-  const TipResult({
+  TipResult({
     required this.date,
     required this.league,
     required this.home,

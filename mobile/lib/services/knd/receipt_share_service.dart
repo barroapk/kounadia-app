@@ -17,7 +17,7 @@ class ReceiptShareService {
 
     if (boundary == null || !boundary.hasSize) return;
 
-    await Future<void>.delayed(const Duration(milliseconds: 100));
+    await Future<void>.delayed(Duration(milliseconds: 100));
 
     final image = await boundary.toImage(pixelRatio: 2.0);
     final byteData = await image.toByteData(format: ui.ImageByteFormat.png);

@@ -7,7 +7,7 @@ class TipResultsService {
   Future<List<TipResult>> _get(String path, String source) async {
     final r = await http
         .get(Uri.parse('${ApiConfig.baseUrl}$path'))
-        .timeout(const Duration(seconds: 90));
+        .timeout(Duration(seconds: 90));
     if (r.statusCode != 200) throw Exception('HTTP ${r.statusCode}');
     final data = jsonDecode(r.body) as Map<String, dynamic>;
     return ((data['results'] as List?) ?? [])

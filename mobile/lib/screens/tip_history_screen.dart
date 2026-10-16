@@ -5,7 +5,7 @@ import '../widgets/forecast_card.dart';
 import '../widgets/knd_banner.dart';
 
 class TipHistoryScreen extends StatefulWidget {
-  const TipHistoryScreen({super.key});
+  TipHistoryScreen({super.key});
 
   @override
   State<TipHistoryScreen> createState() => _TipHistoryScreenState();
@@ -37,7 +37,7 @@ class _TipHistoryScreenState extends State<TipHistoryScreen> {
         future: _f,
         builder: (context, snap) {
           if (snap.connectionState != ConnectionState.done) {
-            return const Center(child: CircularProgressIndicator(color: K.indigo));
+            return Center(child: CircularProgressIndicator(color: K.indigo));
           }
           if (snap.hasError) return kMessage(snap.error.toString(), onRetry: _refresh);
           final data = snap.data!;
@@ -56,17 +56,17 @@ class _TipHistoryScreenState extends State<TipHistoryScreen> {
           final children = <Widget>[
             if (data.offline) kOfflineBanner(),
             _daySwitch(day, yesterday.length, today.length),
-            const SizedBox(height: 10),
+            SizedBox(height: 10),
             _srcChips(ofDay),
-            const SizedBox(height: 14),
+            SizedBox(height: 14),
             _hero(ofDay, day),
-            const SizedBox(height: 14),
-            const KndBanner(),
+            SizedBox(height: 14),
+            KndBanner(),
           ];
 
           if (items.isEmpty) {
             children.addAll([
-              const SizedBox(height: 30),
+              SizedBox(height: 30),
               kMessage(ofDay.isEmpty
                   ? (day == 0
                       ? "Les pronostics gagnants du jour s'afficheront ici dès la fin des matchs."
@@ -83,7 +83,7 @@ class _TipHistoryScreenState extends State<TipHistoryScreen> {
             for (final e in groups.entries) {
               children
                 ..add(_group('$day|$_src|${e.key}', e.key, e.value))
-                ..add(const SizedBox(height: 10));
+                ..add(SizedBox(height: 10));
               rows += e.value.length;
               if (rows ~/ 10 > block) {
                 block = rows ~/ 10;
@@ -97,8 +97,8 @@ class _TipHistoryScreenState extends State<TipHistoryScreen> {
             backgroundColor: K.card,
             onRefresh: _refresh,
             child: ListView(
-              physics: const AlwaysScrollableScrollPhysics(),
-              padding: const EdgeInsets.fromLTRB(12, 12, 12, 96),
+              physics: AlwaysScrollableScrollPhysics(),
+              padding: EdgeInsets.fromLTRB(12, 12, 12, 96),
               children: children,
             ),
           );
@@ -114,7 +114,7 @@ class _TipHistoryScreenState extends State<TipHistoryScreen> {
         child: GestureDetector(
           onTap: () => setState(() => _day = value),
           child: AnimatedContainer(
-            duration: const Duration(milliseconds: 160),
+            duration: Duration(milliseconds: 160),
             height: 40,
             alignment: Alignment.center,
             decoration: BoxDecoration(
@@ -130,7 +130,7 @@ class _TipHistoryScreenState extends State<TipHistoryScreen> {
     }
 
     return Container(
-      padding: const EdgeInsets.all(3),
+      padding: EdgeInsets.all(3),
       decoration: BoxDecoration(
         color: K.card,
         borderRadius: BorderRadius.circular(13),
@@ -153,11 +153,11 @@ class _TipHistoryScreenState extends State<TipHistoryScreen> {
       for (final (value, label, count) in opts)
         Expanded(
           child: Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 3),
+            padding: EdgeInsets.symmetric(horizontal: 3),
             child: GestureDetector(
               onTap: () => setState(() => _src = value),
               child: AnimatedContainer(
-                duration: const Duration(milliseconds: 150),
+                duration: Duration(milliseconds: 150),
                 height: 34,
                 alignment: Alignment.center,
                 decoration: BoxDecoration(
@@ -168,7 +168,7 @@ class _TipHistoryScreenState extends State<TipHistoryScreen> {
                 child: FittedBox(
                   fit: BoxFit.scaleDown,
                   child: Padding(
-                    padding: const EdgeInsets.symmetric(horizontal: 6),
+                    padding: EdgeInsets.symmetric(horizontal: 6),
                     child: Text('$label · $count',
                         style: TextStyle(
                             color: _src == value ? K.text : K.muted,
@@ -190,16 +190,16 @@ class _TipHistoryScreenState extends State<TipHistoryScreen> {
     final ex = list.where((f) => f.source == 'expert').length;
     final when = day == 0 ? 'du jour' : "d'hier";
     Widget mini(String label, int v) => Container(
-          margin: const EdgeInsets.only(right: 8),
-          padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
-          decoration: BoxDecoration(color: const Color(0x33FFFFFF), borderRadius: BorderRadius.circular(20)),
+          margin: EdgeInsets.only(right: 8),
+          padding: EdgeInsets.symmetric(horizontal: 10, vertical: 5),
+          decoration: BoxDecoration(color: Color(0x33FFFFFF), borderRadius: BorderRadius.circular(20)),
           child: Text('$label : $v',
-              style: const TextStyle(color: Colors.white, fontSize: 12, fontWeight: FontWeight.w700)),
+              style: TextStyle(color: Colors.white, fontSize: 12, fontWeight: FontWeight.w700)),
         );
     return Container(
-      padding: const EdgeInsets.all(16),
+      padding: EdgeInsets.all(16),
       decoration: BoxDecoration(
-        gradient: const LinearGradient(
+        gradient: LinearGradient(
           colors: [Color(0xFF16A34A), Color(0xFF0D9488)],
           begin: Alignment.topLeft,
           end: Alignment.bottomRight,
@@ -210,23 +210,23 @@ class _TipHistoryScreenState extends State<TipHistoryScreen> {
         Container(
           width: 50,
           height: 50,
-          decoration: const BoxDecoration(color: Color(0x33FFFFFF), shape: BoxShape.circle),
-          child: const Icon(Icons.emoji_events_rounded, color: Colors.white, size: 28),
+          decoration: BoxDecoration(color: Color(0x33FFFFFF), shape: BoxShape.circle),
+          child: Icon(Icons.emoji_events_rounded, color: Colors.white, size: 28),
         ),
-        const SizedBox(width: 14),
+        SizedBox(width: 14),
         Expanded(
           child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
             Text(n == 0 ? 'Résultats à venir' : '$n pronostic$s validé$s',
-                style: const TextStyle(color: Colors.white, fontSize: 20, fontWeight: FontWeight.w900)),
-            const SizedBox(height: 4),
+                style: TextStyle(color: Colors.white, fontSize: 20, fontWeight: FontWeight.w900)),
+            SizedBox(height: 4),
             Text(
               n == 0
                   ? 'Nos pronostics gagnants $when apparaîtront ici dès la fin des matchs.'
                   : 'Sur nos pronostics $when Kounadia IA et Expert, au total $n pronostic$s validé$s.',
-              style: const TextStyle(color: Color(0xEEFFFFFF), fontSize: 13, height: 1.35),
+              style: TextStyle(color: Color(0xEEFFFFFF), fontSize: 13, height: 1.35),
             ),
             if (n > 0) ...[
-              const SizedBox(height: 10),
+              SizedBox(height: 10),
               Wrap(runSpacing: 6, children: [mini('Kounadia IA', ia), mini('Expert', ex)]),
             ],
           ]),
@@ -256,21 +256,21 @@ class _TipHistoryScreenState extends State<TipHistoryScreen> {
           onTap: () => setState(() => collapsed ? _collapsed.remove(key) : _collapsed.add(key)),
           child: Container(
             color: K.groupHead,
-            padding: const EdgeInsets.fromLTRB(12, 10, 8, 10),
+            padding: EdgeInsets.fromLTRB(12, 10, 8, 10),
             child: Row(children: [
-              const Icon(Icons.emoji_events_outlined, color: K.amber, size: 15),
-              const SizedBox(width: 8),
+              Icon(Icons.emoji_events_outlined, color: K.amber, size: 15),
+              SizedBox(width: 8),
               Expanded(
                 child: Text(title,
                     maxLines: 1,
                     overflow: TextOverflow.ellipsis,
-                    style: const TextStyle(color: K.text, fontSize: 13, fontWeight: FontWeight.w700)),
+                    style: TextStyle(color: K.text, fontSize: 13, fontWeight: FontWeight.w700)),
               ),
               Container(
-                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
-                decoration: BoxDecoration(color: const Color(0x3322C55E), borderRadius: BorderRadius.circular(10)),
+                padding: EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+                decoration: BoxDecoration(color: Color(0x3322C55E), borderRadius: BorderRadius.circular(10)),
                 child: Text('${list.length} ✓',
-                    style: const TextStyle(color: K.green, fontSize: 12, fontWeight: FontWeight.w800)),
+                    style: TextStyle(color: K.green, fontSize: 12, fontWeight: FontWeight.w800)),
               ),
               Icon(collapsed ? Icons.expand_more_rounded : Icons.expand_less_rounded, color: K.muted, size: 22),
             ]),

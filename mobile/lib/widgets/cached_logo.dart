@@ -7,7 +7,7 @@ class CachedLogo extends StatelessWidget {
   final IconData fallbackIcon;
   final Color? fallbackColor;
 
-  const CachedLogo({
+  CachedLogo({
     super.key,
     required this.url,
     this.size = 20,

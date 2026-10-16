@@ -5,7 +5,7 @@ import "../models/search_result.dart";
 class SearchScreen extends StatefulWidget {
   final List<String> availableTeams;
 
-  const SearchScreen({super.key, this.availableTeams = const []});
+  SearchScreen({super.key, this.availableTeams = const []});
 
   @override
   State<SearchScreen> createState() => _SearchScreenState();
@@ -37,8 +37,8 @@ class _SearchScreenState extends State<SearchScreen> {
 
   /// Retire les accents pour une comparaison insensible ("Égypte" == "egypte").
   String _normalize(String text) {
-    const withAccents = 'àáâãäåèéêëìíîïòóôõöùúûüçñÀÁÂÃÄÅÈÉÊËÌÍÎÏÒÓÔÕÖÙÚÛÜÇÑ';
-    const withoutAccents = 'aaaaaaeeeeiiiiooooouuuucnAAAAAAEEEEIIIIOOOOOUUUUCN';
+    final withAccents = 'àáâãäåèéêëìíîïòóôõöùúûüçñÀÁÂÃÄÅÈÉÊËÌÍÎÏÒÓÔÕÖÙÚÛÜÇÑ';
+    final withoutAccents = 'aaaaaaeeeeiiiiooooouuuucnAAAAAAEEEEIIIIOOOOOUUUUCN';
     var result = text.toLowerCase();
     for (var i = 0; i < withAccents.length; i++) {
       result = result.replaceAll(withAccents[i], withoutAccents[i].toLowerCase());
@@ -73,7 +73,7 @@ class _SearchScreenState extends State<SearchScreen> {
         title: TextField(
           controller: _controller,
           autofocus: true,
-          decoration: const InputDecoration(
+          decoration: InputDecoration(
             hintText: "Rechercher une équipe, une compétition, un pays...",
             border: InputBorder.none,
           ),
@@ -82,8 +82,8 @@ class _SearchScreenState extends State<SearchScreen> {
       ),
       body: _query.isEmpty
           ? widget.availableTeams.isEmpty
-              ? const Center(child: Text("Commencez à taper pour voir des suggestions"))
-              : const Center(
+              ? Center(child: Text("Commencez à taper pour voir des suggestions"))
+              : Center(
                   child: Padding(
                     padding: EdgeInsets.all(24),
                     child: Text(
@@ -93,15 +93,15 @@ class _SearchScreenState extends State<SearchScreen> {
                   ),
                 )
           : !hasResults
-              ? const Center(child: Text("Aucun résultat"))
+              ? Center(child: Text("Aucun résultat"))
               : ListView(
                   children: [
                     // Équipes en premier : recherche la plus fréquente en pratique.
                     if (matchingTeams.isNotEmpty) ...[
-                      const _SectionLabel("Équipes (aujourd'hui)"),
+                      _SectionLabel("Équipes (aujourd'hui)"),
                       ...matchingTeams.map(
                         (t) => ListTile(
-                          leading: const Icon(Icons.shield_outlined),
+                          leading: Icon(Icons.shield_outlined),
                           title: Text(t),
                           onTap: () => Navigator.pop(
                             context,
@@ -111,10 +111,10 @@ class _SearchScreenState extends State<SearchScreen> {
                       ),
                     ],
                     if (matchingCompetitions.isNotEmpty) ...[
-                      const _SectionLabel("Compétitions"),
+                      _SectionLabel("Compétitions"),
                       ...matchingCompetitions.map(
                         (c) => ListTile(
-                          leading: const Icon(Icons.emoji_events_outlined),
+                          leading: Icon(Icons.emoji_events_outlined),
                           title: Text(c.name),
                           subtitle: Text("${c.country} · ${c.continent}"),
                           onTap: () => Navigator.pop(
@@ -125,10 +125,10 @@ class _SearchScreenState extends State<SearchScreen> {
                       ),
                     ],
                     if (matchingCountries.isNotEmpty) ...[
-                      const _SectionLabel("Pays"),
+                      _SectionLabel("Pays"),
                       ...matchingCountries.map(
                         (c) => ListTile(
-                          leading: const Icon(Icons.flag_outlined),
+                          leading: Icon(Icons.flag_outlined),
                           title: Text(c),
                           onTap: () => Navigator.pop(
                             context,
@@ -138,10 +138,10 @@ class _SearchScreenState extends State<SearchScreen> {
                       ),
                     ],
                     if (matchingContinents.isNotEmpty) ...[
-                      const _SectionLabel("Continents"),
+                      _SectionLabel("Continents"),
                       ...matchingContinents.map(
                         (c) => ListTile(
-                          leading: const Icon(Icons.public),
+                          leading: Icon(Icons.public),
                           title: Text(c),
                           onTap: () => Navigator.pop(
                             context,
@@ -158,12 +158,12 @@ class _SearchScreenState extends State<SearchScreen> {
 
 class _SectionLabel extends StatelessWidget {
   final String text;
-  const _SectionLabel(this.text);
+  _SectionLabel(this.text);
 
   @override
   Widget build(BuildContext context) {
     return Padding(
-      padding: const EdgeInsets.fromLTRB(16, 12, 16, 4),
+      padding: EdgeInsets.fromLTRB(16, 12, 16, 4),
       child: Text(
         text,
         style: TextStyle(color: Colors.grey[600], fontWeight: FontWeight.bold, fontSize: 12),

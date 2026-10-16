@@ -5,7 +5,7 @@ import '../../widgets/forecast_card.dart' show K, kMessage;
 import '../../widgets/jersey.dart';
 import '../../widgets/k_ui.dart';
 
-const _cats = [
+final _cats = [
   ('wins', 'Victoires'),
   ('draws', 'Nuls'),
   ('losses', 'Défaites'),
@@ -14,7 +14,7 @@ const _cats = [
 ];
 
 class FormScreen extends StatefulWidget {
-  const FormScreen({super.key});
+  FormScreen({super.key});
 
   @override
   State<FormScreen> createState() => _FormScreenState();
@@ -35,7 +35,7 @@ class _FormScreenState extends State<FormScreen> {
       });
 
   Widget _seg(List<String> labels, int sel, ValueChanged<int> on) => Container(
-        padding: const EdgeInsets.all(3),
+        padding: EdgeInsets.all(3),
         decoration: BoxDecoration(
             color: K.card, borderRadius: BorderRadius.circular(12), border: Border.all(color: K.border)),
         child: Row(mainAxisSize: MainAxisSize.min, children: [
@@ -43,7 +43,7 @@ class _FormScreenState extends State<FormScreen> {
             GestureDetector(
               onTap: () => on(i),
               child: Container(
-                padding: const EdgeInsets.symmetric(horizontal: 11, vertical: 7),
+                padding: EdgeInsets.symmetric(horizontal: 11, vertical: 7),
                 decoration: BoxDecoration(
                     color: i == sel ? K.indigo : Colors.transparent, borderRadius: BorderRadius.circular(9)),
                 child: Text(labels[i],
@@ -65,22 +65,22 @@ class _FormScreenState extends State<FormScreen> {
           height: 40,
           child: ListView.separated(
             scrollDirection: Axis.horizontal,
-            padding: const EdgeInsets.symmetric(horizontal: 16),
+            padding: EdgeInsets.symmetric(horizontal: 16),
             itemCount: _cats.length,
-            separatorBuilder: (_, __) => const SizedBox(width: 8),
+            separatorBuilder: (_, __) => SizedBox(width: 8),
             itemBuilder: (_, i) => kPill(_cats[i].$2, i == _cat, () {
               if (i != _cat) _reload(() => _cat = i);
             }),
           ),
         ),
         Padding(
-          padding: const EdgeInsets.fromLTRB(16, 10, 16, 4),
+          padding: EdgeInsets.fromLTRB(16, 10, 16, 4),
           child: Row(children: [
-            _seg(const ['Plus', 'Moins'], _most ? 0 : 1, (i) {
+            _seg(['Plus', 'Moins'], _most ? 0 : 1, (i) {
               if ((i == 0) != _most) _reload(() => _most = i == 0);
             }),
-            const Spacer(),
-            _seg(const ['Général', 'Dom.', 'Ext.'], _view, (i) => setState(() => _view = i)),
+            Spacer(),
+            _seg(['Général', 'Dom.', 'Ext.'], _view, (i) => setState(() => _view = i)),
           ]),
         ),
         Expanded(
@@ -94,9 +94,9 @@ class _FormScreenState extends State<FormScreen> {
               final t = snap.data!;
               if (t.isEmpty) return kMessage('Données de forme indisponibles pour le moment.');
               final table = t[_view < t.length ? _view : 0];
-              const where = ['tous les matchs', 'à domicile', "à l'extérieur"];
+              final where = ['tous les matchs', 'à domicile', "à l'extérieur"];
               return ListView(
-                padding: const EdgeInsets.fromLTRB(16, 0, 16, 32),
+                padding: EdgeInsets.fromLTRB(16, 0, 16, 32),
                 children: [
                   kTitle('${_most ? 'Le plus de' : 'Le moins de'} ${_cats[_cat].$2.toLowerCase()} · ${where[_view]}'),
                   kDividers(table.rows.map((r) => _row(r, goals)).toList()),
@@ -113,35 +113,35 @@ class _FormScreenState extends State<FormScreen> {
     final isPct = r.pct.contains('%');
     final pct = double.tryParse(r.pct.replaceAll('%', '').replaceAll(',', '.').trim());
     return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+      padding: EdgeInsets.symmetric(horizontal: 12, vertical: 10),
       child: Row(children: [
         SizedBox(
           width: 28,
           child: Text('${r.pos}',
               textAlign: TextAlign.center,
-              style: const TextStyle(color: K.muted, fontSize: 13, fontWeight: FontWeight.w800)),
+              style: TextStyle(color: K.muted, fontSize: 13, fontWeight: FontWeight.w800)),
         ),
-        const SizedBox(width: 4),
+        SizedBox(width: 4),
         TeamCrest(name: r.team, logo: LogoCache.get(r.team), size: 26),
-        const SizedBox(width: 10),
+        SizedBox(width: 10),
         Expanded(
           child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
             Text(r.team,
                 maxLines: 1,
                 overflow: TextOverflow.ellipsis,
-                style: const TextStyle(color: K.text, fontSize: 14, fontWeight: FontWeight.w700)),
-            const SizedBox(height: 2),
+                style: TextStyle(color: K.text, fontSize: 14, fontWeight: FontWeight.w700)),
+            SizedBox(height: 2),
             Text(r.league,
                 maxLines: 1,
                 overflow: TextOverflow.ellipsis,
-                style: const TextStyle(color: K.muted, fontSize: 11.5)),
+                style: TextStyle(color: K.muted, fontSize: 11.5)),
           ]),
         ),
-        const SizedBox(width: 8),
+        SizedBox(width: 8),
         Column(crossAxisAlignment: CrossAxisAlignment.end, children: [
           Text(goals ? '${r.value} buts · ${r.played} m.' : '${r.value} / ${r.played}',
-              style: const TextStyle(color: K.text, fontSize: 13.5, fontWeight: FontWeight.w800)),
-          const SizedBox(height: 4),
+              style: TextStyle(color: K.text, fontSize: 13.5, fontWeight: FontWeight.w800)),
+          SizedBox(height: 4),
           if (isPct && pct != null)
             SizedBox(
               width: 64,
@@ -160,7 +160,7 @@ class _FormScreenState extends State<FormScreen> {
               ]),
             )
           else
-            Text('${r.pct} / match', style: const TextStyle(color: K.muted, fontSize: 11.5)),
+            Text('${r.pct} / match', style: TextStyle(color: K.muted, fontSize: 11.5)),
         ]),
       ]),
     );

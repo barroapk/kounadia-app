@@ -4,7 +4,7 @@ import "package:flutter/material.dart";
 class MatchCountdown extends StatefulWidget {
   final DateTime kickoff;
 
-  const MatchCountdown({super.key, required this.kickoff});
+  MatchCountdown({super.key, required this.kickoff});
 
   @override
   State<MatchCountdown> createState() => _MatchCountdownState();
@@ -18,7 +18,7 @@ class _MatchCountdownState extends State<MatchCountdown> {
   void initState() {
     super.initState();
     _updateRemaining();
-    _timer = Timer.periodic(const Duration(seconds: 1), (_) => _updateRemaining());
+    _timer = Timer.periodic(Duration(seconds: 1), (_) => _updateRemaining());
   }
 
   void _updateRemaining() {
@@ -48,23 +48,23 @@ class _MatchCountdownState extends State<MatchCountdown> {
 
   @override
   Widget build(BuildContext context) {
-    if (_remaining == Duration.zero) return const SizedBox.shrink();
+    if (_remaining == Duration.zero) return SizedBox.shrink();
 
     return Container(
-      margin: const EdgeInsets.fromLTRB(12, 12, 12, 0),
-      padding: const EdgeInsets.symmetric(vertical: 10, horizontal: 14),
+      margin: EdgeInsets.fromLTRB(12, 12, 12, 0),
+      padding: EdgeInsets.symmetric(vertical: 10, horizontal: 14),
       decoration: BoxDecoration(
-        color: const Color(0xFF16A34A).withOpacity(0.08),
+        color: Color(0xFF16A34A).withOpacity(0.08),
         borderRadius: BorderRadius.circular(12),
       ),
       child: Row(
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
-          const Icon(Icons.schedule, size: 16, color: Color(0xFF16A34A)),
-          const SizedBox(width: 8),
+          Icon(Icons.schedule, size: 16, color: Color(0xFF16A34A)),
+          SizedBox(width: 8),
           Text(
             "Coup d'envoi dans ${_format(_remaining)}",
-            style: const TextStyle(color: Color(0xFF16A34A), fontWeight: FontWeight.w600, fontSize: 13),
+            style: TextStyle(color: Color(0xFF16A34A), fontWeight: FontWeight.w600, fontSize: 13),
           ),
         ],
       ),

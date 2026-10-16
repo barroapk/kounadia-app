@@ -1,5 +1,5 @@
 // Codes ISO utilisés pour récupérer les drapeaux via flagcdn.com (gratuit, sans clé).
-const Map<String, String> COUNTRY_FLAG_CODES = {
+Map<String, String> COUNTRY_FLAG_CODES = {
   "Angleterre": "gb",
   "Espagne": "es",
   "Allemagne": "de",

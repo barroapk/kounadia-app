@@ -11,7 +11,7 @@ class MatchDetailsTab extends StatefulWidget {
   final VoidCallback onSeeStats;
   final VoidCallback onSeeStandings;
 
-  const MatchDetailsTab({
+  MatchDetailsTab({
     super.key,
     required this.analysis,
     this.standings,
@@ -28,13 +28,13 @@ class _MatchDetailsTabState extends State<MatchDetailsTab> {
 
   Widget _sectionCard({required String title, required IconData icon, required Widget child}) {
     return Container(
-      margin: const EdgeInsets.fromLTRB(12, 0, 12, 10),
-      padding: const EdgeInsets.all(14),
+      margin: EdgeInsets.fromLTRB(12, 0, 12, 10),
+      padding: EdgeInsets.all(14),
       decoration: BoxDecoration(
         color: Colors.white,
         borderRadius: BorderRadius.circular(14),
         boxShadow: [
-          BoxShadow(color: Colors.black.withOpacity(0.04), blurRadius: 6, offset: const Offset(0, 2)),
+          BoxShadow(color: Colors.black.withOpacity(0.04), blurRadius: 6, offset: Offset(0, 2)),
         ],
       ),
       child: Column(
@@ -42,12 +42,12 @@ class _MatchDetailsTabState extends State<MatchDetailsTab> {
         children: [
           Row(
             children: [
-              Icon(icon, size: 16, color: const Color(0xFF16A34A)),
-              const SizedBox(width: 6),
-              Text(title, style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 13)),
+              Icon(icon, size: 16, color: Color(0xFF16A34A)),
+              SizedBox(width: 6),
+              Text(title, style: TextStyle(fontWeight: FontWeight.bold, fontSize: 13)),
             ],
           ),
-          const SizedBox(height: 10),
+          SizedBox(height: 10),
           child,
         ],
       ),
@@ -70,9 +70,9 @@ class _MatchDetailsTabState extends State<MatchDetailsTab> {
   Color _eventColor(MatchEvent e) {
     switch (e.type) {
       case "Goal":
-        return const Color(0xFF16A34A);
+        return Color(0xFF16A34A);
       case "Card":
-        return e.detail == "Red Card" ? const Color(0xFFDC2626) : const Color(0xFFEAB308);
+        return e.detail == "Red Card" ? Color(0xFFDC2626) : Color(0xFFEAB308);
       default:
         return Colors.grey[500]!;
     }
@@ -85,15 +85,15 @@ class _MatchDetailsTabState extends State<MatchDetailsTab> {
 
   Widget _eventRow(MatchEvent e) {
     return Padding(
-      padding: const EdgeInsets.symmetric(vertical: 5),
+      padding: EdgeInsets.symmetric(vertical: 5),
       child: Row(
         children: [
-          SizedBox(width: 34, child: Text(_minuteLabel(e), style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 11.5))),
+          SizedBox(width: 34, child: Text(_minuteLabel(e), style: TextStyle(fontWeight: FontWeight.bold, fontSize: 11.5))),
           Icon(_eventIcon(e), size: 14, color: _eventColor(e)),
-          const SizedBox(width: 8),
+          SizedBox(width: 8),
           Expanded(
             child: Text("${e.player ?? ''}${e.team != null ? ' · ${e.team}' : ''}",
-                style: const TextStyle(fontSize: 12), overflow: TextOverflow.ellipsis),
+                style: TextStyle(fontSize: 12), overflow: TextOverflow.ellipsis),
           ),
         ],
       ),
@@ -103,7 +103,7 @@ class _MatchDetailsTabState extends State<MatchDetailsTab> {
   Widget _timelinePreview() {
     final events = widget.analysis.events;
     if (events == null || events.isEmpty) {
-      return const Text("Aucun événement pour ce match.", style: TextStyle(fontSize: 12, color: Colors.grey));
+      return Text("Aucun événement pour ce match.", style: TextStyle(fontSize: 12, color: Colors.grey));
     }
 
     final sorted = List<MatchEvent>.from(events)
@@ -127,10 +127,10 @@ class _MatchDetailsTabState extends State<MatchDetailsTab> {
           InkWell(
             onTap: () => setState(() => _timelineExpanded = !_timelineExpanded),
             child: Padding(
-              padding: const EdgeInsets.only(top: 4),
+              padding: EdgeInsets.only(top: 4),
               child: Text(
                 _timelineExpanded ? "Réduire" : "Voir toute la chronologie",
-                style: const TextStyle(color: Color(0xFF16A34A), fontSize: 12, fontWeight: FontWeight.w600),
+                style: TextStyle(color: Color(0xFF16A34A), fontSize: 12, fontWeight: FontWeight.w600),
               ),
             ),
           ),
@@ -146,10 +146,10 @@ class _MatchDetailsTabState extends State<MatchDetailsTab> {
   Widget _keyStatsPreview() {
     final stats = widget.analysis.statistics;
     if (stats == null) {
-      return const Text("Statistiques indisponibles.", style: TextStyle(fontSize: 12, color: Colors.grey));
+      return Text("Statistiques indisponibles.", style: TextStyle(fontSize: 12, color: Colors.grey));
     }
 
-    const keyStats = {
+    final keyStats = {
       "Ball Possession": "Possession",
       "expected_goals": "xG",
       "Total Shots": "Tirs",
@@ -168,24 +168,24 @@ class _MatchDetailsTabState extends State<MatchDetailsTab> {
       final homeRatio = total > 0 ? homeNum / total : 0.5;
 
       rows.add(Padding(
-        padding: const EdgeInsets.symmetric(vertical: 5),
+        padding: EdgeInsets.symmetric(vertical: 5),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
-                Text("${home ?? '-'}", style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 12.5)),
+                Text("${home ?? '-'}", style: TextStyle(fontWeight: FontWeight.bold, fontSize: 12.5)),
                 Text(label, style: TextStyle(color: Colors.grey[600], fontSize: 11.5)),
-                Text("${away ?? '-'}", style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 12.5)),
+                Text("${away ?? '-'}", style: TextStyle(fontWeight: FontWeight.bold, fontSize: 12.5)),
               ],
             ),
-            const SizedBox(height: 3),
+            SizedBox(height: 3),
             ClipRRect(
               borderRadius: BorderRadius.circular(4),
               child: Row(
                 children: [
-                  Expanded(flex: (homeRatio * 100).round().clamp(1, 99), child: Container(height: 5, color: const Color(0xFF16A34A))),
+                  Expanded(flex: (homeRatio * 100).round().clamp(1, 99), child: Container(height: 5, color: Color(0xFF16A34A))),
                   Expanded(flex: (100 - (homeRatio * 100).round()).clamp(1, 99), child: Container(height: 5, color: Colors.grey[300])),
                 ],
               ),
@@ -196,7 +196,7 @@ class _MatchDetailsTabState extends State<MatchDetailsTab> {
     });
 
     if (rows.isEmpty) {
-      return const Text("Statistiques indisponibles.", style: TextStyle(fontSize: 12, color: Colors.grey));
+      return Text("Statistiques indisponibles.", style: TextStyle(fontSize: 12, color: Colors.grey));
     }
 
     return Column(
@@ -205,7 +205,7 @@ class _MatchDetailsTabState extends State<MatchDetailsTab> {
         ...rows,
         InkWell(
           onTap: widget.onSeeStats,
-          child: const Padding(
+          child: Padding(
             padding: EdgeInsets.only(top: 4),
             child: Text("Voir toutes les statistiques", style: TextStyle(color: Color(0xFF16A34A), fontSize: 12, fontWeight: FontWeight.w600)),
           ),
@@ -217,7 +217,7 @@ class _MatchDetailsTabState extends State<MatchDetailsTab> {
   Widget _miniStandings() {
     final standings = widget.standings;
     if (standings == null || standings.standings.isEmpty) {
-      return const Text("Classement indisponible pour cette compétition.", style: TextStyle(fontSize: 12, color: Colors.grey));
+      return Text("Classement indisponible pour cette compétition.", style: TextStyle(fontSize: 12, color: Colors.grey));
     }
 
     StandingRow? findRow(String team) {
@@ -233,11 +233,11 @@ class _MatchDetailsTabState extends State<MatchDetailsTab> {
 
     Widget row(StandingRow? r, String fallbackName) {
       return Padding(
-        padding: const EdgeInsets.symmetric(vertical: 3),
+        padding: EdgeInsets.symmetric(vertical: 3),
         child: Row(
           children: [
-            SizedBox(width: 28, child: Text(r != null ? "${r.position}e" : "-", style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 12.5))),
-            Expanded(child: Text(r?.teamName ?? fallbackName, style: const TextStyle(fontSize: 12.5), overflow: TextOverflow.ellipsis)),
+            SizedBox(width: 28, child: Text(r != null ? "${r.position}e" : "-", style: TextStyle(fontWeight: FontWeight.bold, fontSize: 12.5))),
+            Expanded(child: Text(r?.teamName ?? fallbackName, style: TextStyle(fontSize: 12.5), overflow: TextOverflow.ellipsis)),
             if (r != null) Text("${r.points} pts", style: TextStyle(color: Colors.grey[600], fontSize: 11.5)),
           ],
         ),
@@ -251,7 +251,7 @@ class _MatchDetailsTabState extends State<MatchDetailsTab> {
         row(awayRow, widget.analysis.awayTeam),
         InkWell(
           onTap: widget.onSeeStandings,
-          child: const Padding(
+          child: Padding(
             padding: EdgeInsets.only(top: 6),
             child: Text("Voir le classement complet", style: TextStyle(color: Color(0xFF16A34A), fontSize: 12, fontWeight: FontWeight.w600)),
           ),
@@ -264,29 +264,29 @@ class _MatchDetailsTabState extends State<MatchDetailsTab> {
     final total = form.matchesAnalyzed;
     if (total == 0) {
       return Padding(
-        padding: const EdgeInsets.symmetric(vertical: 4),
-        child: Text("$label : pas assez de données.", style: const TextStyle(fontSize: 12, color: Colors.grey)),
+        padding: EdgeInsets.symmetric(vertical: 4),
+        child: Text("$label : pas assez de données.", style: TextStyle(fontSize: 12, color: Colors.grey)),
       );
     }
 
     return Padding(
-      padding: const EdgeInsets.symmetric(vertical: 6),
+      padding: EdgeInsets.symmetric(vertical: 6),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Text(label, style: const TextStyle(fontSize: 12.5, fontWeight: FontWeight.w600)),
-          const SizedBox(height: 4),
+          Text(label, style: TextStyle(fontSize: 12.5, fontWeight: FontWeight.w600)),
+          SizedBox(height: 4),
           ClipRRect(
             borderRadius: BorderRadius.circular(4),
             child: Row(
               children: [
-                if (form.wins > 0) Expanded(flex: form.wins, child: Container(height: 10, color: const Color(0xFF16A34A))),
+                if (form.wins > 0) Expanded(flex: form.wins, child: Container(height: 10, color: Color(0xFF16A34A))),
                 if (form.draws > 0) Expanded(flex: form.draws, child: Container(height: 10, color: Colors.grey[400])),
-                if (form.losses > 0) Expanded(flex: form.losses, child: Container(height: 10, color: const Color(0xFFDC2626))),
+                if (form.losses > 0) Expanded(flex: form.losses, child: Container(height: 10, color: Color(0xFFDC2626))),
               ],
             ),
           ),
-          const SizedBox(height: 3),
+          SizedBox(height: 3),
           Text("${form.wins}V ${form.draws}N ${form.losses}D sur $total match(s)",
               style: TextStyle(color: Colors.grey[600], fontSize: 11)),
         ],
@@ -296,7 +296,7 @@ class _MatchDetailsTabState extends State<MatchDetailsTab> {
 
   Widget _headToHeadBar(HeadToHead h2h) {
     if (!h2h.available || (h2h.totalMatches ?? 0) == 0) {
-      return const Text("Aucun historique de confrontation disponible.", style: TextStyle(fontSize: 12, color: Colors.grey));
+      return Text("Aucun historique de confrontation disponible.", style: TextStyle(fontSize: 12, color: Colors.grey));
     }
 
     final winsA = h2h.teamAWins ?? 0;
@@ -311,23 +311,23 @@ class _MatchDetailsTabState extends State<MatchDetailsTab> {
         Row(
           mainAxisAlignment: MainAxisAlignment.spaceBetween,
           children: [
-            Text("$winsA", style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 13, color: Color(0xFF16A34A))),
+            Text("$winsA", style: TextStyle(fontWeight: FontWeight.bold, fontSize: 13, color: Color(0xFF16A34A))),
             Text("$draws nuls", style: TextStyle(color: Colors.grey[600], fontSize: 11.5)),
-            Text("$winsB", style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 13)),
+            Text("$winsB", style: TextStyle(fontWeight: FontWeight.bold, fontSize: 13)),
           ],
         ),
-        const SizedBox(height: 4),
+        SizedBox(height: 4),
         ClipRRect(
           borderRadius: BorderRadius.circular(4),
           child: Row(
             children: [
-              if (winsA > 0) Expanded(flex: winsA, child: Container(height: 10, color: const Color(0xFF16A34A))),
+              if (winsA > 0) Expanded(flex: winsA, child: Container(height: 10, color: Color(0xFF16A34A))),
               if (draws > 0) Expanded(flex: draws, child: Container(height: 10, color: Colors.grey[400])),
               if (winsB > 0) Expanded(flex: winsB, child: Container(height: 10, color: Colors.grey[700])),
             ],
           ),
         ),
-        const SizedBox(height: 4),
+        SizedBox(height: 4),
         Text(
           "$teamAName : $winsA victoire(s) · $teamBName : $winsB victoire(s) · $draws nul(s) · ${h2h.totalMatches} confrontation(s) au total",
           style: TextStyle(color: Colors.grey[600], fontSize: 10.5),
@@ -341,7 +341,7 @@ class _MatchDetailsTabState extends State<MatchDetailsTab> {
     final analysis = widget.analysis;
 
     return ListView(
-      padding: const EdgeInsets.only(top: 10, bottom: 16),
+      padding: EdgeInsets.only(top: 10, bottom: 16),
       children: [
         MatchSummaryCard(
           statistics: analysis.statistics,

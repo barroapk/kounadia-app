@@ -4,10 +4,10 @@ import 'package:url_launcher/url_launcher.dart';
 import '../../widgets/forecast_card.dart' show K;
 import 'deposit_screen.dart' show kWhatsAppNumber;
 
-const kMinWithdrawal = 500;
+final kMinWithdrawal = 500;
 
 class WithdrawalScreen extends StatefulWidget {
-  const WithdrawalScreen({super.key});
+  WithdrawalScreen({super.key});
 
   @override
   State<WithdrawalScreen> createState() => _WithdrawalScreenState();
@@ -75,36 +75,36 @@ class _WithdrawalScreenState extends State<WithdrawalScreen> {
 
   InputDecoration _deco(String hint, String? error, IconData icon) => InputDecoration(
         hintText: hint,
-        hintStyle: const TextStyle(color: K.muted),
+        hintStyle: TextStyle(color: K.muted),
         errorText: error,
         counterText: '',
         prefixIcon: Icon(icon, color: K.muted),
         filled: true,
         fillColor: K.card,
-        contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
+        contentPadding: EdgeInsets.symmetric(horizontal: 16, vertical: 16),
         border: OutlineInputBorder(
-            borderRadius: BorderRadius.circular(14), borderSide: const BorderSide(color: K.border)),
+            borderRadius: BorderRadius.circular(14), borderSide: BorderSide(color: K.border)),
         enabledBorder: OutlineInputBorder(
-            borderRadius: BorderRadius.circular(14), borderSide: const BorderSide(color: K.border)),
+            borderRadius: BorderRadius.circular(14), borderSide: BorderSide(color: K.border)),
         focusedBorder: OutlineInputBorder(
-            borderRadius: BorderRadius.circular(14), borderSide: const BorderSide(color: K.amber, width: 1.5)),
+            borderRadius: BorderRadius.circular(14), borderSide: BorderSide(color: K.amber, width: 1.5)),
       );
 
   Widget _label(String t) => Padding(
-        padding: const EdgeInsets.fromLTRB(4, 22, 4, 8),
-        child: Text(t, style: const TextStyle(color: K.text, fontSize: 14, fontWeight: FontWeight.w700)),
+        padding: EdgeInsets.fromLTRB(4, 22, 4, 8),
+        child: Text(t, style: TextStyle(color: K.text, fontSize: 14, fontWeight: FontWeight.w700)),
       );
 
   Widget _pill(String text, VoidCallback onTap) => GestureDetector(
         onTap: onTap,
         child: Container(
-          padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
+          padding: EdgeInsets.symmetric(horizontal: 14, vertical: 8),
           decoration: BoxDecoration(
             color: K.card,
             borderRadius: BorderRadius.circular(20),
             border: Border.all(color: K.border),
           ),
-          child: Text(text, style: const TextStyle(color: K.text, fontSize: 13, fontWeight: FontWeight.w600)),
+          child: Text(text, style: TextStyle(color: K.text, fontSize: 13, fontWeight: FontWeight.w600)),
         ),
       );
 
@@ -117,19 +117,19 @@ class _WithdrawalScreenState extends State<WithdrawalScreen> {
         foregroundColor: K.text,
         elevation: 0,
         scrolledUnderElevation: 0,
-        title: const Text('Retrait 1xBet', style: TextStyle(fontWeight: FontWeight.w800)),
+        title: Text('Retrait 1xBet', style: TextStyle(fontWeight: FontWeight.w800)),
       ),
       body: ListView(
-        padding: const EdgeInsets.fromLTRB(20, 8, 20, 32),
+        padding: EdgeInsets.fromLTRB(20, 8, 20, 32),
         children: [
           Container(
-            padding: const EdgeInsets.all(16),
+            padding: EdgeInsets.all(16),
             decoration: BoxDecoration(
-              color: const Color(0x22F59E0B),
+              color: Color(0x22F59E0B),
               borderRadius: BorderRadius.circular(16),
-              border: Border.all(color: const Color(0x55F59E0B)),
+              border: Border.all(color: Color(0x55F59E0B)),
             ),
-            child: const Row(children: [
+            child: Row(children: [
               Icon(Icons.north_east_rounded, color: K.amber, size: 28),
               SizedBox(width: 12),
               Expanded(
@@ -147,13 +147,13 @@ class _WithdrawalScreenState extends State<WithdrawalScreen> {
             keyboardType: TextInputType.number,
             inputFormatters: [FilteringTextInputFormatter.digitsOnly],
             maxLength: 7,
-            style: const TextStyle(color: K.text, fontSize: 17, fontWeight: FontWeight.w600),
+            style: TextStyle(color: K.text, fontSize: 17, fontWeight: FontWeight.w600),
             decoration: _deco('Ex : 10000', _amountError, Icons.payments_outlined),
             onChanged: (_) {
               if (_amountError != null) setState(() => _amountError = null);
             },
           ),
-          const SizedBox(height: 10),
+          SizedBox(height: 10),
           Wrap(
             spacing: 8,
             runSpacing: 8,
@@ -170,31 +170,31 @@ class _WithdrawalScreenState extends State<WithdrawalScreen> {
             keyboardType: TextInputType.phone,
             inputFormatters: [FilteringTextInputFormatter.digitsOnly],
             maxLength: 12,
-            style: const TextStyle(color: K.text, fontSize: 17, fontWeight: FontWeight.w600),
+            style: TextStyle(color: K.text, fontSize: 17, fontWeight: FontWeight.w600),
             decoration: _deco('Ex : 07 00 00 00', _phoneError, Icons.phone_android_rounded),
             onChanged: (_) {
               if (_phoneError != null) setState(() => _phoneError = null);
             },
           ),
-          const SizedBox(height: 30),
+          SizedBox(height: 30),
           SizedBox(
             height: 54,
             child: FilledButton.icon(
               onPressed: _sending ? null : _send,
               style: FilledButton.styleFrom(
-                backgroundColor: const Color(0xFF25D366),
+                backgroundColor: Color(0xFF25D366),
                 foregroundColor: Colors.white,
                 shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
               ),
               icon: _sending
-                  ? const SizedBox(
+                  ? SizedBox(
                       width: 18, height: 18, child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white))
-                  : const Icon(Icons.send_rounded),
-              label: const Text('Envoyer sur WhatsApp', style: TextStyle(fontSize: 16, fontWeight: FontWeight.w800)),
+                  : Icon(Icons.send_rounded),
+              label: Text('Envoyer sur WhatsApp', style: TextStyle(fontSize: 16, fontWeight: FontWeight.w800)),
             ),
           ),
-          const SizedBox(height: 18),
-          const Text(
+          SizedBox(height: 18),
+          Text(
             'Réservé aux personnes majeures. Jouez de manière responsable.',
             textAlign: TextAlign.center,
             style: TextStyle(color: K.muted, fontSize: 12),

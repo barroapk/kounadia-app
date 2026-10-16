@@ -7,7 +7,7 @@ class NerdyTip {
   final String tipFr;
   final double? confidence;
 
-  const NerdyTip({
+  NerdyTip({
     required this.date,
     required this.league,
     required this.home,

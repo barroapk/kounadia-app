@@ -13,7 +13,7 @@ class Market {
   final int? prob;
   final String status;
 
-  const Market(this.name, this.pick, this.odd, this.prob, this.status);
+  Market(this.name, this.pick, this.odd, this.prob, this.status);
 
   String get nameFr {
     final n = name.trim();
@@ -61,7 +61,7 @@ class GameRow {
   final String? outcome;
   final bool homeBold;
   final bool awayBold;
-  const GameRow(this.date, this.home, this.away, this.score, this.outcome, this.homeBold, this.awayBold);
+  GameRow(this.date, this.home, this.away, this.score, this.outcome, this.homeBold, this.awayBold);
 }
 
 class StandRow {
@@ -69,7 +69,7 @@ class StandRow {
   final String team;
   final String zone;
   final String mp, w, d, l, gf, ga, diff, pts;
-  const StandRow(this.pos, this.team, this.zone, this.mp, this.w, this.d, this.l, this.gf, this.ga,
+  StandRow(this.pos, this.team, this.zone, this.mp, this.w, this.d, this.l, this.gf, this.ga,
       this.diff, this.pts);
 }
 
@@ -77,14 +77,14 @@ class StatRow {
   final String label;
   final String a;
   final String b;
-  const StatRow(this.label, this.a, this.b);
+  StatRow(this.label, this.a, this.b);
 }
 
 class LeagueStat {
   final String label;
   final String value;
   final bool header;
-  const LeagueStat(this.label, this.value, this.header);
+  LeagueStat(this.label, this.value, this.header);
 }
 
 class MatchDetail {
@@ -105,7 +105,7 @@ class MatchDetail {
   final List<LeagueStat> leagueStats;
   final String leagueStatsTitle;
 
-  const MatchDetail({
+  MatchDetail({
     this.homeLogo,
     this.awayLogo,
     this.liveScore,
@@ -125,7 +125,7 @@ class MatchDetail {
   });
 }
 
-const _fr = {
+final _fr = {
   'Wins': 'Victoires',
   'Draws': 'Nuls',
   'Losses': 'Défaites',
@@ -153,8 +153,8 @@ const _fr = {
 String frLabel(String s) => _fr[s.trim()] ?? s.trim();
 
 class MatchDetailService {
-  static const _base = 'https://primatips.com';
-  static const _ua = {'User-Agent': 'KOUNADIA-App/1.0 (+https://github.com/barroapk/kounadia-data)'};
+  static final _base = 'https://primatips.com';
+  static final _ua = {'User-Agent': 'KOUNADIA-App/1.0 (+https://github.com/barroapk/kounadia-data)'};
 
   static String _txt(String s) => s
       .replaceAll(RegExp(r'<[^>]+>'), '')
@@ -168,9 +168,9 @@ class MatchDetailService {
 
   static Future<MatchDetail> load(LiveMatch m) async {
     try {
-      final r = await http.get(Uri.parse(m.url), headers: _ua).timeout(const Duration(seconds: 20));
+      final r = await http.get(Uri.parse(m.url), headers: _ua).timeout(Duration(seconds: 20));
       if (r.statusCode != 200) {
-        throw const FriendlyError('Les détails de ce match sont momentanément indisponibles.');
+        throw FriendlyError('Les détails de ce match sont momentanément indisponibles.');
       }
       final d = _parse(utf8.decode(r.bodyBytes));
       if (d.homeLogo != null) await LogoCache.put(m.home, d.homeLogo!);
@@ -180,9 +180,9 @@ class MatchDetailService {
       rethrow;
     } catch (e) {
       if (e is SocketException || e is TimeoutException || e is http.ClientException) {
-        throw const FriendlyError('Vous êtes hors connexion. Vérifiez votre connexion internet puis réessayez.');
+        throw FriendlyError('Vous êtes hors connexion. Vérifiez votre connexion internet puis réessayez.');
       }
-      throw const FriendlyError('Les détails de ce match sont momentanément indisponibles.');
+      throw FriendlyError('Les détails de ce match sont momentanément indisponibles.');
     }
   }
 
@@ -202,7 +202,7 @@ class MatchDetailService {
               .where((v) => v.isNotEmpty)
               .toList();
         }
-        return const [];
+        return [];
       }
 
       final probs = rowCells('Probability').map((v) => int.tryParse(v.replaceAll('%', '').trim())).toList();
@@ -350,10 +350,10 @@ class MatchDetailService {
       updated: one(r'last update ([0-9-]+ [0-9:]+)'),
       markets: _markets(h),
       h2h: h2h,
-      homeForm: forms.isNotEmpty ? forms[0] : const [],
-      awayForm: forms.length > 1 ? forms[1] : const [],
-      homeNext: nexts.isNotEmpty ? nexts[0] : const [],
-      awayNext: nexts.length > 1 ? nexts[1] : const [],
+      homeForm: forms.isNotEmpty ? forms[0] : [],
+      awayForm: forms.length > 1 ? forms[1] : [],
+      homeNext: nexts.isNotEmpty ? nexts[0] : [],
+      awayNext: nexts.length > 1 ? nexts[1] : [],
       tableTitle: tableTitle,
       table: table,
       teamStats: teamStats,

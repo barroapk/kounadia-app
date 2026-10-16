@@ -9,7 +9,7 @@ class SgTip {
   final int agree;
   final int models;
 
-  const SgTip({
+  SgTip({
     required this.date,
     required this.leagueName,
     required this.home,

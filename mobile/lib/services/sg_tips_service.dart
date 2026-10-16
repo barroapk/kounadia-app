@@ -6,7 +6,7 @@ import '../models/sg_tip.dart';
 class SgTipsService {
   Future<List<SgTip>> getToday() async {
     final uri = Uri.parse('${ApiConfig.baseUrl}/scoregpt/today');
-    final r = await http.get(uri).timeout(const Duration(seconds: 90));
+    final r = await http.get(uri).timeout(Duration(seconds: 90));
     if (r.statusCode != 200) {
       throw Exception('Pronostics indisponibles');
     }

@@ -7,7 +7,7 @@ import '../models/forecast.dart';
 
 class FriendlyError implements Exception {
   final String message;
-  const FriendlyError(this.message);
+  FriendlyError(this.message);
   @override
   String toString() => message;
 }
@@ -16,17 +16,17 @@ class TodayData {
   final List<Forecast> ia;
   final List<Forecast> expert;
   final bool offline;
-  const TodayData(this.ia, this.expert, this.offline);
+  TodayData(this.ia, this.expert, this.offline);
 }
 
 class HistoryData {
   final List<Forecast> items;
   final bool offline;
-  const HistoryData(this.items, this.offline);
+  HistoryData(this.items, this.offline);
 }
 
 class KounadiaData {
-  static const _base = 'https://raw.githubusercontent.com/barroapk/kounadia-data/pronos';
+  static final _base = 'https://raw.githubusercontent.com/barroapk/kounadia-data/pronos';
 
   static String _friendly(Object e) {
     if (e is SocketException || e is TimeoutException || e is http.ClientException) {
@@ -42,8 +42,8 @@ class KounadiaData {
       final bust = DateTime.now().millisecondsSinceEpoch ~/ 300000;
       final r = await http
           .get(Uri.parse('$_base/$file?v=$bust'))
-          .timeout(const Duration(seconds: 20));
-      if (r.statusCode != 200) throw const HttpException('indisponible');
+          .timeout(Duration(seconds: 20));
+      if (r.statusCode != 200) throw HttpException('indisponible');
       final body = utf8.decode(r.bodyBytes);
       final data = jsonDecode(body);
       await prefs.setString(key, body);
@@ -77,7 +77,7 @@ class KounadiaData {
 
   static Future<HistoryData> history() async {
     final (data, offline) = await _get('history.json');
-    final items = ((data is List) ? data : const [])
+    final items = ((data is List) ? data : [])
         .map((e) => Forecast.fromJson(
             e as Map<String, dynamic>, (e['source'] ?? 'ia').toString()))
         .toList()

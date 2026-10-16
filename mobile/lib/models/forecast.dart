@@ -10,7 +10,7 @@ Color? _hex(String s) {
 }
 
 List<Color> _colors(dynamic v) =>
-    (v is List ? v : const []).map((e) => _hex(e.toString())).whereType<Color>().toList();
+    (v is List ? v : []).map((e) => _hex(e.toString())).whereType<Color>().toList();
 
 class Forecast {
   final String id;
@@ -32,7 +32,7 @@ class Forecast {
   final String? score;
   final bool? won;
 
-  const Forecast({
+  Forecast({
     required this.id,
     required this.source,
     required this.date,

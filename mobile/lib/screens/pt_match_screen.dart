@@ -7,7 +7,7 @@ import '../widgets/jersey.dart';
 
 class PtMatchScreen extends StatefulWidget {
   final LiveMatch match;
-  const PtMatchScreen({super.key, required this.match});
+  PtMatchScreen({super.key, required this.match});
 
   @override
   State<PtMatchScreen> createState() => _PtMatchScreenState();
@@ -32,13 +32,13 @@ class _PtMatchScreenState extends State<PtMatchScreen> {
           title: Text(m.leagueLabel,
               maxLines: 1,
               overflow: TextOverflow.ellipsis,
-              style: const TextStyle(fontSize: 15, fontWeight: FontWeight.w700)),
+              style: TextStyle(fontSize: 15, fontWeight: FontWeight.w700)),
         ),
         body: FutureBuilder<MatchDetail>(
           future: _f,
           builder: (context, snap) {
             if (snap.connectionState != ConnectionState.done) {
-              return const Center(child: CircularProgressIndicator(color: K.indigo));
+              return Center(child: CircularProgressIndicator(color: K.indigo));
             }
             if (snap.hasError) {
               return kMessage(snap.error.toString(),
@@ -47,8 +47,8 @@ class _PtMatchScreenState extends State<PtMatchScreen> {
             final d = snap.data!;
             return Column(
               children: [
-                Padding(padding: const EdgeInsets.fromLTRB(16, 4, 16, 10), child: _header(d)),
-                const TabBar(
+                Padding(padding: EdgeInsets.fromLTRB(16, 4, 16, 10), child: _header(d)),
+                TabBar(
                   isScrollable: true,
                   tabAlignment: TabAlignment.start,
                   indicatorColor: K.indigo,
@@ -87,14 +87,14 @@ class _PtMatchScreenState extends State<PtMatchScreen> {
   // ---------- Éléments communs ----------
 
   Widget _list(List<Widget> children) => ListView(
-        padding: const EdgeInsets.fromLTRB(16, 14, 16, 32),
+        padding: EdgeInsets.fromLTRB(16, 14, 16, 32),
         children: children,
       );
 
   Widget _title(String t) => Padding(
-        padding: const EdgeInsets.fromLTRB(2, 6, 2, 10),
+        padding: EdgeInsets.fromLTRB(2, 6, 2, 10),
         child: Text(t.toUpperCase(),
-            style: const TextStyle(color: K.muted, fontSize: 12, fontWeight: FontWeight.w800, letterSpacing: 1.1)),
+            style: TextStyle(color: K.muted, fontSize: 12, fontWeight: FontWeight.w800, letterSpacing: 1.1)),
       );
 
   BoxDecoration get _box => BoxDecoration(
@@ -127,19 +127,19 @@ class _PtMatchScreenState extends State<PtMatchScreen> {
   Widget _badge(String? o) => Container(
         width: 22,
         height: 22,
-        margin: const EdgeInsets.only(left: 4),
+        margin: EdgeInsets.only(left: 4),
         alignment: Alignment.center,
         decoration: BoxDecoration(color: _oc(o), borderRadius: BorderRadius.circular(6)),
         child: Text(_ol(o),
-            style: const TextStyle(color: Colors.white, fontSize: 11.5, fontWeight: FontWeight.w800)),
+            style: TextStyle(color: Colors.white, fontSize: 11.5, fontWeight: FontWeight.w800)),
       );
 
   Widget _gameRow(GameRow g) {
     return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+      padding: EdgeInsets.symmetric(horizontal: 12, vertical: 8),
       child: Row(
         children: [
-          SizedBox(width: 62, child: Text(_d(g.date), style: const TextStyle(color: K.muted, fontSize: 11.5))),
+          SizedBox(width: 62, child: Text(_d(g.date), style: TextStyle(color: K.muted, fontSize: 11.5))),
           Expanded(
             child: Text(g.home,
                 textAlign: TextAlign.right,
@@ -150,8 +150,8 @@ class _PtMatchScreenState extends State<PtMatchScreen> {
           ),
           Container(
             width: 52,
-            margin: const EdgeInsets.symmetric(horizontal: 8),
-            padding: const EdgeInsets.symmetric(vertical: 3),
+            margin: EdgeInsets.symmetric(horizontal: 8),
+            padding: EdgeInsets.symmetric(vertical: 3),
             alignment: Alignment.center,
             decoration: BoxDecoration(
               color: g.outcome == null ? Colors.transparent : _oc(g.outcome).withAlpha(45),
@@ -159,7 +159,7 @@ class _PtMatchScreenState extends State<PtMatchScreen> {
               border: Border.all(color: _oc(g.outcome).withAlpha(140)),
             ),
             child: Text(g.score,
-                style: const TextStyle(color: K.text, fontSize: 13, fontWeight: FontWeight.w800)),
+                style: TextStyle(color: K.text, fontSize: 13, fontWeight: FontWeight.w800)),
           ),
           Expanded(
             child: Text(g.away,
@@ -187,12 +187,12 @@ class _PtMatchScreenState extends State<PtMatchScreen> {
   Widget _teamCol(String name, String? logo) => Column(
         children: [
           TeamCrest(name: name, logo: logo ?? LogoCache.get(name), size: 48),
-          const SizedBox(height: 8),
+          SizedBox(height: 8),
           Text(name,
               textAlign: TextAlign.center,
               maxLines: 2,
               overflow: TextOverflow.ellipsis,
-              style: const TextStyle(color: K.text, fontSize: 14, fontWeight: FontWeight.w700)),
+              style: TextStyle(color: K.text, fontSize: 14, fontWeight: FontWeight.w700)),
         ],
       );
 
@@ -225,7 +225,7 @@ class _PtMatchScreenState extends State<PtMatchScreen> {
         sc = K.pending;
     }
     return Container(
-      padding: const EdgeInsets.fromLTRB(12, 16, 12, 16),
+      padding: EdgeInsets.fromLTRB(12, 16, 12, 16),
       decoration: BoxDecoration(
         color: K.card,
         borderRadius: BorderRadius.circular(18),
@@ -238,12 +238,12 @@ class _PtMatchScreenState extends State<PtMatchScreen> {
           SizedBox(
             width: 96,
             child: Column(children: [
-              const SizedBox(height: 10),
+              SizedBox(height: 10),
               FittedBox(
                 child: Text(center,
-                    style: const TextStyle(color: K.text, fontSize: 26, fontWeight: FontWeight.w800)),
+                    style: TextStyle(color: K.text, fontSize: 26, fontWeight: FontWeight.w800)),
               ),
-              const SizedBox(height: 6),
+              SizedBox(height: 6),
               Text(status,
                   textAlign: TextAlign.center,
                   style: TextStyle(color: sc, fontSize: 12.5, fontWeight: FontWeight.w800)),
@@ -263,9 +263,9 @@ class _PtMatchScreenState extends State<PtMatchScreen> {
       ...d.markets.map(_market),
       if (d.updated != null)
         Padding(
-          padding: const EdgeInsets.only(top: 6),
+          padding: EdgeInsets.only(top: 6),
           child: Text('Cotes moyennes avant-match · mise à jour ${d.updated}',
-              style: const TextStyle(color: K.muted, fontSize: 11.5)),
+              style: TextStyle(color: K.muted, fontSize: 11.5)),
         ),
     ]);
   }
@@ -277,8 +277,8 @@ class _PtMatchScreenState extends State<PtMatchScreen> {
             ? K.red
             : K.pending;
     return Container(
-      margin: const EdgeInsets.only(bottom: 10),
-      padding: const EdgeInsets.fromLTRB(14, 12, 14, 12),
+      margin: EdgeInsets.only(bottom: 10),
+      padding: EdgeInsets.fromLTRB(14, 12, 14, 12),
       decoration: _box,
       child: Row(
         children: [
@@ -286,8 +286,8 @@ class _PtMatchScreenState extends State<PtMatchScreen> {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text(x.nameFr, style: const TextStyle(color: K.muted, fontSize: 12.5, fontWeight: FontWeight.w600)),
-                const SizedBox(height: 4),
+                Text(x.nameFr, style: TextStyle(color: K.muted, fontSize: 12.5, fontWeight: FontWeight.w600)),
+                SizedBox(height: 4),
                 Text(x.pickFr(m.home, m.away),
                     maxLines: 2,
                     overflow: TextOverflow.ellipsis,
@@ -295,18 +295,18 @@ class _PtMatchScreenState extends State<PtMatchScreen> {
               ],
             ),
           ),
-          const SizedBox(width: 10),
+          SizedBox(width: 10),
           Column(
             crossAxisAlignment: CrossAxisAlignment.end,
             children: [
               if (x.odd.isNotEmpty)
-                Text('@ ${x.odd}', style: const TextStyle(color: K.text, fontSize: 15, fontWeight: FontWeight.w800)),
-              if (x.prob != null) Text('${x.prob} %', style: const TextStyle(color: K.muted, fontSize: 12.5)),
+                Text('@ ${x.odd}', style: TextStyle(color: K.text, fontSize: 15, fontWeight: FontWeight.w800)),
+              if (x.prob != null) Text('${x.prob} %', style: TextStyle(color: K.muted, fontSize: 12.5)),
             ],
           ),
           if (x.status != 'pending')
             Padding(
-              padding: const EdgeInsets.only(left: 10),
+              padding: EdgeInsets.only(left: 10),
               child: Icon(x.status == 'won' ? Icons.check_circle_rounded : Icons.cancel_rounded, color: c, size: 22),
             ),
         ],
@@ -319,16 +319,16 @@ class _PtMatchScreenState extends State<PtMatchScreen> {
   Widget _formHeader(String name, String? logo, List<GameRow> list) {
     final last5 = list.take(5).toList();
     return Padding(
-      padding: const EdgeInsets.only(bottom: 10),
+      padding: EdgeInsets.only(bottom: 10),
       child: Row(
         children: [
           TeamCrest(name: name, logo: logo ?? LogoCache.get(name), size: 24),
-          const SizedBox(width: 10),
+          SizedBox(width: 10),
           Expanded(
             child: Text(name,
                 maxLines: 1,
                 overflow: TextOverflow.ellipsis,
-                style: const TextStyle(color: K.text, fontSize: 15, fontWeight: FontWeight.w800)),
+                style: TextStyle(color: K.text, fontSize: 15, fontWeight: FontWeight.w800)),
           ),
           ...last5.map((g) => _badge(g.outcome)),
         ],
@@ -341,14 +341,14 @@ class _PtMatchScreenState extends State<PtMatchScreen> {
     return _list([
       _formHeader(m.home, d.homeLogo, d.homeForm),
       if (d.homeForm.isNotEmpty) _games(d.homeForm),
-      const SizedBox(height: 22),
+      SizedBox(height: 22),
       _formHeader(m.away, d.awayLogo, d.awayForm),
       if (d.awayForm.isNotEmpty) _games(d.awayForm),
       if (d.homeNext.isNotEmpty || d.awayNext.isNotEmpty) ...[
-        const SizedBox(height: 22),
+        SizedBox(height: 22),
         _title('Prochains matchs'),
         if (d.homeNext.isNotEmpty) _games(d.homeNext),
-        const SizedBox(height: 10),
+        SizedBox(height: 10),
         if (d.awayNext.isNotEmpty) _games(d.awayNext),
       ],
     ]);
@@ -362,17 +362,17 @@ class _PtMatchScreenState extends State<PtMatchScreen> {
     final n = d.h2h.where((g) => g.outcome == 'draw').length;
     final l = d.h2h.where((g) => g.outcome == 'loss').length;
     final total = (w + n + l) == 0 ? 1 : (w + n + l);
-    Widget seg(int v, Color c) => v == 0 ? const SizedBox.shrink() : Expanded(flex: v, child: Container(height: 8, color: c));
+    Widget seg(int v, Color c) => v == 0 ? SizedBox.shrink() : Expanded(flex: v, child: Container(height: 8, color: c));
     Widget cnt(String label, int v, Color c, CrossAxisAlignment a) => Column(
           crossAxisAlignment: a,
           children: [
             Text('$v', style: TextStyle(color: c, fontSize: 22, fontWeight: FontWeight.w800)),
-            Text(label, maxLines: 1, overflow: TextOverflow.ellipsis, style: const TextStyle(color: K.muted, fontSize: 12)),
+            Text(label, maxLines: 1, overflow: TextOverflow.ellipsis, style: TextStyle(color: K.muted, fontSize: 12)),
           ],
         );
     return _list([
       Container(
-        padding: const EdgeInsets.all(16),
+        padding: EdgeInsets.all(16),
         decoration: _box,
         child: Column(children: [
           Row(children: [
@@ -380,14 +380,14 @@ class _PtMatchScreenState extends State<PtMatchScreen> {
             Expanded(child: cnt('Nuls', n, K.amber, CrossAxisAlignment.center)),
             Expanded(child: cnt(m.away, l, K.red, CrossAxisAlignment.end)),
           ]),
-          const SizedBox(height: 12),
+          SizedBox(height: 12),
           ClipRRect(
             borderRadius: BorderRadius.circular(4),
-            child: total == 0 ? const SizedBox.shrink() : Row(children: [seg(w, K.green), seg(n, K.amber), seg(l, K.red)]),
+            child: total == 0 ? SizedBox.shrink() : Row(children: [seg(w, K.green), seg(n, K.amber), seg(l, K.red)]),
           ),
         ]),
       ),
-      const SizedBox(height: 16),
+      SizedBox(height: 16),
       _title('${d.h2h.length} dernières confrontations'),
       _games(d.h2h),
     ]);
@@ -397,7 +397,7 @@ class _PtMatchScreenState extends State<PtMatchScreen> {
 
   Widget _tableTab(MatchDetail d) {
     if (d.table.isEmpty) return kMessage('Classement indisponible pour cette compétition.');
-    const palette = [K.green, K.indigo, Color(0xFF06B6D4), K.amber, Color(0xFFA855F7)];
+    final palette = [K.green, K.indigo, Color(0xFF06B6D4), K.amber, Color(0xFFA855F7)];
     final zones = <String, Color>{};
     for (final r in d.table) {
       if (r.zone.isEmpty || zones.containsKey(r.zone)) continue;
@@ -405,15 +405,15 @@ class _PtMatchScreenState extends State<PtMatchScreen> {
           ? K.red
           : palette[zones.length % palette.length];
     }
-    const hs = TextStyle(color: K.muted, fontSize: 11.5, fontWeight: FontWeight.w700);
+    final hs = TextStyle(color: K.muted, fontSize: 11.5, fontWeight: FontWeight.w700);
     Widget cell(String t, double w, TextStyle s) => SizedBox(width: w, child: Text(t, textAlign: TextAlign.center, style: s));
 
     final rows = <Widget>[
       Padding(
-        padding: const EdgeInsets.fromLTRB(12, 10, 12, 8),
+        padding: EdgeInsets.fromLTRB(12, 10, 12, 8),
         child: Row(children: [
           cell('#', 26, hs),
-          const Expanded(child: Text('Équipe', style: hs)),
+          Expanded(child: Text('Équipe', style: hs)),
           cell('J', 28, hs),
           cell('Diff', 38, hs),
           cell('Pts', 34, hs),
@@ -425,11 +425,11 @@ class _PtMatchScreenState extends State<PtMatchScreen> {
       final ts = TextStyle(color: K.text, fontSize: 13, fontWeight: mine ? FontWeight.w800 : FontWeight.w500);
       rows.add(Container(height: 1, color: K.border));
       rows.add(Container(
-        color: mine ? const Color(0x264F46E5) : null,
-        padding: const EdgeInsets.fromLTRB(0, 8, 12, 8),
+        color: mine ? Color(0x264F46E5) : null,
+        padding: EdgeInsets.fromLTRB(0, 8, 12, 8),
         child: Row(children: [
           Container(width: 4, height: 20, color: zones[r.zone] ?? Colors.transparent),
-          const SizedBox(width: 8),
+          SizedBox(width: 8),
           cell('${r.pos}', 26, ts),
           Expanded(child: Text(r.team, maxLines: 1, overflow: TextOverflow.ellipsis, style: ts)),
           cell(r.mp, 28, ts),
@@ -442,15 +442,15 @@ class _PtMatchScreenState extends State<PtMatchScreen> {
       _title(d.tableTitle.isEmpty ? 'Classement' : d.tableTitle),
       Container(decoration: _box, clipBehavior: Clip.antiAlias, child: Column(children: rows)),
       if (zones.isNotEmpty) ...[
-        const SizedBox(height: 12),
+        SizedBox(height: 12),
         Wrap(
           spacing: 14,
           runSpacing: 8,
           children: zones.entries
               .map((e) => Row(mainAxisSize: MainAxisSize.min, children: [
                     Container(width: 10, height: 10, decoration: BoxDecoration(color: e.value, borderRadius: BorderRadius.circular(2))),
-                    const SizedBox(width: 6),
-                    Text(e.key, style: const TextStyle(color: K.muted, fontSize: 12)),
+                    SizedBox(width: 6),
+                    Text(e.key, style: TextStyle(color: K.muted, fontSize: 12)),
                   ]))
               .toList(),
         ),
@@ -469,23 +469,23 @@ class _PtMatchScreenState extends State<PtMatchScreen> {
     final ra = sum > 0 && a != null ? (a / sum * 1000).round() : 1;
     final rb = sum > 0 && b != null ? (b / sum * 1000).round() : 1;
     return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 9),
+      padding: EdgeInsets.symmetric(horizontal: 14, vertical: 9),
       child: Column(children: [
         Row(children: [
-          Text(s.a, style: const TextStyle(color: K.text, fontSize: 13.5, fontWeight: FontWeight.w800)),
+          Text(s.a, style: TextStyle(color: K.text, fontSize: 13.5, fontWeight: FontWeight.w800)),
           Expanded(
             child: Text(s.label,
                 textAlign: TextAlign.center,
-                style: const TextStyle(color: K.muted, fontSize: 12.5, fontWeight: FontWeight.w600)),
+                style: TextStyle(color: K.muted, fontSize: 12.5, fontWeight: FontWeight.w600)),
           ),
-          Text(s.b, style: const TextStyle(color: K.text, fontSize: 13.5, fontWeight: FontWeight.w800)),
+          Text(s.b, style: TextStyle(color: K.text, fontSize: 13.5, fontWeight: FontWeight.w800)),
         ]),
-        const SizedBox(height: 6),
+        SizedBox(height: 6),
         ClipRRect(
           borderRadius: BorderRadius.circular(3),
           child: Row(children: [
             Expanded(flex: ra == 0 ? 1 : ra, child: Container(height: 5, color: K.indigo)),
-            const SizedBox(width: 3),
+            SizedBox(width: 3),
             Expanded(flex: rb == 0 ? 1 : rb, child: Container(height: 5, color: K.amber)),
           ]),
         ),
@@ -504,15 +504,15 @@ class _PtMatchScreenState extends State<PtMatchScreen> {
     for (final s in d.leagueStats) {
       if (s.header) {
         league.add(Padding(
-          padding: const EdgeInsets.fromLTRB(14, 12, 14, 6),
-          child: Text(s.label, style: const TextStyle(color: K.text, fontSize: 13.5, fontWeight: FontWeight.w800)),
+          padding: EdgeInsets.fromLTRB(14, 12, 14, 6),
+          child: Text(s.label, style: TextStyle(color: K.text, fontSize: 13.5, fontWeight: FontWeight.w800)),
         ));
       } else {
         league.add(Padding(
-          padding: const EdgeInsets.fromLTRB(14, 6, 14, 6),
+          padding: EdgeInsets.fromLTRB(14, 6, 14, 6),
           child: Row(children: [
-            Expanded(child: Text(s.label, style: const TextStyle(color: K.muted, fontSize: 13))),
-            Text(s.value, style: const TextStyle(color: K.text, fontSize: 13, fontWeight: FontWeight.w700)),
+            Expanded(child: Text(s.label, style: TextStyle(color: K.muted, fontSize: 13))),
+            Text(s.value, style: TextStyle(color: K.text, fontSize: 13, fontWeight: FontWeight.w700)),
           ]),
         ));
       }
@@ -520,21 +520,21 @@ class _PtMatchScreenState extends State<PtMatchScreen> {
     return _list([
       if (rows.isNotEmpty) ...[
         Padding(
-          padding: const EdgeInsets.only(bottom: 10),
+          padding: EdgeInsets.only(bottom: 10),
           child: Row(children: [
-            Expanded(child: Text(m.home, maxLines: 1, overflow: TextOverflow.ellipsis, style: const TextStyle(color: K.indigo, fontSize: 13.5, fontWeight: FontWeight.w800))),
-            const Text('vs', style: TextStyle(color: K.muted, fontSize: 12)),
-            Expanded(child: Text(m.away, textAlign: TextAlign.right, maxLines: 1, overflow: TextOverflow.ellipsis, style: const TextStyle(color: K.amber, fontSize: 13.5, fontWeight: FontWeight.w800))),
+            Expanded(child: Text(m.home, maxLines: 1, overflow: TextOverflow.ellipsis, style: TextStyle(color: K.indigo, fontSize: 13.5, fontWeight: FontWeight.w800))),
+            Text('vs', style: TextStyle(color: K.muted, fontSize: 12)),
+            Expanded(child: Text(m.away, textAlign: TextAlign.right, maxLines: 1, overflow: TextOverflow.ellipsis, style: TextStyle(color: K.amber, fontSize: 13.5, fontWeight: FontWeight.w800))),
           ]),
         ),
         Container(decoration: _box, clipBehavior: Clip.antiAlias, child: Column(children: rows)),
       ],
       if (league.isNotEmpty) ...[
-        const SizedBox(height: 22),
+        SizedBox(height: 22),
         _title(d.leagueStatsTitle.isEmpty ? 'Championnat' : 'Championnat · ${d.leagueStatsTitle}'),
         Container(
           decoration: _box,
-          padding: const EdgeInsets.only(bottom: 8),
+          padding: EdgeInsets.only(bottom: 8),
           child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: league),
         ),
       ],

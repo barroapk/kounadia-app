@@ -9,19 +9,19 @@ BoxDecoration kBox({double r = 14}) => BoxDecoration(
     );
 
 Widget kTitle(String t) => Padding(
-      padding: const EdgeInsets.fromLTRB(4, 18, 4, 10),
+      padding: EdgeInsets.fromLTRB(4, 18, 4, 10),
       child: Text(t.toUpperCase(),
-          style: const TextStyle(color: K.muted, fontSize: 12, fontWeight: FontWeight.w800, letterSpacing: 1.1)),
+          style: TextStyle(color: K.muted, fontSize: 12, fontWeight: FontWeight.w800, letterSpacing: 1.1)),
     );
 
-Widget kLoader() => const Center(child: CircularProgressIndicator(color: K.indigo));
+Widget kLoader() => Center(child: CircularProgressIndicator(color: K.indigo));
 
 PreferredSizeWidget kAppBar(String title) => AppBar(
       backgroundColor: K.bg,
       foregroundColor: K.text,
       elevation: 0,
       scrolledUnderElevation: 0,
-      title: Text(title, style: const TextStyle(fontSize: 18, fontWeight: FontWeight.w800)),
+      title: Text(title, style: TextStyle(fontSize: 18, fontWeight: FontWeight.w800)),
     );
 
 Widget kPill(String t, bool sel, VoidCallback onTap, {double? height = 38}) => Material(
@@ -32,7 +32,7 @@ Widget kPill(String t, bool sel, VoidCallback onTap, {double? height = 38}) => M
         onTap: onTap,
         child: Container(
           height: height,
-          padding: const EdgeInsets.symmetric(horizontal: 14),
+          padding: EdgeInsets.symmetric(horizontal: 14),
           alignment: Alignment.center,
           decoration: BoxDecoration(
             borderRadius: BorderRadius.circular(12),
@@ -58,7 +58,7 @@ class PtImage extends StatelessWidget {
   final String url;
   final double w;
   final double h;
-  const PtImage(this.url, {super.key, this.w = 22, this.h = 16});
+  PtImage(this.url, {super.key, this.w = 22, this.h = 16});
 
   @override
   Widget build(BuildContext context) {
@@ -70,7 +70,7 @@ class PtImage extends StatelessWidget {
         width: w,
         height: h,
         fit: BoxFit.contain,
-        httpHeaders: const {'Referer': 'https://primatips.com/'},
+        httpHeaders: {'Referer': 'https://primatips.com/'},
         placeholder: (_, __) => SizedBox(width: w, height: h),
         errorWidget: (_, __, ___) => SizedBox(width: w, height: h),
       ),

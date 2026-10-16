@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'dart:math' as math;
 import 'package:flutter/material.dart';
 import '../models/coupon.dart';
@@ -13,7 +14,7 @@ import '../widgets/coupon_receipt.dart';
 import 'pt_match_screen.dart';
 
 class CouponTab extends StatefulWidget {
-  const CouponTab({super.key});
+  CouponTab({super.key});
 
   @override
   State<CouponTab> createState() => _CouponTabState();
@@ -33,11 +34,12 @@ class _CouponTabState extends State<CouponTab> with AutomaticKeepAliveClientMixi
   List<Coupon> _results = [];
   final Set<String> _shown = {};
   List<Coupon> _saved = [];
+  Timer? _timer;
   Map<String, List<LiveMatch>> _days = {};
   Map<int, MatchMarkets> _mk = {};
 
-  static const _oMin = 1.5;
-  static const _oMax = 50.0;
+  static final _oMin = 1.5;
+  static final _oMax = 50.0;
   double _toOdd(double v) => (_oMin * math.pow(_oMax / _oMin, v)).toDouble();
   double _fromOdd(double o) => (math.log(o / _oMin) / math.log(_oMax / _oMin)).clamp(0.0, 1.0).toDouble();
   double _r(double v) => v < 10 ? (v * 10).round() / 10 : (v * 2).round() / 2;
@@ -46,6 +48,15 @@ class _CouponTabState extends State<CouponTab> with AutomaticKeepAliveClientMixi
   void initState() {
     super.initState();
     _loadSaved();
+    _timer = Timer.periodic(Duration(minutes: 2), (_) {
+      if (_view == 1) _loadSaved();
+    });
+  }
+
+  @override
+  void dispose() {
+    _timer?.cancel();
+    super.dispose();
   }
 
   String _key(int off) {
@@ -81,7 +92,7 @@ class _CouponTabState extends State<CouponTab> with AutomaticKeepAliveClientMixi
     if (!mounted) return;
     ScaffoldMessenger.of(context)
       ..hideCurrentSnackBar()
-      ..showSnackBar(SnackBar(content: Text(m), duration: const Duration(seconds: 2)));
+      ..showSnackBar(SnackBar(content: Text(m), duration: Duration(seconds: 2)));
   }
 
   void _applyPreset(String k) {
@@ -113,13 +124,13 @@ class _CouponTabState extends State<CouponTab> with AutomaticKeepAliveClientMixi
       }
       return;
     }
-    await Future<void>.delayed(const Duration(milliseconds: 50));
+    await Future<void>.delayed(Duration(milliseconds: 50));
     final keys = _c.period == 0
         ? [_key(0)]
         : _c.period == 1
             ? [_key(1)]
             : [_key(0), _key(1)];
-    final matches = keys.expand((k) => _days[k] ?? const <LiveMatch>[]).toList();
+    final matches = keys.expand((k) => _days[k] ?? <LiveMatch>[]).toList();
     final cands = CouponEngine.candidates(matches, _c, _mk);
     if (!more) _shown.clear();
     final res = CouponEngine.generate(cands, _c, exclude: _shown);
@@ -140,10 +151,14 @@ class _CouponTabState extends State<CouponTab> with AutomaticKeepAliveClientMixi
   }
 
   Future<void> _save(Coupon c) async {
-    final ok = await CouponStore.add(c);
+    final r = await CouponStore.add(c);
     final l = await CouponStore.all();
     if (mounted) setState(() => _saved = l);
-    _snack(ok ? '⭐ Coupon enregistré dans « Mes coupons »' : 'Ce coupon est déjà enregistré');
+    _snack(r == 'ok'
+        ? '⭐ Coupon enregistré dans « Mes coupons »'
+        : r == 'full'
+            ? 'Limite de 5 coupons atteinte : supprime un coupon pour en enregistrer un nouveau.'
+            : 'Ce coupon est déjà enregistré');
   }
 
   Future<void> _delete(Coupon c) async {
@@ -163,10 +178,10 @@ class _CouponTabState extends State<CouponTab> with AutomaticKeepAliveClientMixi
   Widget build(BuildContext context) {
     super.build(context);
     return ListView(
-      padding: const EdgeInsets.fromLTRB(12, 4, 12, 96),
+      padding: EdgeInsets.fromLTRB(12, 4, 12, 96),
       children: [
         _viewSwitch(),
-        const SizedBox(height: 12),
+        SizedBox(height: 12),
         if (_view == 0) ..._create() else ..._mine(),
       ],
     );
@@ -182,7 +197,7 @@ class _CouponTabState extends State<CouponTab> with AutomaticKeepAliveClientMixi
             if (v == 1) _loadSaved();
           },
           child: AnimatedContainer(
-            duration: const Duration(milliseconds: 150),
+            duration: Duration(milliseconds: 150),
             height: 36,
             alignment: Alignment.center,
             decoration: BoxDecoration(
@@ -197,23 +212,23 @@ class _CouponTabState extends State<CouponTab> with AutomaticKeepAliveClientMixi
     }
 
     return Container(
-      padding: const EdgeInsets.all(3),
+      padding: EdgeInsets.all(3),
       decoration: kBox(r: 12),
       child: Row(children: [half('Créer un coupon', 0), half('Mes coupons · ${_saved.length}', 1)]),
     );
   }
 
   Widget _hero() => Container(
-        padding: const EdgeInsets.all(16),
+        padding: EdgeInsets.all(16),
         decoration: BoxDecoration(
-          gradient: const LinearGradient(
+          gradient: LinearGradient(
             colors: [Color(0xFF4F46E5), Color(0xFF7C3AED)],
             begin: Alignment.topLeft,
             end: Alignment.bottomRight,
           ),
           borderRadius: BorderRadius.circular(18),
         ),
-        child: const Row(crossAxisAlignment: CrossAxisAlignment.start, children: [
+        child: Row(crossAxisAlignment: CrossAxisAlignment.start, children: [
           CircleAvatar(
             radius: 24,
             backgroundColor: Color(0x33FFFFFF),
@@ -235,7 +250,7 @@ class _CouponTabState extends State<CouponTab> with AutomaticKeepAliveClientMixi
       );
 
   Widget _seg(List<String> labels, int sel, ValueChanged<int> on) => Container(
-        padding: const EdgeInsets.all(3),
+        padding: EdgeInsets.all(3),
         decoration: BoxDecoration(color: K.bg, borderRadius: BorderRadius.circular(11)),
         child: Row(children: [
           for (var i = 0; i < labels.length; i++)
@@ -259,12 +274,12 @@ class _CouponTabState extends State<CouponTab> with AutomaticKeepAliveClientMixi
       );
 
   Widget _head(String title, String value) => Padding(
-        padding: const EdgeInsets.fromLTRB(2, 14, 2, 0),
+        padding: EdgeInsets.fromLTRB(2, 14, 2, 0),
         child: Row(children: [
           Expanded(
-            child: Text(title, style: const TextStyle(color: K.text, fontSize: 13.5, fontWeight: FontWeight.w700)),
+            child: Text(title, style: TextStyle(color: K.text, fontSize: 13.5, fontWeight: FontWeight.w700)),
           ),
-          Text(value, style: const TextStyle(color: K.indigoText, fontSize: 13.5, fontWeight: FontWeight.w800)),
+          Text(value, style: TextStyle(color: K.indigoText, fontSize: 13.5, fontWeight: FontWeight.w800)),
         ]),
       );
 
@@ -283,7 +298,7 @@ class _CouponTabState extends State<CouponTab> with AutomaticKeepAliveClientMixi
   Widget _toggle(String label, bool on, VoidCallback tap) => GestureDetector(
         onTap: tap,
         child: Container(
-          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 7),
+          padding: EdgeInsets.symmetric(horizontal: 12, vertical: 7),
           decoration: BoxDecoration(
             color: on ? K.indigoSoft : K.bg,
             borderRadius: BorderRadius.circular(20),
@@ -291,7 +306,7 @@ class _CouponTabState extends State<CouponTab> with AutomaticKeepAliveClientMixi
           ),
           child: Row(mainAxisSize: MainAxisSize.min, children: [
             Icon(on ? Icons.check_rounded : Icons.add_rounded, size: 15, color: on ? K.text : K.muted),
-            const SizedBox(width: 4),
+            SizedBox(width: 4),
             Text(label,
                 style: TextStyle(color: on ? K.text : K.muted, fontSize: 12.5, fontWeight: FontWeight.w700)),
           ]),
@@ -304,12 +319,12 @@ class _CouponTabState extends State<CouponTab> with AutomaticKeepAliveClientMixi
       });
 
   Widget _criteria() => Container(
-        padding: const EdgeInsets.fromLTRB(14, 14, 14, 10),
+        padding: EdgeInsets.fromLTRB(14, 14, 14, 10),
         decoration: kBox(r: 16),
         child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-          const Text('Période', style: TextStyle(color: K.text, fontSize: 13.5, fontWeight: FontWeight.w700)),
-          const SizedBox(height: 8),
-          _seg(const ["Aujourd'hui", 'Demain', 'Les deux'], _c.period, (i) => setState(() => _c.period = i)),
+          Text('Période', style: TextStyle(color: K.text, fontSize: 13.5, fontWeight: FontWeight.w700)),
+          SizedBox(height: 8),
+          _seg(["Aujourd'hui", 'Demain', 'Les deux'], _c.period, (i) => setState(() => _c.period = i)),
           _head('Cote totale', '×${fx(_c.totalMin)} – ×${fx(_c.totalMax)}'),
           _slider(RangeValues(_fromOdd(_c.totalMin), _fromOdd(_c.totalMax)), 0, 1, 60,
               (v) => _edit(() {
@@ -325,11 +340,11 @@ class _CouponTabState extends State<CouponTab> with AutomaticKeepAliveClientMixi
           InkWell(
             onTap: () => setState(() => _advanced = !_advanced),
             child: Padding(
-              padding: const EdgeInsets.symmetric(vertical: 8),
+              padding: EdgeInsets.symmetric(vertical: 8),
               child: Row(children: [
-                const Icon(Icons.tune_rounded, color: K.muted, size: 18),
-                const SizedBox(width: 8),
-                const Expanded(
+                Icon(Icons.tune_rounded, color: K.muted, size: 18),
+                SizedBox(width: 8),
+                Expanded(
                   child: Text('Critères avancés',
                       style: TextStyle(color: K.muted, fontSize: 13, fontWeight: FontWeight.w700)),
                 ),
@@ -350,10 +365,10 @@ class _CouponTabState extends State<CouponTab> with AutomaticKeepAliveClientMixi
                       _c.probMin = v.start.round();
                       _c.probMax = v.end.round();
                     })),
-            const SizedBox(height: 6),
-            const Text('Types de paris',
+            SizedBox(height: 6),
+            Text('Types de paris',
                 style: TextStyle(color: K.text, fontSize: 13.5, fontWeight: FontWeight.w700)),
-            const SizedBox(height: 8),
+            SizedBox(height: 8),
             Wrap(spacing: 8, runSpacing: 8, children: [
               _toggle('Victoire', _c.win, () {
                 if (_c.win && !_c.draw && !_c.dc) return;
@@ -370,41 +385,41 @@ class _CouponTabState extends State<CouponTab> with AutomaticKeepAliveClientMixi
                 _edit(() => _c.dc = !_c.dc);
               }),
             ]),
-            const SizedBox(height: 8),
+            SizedBox(height: 8),
           ],
         ]),
       );
 
   Widget _note(String t) => Container(
-        margin: const EdgeInsets.only(bottom: 12),
-        padding: const EdgeInsets.all(14),
+        margin: EdgeInsets.only(bottom: 12),
+        padding: EdgeInsets.all(14),
         decoration: BoxDecoration(
-          color: const Color(0x22F59E0B),
+          color: Color(0x22F59E0B),
           borderRadius: BorderRadius.circular(14),
-          border: Border.all(color: const Color(0x55F59E0B)),
+          border: Border.all(color: Color(0x55F59E0B)),
         ),
         child: Row(crossAxisAlignment: CrossAxisAlignment.start, children: [
-          const Icon(Icons.info_outline_rounded, color: K.amber, size: 18),
-          const SizedBox(width: 10),
-          Expanded(child: Text(t, style: const TextStyle(color: K.text, fontSize: 13, height: 1.4))),
+          Icon(Icons.info_outline_rounded, color: K.amber, size: 18),
+          SizedBox(width: 10),
+          Expanded(child: Text(t, style: TextStyle(color: K.text, fontSize: 13, height: 1.4))),
         ]),
       );
 
   List<Widget> _create() => [
         _hero(),
-        const SizedBox(height: 12),
+        SizedBox(height: 12),
         Row(children: [
-          for (final (k, label) in const [('safe', 'Prudent'), ('eq', 'Équilibré'), ('bold', 'Audacieux')])
+          for (final (k, label) in [('safe', 'Prudent'), ('eq', 'Équilibré'), ('bold', 'Audacieux')])
             Expanded(
               child: Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 3),
+                padding: EdgeInsets.symmetric(horizontal: 3),
                 child: kPill(label, _preset == k, () => _applyPreset(k)),
               ),
             ),
         ]),
-        const SizedBox(height: 12),
+        SizedBox(height: 12),
         _criteria(),
-        const SizedBox(height: 14),
+        SizedBox(height: 14),
         SizedBox(
           height: 52,
           child: FilledButton.icon(
@@ -415,22 +430,22 @@ class _CouponTabState extends State<CouponTab> with AutomaticKeepAliveClientMixi
               shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
             ),
             icon: _busy
-                ? const SizedBox(
+                ? SizedBox(
                     width: 18, height: 18, child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white))
-                : const Icon(Icons.auto_awesome_rounded),
+                : Icon(Icons.auto_awesome_rounded),
             label: Text(_busy ? 'Analyse en cours…' : 'Générer mes coupons',
-                style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w800)),
+                style: TextStyle(fontSize: 16, fontWeight: FontWeight.w800)),
           ),
         ),
-        const SizedBox(height: 14),
-        const KndBanner(),
+        SizedBox(height: 14),
+        KndBanner(),
         if (_msg != null) _note(_msg!),
         if (_results.isNotEmpty) ...[
           Padding(
-            padding: const EdgeInsets.fromLTRB(4, 0, 4, 10),
+            padding: EdgeInsets.fromLTRB(4, 0, 4, 10),
             child: Text(
               '${_results.length} coupon${_results.length > 1 ? 's' : ''} proposé${_results.length > 1 ? 's' : ''} · $_analyzed matchs analysés',
-              style: const TextStyle(color: K.muted, fontSize: 12.5, fontWeight: FontWeight.w600),
+              style: TextStyle(color: K.muted, fontSize: 12.5, fontWeight: FontWeight.w600),
             ),
           ),
           for (var i = 0; i < _results.length; i++) ...[
@@ -442,7 +457,7 @@ class _CouponTabState extends State<CouponTab> with AutomaticKeepAliveClientMixi
               onAction: () => _save(_results[i]),
               onOpen: _open,
             ),
-            const SizedBox(height: 12),
+            SizedBox(height: 12),
           ],
           SizedBox(
             height: 48,
@@ -450,16 +465,16 @@ class _CouponTabState extends State<CouponTab> with AutomaticKeepAliveClientMixi
               onPressed: _busy ? null : () => _generate(more: true),
               style: OutlinedButton.styleFrom(
                 foregroundColor: K.text,
-                side: const BorderSide(color: K.border),
+                side: BorderSide(color: K.border),
                 shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
               ),
-              icon: const Icon(Icons.refresh_rounded),
-              label: const Text("Générer d'autres coupons", style: TextStyle(fontWeight: FontWeight.w700)),
+              icon: Icon(Icons.refresh_rounded),
+              label: Text("Générer d'autres coupons", style: TextStyle(fontWeight: FontWeight.w700)),
             ),
           ),
         ],
-        const SizedBox(height: 16),
-        const Text(
+        SizedBox(height: 16),
+        Text(
           "Cotes moyennes indicatives : elles peuvent varier chez le bookmaker. Aucun coupon n'est garanti. 18+ · Jouez de manière responsable.",
           textAlign: TextAlign.center,
           style: TextStyle(color: K.muted, fontSize: 11.5, height: 1.4),
@@ -469,8 +484,8 @@ class _CouponTabState extends State<CouponTab> with AutomaticKeepAliveClientMixi
   List<Widget> _mine() {
     if (_saved.isEmpty) {
       return [
-        const KndBanner(),
-        const SizedBox(height: 30),
+        KndBanner(),
+        SizedBox(height: 30),
         kMessage('Aucun coupon enregistré.\nGénère un coupon puis appuie sur ☆ pour le retrouver ici.'),
       ];
     }
@@ -478,15 +493,15 @@ class _CouponTabState extends State<CouponTab> with AutomaticKeepAliveClientMixi
       Row(children: [
         Expanded(
           child: Text('${_saved.length} coupon${_saved.length > 1 ? 's' : ''} enregistré${_saved.length > 1 ? 's' : ''}',
-              style: const TextStyle(color: K.muted, fontSize: 12.5, fontWeight: FontWeight.w600)),
+              style: TextStyle(color: K.muted, fontSize: 12.5, fontWeight: FontWeight.w600)),
         ),
         TextButton.icon(
           onPressed: _loadSaved,
-          icon: const Icon(Icons.sync_rounded, size: 18, color: K.indigoText),
-          label: const Text('Actualiser', style: TextStyle(color: K.indigoText, fontWeight: FontWeight.w700)),
+          icon: Icon(Icons.sync_rounded, size: 18, color: K.indigoText),
+          label: Text('Actualiser', style: TextStyle(color: K.indigoText, fontWeight: FontWeight.w700)),
         ),
       ]),
-      const KndBanner(),
+      KndBanner(),
       for (final c in _saved) ...[
         _CouponCard(
           coupon: c,
@@ -496,7 +511,7 @@ class _CouponTabState extends State<CouponTab> with AutomaticKeepAliveClientMixi
           onAction: () => _delete(c),
           onOpen: _open,
         ),
-        const SizedBox(height: 12),
+        SizedBox(height: 12),
       ],
     ];
   }
@@ -510,7 +525,7 @@ class _CouponCard extends StatelessWidget {
   final VoidCallback onAction;
   final void Function(Leg) onOpen;
 
-  const _CouponCard({
+  _CouponCard({
     required this.coupon,
     required this.title,
     required this.saved,
@@ -530,19 +545,21 @@ class _CouponCard extends StatelessWidget {
     final d = l.date;
     return InkWell(
       onTap: () => onOpen(l),
+      child: Container(
+      color: (l.result == 'won' || l.result == 'lost') ? rc.withAlpha(30) : null,
       child: Padding(
-        padding: const EdgeInsets.fromLTRB(12, 10, 12, 10),
+        padding: EdgeInsets.fromLTRB(12, 10, 12, 10),
         child: Row(children: [
           SizedBox(
             width: 46,
             child: Column(children: [
               Text(d == null ? '--:--' : hm(d),
-                  style: const TextStyle(color: K.text, fontSize: 13, fontWeight: FontWeight.w700)),
+                  style: TextStyle(color: K.text, fontSize: 13, fontWeight: FontWeight.w700)),
               Text(d == null ? '' : '${two(d.day)}/${two(d.month)}',
-                  style: const TextStyle(color: K.muted, fontSize: 10.5)),
+                  style: TextStyle(color: K.muted, fontSize: 10.5)),
               if (l.result != 'pending')
                 Padding(
-                  padding: const EdgeInsets.only(top: 2),
+                  padding: EdgeInsets.only(top: 2),
                   child: Icon(
                     l.result == 'won'
                         ? Icons.check_circle_rounded
@@ -557,17 +574,17 @@ class _CouponCard extends StatelessWidget {
                 ),
             ]),
           ),
-          const SizedBox(width: 6),
+          SizedBox(width: 6),
           Expanded(
             child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
               Text(l.league,
-                  maxLines: 1, overflow: TextOverflow.ellipsis, style: const TextStyle(color: K.muted, fontSize: 11)),
-              const SizedBox(height: 2),
+                  maxLines: 1, overflow: TextOverflow.ellipsis, style: TextStyle(color: K.muted, fontSize: 11)),
+              SizedBox(height: 2),
               Text('${l.home} – ${l.away}',
                   maxLines: 1,
                   overflow: TextOverflow.ellipsis,
-                  style: const TextStyle(color: K.text, fontSize: 13.5, fontWeight: FontWeight.w600)),
-              const SizedBox(height: 3),
+                  style: TextStyle(color: K.text, fontSize: 13.5, fontWeight: FontWeight.w600)),
+              SizedBox(height: 3),
               Text(l.label,
                   maxLines: 1,
                   overflow: TextOverflow.ellipsis,
@@ -577,12 +594,13 @@ class _CouponCard extends StatelessWidget {
                       fontWeight: FontWeight.w800)),
             ]),
           ),
-          const SizedBox(width: 8),
+          SizedBox(width: 8),
           Column(crossAxisAlignment: CrossAxisAlignment.end, children: [
-            Text('@${fx(l.odd)}', style: const TextStyle(color: K.text, fontSize: 14.5, fontWeight: FontWeight.w800)),
-            Text('${l.prob} %', style: const TextStyle(color: K.muted, fontSize: 11.5)),
+            Text('@${fx(l.odd)}', style: TextStyle(color: K.text, fontSize: 14.5, fontWeight: FontWeight.w800)),
+            Text('${l.prob} %', style: TextStyle(color: K.muted, fontSize: 11.5)),
           ]),
         ]),
+      ),
       ),
     );
   }
@@ -606,18 +624,18 @@ class _CouponCard extends StatelessWidget {
       child: Column(children: [
         Container(
           color: K.groupHead,
-          padding: const EdgeInsets.fromLTRB(14, 12, 14, 12),
+          padding: EdgeInsets.fromLTRB(14, 12, 14, 12),
           child: Row(children: [
             Expanded(
               child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-                Text(title, style: const TextStyle(color: K.text, fontSize: 14.5, fontWeight: FontWeight.w800)),
-                const SizedBox(height: 4),
+                Text(title, style: TextStyle(color: K.text, fontSize: 14.5, fontWeight: FontWeight.w800)),
+                SizedBox(height: 4),
                 Row(children: [
-                  Text('${coupon.legs.length} matchs', style: const TextStyle(color: K.muted, fontSize: 12)),
+                  Text('${coupon.legs.length} matchs', style: TextStyle(color: K.muted, fontSize: 12)),
                   if (saved) ...[
-                    const SizedBox(width: 8),
+                    SizedBox(width: 8),
                     Container(
-                      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+                      padding: EdgeInsets.symmetric(horizontal: 8, vertical: 2),
                       decoration: BoxDecoration(color: stColor.withAlpha(45), borderRadius: BorderRadius.circular(10)),
                       child: Text(stLabel, style: TextStyle(color: stColor, fontSize: 11.5, fontWeight: FontWeight.w800)),
                     ),
@@ -627,26 +645,26 @@ class _CouponCard extends StatelessWidget {
             ),
             Column(crossAxisAlignment: CrossAxisAlignment.end, children: [
               Text('×${fx(coupon.total)}',
-                  style: const TextStyle(color: K.green, fontSize: 22, fontWeight: FontWeight.w900)),
-              const Text('cote totale', style: TextStyle(color: K.muted, fontSize: 11)),
+                  style: TextStyle(color: K.green, fontSize: 22, fontWeight: FontWeight.w900)),
+              Text('cote totale', style: TextStyle(color: K.muted, fontSize: 11)),
             ]),
           ]),
         ),
         ...rows,
         Container(height: 1, color: K.border),
         Padding(
-          padding: const EdgeInsets.fromLTRB(14, 2, 4, 2),
+          padding: EdgeInsets.fromLTRB(14, 2, 4, 2),
           child: Row(children: [
-            const Icon(Icons.insights_rounded, color: K.muted, size: 16),
-            const SizedBox(width: 6),
+            Icon(Icons.insights_rounded, color: K.muted, size: 16),
+            SizedBox(width: 6),
             Expanded(
               child: Text('Probabilité estimée ≈ ${coupon.pctText()}',
-                  style: const TextStyle(color: K.muted, fontSize: 12.5)),
+                  style: TextStyle(color: K.muted, fontSize: 12.5)),
             ),
             IconButton(
               tooltip: 'Partager',
               onPressed: onShare,
-              icon: const Icon(Icons.share_rounded, color: K.muted, size: 20),
+              icon: Icon(Icons.share_rounded, color: K.muted, size: 20),
             ),
             IconButton(
               tooltip: saved ? 'Supprimer' : 'Enregistrer',

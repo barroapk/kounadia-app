@@ -3,7 +3,7 @@ import "../config/competitions_catalog.dart";
 import "../services/competition_preferences.dart";
 
 class CompetitionsSettingsScreen extends StatefulWidget {
-  const CompetitionsSettingsScreen({super.key});
+  CompetitionsSettingsScreen({super.key});
 
   @override
   State<CompetitionsSettingsScreen> createState() => _CompetitionsSettingsScreenState();
@@ -42,7 +42,7 @@ class _CompetitionsSettingsScreenState extends State<CompetitionsSettingsScreen>
   @override
   Widget build(BuildContext context) {
     if (_loading) {
-      return const Scaffold(
+      return Scaffold(
         body: Center(child: CircularProgressIndicator()),
       );
     }
@@ -55,13 +55,13 @@ class _CompetitionsSettingsScreenState extends State<CompetitionsSettingsScreen>
     }
 
     return Scaffold(
-      appBar: AppBar(title: const Text("Compétitions affichées")),
+      appBar: AppBar(title: Text("Compétitions affichées")),
       body: ListView(
         children: grouped.entries.map((continentEntry) {
           return ExpansionTile(
             title: Text(
               continentEntry.key,
-              style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 14),
+              style: TextStyle(fontWeight: FontWeight.bold, fontSize: 14),
             ),
             childrenPadding: EdgeInsets.zero,
             children: continentEntry.value.entries.map((countryEntry) {
@@ -71,7 +71,7 @@ class _CompetitionsSettingsScreenState extends State<CompetitionsSettingsScreen>
                 children: [
                   if (countryEntry.key != "International")
                     Padding(
-                      padding: const EdgeInsets.fromLTRB(24, 6, 16, 2),
+                      padding: EdgeInsets.fromLTRB(24, 6, 16, 2),
                       child: Text(
                         countryEntry.key,
                         style: TextStyle(
@@ -86,20 +86,20 @@ class _CompetitionsSettingsScreenState extends State<CompetitionsSettingsScreen>
                     return InkWell(
                       onTap: () => _toggle(comp.name, !isEnabled),
                       child: Padding(
-                        padding: const EdgeInsets.symmetric(horizontal: 32, vertical: 6),
+                        padding: EdgeInsets.symmetric(horizontal: 32, vertical: 6),
                         child: Row(
                           children: [
                             Expanded(
                               child: Text(
                                 comp.name,
-                                style: const TextStyle(fontSize: 13),
+                                style: TextStyle(fontSize: 13),
                               ),
                             ),
                             Transform.scale(
                               scale: 0.75,
                               child: Switch(
                                 value: isEnabled,
-                                activeColor: const Color(0xFF16A34A),
+                                activeColor: Color(0xFF16A34A),
                                 onChanged: (value) => _toggle(comp.name, value),
                               ),
                             ),

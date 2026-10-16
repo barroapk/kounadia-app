@@ -6,7 +6,7 @@ import '../models/nerdy_tip.dart';
 class NerdyTipsService {
   Future<List<NerdyTip>> getToday() async {
     final uri = Uri.parse('${ApiConfig.baseUrl}/nerdytips/today');
-    final r = await http.get(uri).timeout(const Duration(seconds: 90));
+    final r = await http.get(uri).timeout(Duration(seconds: 90));
     if (r.statusCode != 200) {
       throw Exception('Pronostics indisponibles');
     }

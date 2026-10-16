@@ -19,7 +19,7 @@ class MatchDetailScreen extends StatefulWidget {
   final String? awayTeamCrest;
   final String provider;
 
-  const MatchDetailScreen({
+  MatchDetailScreen({
     super.key,
     required this.matchId,
     required this.homeTeam,
@@ -144,16 +144,16 @@ class _MatchDetailScreenState extends State<MatchDetailScreen>
   Widget _formTab(TeamForm home, TeamForm away, HeadToHead h2h, String homeTeamName, String awayTeamName) {
     Widget formCard(String label, TeamForm form) {
       return Card(
-        margin: const EdgeInsets.symmetric(vertical: 6),
+        margin: EdgeInsets.symmetric(vertical: 6),
         child: Padding(
-          padding: const EdgeInsets.all(12),
+          padding: EdgeInsets.all(12),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               Text(label, style: Theme.of(context).textTheme.titleMedium),
-              const SizedBox(height: 8),
+              SizedBox(height: 8),
               if (form.matchesAnalyzed == 0)
-                const Text("Pas assez de données historiques pour l'instant.")
+                Text("Pas assez de données historiques pour l'instant.")
               else ...[
                 Text("${form.wins}V - ${form.draws}N - ${form.losses}D sur ${form.matchesAnalyzed} match(s)"),
                 Text("Forme : ${form.formPercent}% (${form.points}/${form.maxPoints} pts)"),
@@ -168,31 +168,31 @@ class _MatchDetailScreenState extends State<MatchDetailScreen>
     }
 
     return ListView(
-      padding: const EdgeInsets.all(12),
+      padding: EdgeInsets.all(12),
       children: [
         Card(
-          margin: const EdgeInsets.symmetric(vertical: 6),
+          margin: EdgeInsets.symmetric(vertical: 6),
           child: Padding(
-            padding: const EdgeInsets.all(12),
+            padding: EdgeInsets.all(12),
             child: buildFormBar(homeTeamName, home),
           ),
         ),
         Card(
-          margin: const EdgeInsets.symmetric(vertical: 6),
+          margin: EdgeInsets.symmetric(vertical: 6),
           child: Padding(
-            padding: const EdgeInsets.all(12),
+            padding: EdgeInsets.all(12),
             child: buildFormBar(awayTeamName, away),
           ),
         ),
         Card(
-          margin: const EdgeInsets.symmetric(vertical: 6),
+          margin: EdgeInsets.symmetric(vertical: 6),
           child: Padding(
-            padding: const EdgeInsets.all(12),
+            padding: EdgeInsets.all(12),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text("Confrontations directes", style: Theme.of(context).textTheme.titleMedium),
-                const SizedBox(height: 8),
+                SizedBox(height: 8),
                 buildHeadToHeadBar(h2h),
               ],
             ),
@@ -207,11 +207,11 @@ class _MatchDetailScreenState extends State<MatchDetailScreen>
       future: _standingsFuture,
       builder: (context, snapshot) {
         if (snapshot.connectionState == ConnectionState.waiting) {
-          return const Center(child: CircularProgressIndicator());
+          return Center(child: CircularProgressIndicator());
         }
         final data = snapshot.data;
         if (data == null || data.standings.isEmpty) {
-          return const Center(
+          return Center(
             child: Padding(
               padding: EdgeInsets.all(24),
               child: Text("Classement indisponible pour le moment.", textAlign: TextAlign.center),
@@ -231,24 +231,24 @@ class _MatchDetailScreenState extends State<MatchDetailScreen>
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: const Color(0xFFF4F5F7),
+      backgroundColor: Color(0xFFF4F5F7),
       body: SafeArea(
         child: Builder(
           builder: (context) {
             if (_isInitialLoading) {
-              return const Center(child: CircularProgressIndicator());
+              return Center(child: CircularProgressIndicator());
             }
 
             if (_analysis == null) {
               return Center(
                 child: Padding(
-                  padding: const EdgeInsets.all(24.0),
+                  padding: EdgeInsets.all(24.0),
                   child: Column(
                     mainAxisSize: MainAxisSize.min,
                     children: [
                       Text("Erreur : ${_loadError ?? 'inconnue'}"),
-                      const SizedBox(height: 12),
-                      ElevatedButton(onPressed: _reloadAnalysis, child: const Text("Réessayer")),
+                      SizedBox(height: 12),
+                      ElevatedButton(onPressed: _reloadAnalysis, child: Text("Réessayer")),
                     ],
                   ),
                 ),
@@ -271,10 +271,10 @@ class _MatchDetailScreenState extends State<MatchDetailScreen>
             final tabViews = <Widget>[];
 
             if (isUpcoming) {
-              tabs.add(const Tab(icon: Icon(Icons.show_chart, size: 18), text: "FORME"));
+              tabs.add(Tab(icon: Icon(Icons.show_chart, size: 18), text: "FORME"));
               tabViews.add(_formTab(analysis.home, analysis.away, analysis.headToHead, analysis.homeTeam, analysis.awayTeam));
 
-              tabs.add(const Tab(icon: Icon(Icons.dashboard_outlined, size: 18), text: "DÉTAILS"));
+              tabs.add(Tab(icon: Icon(Icons.dashboard_outlined, size: 18), text: "DÉTAILS"));
               tabViews.add(MatchDetailsTab(
                 analysis: analysis,
                 standings: _standingsCache,
@@ -283,16 +283,16 @@ class _MatchDetailScreenState extends State<MatchDetailScreen>
               ));
 
               if (hasLineups) {
-                tabs.add(const Tab(icon: Icon(Icons.groups_outlined, size: 18), text: "COMPOS"));
+                tabs.add(Tab(icon: Icon(Icons.groups_outlined, size: 18), text: "COMPOS"));
                 tabViews.add(MatchLineupsView(lineups: analysis.lineups!));
               }
 
               if (hasStandings) {
-                tabs.add(const Tab(icon: Icon(Icons.leaderboard_outlined, size: 18), text: "CLASSEMENT"));
+                tabs.add(Tab(icon: Icon(Icons.leaderboard_outlined, size: 18), text: "CLASSEMENT"));
                 tabViews.add(_standingsTab());
               }
             } else {
-              tabs.add(const Tab(icon: Icon(Icons.dashboard_outlined, size: 18), text: "DÉTAILS"));
+              tabs.add(Tab(icon: Icon(Icons.dashboard_outlined, size: 18), text: "DÉTAILS"));
               tabViews.add(MatchDetailsTab(
                 analysis: analysis,
                 standings: _standingsCache,
@@ -301,7 +301,7 @@ class _MatchDetailScreenState extends State<MatchDetailScreen>
               ));
 
               if (hasStats) {
-                tabs.add(const Tab(icon: Icon(Icons.bar_chart, size: 18), text: "STATS"));
+                tabs.add(Tab(icon: Icon(Icons.bar_chart, size: 18), text: "STATS"));
                 tabViews.add(MatchStatisticsView(
                   statistics: analysis.statistics!,
                   homeTeam: analysis.homeTeam,
@@ -310,16 +310,16 @@ class _MatchDetailScreenState extends State<MatchDetailScreen>
               }
 
               if (hasLineups) {
-                tabs.add(const Tab(icon: Icon(Icons.groups_outlined, size: 18), text: "COMPOS"));
+                tabs.add(Tab(icon: Icon(Icons.groups_outlined, size: 18), text: "COMPOS"));
                 tabViews.add(MatchLineupsView(lineups: analysis.lineups!));
               }
 
               if (hasStandings) {
-                tabs.add(const Tab(icon: Icon(Icons.leaderboard_outlined, size: 18), text: "CLASSEMENT"));
+                tabs.add(Tab(icon: Icon(Icons.leaderboard_outlined, size: 18), text: "CLASSEMENT"));
                 tabViews.add(_standingsTab());
               }
 
-              tabs.add(const Tab(icon: Icon(Icons.show_chart, size: 18), text: "FORME"));
+              tabs.add(Tab(icon: Icon(Icons.show_chart, size: 18), text: "FORME"));
               tabViews.add(_formTab(analysis.home, analysis.away, analysis.headToHead, analysis.homeTeam, analysis.awayTeam));
             }
 
@@ -327,7 +327,7 @@ class _MatchDetailScreenState extends State<MatchDetailScreen>
 
             return Column(
               children: [
-                if (_isRefreshing) const LinearProgressIndicator(minHeight: 2, color: Color(0xFF16A34A)),
+                if (_isRefreshing) LinearProgressIndicator(minHeight: 2, color: Color(0xFF16A34A)),
                 Expanded(
                   child: NestedScrollView(
                     headerSliverBuilder: (context, innerBoxIsScrolled) {
@@ -358,9 +358,9 @@ class _MatchDetailScreenState extends State<MatchDetailScreen>
                             TabBar(
                               controller: _tabController,
                               isScrollable: true,
-                              labelColor: const Color(0xFF16A34A),
+                              labelColor: Color(0xFF16A34A),
                               unselectedLabelColor: Colors.grey,
-                              indicatorColor: const Color(0xFF16A34A),
+                              indicatorColor: Color(0xFF16A34A),
                               tabs: tabs,
                             ),
                           ),
@@ -390,7 +390,7 @@ class _TabBarDelegate extends SliverPersistentHeaderDelegate {
 
   @override
   Widget build(BuildContext context, double shrinkOffset, bool overlapsContent) {
-    return Container(color: const Color(0xFFF4F5F7), child: tabBar);
+    return Container(color: Color(0xFFF4F5F7), child: tabBar);
   }
 
   @override

@@ -2,8 +2,8 @@ import "dart:convert";
 import "package:shared_preferences/shared_preferences.dart";
 
 class PlayerCacheService {
-  static const _key = "knd_recent_1xbet_players";
-  static const _maxPlayers = 5;
+  static final _key = "knd_recent_1xbet_players";
+  static final _maxPlayers = 5;
 
   Future<List<Map<String, String>>> getPlayers() async {
     final prefs = await SharedPreferences.getInstance();

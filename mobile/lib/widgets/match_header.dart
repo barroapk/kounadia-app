@@ -11,7 +11,7 @@ class MatchHeader extends StatelessWidget {
   final String? statusLabel;
   final bool isLive;
 
-  const MatchHeader({
+  MatchHeader({
     super.key,
     required this.homeTeam,
     required this.awayTeam,
@@ -29,15 +29,15 @@ class MatchHeader extends StatelessWidget {
 
     return Container(
       color: Colors.white,
-      padding: const EdgeInsets.fromLTRB(16, 20, 16, 20),
+      padding: EdgeInsets.fromLTRB(16, 20, 16, 20),
       child: Column(
         children: [
           if (statusLabel != null)
             Container(
-              margin: const EdgeInsets.only(bottom: 14),
-              padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+              margin: EdgeInsets.only(bottom: 14),
+              padding: EdgeInsets.symmetric(horizontal: 10, vertical: 4),
               decoration: BoxDecoration(
-                color: isLive ? const Color(0xFFDC2626) : Colors.grey[200],
+                color: isLive ? Color(0xFFDC2626) : Colors.grey[200],
                 borderRadius: BorderRadius.circular(20),
               ),
               child: Text(
@@ -57,13 +57,13 @@ class MatchHeader extends StatelessWidget {
                 child: Column(
                   children: [
                     CachedLogo(url: homeTeamCrest, size: 60, fallbackIcon: Icons.shield_outlined),
-                    const SizedBox(height: 8),
+                    SizedBox(height: 8),
                     Text(
                       homeTeam,
                       textAlign: TextAlign.center,
                       maxLines: 2,
                       overflow: TextOverflow.ellipsis,
-                      style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 13),
+                      style: TextStyle(fontWeight: FontWeight.bold, fontSize: 13),
                     ),
                   ],
                 ),
@@ -73,20 +73,20 @@ class MatchHeader extends StatelessWidget {
                 child: Text(
                   hasScore ? "$homeScore - $awayScore" : "VS",
                   textAlign: TextAlign.center,
-                  style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 32),
+                  style: TextStyle(fontWeight: FontWeight.bold, fontSize: 32),
                 ),
               ),
               Expanded(
                 child: Column(
                   children: [
                     CachedLogo(url: awayTeamCrest, size: 60, fallbackIcon: Icons.shield_outlined),
-                    const SizedBox(height: 8),
+                    SizedBox(height: 8),
                     Text(
                       awayTeam,
                       textAlign: TextAlign.center,
                       maxLines: 2,
                       overflow: TextOverflow.ellipsis,
-                      style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 13),
+                      style: TextStyle(fontWeight: FontWeight.bold, fontSize: 13),
                     ),
                   ],
                 ),

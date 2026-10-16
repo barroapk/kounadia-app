@@ -20,7 +20,7 @@ class CouponEngine {
   /// Pour chaque match à venir : la liste des paris qui respectent les critères.
   static List<List<Leg>> candidates(Iterable<LiveMatch> matches, CouponCriteria c,
       [Map<int, MatchMarkets> markets = const {}]) {
-    final limit = DateTime.now().add(const Duration(minutes: 10));
+    final limit = DateTime.now().add(Duration(minutes: 10));
     final out = <List<Leg>>[];
     for (final m in matches) {
       if (m.status != 'upcoming' || m.date == null || m.date!.isBefore(limit)) continue;
@@ -48,7 +48,7 @@ class CouponEngine {
       final mk = markets[m.id];
       if (mk != null) {
         if (c.goals) {
-          for (final (key, code) in const [('ou15', '15'), ('ou25', '25'), ('ou35', '35')]) {
+          for (final (key, code) in [('ou15', '15'), ('ou25', '25'), ('ou35', '35')]) {
             final x = mk.m[key];
             if (x == null) continue;
             ev.add(legOf(m, 'O$code', x.$1[0], x.$2[0]));

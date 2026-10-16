@@ -1,7 +1,7 @@
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
 
-const _fallback = [
+final _fallback = [
   Color(0xFF16A34A), Color(0xFF2563EB), Color(0xFFDC2626), Color(0xFF9333EA),
   Color(0xFFEA580C), Color(0xFF0891B2), Color(0xFFCA8A04), Color(0xFFDB2777),
   Color(0xFF4F46E5), Color(0xFF0D9488),
@@ -19,7 +19,7 @@ List<Color> colorsFor(String name, List<Color> given) {
 class Jersey extends StatelessWidget {
   final List<Color> colors;
   final double size;
-  const Jersey({super.key, required this.colors, this.size = 28});
+  Jersey({super.key, required this.colors, this.size = 28});
 
   @override
   Widget build(BuildContext context) =>
@@ -52,7 +52,7 @@ class _JerseyPainter extends CustomPainter {
       ..lineTo(21.72 * s, 5.69 * s)
       ..quadraticBezierTo(22 * s, 4.2 * s, 20.38 * s, 3.46 * s)
       ..close();
-    final c1 = colors.isEmpty ? const Color(0xFF6B7280) : colors.first;
+    final c1 = colors.isEmpty ? Color(0xFF6B7280) : colors.first;
     final c2 = colors.length > 1 ? colors[1] : Color.lerp(c1, Colors.black, 0.35)!;
     final fill = Paint()
       ..shader = LinearGradient(
@@ -80,7 +80,7 @@ class TeamCrest extends StatelessWidget {
   final List<Color> colors;
   final double size;
 
-  const TeamCrest({
+  TeamCrest({
     super.key,
     required this.name,
     this.logo,

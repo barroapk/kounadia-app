@@ -5,7 +5,7 @@ import '../../widgets/k_ui.dart';
 import '../../widgets/standing_table.dart';
 
 class TablesScreen extends StatefulWidget {
-  const TablesScreen({super.key});
+  TablesScreen({super.key});
 
   @override
   State<TablesScreen> createState() => _TablesScreenState();
@@ -22,22 +22,22 @@ class _TablesScreenState extends State<TablesScreen> {
       appBar: kAppBar('Classements'),
       body: Column(children: [
         Padding(
-          padding: const EdgeInsets.fromLTRB(16, 4, 16, 4),
+          padding: EdgeInsets.fromLTRB(16, 4, 16, 4),
           child: TextField(
             onChanged: (v) => setState(() => _q = v.trim().toLowerCase()),
-            style: const TextStyle(color: K.text),
+            style: TextStyle(color: K.text),
             cursorColor: K.indigo,
             decoration: InputDecoration(
               hintText: 'Rechercher un pays ou une compétition',
-              hintStyle: const TextStyle(color: K.muted, fontSize: 14),
-              prefixIcon: const Icon(Icons.search_rounded, color: K.muted),
+              hintStyle: TextStyle(color: K.muted, fontSize: 14),
+              prefixIcon: Icon(Icons.search_rounded, color: K.muted),
               filled: true,
               fillColor: K.card,
-              contentPadding: const EdgeInsets.symmetric(vertical: 12),
+              contentPadding: EdgeInsets.symmetric(vertical: 12),
               enabledBorder: OutlineInputBorder(
-                  borderRadius: BorderRadius.circular(14), borderSide: const BorderSide(color: K.border)),
+                  borderRadius: BorderRadius.circular(14), borderSide: BorderSide(color: K.border)),
               focusedBorder: OutlineInputBorder(
-                  borderRadius: BorderRadius.circular(14), borderSide: const BorderSide(color: K.indigo)),
+                  borderRadius: BorderRadius.circular(14), borderSide: BorderSide(color: K.indigo)),
             ),
           ),
         ),
@@ -63,7 +63,7 @@ class _TablesScreenState extends State<TablesScreen> {
                 children.add(kDividers(items.map(_tile).toList()));
               }
               if (children.isEmpty) return kMessage('Aucun résultat pour cette recherche.');
-              return ListView(padding: const EdgeInsets.fromLTRB(16, 0, 16, 32), children: children);
+              return ListView(padding: EdgeInsets.fromLTRB(16, 0, 16, 32), children: children);
             },
           ),
         ),
@@ -75,15 +75,15 @@ class _TablesScreenState extends State<TablesScreen> {
         onTap: () => Navigator.push(
             context, MaterialPageRoute(builder: (_) => CountryTablesScreen(link: l))),
         child: Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 13),
+          padding: EdgeInsets.symmetric(horizontal: 14, vertical: 13),
           child: Row(children: [
             PtImage(l.img, w: 26, h: 18),
-            const SizedBox(width: 12),
+            SizedBox(width: 12),
             Expanded(
               child: Text(frName(l.name),
-                  style: const TextStyle(color: K.text, fontSize: 14.5, fontWeight: FontWeight.w600)),
+                  style: TextStyle(color: K.text, fontSize: 14.5, fontWeight: FontWeight.w600)),
             ),
-            const Icon(Icons.chevron_right_rounded, color: K.muted),
+            Icon(Icons.chevron_right_rounded, color: K.muted),
           ]),
         ),
       );
@@ -91,7 +91,7 @@ class _TablesScreenState extends State<TablesScreen> {
 
 class CountryTablesScreen extends StatefulWidget {
   final PtLink link;
-  const CountryTablesScreen({super.key, required this.link});
+  CountryTablesScreen({super.key, required this.link});
 
   @override
   State<CountryTablesScreen> createState() => _CountryTablesScreenState();
@@ -101,7 +101,7 @@ class _CountryTablesScreenState extends State<CountryTablesScreen> {
   late Future<List<PtTable>> _f = PrimaTipsService.tables(widget.link.path);
 
   Widget _view(PtTable t) => ListView(
-        padding: const EdgeInsets.fromLTRB(16, 12, 16, 32),
+        padding: EdgeInsets.fromLTRB(16, 12, 16, 32),
         children: [StandingTable(rows: t.rows, full: true)],
       );
 
@@ -132,7 +132,7 @@ class _CountryTablesScreenState extends State<CountryTablesScreen> {
                 labelColor: K.text,
                 unselectedLabelColor: K.muted,
                 dividerColor: K.border,
-                labelStyle: const TextStyle(fontSize: 14, fontWeight: FontWeight.w800),
+                labelStyle: TextStyle(fontSize: 14, fontWeight: FontWeight.w800),
                 tabs: t.map((x) => Tab(text: x.title.isEmpty ? 'Classement' : x.title)).toList(),
               ),
               Expanded(child: TabBarView(children: t.map(_view).toList())),

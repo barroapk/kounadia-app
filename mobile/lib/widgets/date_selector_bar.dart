@@ -4,7 +4,7 @@ class DateSelectorBar extends StatelessWidget {
   final DateTime selectedDate;
   final ValueChanged<DateTime> onDateChanged;
 
-  const DateSelectorBar({
+  DateSelectorBar({
     super.key,
     required this.selectedDate,
     required this.onDateChanged,
@@ -24,7 +24,7 @@ class DateSelectorBar extends StatelessWidget {
     if (diff == -1) return "Hier";
     if (diff == 1) return "Demain";
 
-    const mois = [
+    final mois = [
       "janv.", "févr.", "mars", "avr.", "mai", "juin",
       "juil.", "août", "sept.", "oct.", "nov.", "déc.",
     ];
@@ -36,7 +36,7 @@ class DateSelectorBar extends StatelessWidget {
 
     showModalBottomSheet(
       context: context,
-      shape: const RoundedRectangleBorder(
+      shape: RoundedRectangleBorder(
         borderRadius: BorderRadius.vertical(top: Radius.circular(16)),
       ),
       builder: (context) {
@@ -50,7 +50,7 @@ class DateSelectorBar extends StatelessWidget {
               ),
             ),
             trailing: isSelected
-                ? const Icon(Icons.check, color: Color(0xFF16A34A))
+                ? Icon(Icons.check, color: Color(0xFF16A34A))
                 : null,
             onTap: () {
               onDateChanged(date);
@@ -63,11 +63,11 @@ class DateSelectorBar extends StatelessWidget {
           child: Column(
             mainAxisSize: MainAxisSize.min,
             children: [
-              const SizedBox(height: 8),
-              option("Hier", now.subtract(const Duration(days: 1))),
+              SizedBox(height: 8),
+              option("Hier", now.subtract(Duration(days: 1))),
               option("Aujourd'hui", now),
-              option("Demain", now.add(const Duration(days: 1))),
-              const SizedBox(height: 8),
+              option("Demain", now.add(Duration(days: 1))),
+              SizedBox(height: 8),
             ],
           ),
         );
@@ -79,8 +79,8 @@ class DateSelectorBar extends StatelessWidget {
     final picked = await showDatePicker(
       context: context,
       initialDate: selectedDate,
-      firstDate: DateTime.now().subtract(const Duration(days: 365)),
-      lastDate: DateTime.now().add(const Duration(days: 365)),
+      firstDate: DateTime.now().subtract(Duration(days: 365)),
+      lastDate: DateTime.now().add(Duration(days: 365)),
     );
     if (picked != null) onDateChanged(picked);
   }
@@ -88,7 +88,7 @@ class DateSelectorBar extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+      padding: EdgeInsets.symmetric(horizontal: 8, vertical: 4),
       child: Row(
         children: [
           Expanded(
@@ -96,24 +96,24 @@ class DateSelectorBar extends StatelessWidget {
               onTap: () => _showQuickPicker(context),
               borderRadius: BorderRadius.circular(8),
               child: Padding(
-                padding: const EdgeInsets.symmetric(vertical: 8, horizontal: 8),
+                padding: EdgeInsets.symmetric(vertical: 8, horizontal: 8),
                 child: Row(
                   children: [
                     Text(
                       _label(selectedDate),
-                      style: const TextStyle(
+                      style: TextStyle(
                         fontWeight: FontWeight.bold,
                         fontSize: 16,
                       ),
                     ),
-                    const Icon(Icons.arrow_drop_down),
+                    Icon(Icons.arrow_drop_down),
                   ],
                 ),
               ),
             ),
           ),
           IconButton(
-            icon: const Icon(Icons.calendar_today, size: 20),
+            icon: Icon(Icons.calendar_today, size: 20),
             onPressed: () => _openCalendar(context),
           ),
         ],

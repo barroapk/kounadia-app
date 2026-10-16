@@ -8,7 +8,7 @@ class MatchRow extends StatefulWidget {
   final Match match;
   final VoidCallback onTap;
 
-  const MatchRow({super.key, required this.match, required this.onTap});
+  MatchRow({super.key, required this.match, required this.onTap});
 
   @override
   State<MatchRow> createState() => _MatchRowState();
@@ -19,7 +19,7 @@ class _MatchRowState extends State<MatchRow> {
   String? _baseLabel;
   DateTime _anchorTime = DateTime.now();
 
-  static const _liveStatuses = ["LIVE", "IN_PLAY", "PAUSED"];
+  static final _liveStatuses = ["LIVE", "IN_PLAY", "PAUSED"];
 
   bool get _isLive => _liveStatuses.contains(widget.match.status);
   bool get _isFinished => widget.match.status == "FINISHED";
@@ -33,7 +33,7 @@ class _MatchRowState extends State<MatchRow> {
   }
 
   void _startTicker() {
-    _ticker ??= Timer.periodic(const Duration(seconds: 15), (_) {
+    _ticker ??= Timer.periodic(Duration(seconds: 15), (_) {
       if (mounted) setState(() {});
     });
   }
@@ -87,7 +87,7 @@ class _MatchRowState extends State<MatchRow> {
     if (elapsedMinutes <= 45) {
       return elapsedMinutes < 1 ? "1'" : "$elapsedMinutes'";
     }
-    const halftimeBreak = 15;
+    final halftimeBreak = 15;
     final secondHalfMinute = elapsedMinutes - halftimeBreak;
     if (secondHalfMinute <= 45) {
       return secondHalfMinute < 46 ? "$secondHalfMinute'" : "45'";
@@ -117,7 +117,7 @@ class _MatchRowState extends State<MatchRow> {
     return InkWell(
       onTap: widget.onTap,
       child: Padding(
-        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+        padding: EdgeInsets.symmetric(horizontal: 12, vertical: 10),
         child: Row(
           crossAxisAlignment: CrossAxisAlignment.center,
           children: [
@@ -130,10 +130,10 @@ class _MatchRowState extends State<MatchRow> {
                       widget.match.homeTeam,
                       textAlign: TextAlign.right,
                       overflow: TextOverflow.ellipsis,
-                      style: const TextStyle(fontSize: 14),
+                      style: TextStyle(fontSize: 14),
                     ),
                   ),
-                  const SizedBox(width: 6),
+                  SizedBox(width: 6),
                   CachedLogo(url: widget.match.homeTeamCrest),
                 ],
               ),
@@ -148,10 +148,10 @@ class _MatchRowState extends State<MatchRow> {
                     style: TextStyle(
                       fontSize: 11,
                       fontWeight: _isLive ? FontWeight.bold : FontWeight.normal,
-                      color: _isLive ? const Color(0xFFDC2626) : Colors.grey[600],
+                      color: _isLive ? Color(0xFFDC2626) : Colors.grey[600],
                     ),
                   ),
-                  const SizedBox(height: 2),
+                  SizedBox(height: 2),
                   Text(
                     hasScore
                         ? "${widget.match.homeScore} - ${widget.match.awayScore}"
@@ -175,13 +175,13 @@ class _MatchRowState extends State<MatchRow> {
               child: Row(
                 children: [
                   CachedLogo(url: widget.match.awayTeamCrest),
-                  const SizedBox(width: 6),
+                  SizedBox(width: 6),
                   Flexible(
                     child: Text(
                       widget.match.awayTeam,
                       textAlign: TextAlign.left,
                       overflow: TextOverflow.ellipsis,
-                      style: const TextStyle(fontSize: 14),
+                      style: TextStyle(fontSize: 14),
                     ),
                   ),
                 ],

@@ -4,12 +4,12 @@ import 'package:url_launcher/url_launcher.dart';
 import '../../services/knd/player_cache_service.dart';
 import '../../widgets/forecast_card.dart' show K;
 
-const kWhatsAppNumber = '22655337782';
-const kMinDeposit = 500;
-const kMaxDeposit = 1000000;
+final kWhatsAppNumber = '22655337782';
+final kMinDeposit = 500;
+final kMaxDeposit = 1000000;
 
 class DepositScreen extends StatefulWidget {
-  const DepositScreen({super.key});
+  DepositScreen({super.key});
 
   @override
   State<DepositScreen> createState() => _DepositScreenState();
@@ -114,46 +114,46 @@ class _DepositScreenState extends State<DepositScreen> {
   InputDecoration _deco(String hint, String? error, IconData icon) {
     return InputDecoration(
       hintText: hint,
-      hintStyle: const TextStyle(color: K.muted),
+      hintStyle: TextStyle(color: K.muted),
       errorText: error,
       counterText: '',
       prefixIcon: Icon(icon, color: K.muted),
       filled: true,
       fillColor: K.card,
-      contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
+      contentPadding: EdgeInsets.symmetric(horizontal: 16, vertical: 16),
       border: OutlineInputBorder(
         borderRadius: BorderRadius.circular(14),
-        borderSide: const BorderSide(color: K.border),
+        borderSide: BorderSide(color: K.border),
       ),
       enabledBorder: OutlineInputBorder(
         borderRadius: BorderRadius.circular(14),
-        borderSide: const BorderSide(color: K.border),
+        borderSide: BorderSide(color: K.border),
       ),
       focusedBorder: OutlineInputBorder(
         borderRadius: BorderRadius.circular(14),
-        borderSide: const BorderSide(color: K.indigo, width: 1.5),
+        borderSide: BorderSide(color: K.indigo, width: 1.5),
       ),
     );
   }
 
   Widget _label(String t) => Padding(
-        padding: const EdgeInsets.fromLTRB(4, 22, 4, 8),
+        padding: EdgeInsets.fromLTRB(4, 22, 4, 8),
         child: Text(t,
-            style: const TextStyle(color: K.text, fontSize: 14, fontWeight: FontWeight.w700)),
+            style: TextStyle(color: K.text, fontSize: 14, fontWeight: FontWeight.w700)),
       );
 
   Widget _pill(String text, VoidCallback onTap) {
     return GestureDetector(
       onTap: onTap,
       child: Container(
-        padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
+        padding: EdgeInsets.symmetric(horizontal: 14, vertical: 8),
         decoration: BoxDecoration(
           color: K.card,
           borderRadius: BorderRadius.circular(20),
           border: Border.all(color: K.border),
         ),
         child: Text(text,
-            style: const TextStyle(color: K.text, fontSize: 13, fontWeight: FontWeight.w600)),
+            style: TextStyle(color: K.text, fontSize: 13, fontWeight: FontWeight.w600)),
       ),
     );
   }
@@ -167,19 +167,19 @@ class _DepositScreenState extends State<DepositScreen> {
         foregroundColor: K.text,
         elevation: 0,
         scrolledUnderElevation: 0,
-        title: const Text('Dépôt 1xBet', style: TextStyle(fontWeight: FontWeight.w800)),
+        title: Text('Dépôt 1xBet', style: TextStyle(fontWeight: FontWeight.w800)),
       ),
       body: ListView(
-        padding: const EdgeInsets.fromLTRB(20, 8, 20, 32),
+        padding: EdgeInsets.fromLTRB(20, 8, 20, 32),
         children: [
           Container(
-            padding: const EdgeInsets.all(16),
+            padding: EdgeInsets.all(16),
             decoration: BoxDecoration(
-              color: const Color(0x2225D366),
+              color: Color(0x2225D366),
               borderRadius: BorderRadius.circular(16),
-              border: Border.all(color: const Color(0x5525D366)),
+              border: Border.all(color: Color(0x5525D366)),
             ),
-            child: const Row(
+            child: Row(
               children: [
                 Icon(Icons.chat_rounded, color: Color(0xFF25D366), size: 28),
                 SizedBox(width: 12),
@@ -198,15 +198,15 @@ class _DepositScreenState extends State<DepositScreen> {
             controller: _id,
             keyboardType: TextInputType.number,
             inputFormatters: [FilteringTextInputFormatter.digitsOnly],
-            style: const TextStyle(color: K.text, fontSize: 17, fontWeight: FontWeight.w600),
+            style: TextStyle(color: K.text, fontSize: 17, fontWeight: FontWeight.w600),
             decoration: _deco('Ex : 123456789', _idError, Icons.badge_outlined),
             onChanged: (_) {
               if (_idError != null) setState(() => _idError = null);
             },
           ),
           if (_recent.isNotEmpty) ...[
-            const SizedBox(height: 10),
-            const Padding(
+            SizedBox(height: 10),
+            Padding(
               padding: EdgeInsets.only(left: 4, bottom: 8),
               child: Text('Derniers ID utilisés',
                   style: TextStyle(color: K.muted, fontSize: 12)),
@@ -230,13 +230,13 @@ class _DepositScreenState extends State<DepositScreen> {
             keyboardType: TextInputType.number,
             inputFormatters: [FilteringTextInputFormatter.digitsOnly],
             maxLength: 7,
-            style: const TextStyle(color: K.text, fontSize: 17, fontWeight: FontWeight.w600),
+            style: TextStyle(color: K.text, fontSize: 17, fontWeight: FontWeight.w600),
             decoration: _deco('Ex : 5000', _amountError, Icons.payments_outlined),
             onChanged: (_) {
               if (_amountError != null) setState(() => _amountError = null);
             },
           ),
-          const SizedBox(height: 10),
+          SizedBox(height: 10),
           Wrap(
             spacing: 8,
             runSpacing: 8,
@@ -247,28 +247,28 @@ class _DepositScreenState extends State<DepositScreen> {
                     }))
                 .toList(),
           ),
-          const SizedBox(height: 30),
+          SizedBox(height: 30),
           SizedBox(
             height: 54,
             child: FilledButton.icon(
               onPressed: _sending ? null : _send,
               style: FilledButton.styleFrom(
-                backgroundColor: const Color(0xFF25D366),
+                backgroundColor: Color(0xFF25D366),
                 foregroundColor: Colors.white,
                 shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
               ),
               icon: _sending
-                  ? const SizedBox(
+                  ? SizedBox(
                       width: 18,
                       height: 18,
                       child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white))
-                  : const Icon(Icons.send_rounded),
-              label: const Text('Envoyer sur WhatsApp',
+                  : Icon(Icons.send_rounded),
+              label: Text('Envoyer sur WhatsApp',
                   style: TextStyle(fontSize: 16, fontWeight: FontWeight.w800)),
             ),
           ),
-          const SizedBox(height: 18),
-          const Text(
+          SizedBox(height: 18),
+          Text(
             'Réservé aux personnes majeures. Jouez de manière responsable.',
             textAlign: TextAlign.center,
             style: TextStyle(color: K.muted, fontSize: 12),
