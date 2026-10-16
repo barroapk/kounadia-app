@@ -98,9 +98,9 @@ class TeamCrest extends StatelessWidget {
       height: size,
       child: CachedNetworkImage(
         imageUrl: url,
-        httpHeaders: const {
+        httpHeaders: {
           'User-Agent': 'Mozilla/5.0 (Linux; Android 13) KOUNADIA',
-          'Referer': 'https://nerdytips.com/',
+          'Referer': url.contains('primatips') ? 'https://primatips.com/' : 'https://nerdytips.com/',
         },
         fit: BoxFit.contain,
         placeholder: (_, __) => jersey,

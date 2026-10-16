@@ -7,6 +7,8 @@ import '../services/scores_service.dart';
 import '../widgets/forecast_card.dart' show K, kMessage, kOfflineBanner, hm, two;
 import '../widgets/jersey.dart';
 import '../widgets/knd_banner.dart';
+import '../services/logo_cache.dart';
+import 'pt_match_screen.dart';
 
 class ScoresScreen extends StatefulWidget {
   const ScoresScreen({super.key});
@@ -34,6 +36,9 @@ class _ScoresScreenState extends State<ScoresScreen> with WidgetsBindingObserver
     WidgetsBinding.instance.addObserver(this);
     _loadFav();
     _load();
+    LogoCache.load().then((_) {
+      if (mounted) setState(() {});
+    });
     _fullTimer = Timer.periodic(const Duration(minutes: 5), (_) => _load(silent: true));
     _liveTimer = Timer.periodic(const Duration(seconds: 30), (_) => _pollLive());
   }
@@ -394,7 +399,7 @@ class _ScoresScreenState extends State<ScoresScreen> with WidgetsBindingObserver
   Widget _team(String name, int? goals, bool win) {
     return Row(
       children: [
-        TeamCrest(name: name, size: 16),
+        TeamCrest(name: name, logo: LogoCache.get(name), size: 16),
         const SizedBox(width: 7),
         Expanded(
           child: Text(name,
@@ -430,6 +435,10 @@ class _ScoresScreenState extends State<ScoresScreen> with WidgetsBindingObserver
     final prob = m.tipProb;
 
     return InkWell(
+      onTap: () => Navigator.push(context, MaterialPageRoute(builder: (_) => PtMatchScreen(match: m)))
+          .then((_) {
+        if (mounted) setState(() {});
+      }),
       onLongPress: () => _toggleFav(m),
       child: Container(
         color: m.status == 'live' ? const Color(0x14EF4444) : null,
