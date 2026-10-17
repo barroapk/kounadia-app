@@ -97,12 +97,15 @@ class KounadiaData {
     try {
       final (days, _) = await ScoresService.load();
       final all = [for (final l in days.values) ...l];
+      final lv = await liveById();
       Forecast live(Forecast f) {
         if (f.won != null) return f;
         final tol = f.hasTime ? 3 : 14;
         for (final m in all) {
-          if (m.hs == null || m.as_ == null) continue;
-          if (m.status != 'live' && m.status != 'finished') continue;
+          final x = lv[m.id];
+          final hs = x?.$1 ?? m.hs, aw = x?.$2 ?? m.as_;
+          if (hs == null || aw == null) continue;
+          if (x == null && m.status != 'live' && m.status != 'finished') continue;
           if (m.date != null && m.date!.difference(f.date).inHours.abs() > tol) continue;
           if (!_same(m.home, f.home) || !_same(m.away, f.away)) continue;
           return Forecast(
@@ -110,7 +113,8 @@ class KounadiaData {
             home: f.home, away: f.away, homeLogo: f.homeLogo, awayLogo: f.awayLogo,
             homeColors: f.homeColors, awayColors: f.awayColors, tipFr: f.tipFr, predicted: f.predicted,
             confidence: f.confidence, agree: f.agree, models: f.models,
-            score: '${m.hs}-${m.as_}', won: null,
+            score: '$hs-$aw', won: null,
+            minute: x?.$3 ?? (m.status == 'finished' ? 'Fin' : m.minute),
           );
         }
         return f;

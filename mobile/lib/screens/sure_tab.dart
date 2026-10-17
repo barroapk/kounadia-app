@@ -9,15 +9,21 @@ import '../widgets/forecast_card.dart';
 import '../widgets/knd_banner.dart';
 
 /// Convertit un Coup sûr en carte de pronostic (même style que Kounadia IA / Expert).
-Forecast sureForecast(VipLeg l, [LiveMatch? m]) {
+Forecast sureForecast(VipLeg l, [LiveMatch? m, (int?, int?, String)? x]) {
   var score = l.score;
+  String? minute;
   if (m != null && m.hs != null && m.as_ != null && (m.status == 'live' || m.status == 'finished')) {
     score = '${m.hs}-${m.as_}';
+    minute = m.status == 'finished' ? 'Fin' : m.minute;
+  }
+  if (x != null && x.$1 != null && x.$2 != null) {
+    score = '${x.$1}-${x.$2}';
+    minute = x.$3;
   }
   return Forecast(
     id: 'sure_${l.id}',
     source: 'sure',
-    date: l.date ?? DateTime.now(),
+    date: m?.date ?? l.date ?? DateTime.now(),
     hasTime: l.date != null,
     league: l.league,
     home: l.home,
@@ -28,6 +34,7 @@ Forecast sureForecast(VipLeg l, [LiveMatch? m]) {
     confidence: l.conf / 10,
     score: score,
     won: l.result == 'won' ? true : l.result == 'lost' ? false : null,
+    minute: minute,
   );
 }
 
@@ -41,6 +48,7 @@ class SureTab extends StatefulWidget {
 class _SureTabState extends State<SureTab> {
   VipData? _data;
   Map<int, LiveMatch> _live = {};
+  Map<int, (int?, int?, String)> _lv = {};
   String? _error;
   bool _loading = true;
   Timer? _timer;
@@ -51,7 +59,7 @@ class _SureTabState extends State<SureTab> {
     super.initState();
     _load();
     // Résultats au fur et à mesure : mise à jour discrète toutes les 2 minutes.
-    _timer = Timer.periodic(Duration(minutes: 2), (_) {
+    _timer = Timer.periodic(Duration(minutes: 1), (_) {
       if (mounted) _load(silent: true);
     });
   }
@@ -67,6 +75,7 @@ class _SureTabState extends State<SureTab> {
     try {
       final d = await VipService.load();
       var live = <int, LiveMatch>{};
+      final lv = await liveById();
       try {
         final (days, _) = await ScoresService.load();
         live = {for (final l in days.values) for (final m in l) m.id: m};
@@ -75,6 +84,7 @@ class _SureTabState extends State<SureTab> {
       setState(() {
         _data = d;
         _live = live;
+        _lv = lv;
         _error = null;
         _loading = false;
       });
@@ -94,7 +104,7 @@ class _SureTabState extends State<SureTab> {
     final d = _data!;
     final day = d.today;
     final legs = day?.singles ?? const <VipLeg>[];
-    final items = legs.map((l) => sureForecast(l, _live[l.id])).toList()..sort((a, b) => a.date.compareTo(b.date));
+    final items = legs.map((l) => sureForecast(l, _live[l.id], _lv[l.id])).toList()..sort((a, b) => a.date.compareTo(b.date));
     final now = DateTime.now();
     final ymd = '${now.year}-${two(now.month)}-${two(now.day)}';
 

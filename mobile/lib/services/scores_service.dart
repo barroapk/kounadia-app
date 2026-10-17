@@ -51,3 +51,19 @@ class ScoresService {
     return (d is List) ? d.whereType<Map<String, dynamic>>().toList() : [];
   }
 }
+
+/// Direct PrimaTips : id -> (buts dom., buts ext., minute ou 'Fin').
+Future<Map<int, (int?, int?, String)>> liveById() async {
+  final out = <int, (int?, int?, String)>{};
+  try {
+    for (final l in await ScoresService.live()) {
+      final id = (l['id'] as num?)?.toInt();
+      if (id == null) continue;
+      final st = (l['st'] ?? '').toString().trim();
+      final fin = RegExp(r'^(FT|AET|PEN)', caseSensitive: false).hasMatch(st);
+      final min = fin ? 'Fin' : RegExp(r'^\d').hasMatch(st) ? "$st'" : (st.toUpperCase() == 'HT' ? 'MT' : st);
+      out[id] = ((l['hs'] as num?)?.toInt(), (l['as'] as num?)?.toInt(), min);
+    }
+  } catch (_) {}
+  return out;
+}

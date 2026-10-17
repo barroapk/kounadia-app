@@ -9,6 +9,7 @@ import '../widgets/welcome_card.dart';
 import 'football/facts_screen.dart';
 import 'football/form_screen.dart';
 import 'football/tables_screen.dart';
+import 'fav_leagues_screen.dart';
 
 final kAppVersion = '1.0.0';
 final _supportEmail = 'pierreclavers56@gmail.com';
@@ -123,6 +124,8 @@ class SettingsScreen extends StatelessWidget {
           _header(),
           kTitle('Football'),
           kDividers([
+            _tile(Icons.star_rounded, K.amber, 'Mes championnats', 'Tes favoris en premier dans Matchs',
+                () => _open(context, FavLeaguesScreen())),
             _tile(Icons.leaderboard_rounded, K.indigoText, 'Classements', 'Tous les championnats du monde',
                 () => _open(context, TablesScreen())),
             _tile(Icons.lightbulb_rounded, K.amber, 'Faits du jour', 'Séries et chiffres clés des matchs',

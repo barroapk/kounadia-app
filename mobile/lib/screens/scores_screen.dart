@@ -10,6 +10,8 @@ import '../widgets/knd_banner.dart';
 import '../services/logo_cache.dart';
 import '../services/markets_service.dart';
 import 'pt_match_screen.dart';
+import 'fav_leagues_screen.dart';
+import '../services/fav_leagues.dart';
 import '../services/primatips_service.dart' show frLeague;
 
 class ScoresScreen extends StatefulWidget {
@@ -32,23 +34,38 @@ class _ScoresScreenState extends State<ScoresScreen> with WidgetsBindingObserver
   Timer? _liveTimer;
   Timer? _fullTimer;
   bool _active = true;
+  bool _onlyFav = false;
+  int _tick = 0;
+
+  void _onFav() {
+    if (mounted) setState(() {});
+  }
+
+  bool _mine(LiveMatch m) => FavLeagues.has(m.leagueLabel) || _fav.contains(m.id);
 
   @override
   void initState() {
     super.initState();
     WidgetsBinding.instance.addObserver(this);
     _loadFav();
+    FavLeagues.load().then((_) => _onFav());
+    FavLeagues.set.addListener(_onFav);
     _load();
     LogoCache.load().then((_) {
       if (mounted) setState(() {});
     });
-    _fullTimer = Timer.periodic(Duration(minutes: 5), (_) => _load(silent: true));
+    // Toutes les 5 min, ou chaque minute tant que l'appli est hors connexion.
+    _fullTimer = Timer.periodic(Duration(minutes: 1), (_) {
+      _tick++;
+      if (_active && (_offline || _tick % 5 == 0)) _load(silent: true);
+    });
     _liveTimer = Timer.periodic(Duration(seconds: 30), (_) => _pollLive());
   }
 
   @override
   void dispose() {
     WidgetsBinding.instance.removeObserver(this);
+    FavLeagues.set.removeListener(_onFav);
     _liveTimer?.cancel();
     _fullTimer?.cancel();
     super.dispose();
@@ -57,7 +74,10 @@ class _ScoresScreenState extends State<ScoresScreen> with WidgetsBindingObserver
   @override
   void didChangeAppLifecycleState(AppLifecycleState state) {
     _active = state == AppLifecycleState.resumed;
-    if (_active) _pollLive();
+    if (_active) {
+      _load(silent: true);
+      _pollLive();
+    }
   }
 
   String _key(int off) {
@@ -174,9 +194,9 @@ class _ScoresScreenState extends State<ScoresScreen> with WidgetsBindingObserver
   List<LiveMatch> _filtered(List<LiveMatch> all) {
     switch (_filter) {
       case 'live':
-        return all.where((m) => m.status == 'live').toList();
-      case 'fav':
-        return all.where((m) => _fav.contains(m.id)).toList();
+        return all.where((m) => m.status == 'live' && (!_onlyFav || _mine(m))).toList();
+      case 'mine':
+        return all.where(_mine).toList();
       default:
         return all;
     }
@@ -224,7 +244,7 @@ class _ScoresScreenState extends State<ScoresScreen> with WidgetsBindingObserver
                         all.where((m) => m.status == 'live').length,
                         dot: all.any((m) => m.status == 'live'))),
                 SizedBox(width: 6),
-                Expanded(child: _seg('fav', 'Favoris', all.where((m) => _fav.contains(m.id)).length)),
+                Expanded(child: _seg('mine', 'Mes matchs', all.where(_mine).length)),
               ],
             ),
           ),
@@ -297,21 +317,46 @@ class _ScoresScreenState extends State<ScoresScreen> with WidgetsBindingObserver
       groups.putIfAbsent(m.leagueLabel, () => []).add(m);
     }
 
-    final children = <Widget>[if (_offline) kOfflineBanner()];
+    final children = <Widget>[
+      if (_offline) kOfflineBanner(),
+      if (_filter == 'live' && FavLeagues.set.value.isNotEmpty)
+        Padding(
+          padding: EdgeInsets.only(bottom: 8),
+          child: Row(children: [
+            Icon(Icons.star_rounded, color: K.amber, size: 18),
+            SizedBox(width: 6),
+            Expanded(child: Text('Uniquement mes championnats', style: TextStyle(color: K.text, fontSize: 13.5, fontWeight: FontWeight.w600))),
+            Switch(value: _onlyFav, activeColor: K.amber, onChanged: (v) => setState(() => _onlyFav = v)),
+          ]),
+        ),
+    ];
     if (items.isEmpty) {
       children.addAll([
         SizedBox(height: 60),
         kMessage(_filter == 'live'
             ? 'Aucun match en direct pour le moment.'
-            : _filter == 'fav'
-                ? 'Fais un appui long sur un match pour l’ajouter à tes favoris.'
+            : _filter == 'mine'
+                ? 'Aucun match de tes championnats ce jour.\nChoisis-les avec ⭐ (ou appui long sur un match).'
                 : 'Aucun match pour ce jour.'),
+        if (_filter == 'mine')
+          Center(
+            child: FilledButton.icon(
+              style: FilledButton.styleFrom(backgroundColor: K.indigo),
+              onPressed: () => Navigator.push(context, MaterialPageRoute(builder: (_) => FavLeaguesScreen())),
+              icon: Icon(Icons.star_rounded),
+              label: Text('Choisir mes championnats'),
+            ),
+          ),
       ]);
     } else {
       children.add(KndBanner());
       var rows = 0;
       var block = 0;
-      for (final e in groups.entries) {
+      final ordered = [
+        ...groups.entries.where((e) => FavLeagues.has(e.key)),
+        ...groups.entries.where((e) => !FavLeagues.has(e.key)),
+      ];
+      for (final e in ordered) {
         children
           ..add(_group(e.key, e.value))
           ..add(SizedBox(height: 10));
@@ -389,6 +434,14 @@ class _ScoresScreenState extends State<ScoresScreen> with WidgetsBindingObserver
                         decoration: BoxDecoration(color: K.red, shape: BoxShape.circle)),
                     SizedBox(width: 6),
                   ],
+                  GestureDetector(
+                    onTap: () => FavLeagues.toggle(title),
+                    child: Padding(
+                      padding: EdgeInsets.symmetric(horizontal: 6),
+                      child: Icon(FavLeagues.has(title) ? Icons.star_rounded : Icons.star_border_rounded,
+                          color: FavLeagues.has(title) ? K.amber : K.muted, size: 19),
+                    ),
+                  ),
                   Text('${list.length}', style: TextStyle(color: K.muted, fontSize: 12)),
                   Icon(collapsed ? Icons.expand_more_rounded : Icons.expand_less_rounded,
                       color: K.muted, size: 22),

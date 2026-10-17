@@ -20,13 +20,13 @@ class ThemeSelector extends StatelessWidget {
             Text("Thème de l'affichage", style: TextStyle(color: K.text, fontSize: 15, fontWeight: FontWeight.w700)),
           ]),
           SizedBox(height: 4),
-          Text('Auto : clair de 6h à 18h, sombre de 18h à 6h',
+          Text('Jour : 6h - 18h · Nuit : 18h - 6h · Auto : change tout seul',
               style: TextStyle(color: K.muted, fontSize: 12.5)),
           SizedBox(height: 12),
           Row(children: [
             for (final (v, label, icon) in [
-              ('light', 'Clair', Icons.light_mode_rounded),
-              ('dark', 'Sombre', Icons.dark_mode_rounded),
+              ('light', 'Jour', Icons.light_mode_rounded),
+              ('dark', 'Nuit', Icons.dark_mode_rounded),
               ('auto', 'Auto', Icons.brightness_auto_rounded),
             ])
               Expanded(

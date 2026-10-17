@@ -21,7 +21,7 @@ class _PredictionsScreenState extends State<PredictionsScreen> {
   @override
   void initState() {
     super.initState();
-    _timer = Timer.periodic(Duration(minutes: 2), (_) {
+    _timer = Timer.periodic(Duration(minutes: 1), (_) {
       final nf = KounadiaData.today();
       nf.then((_) {
         if (mounted) setState(() => _f = nf);

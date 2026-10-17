@@ -101,6 +101,10 @@ class ForecastCard extends StatelessWidget {
     Widget time;
     if (result) {
       time = Icon(f.won == true ? Icons.check_circle_rounded : Icons.cancel_rounded, color: pickColor, size: 20);
+    } else if (f.minute != null) {
+      time = Text(f.minute!,
+          textAlign: TextAlign.center,
+          style: TextStyle(color: f.minute == 'Fin' ? K.muted : K.red, fontSize: 13, fontWeight: FontWeight.w800));
     } else if (now.isBefore(f.date)) {
       time = Text(f.hasTime ? hm(f.date) : '--:--',
           style: TextStyle(color: K.text, fontSize: 13, fontWeight: FontWeight.w700));

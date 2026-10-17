@@ -31,6 +31,7 @@ class Forecast {
   final int? models;
   final String? score;
   final bool? won;
+  final String? minute;
 
   Forecast({
     required this.id,
@@ -51,6 +52,7 @@ class Forecast {
     this.models,
     this.score,
     this.won,
+    this.minute,
   });
 
   factory Forecast.fromJson(Map<String, dynamic> j, String source) {
