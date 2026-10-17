@@ -8,6 +8,7 @@ import 'scores_screen.dart';
 import 'settings_screen.dart';
 import 'tip_history_screen.dart';
 import 'coupon_tab.dart';
+import '../widgets/premium_gate.dart';
 import '../widgets/welcome_card.dart';
 
 final k1xBet = Color(0xFF1A5BA6);
@@ -29,7 +30,22 @@ class _MainScreenState extends State<MainScreen> {
       if (mounted) maybeShowWelcome(context);
     });
   }
-  static List<Widget> _screens = [ScoresScreen(), PredictionsScreen(), CouponTab(), TipHistoryScreen()];
+  static List<Widget> _screens = [
+    ScoresScreen(),
+    PremiumGate(
+                    title: "Prédictions KOUNADIA",
+                    pitch: "Chaque jour, nos pronostics analysés : Kounadia IA, avis Expert et la sélection Coup sûr, avec les résultats en direct.",
+                    perks: ["Kounadia IA : score prédit et tendance de chaque match","Expert : les pronostics de nos analystes","Coup sûr : les sélections les plus fiables du jour","Scores et minutes en direct sur chaque carte"],
+                    icon: Icons.insights_rounded,
+                    child: PredictionsScreen()),
+    PremiumGate(
+                    title: "Créer un coupon",
+                    pitch: "Choisis ta cote et ton nombre de matchs : KOUNADIA compose ton coupon à partir de ses analyses.",
+                    perks: ["Coupon composé selon ta cote cible","Sélection fondée sur nos analyses et les statistiques","Partage du coupon en image en un clic","Suivi automatique : gagné ou perdu"],
+                    icon: Icons.confirmation_number_rounded,
+                    child: CouponTab()),
+    TipHistoryScreen(),
+  ];
   static final _titles = ['Matchs', 'Prédictions', 'Créer coupon', 'Historique'];
 
   void _push(Widget w) => Navigator.push(context, MaterialPageRoute(builder: (_) => w));

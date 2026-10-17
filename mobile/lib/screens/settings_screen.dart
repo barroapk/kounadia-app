@@ -10,6 +10,9 @@ import 'football/facts_screen.dart';
 import 'football/form_screen.dart';
 import 'football/tables_screen.dart';
 import 'fav_leagues_screen.dart';
+import 'account_screen.dart';
+import '../widgets/premium_gate.dart';
+import '../services/account.dart';
 
 final kAppVersion = '1.0.0';
 final _supportEmail = 'pierreclavers56@gmail.com';
@@ -122,6 +125,15 @@ class SettingsScreen extends StatelessWidget {
         padding: EdgeInsets.fromLTRB(16, 4, 16, 32),
         children: [
           _header(),
+          kTitle('Compte'),
+          kDividers([
+            ValueListenableBuilder<KUser?>(
+              valueListenable: Account.user,
+              builder: (_, u, __) => _tile(Icons.workspace_premium_rounded, Color(0xFFD4A017), 'Mon compte',
+                  u == null ? 'Se connecter · S\'abonner à Premium' : (u.premium ? '👑 Premium actif' : '${u.username} · aucun abonnement'),
+                  () => _open(context, AccountScreen())),
+            ),
+          ]),
           kTitle('Football'),
           kDividers([
             _tile(Icons.star_rounded, K.amber, 'Mes championnats', 'Tes favoris en premier dans Matchs',
@@ -129,9 +141,21 @@ class SettingsScreen extends StatelessWidget {
             _tile(Icons.leaderboard_rounded, K.indigoText, 'Classements', 'Tous les championnats du monde',
                 () => _open(context, TablesScreen())),
             _tile(Icons.lightbulb_rounded, K.amber, 'Faits du jour', 'Séries et chiffres clés des matchs',
-                () => _open(context, FactsScreen())),
+                () => _open(context, PremiumGate(
+                    standalone: true,
+                    title: "Faits du jour",
+                    pitch: "Les séries et chiffres clés des matchs du jour, pour parier en connaissance de cause.",
+                    perks: ["Séries en cours : victoires, buts, matchs nuls","Chiffres clés de chaque équipe","Mis à jour chaque jour"],
+                    icon: Icons.lightbulb_rounded,
+                    child: FactsScreen()))),
             _tile(Icons.trending_up_rounded, K.green, 'Forme des équipes', 'Les équipes en forme et en difficulté',
-                () => _open(context, FormScreen())),
+                () => _open(context, PremiumGate(
+                    standalone: true,
+                    title: "Forme des équipes",
+                    pitch: "Repère en un coup d'œil les équipes en forme et celles en difficulté.",
+                    perks: ["Équipes en forme et en difficulté","Résultats récents de chaque équipe","Tous les grands championnats"],
+                    icon: Icons.trending_up_rounded,
+                    child: FormScreen()))),
           ]),
           kTitle('Affichage'),
           ThemeSelector(),

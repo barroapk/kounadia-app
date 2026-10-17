@@ -10,6 +10,7 @@ import '../widgets/knd_banner.dart';
 import '../services/logo_cache.dart';
 import '../services/markets_service.dart';
 import 'pt_match_screen.dart';
+import '../widgets/premium_gate.dart';
 import 'fav_leagues_screen.dart';
 import '../services/fav_leagues.dart';
 import '../services/primatips_service.dart' show frLeague;
@@ -548,7 +549,13 @@ class _ScoresScreenState extends State<ScoresScreen> with WidgetsBindingObserver
     final prob = m.tipProb;
 
     return InkWell(
-      onTap: () => Navigator.push(context, MaterialPageRoute(builder: (_) => PtMatchScreen(match: m)))
+      onTap: () => Navigator.push(context, MaterialPageRoute(builder: (_) => PremiumGate(
+                    standalone: true,
+                    title: "Analyse du match",
+                    pitch: "Statistiques, forme, confrontations et marchés détaillés pour chaque match.",
+                    perks: ["Probabilités et cotes : 1X2, buts, les deux marquent","Forme récente et classement","Confrontations directes","Analyse KOUNADIA du match"],
+                    icon: Icons.query_stats_rounded,
+                    child: PtMatchScreen(match: m))))
           .then((_) {
         if (mounted) setState(() {});
       }),
