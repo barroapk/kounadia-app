@@ -1,20 +1,19 @@
 import 'dart:convert';
 import 'package:http/http.dart' as http;
+import 'kfeed.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import '../models/live_match.dart';
 import 'kounadia_data_service.dart' show FriendlyError;
 
 class ScoresService {
-  static final _url =
-      'https://raw.githubusercontent.com/barroapk/kounadia-data/scores/scores.json';
   static final _live = 'https://primatips.com/liveresults?day=0';
-  static final _ua = {'User-Agent': 'KOUNADIA-App/1.0 (+https://github.com/barroapk/kounadia-data)'};
+  static final _ua = {'User-Agent': 'KOUNADIA-App/1.0'};
 
   static Future<(Map<String, List<LiveMatch>>, bool)> load() async {
     final prefs = await SharedPreferences.getInstance();
     try {
       final bust = DateTime.now().millisecondsSinceEpoch ~/ 60000;
-      final r = await http.get(Uri.parse('$_url?v=$bust')).timeout(Duration(seconds: 20));
+      final r = await KFeed.get('scores/scores.json?v=$bust').timeout(Duration(seconds: 20));
       if (r.statusCode != 200) throw Exception('indisponible');
       final body = utf8.decode(r.bodyBytes);
       final days = _parse(body);

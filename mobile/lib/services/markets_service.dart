@@ -1,5 +1,6 @@
 import 'dart:convert';
 import 'package:http/http.dart' as http;
+import 'kfeed.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 class MatchMarkets {
@@ -11,7 +12,6 @@ class MatchMarkets {
 }
 
 class MarketsService {
-  static final _url = 'https://raw.githubusercontent.com/barroapk/kounadia-data/markets/markets.json';
   static Map<int, MatchMarkets>? _mem;
   static DateTime? _at;
 
@@ -23,7 +23,7 @@ class MarketsService {
     String? body;
     try {
       final bust = DateTime.now().millisecondsSinceEpoch ~/ 600000;
-      final r = await http.get(Uri.parse('$_url?v=$bust')).timeout(Duration(seconds: 20));
+      final r = await KFeed.get('markets/markets.json?v=$bust').timeout(Duration(seconds: 20));
       if (r.statusCode == 200) {
         body = utf8.decode(r.bodyBytes);
         await prefs.setString('kmarkets', body);

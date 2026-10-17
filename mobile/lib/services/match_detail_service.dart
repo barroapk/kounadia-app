@@ -154,7 +154,7 @@ String frLabel(String s) => _fr[s.trim()] ?? s.trim();
 
 class MatchDetailService {
   static final _base = 'https://primatips.com';
-  static final _ua = {'User-Agent': 'KOUNADIA-App/1.0 (+https://github.com/barroapk/kounadia-data)'};
+  static final _ua = {'User-Agent': 'KOUNADIA-App/1.0'};
 
   static String _txt(String s) => s
       .replaceAll(RegExp(r'<[^>]+>'), '')

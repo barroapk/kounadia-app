@@ -192,7 +192,7 @@ String frFact(String s) {
 
 class PrimaTipsService {
   static final base = 'https://primatips.com';
-  static final _ua = {'User-Agent': 'KOUNADIA-App/1.0 (+https://github.com/barroapk/kounadia-data)'};
+  static final _ua = {'User-Agent': 'KOUNADIA-App/1.0'};
   static final Map<String, (DateTime, String)> _cache = {};
 
   static String txt(String s) => s

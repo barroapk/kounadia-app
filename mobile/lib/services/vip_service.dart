@@ -1,5 +1,6 @@
 import 'dart:convert';
 import 'package:http/http.dart' as http;
+import 'kfeed.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import '../models/vip.dart';
 import 'coupon_engine.dart';
@@ -14,13 +15,12 @@ class VipData {
 }
 
 class VipService {
-  static final _base = 'https://raw.githubusercontent.com/barroapk/kounadia-data/vip';
 
   static Future<(String?, bool)> _get(String file) async {
     final prefs = await SharedPreferences.getInstance();
     try {
       final bust = DateTime.now().millisecondsSinceEpoch ~/ 300000;
-      final r = await http.get(Uri.parse('$_base/$file?v=$bust')).timeout(Duration(seconds: 20));
+      final r = await KFeed.get('vip/$file?v=$bust').timeout(Duration(seconds: 20));
       if (r.statusCode == 200) {
         final body = utf8.decode(r.bodyBytes);
         await prefs.setString('kvip_$file', body);

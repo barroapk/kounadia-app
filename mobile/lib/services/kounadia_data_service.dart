@@ -2,6 +2,7 @@ import 'dart:async';
 import 'dart:convert';
 import 'dart:io';
 import 'package:http/http.dart' as http;
+import 'kfeed.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import '../models/forecast.dart';
 
@@ -26,7 +27,6 @@ class HistoryData {
 }
 
 class KounadiaData {
-  static final _base = 'https://raw.githubusercontent.com/barroapk/kounadia-data/pronos';
 
   static String _friendly(Object e) {
     if (e is SocketException || e is TimeoutException || e is http.ClientException) {
@@ -40,8 +40,7 @@ class KounadiaData {
     final key = 'kdata_$file';
     try {
       final bust = DateTime.now().millisecondsSinceEpoch ~/ 300000;
-      final r = await http
-          .get(Uri.parse('$_base/$file?v=$bust'))
+      final r = await KFeed.get('pronos/$file?v=$bust')
           .timeout(Duration(seconds: 20));
       if (r.statusCode != 200) throw HttpException('indisponible');
       final body = utf8.decode(r.bodyBytes);
