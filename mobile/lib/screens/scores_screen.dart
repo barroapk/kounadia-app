@@ -36,6 +36,8 @@ class _ScoresScreenState extends State<ScoresScreen> with WidgetsBindingObserver
   bool _active = true;
   bool _onlyFav = false;
   int _tick = 0;
+  String _q = '';
+  bool _search = false;
 
   void _onFav() {
     if (mounted) setState(() {});
@@ -48,7 +50,10 @@ class _ScoresScreenState extends State<ScoresScreen> with WidgetsBindingObserver
     super.initState();
     WidgetsBinding.instance.addObserver(this);
     _loadFav();
-    FavLeagues.load().then((_) => _onFav());
+    FavLeagues.load().then((_) {
+      if (FavLeagues.set.value.isNotEmpty && _filter == 'all') _filter = 'mine';
+      _onFav();
+    });
     FavLeagues.set.addListener(_onFav);
     _load();
     LogoCache.load().then((_) {
@@ -192,6 +197,11 @@ class _ScoresScreenState extends State<ScoresScreen> with WidgetsBindingObserver
   }
 
   List<LiveMatch> _filtered(List<LiveMatch> all) {
+    final q = _sn(_q.trim());
+    if (q.isNotEmpty) {
+      return all.where((m) => _sn(m.home).contains(q) || _sn(m.away).contains(q) ||
+          _sn(frLeague(m.leagueLabel)).contains(q) || _sn(m.leagueLabel).contains(q)).toList();
+    }
     switch (_filter) {
       case 'live':
         return all.where((m) => m.status == 'live' && (!_onlyFav || _mine(m))).toList();
@@ -230,9 +240,34 @@ class _ScoresScreenState extends State<ScoresScreen> with WidgetsBindingObserver
                 ),
                 _navBtn(Icons.chevron_right_rounded,
                     _offset < 1 ? () => setState(() => _offset++) : null),
+                SizedBox(width: 8),
+                _navBtn(_search ? Icons.close_rounded : Icons.search_rounded, () => setState(() {
+                      _search = !_search;
+                      if (!_search) _q = '';
+                    })),
               ],
             ),
           ),
+          if (_search)
+            Padding(
+              padding: EdgeInsets.fromLTRB(12, 0, 12, 10),
+              child: TextField(
+                autofocus: true,
+                onChanged: (v) => setState(() => _q = v),
+                style: TextStyle(color: K.text),
+                decoration: InputDecoration(
+                  hintText: 'Équipe ou championnat…',
+                  hintStyle: TextStyle(color: K.muted),
+                  prefixIcon: Icon(Icons.search_rounded, color: K.muted),
+                  filled: true,
+                  fillColor: K.card,
+                  isDense: true,
+                  contentPadding: EdgeInsets.symmetric(vertical: 10),
+                  border: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: BorderSide(color: K.border)),
+                  enabledBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: BorderSide(color: K.border)),
+                ),
+              ),
+            ),
           Padding(
             padding: EdgeInsets.fromLTRB(12, 0, 12, 10),
             child: Row(
@@ -333,7 +368,9 @@ class _ScoresScreenState extends State<ScoresScreen> with WidgetsBindingObserver
     if (items.isEmpty) {
       children.addAll([
         SizedBox(height: 60),
-        kMessage(_filter == 'live'
+        kMessage(_q.trim().isNotEmpty
+            ? 'Aucun match trouvé pour « ${_q.trim()} ».'
+            : _filter == 'live'
             ? 'Aucun match en direct pour le moment.'
             : _filter == 'mine'
                 ? 'Aucun match de tes championnats ce jour.\nChoisis-les avec ⭐ (ou appui long sur un match).'
@@ -565,3 +602,12 @@ class _ScoresScreenState extends State<ScoresScreen> with WidgetsBindingObserver
     );
   }
 }
+
+String _sn(String s) => s
+    .toLowerCase()
+    .replaceAll(RegExp('[àâä]'), 'a')
+    .replaceAll(RegExp('[éèêë]'), 'e')
+    .replaceAll(RegExp('[îï]'), 'i')
+    .replaceAll(RegExp('[ôö]'), 'o')
+    .replaceAll(RegExp('[ùûü]'), 'u')
+    .replaceAll('ç', 'c');
