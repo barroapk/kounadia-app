@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import '../models/forecast.dart';
 import '../services/kounadia_data_service.dart';
+import '../services/vip_service.dart';
+import 'sure_tab.dart' show sureForecast;
 import '../widgets/forecast_card.dart';
 import '../widgets/knd_banner.dart';
 
@@ -12,13 +14,30 @@ class TipHistoryScreen extends StatefulWidget {
 }
 
 class _TipHistoryScreenState extends State<TipHistoryScreen> {
-  late Future<HistoryData> _f = KounadiaData.history();
+  late Future<HistoryData> _f = _load();
+
+  /// IA + Expert + Coup sûr gagnants (hier et aujourd'hui).
+  Future<HistoryData> _load() async {
+    final h = await KounadiaData.history();
+    try {
+      final v = await VipService.load();
+      final legs = [...?v.today?.singles, for (final d in v.history.take(2)) ...d.singles];
+      final seen = <int>{};
+      final extra = <Forecast>[];
+      for (final l in legs) {
+        if (l.result == 'won' && seen.add(l.id)) extra.add(sureForecast(l));
+      }
+      return HistoryData([...h.items, ...extra], h.offline);
+    } catch (_) {
+      return h;
+    }
+  }
   int? _day; // 0 = aujourd'hui, 1 = hier (null = automatique)
   String _src = 'all';
   final Set<String> _collapsed = {};
 
   Future<void> _refresh() async {
-    setState(() => _f = KounadiaData.history());
+    setState(() => _f = _load());
     try {
       await _f;
     } catch (_) {}
@@ -148,6 +167,7 @@ class _TipHistoryScreenState extends State<TipHistoryScreen> {
       ('all', 'Tous', ofDay.length),
       ('ia', 'Kounadia IA', ofDay.where((f) => f.source == 'ia').length),
       ('expert', 'Expert', ofDay.where((f) => f.source == 'expert').length),
+      ('sure', 'Coup sûr', ofDay.where((f) => f.source == 'sure').length),
     ];
     return Row(children: [
       for (final (value, label, count) in opts)
@@ -188,6 +208,7 @@ class _TipHistoryScreenState extends State<TipHistoryScreen> {
     final s = n > 1 ? 's' : '';
     final ia = list.where((f) => f.source == 'ia').length;
     final ex = list.where((f) => f.source == 'expert').length;
+    final su = list.where((f) => f.source == 'sure').length;
     final when = day == 0 ? 'du jour' : "d'hier";
     Widget mini(String label, int v) => Container(
           margin: EdgeInsets.only(right: 8),
@@ -222,12 +243,12 @@ class _TipHistoryScreenState extends State<TipHistoryScreen> {
             Text(
               n == 0
                   ? 'Nos pronostics gagnants $when apparaîtront ici dès la fin des matchs.'
-                  : 'Sur nos pronostics $when Kounadia IA et Expert, au total $n pronostic$s validé$s.',
+                  : 'Sur nos pronostics $when Kounadia IA, Expert et Coup sûr, au total $n pronostic$s validé$s.',
               style: TextStyle(color: Color(0xEEFFFFFF), fontSize: 13, height: 1.35),
             ),
             if (n > 0) ...[
               SizedBox(height: 10),
-              Wrap(runSpacing: 6, children: [mini('Kounadia IA', ia), mini('Expert', ex)]),
+              Wrap(runSpacing: 6, children: [mini('Kounadia IA', ia), mini('Expert', ex), mini('Coup sûr', su)]),
             ],
           ]),
         ),

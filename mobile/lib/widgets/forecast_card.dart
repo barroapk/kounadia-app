@@ -95,8 +95,8 @@ class ForecastCard extends StatelessWidget {
     final now = DateTime.now();
     final pickColor = result ? (f.won == true ? K.green : K.red) : K.pending;
     final sc = RegExp(r'(\d+)\s*[-:]\s*(\d+)').firstMatch(f.score ?? '');
-    final hg = result && sc != null ? int.parse(sc[1]!) : null;
-    final ag = result && sc != null ? int.parse(sc[2]!) : null;
+    final hg = sc != null ? int.parse(sc[1]!) : null;
+    final ag = sc != null ? int.parse(sc[2]!) : null;
 
     Widget time;
     if (result) {
@@ -114,8 +114,10 @@ class ForecastCard extends StatelessWidget {
 
     final parts = <String>[
       if (result && f.predicted != null) 'Prédit ${f.predicted}',
-      if (result) f.won == true ? 'Validé' : 'Perdu',
-      if (!result && f.source == 'ia' && f.predicted != null) 'Score ${f.predicted}',
+      if (result)
+        f.source == 'sure'
+            ? (f.won == true ? 'Terminé · Gagné' : 'Terminé · Perdu')
+            : (f.won == true ? 'Validé' : 'Perdu'),
       if (!result && f.agree != null && f.models != null) '${f.agree}/${f.models} IA',
       if (!result && f.confidence != null) 'Conf. ${f.confidence!.toStringAsFixed(1)}/10',
     ];
@@ -143,6 +145,15 @@ class ForecastCard extends StatelessWidget {
                   maxLines: 2,
                   overflow: TextOverflow.ellipsis,
                   style: TextStyle(color: pickColor, fontSize: 12.5, fontWeight: FontWeight.w800, height: 1.2)),
+              if (!result && f.source == 'ia' && f.predicted != null) ...[
+                SizedBox(height: 4),
+                Container(
+                  padding: EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+                  decoration: BoxDecoration(color: K.indigoSoft, borderRadius: BorderRadius.circular(8)),
+                  child: Text(prettyScore(f.predicted),
+                      style: TextStyle(color: K.indigoText, fontSize: 17, fontWeight: FontWeight.w900)),
+                ),
+              ],
               if (parts.isNotEmpty) ...[
                 SizedBox(height: 3),
                 Text(parts.join(' · '),

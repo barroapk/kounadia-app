@@ -3,7 +3,7 @@ import '../models/forecast.dart';
 import '../services/kounadia_data_service.dart';
 import '../widgets/forecast_card.dart';
 import '../widgets/knd_banner.dart';
-import 'coupon_tab.dart';
+import 'sure_tab.dart';
 
 class PredictionsScreen extends StatefulWidget {
   PredictionsScreen({super.key});
@@ -49,12 +49,12 @@ class _PredictionsScreenState extends State<PredictionsScreen> {
                   labelColor: Colors.white,
                   unselectedLabelColor: K.muted,
                   labelStyle: TextStyle(fontSize: 13.5, fontWeight: FontWeight.w800),
-                  tabs: [Tab(text: 'Kounadia IA'), Tab(text: 'Expert'), Tab(text: 'Coupons')],
+                  tabs: [Tab(text: 'Kounadia IA'), Tab(text: 'Expert'), Tab(text: 'Coup sûr')],
                 ),
               ),
             ),
             Expanded(
-              child: TabBarView(children: [_tab(true), _tab(false), CouponTab()]),
+              child: TabBarView(children: [_tab(true), _tab(false), SureTab()]),
             ),
           ],
         ),

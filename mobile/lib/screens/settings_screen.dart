@@ -9,7 +9,6 @@ import '../widgets/welcome_card.dart';
 import 'football/facts_screen.dart';
 import 'football/form_screen.dart';
 import 'football/tables_screen.dart';
-import 'vip_screen.dart';
 
 final kAppVersion = '1.0.0';
 final _supportEmail = 'pierreclavers56@gmail.com';
@@ -130,8 +129,6 @@ class SettingsScreen extends StatelessWidget {
                 () => _open(context, FactsScreen())),
             _tile(Icons.trending_up_rounded, K.green, 'Forme des équipes', 'Les équipes en forme et en difficulté',
                 () => _open(context, FormScreen())),
-            _tile(Icons.workspace_premium_rounded, K.amber, 'Coupon VIP du jour', '3 coupons + Top 5 des paris sûrs',
-                () => _open(context, VipScreen(standalone: true))),
           ]),
           kTitle('Affichage'),
           ThemeSelector(),
