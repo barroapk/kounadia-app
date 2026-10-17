@@ -70,7 +70,7 @@ class PtFact {
     final d = DateTime.tryParse(day);
     final t = RegExp(r'^(\d{1,2}):(\d{2})').firstMatch(hour);
     if (d == null || t == null) return null;
-    return DateTime.utc(d.year, d.month, d.day, int.parse(t[1]!), int.parse(t[2]!)).toLocal();
+    return londonToLocal(d.year, d.month, d.day, int.parse(t[1]!), int.parse(t[2]!));
   }
 
   String get state => live
@@ -331,4 +331,18 @@ class PrimaTipsService {
     }
     return out;
   }
+}
+
+DateTime _lastSunday(int y, int m) {
+  final d = DateTime.utc(y, m + 1, 0);
+  return d.subtract(Duration(days: d.weekday % 7));
+}
+
+/// Heure de Londres (GMT l'hiver, GMT+1 l'été) -> heure du téléphone.
+DateTime londonToLocal(int y, int mo, int d, int h, int mi) {
+  final t = DateTime.utc(y, mo, d, h, mi);
+  final start = _lastSunday(y, 3).add(Duration(hours: 1));
+  final end = _lastSunday(y, 10).add(Duration(hours: 2));
+  final summer = !t.isBefore(start) && t.isBefore(end);
+  return (summer ? t.subtract(Duration(hours: 1)) : t).toLocal();
 }

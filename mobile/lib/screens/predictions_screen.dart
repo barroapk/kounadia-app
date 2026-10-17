@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'package:flutter/material.dart';
 import '../models/forecast.dart';
 import '../services/kounadia_data_service.dart';
@@ -15,6 +16,24 @@ class PredictionsScreen extends StatefulWidget {
 class _PredictionsScreenState extends State<PredictionsScreen> {
   late Future<TodayData> _f = KounadiaData.today();
   final Set<String> _collapsed = {};
+  Timer? _timer;
+
+  @override
+  void initState() {
+    super.initState();
+    _timer = Timer.periodic(Duration(minutes: 2), (_) {
+      final nf = KounadiaData.today();
+      nf.then((_) {
+        if (mounted) setState(() => _f = nf);
+      }).catchError((_) {});
+    });
+  }
+
+  @override
+  void dispose() {
+    _timer?.cancel();
+    super.dispose();
+  }
 
   Future<void> _refresh() async {
     setState(() => _f = KounadiaData.today());
@@ -65,10 +84,10 @@ class _PredictionsScreenState extends State<PredictionsScreen> {
   Widget _tab(bool ia) => FutureBuilder<TodayData>(
         future: _f,
         builder: (context, snap) {
-          if (snap.connectionState != ConnectionState.done) {
+          if (snap.connectionState != ConnectionState.done && !snap.hasData) {
             return Center(child: CircularProgressIndicator(color: K.indigo));
           }
-          if (snap.hasError) return kMessage(snap.error.toString(), onRetry: _refresh);
+          if (snap.hasError && !snap.hasData) return kMessage(snap.error.toString(), onRetry: _refresh);
           final d = snap.data!;
           return ia
               ? _list('ia', d.ia, d.offline, "Aucun pronostic Kounadia IA pour aujourd'hui.")

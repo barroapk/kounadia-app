@@ -3,6 +3,7 @@ import 'dart:convert';
 import 'dart:io';
 import 'package:http/http.dart' as http;
 import 'kfeed.dart';
+import 'scores_service.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import '../models/forecast.dart';
 
@@ -93,6 +94,30 @@ class KounadiaData {
       ia = ia.map(merge).toList();
       ex = ex.map(merge).toList();
     } catch (_) {}
+    try {
+      final (days, _) = await ScoresService.load();
+      final all = [for (final l in days.values) ...l];
+      Forecast live(Forecast f) {
+        if (f.won != null) return f;
+        final tol = f.hasTime ? 3 : 14;
+        for (final m in all) {
+          if (m.hs == null || m.as_ == null) continue;
+          if (m.status != 'live' && m.status != 'finished') continue;
+          if (m.date != null && m.date!.difference(f.date).inHours.abs() > tol) continue;
+          if (!_same(m.home, f.home) || !_same(m.away, f.away)) continue;
+          return Forecast(
+            id: f.id, source: f.source, date: f.date, hasTime: f.hasTime, league: f.league,
+            home: f.home, away: f.away, homeLogo: f.homeLogo, awayLogo: f.awayLogo,
+            homeColors: f.homeColors, awayColors: f.awayColors, tipFr: f.tipFr, predicted: f.predicted,
+            confidence: f.confidence, agree: f.agree, models: f.models,
+            score: '${m.hs}-${m.as_}', won: null,
+          );
+        }
+        return f;
+      }
+      ia = ia.map(live).toList();
+      ex = ex.map(live).toList();
+    } catch (_) {}
     return TodayData(ia, ex, offline);
   }
 
@@ -105,4 +130,11 @@ class KounadiaData {
       ..sort((a, b) => b.date.compareTo(a.date));
     return HistoryData(items, offline);
   }
+}
+
+String _nm(String s) => s.toLowerCase().replaceAll(RegExp(r'[^a-z0-9]'), '');
+bool _same(String a, String b) {
+  final x = _nm(a), y = _nm(b);
+  if (x.isEmpty || y.isEmpty) return false;
+  return x == y || (x.length >= 5 && y.length >= 5 && (x.contains(y) || y.contains(x)));
 }
