@@ -2,6 +2,7 @@ import 'dart:convert';
 import 'package:flutter/foundation.dart';
 import 'package:http/http.dart' as http;
 import 'package:shared_preferences/shared_preferences.dart';
+import 'sync.dart';
 
 const kApiBase = String.fromEnvironment('API_BASE', defaultValue: 'https://knd-api-5bgz.onrender.com');
 
@@ -92,6 +93,18 @@ class Account {
 
   static Future<void> _fromAuth(Map<String, dynamic> j) async {
     await _save(j['token'].toString(), KUser.fromJson(Map<String, dynamic>.from(j['user'] as Map)));
+    await Sync.pull();
+  }
+
+  /// Réglages sauvegardés dans le compte.
+  static Future<Map<String, dynamic>> getPrefs() async {
+    final j = await _call('GET', '/kounadia/me/prefs');
+    final p = j['prefs'];
+    return p is Map ? Map<String, dynamic>.from(p) : <String, dynamic>{};
+  }
+
+  static Future<void> putPrefs(Map<String, dynamic> prefs) async {
+    await _call('POST', '/kounadia/me/prefs', {'prefs': prefs});
   }
 
   static Future<void> register(String username, String phone, String pw, String pw2) async =>

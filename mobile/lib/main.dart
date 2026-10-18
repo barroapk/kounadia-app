@@ -7,6 +7,7 @@ import 'services/analytics.dart';
 import 'services/account.dart';
 import 'services/user_prefs.dart';
 import 'services/currency.dart';
+import 'services/sync.dart';
 import 'widgets/forecast_card.dart' show K;
 
 Future<void> main() async {
@@ -16,6 +17,7 @@ Future<void> main() async {
   Fx.init();
   Analytics.init();
   Account.init();
+  Sync.start();
   K.dark = ThemeCtl.isDark;
   runApp(KounadiaApp());
 }
@@ -49,7 +51,10 @@ class _KounadiaAppState extends State<KounadiaApp> with WidgetsBindingObserver {
   @override
   void didChangeAppLifecycleState(AppLifecycleState state) {
     if (state == AppLifecycleState.resumed) _check();
-    if (state == AppLifecycleState.paused) Analytics.flush();
+    if (state == AppLifecycleState.paused) {
+      Analytics.flush();
+      Sync.push();
+    }
   }
 
   void _check() {

@@ -9,6 +9,12 @@ class FavLeagues {
 
   static Future<void> load() => _f ??= _load();
 
+  /// Relit les favoris (après récupération depuis le compte).
+  static Future<void> reload() {
+    _f = null;
+    return load();
+  }
+
   static Future<void> _load() async {
     try {
       final p = await SharedPreferences.getInstance();

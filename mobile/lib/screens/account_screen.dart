@@ -227,6 +227,15 @@ class _AccountScreenState extends State<AccountScreen> {
             ),
           ]),
         ),
+        SizedBox(height: 10),
+        Row(children: [
+          Icon(Icons.cloud_done_rounded, color: K.green, size: 18),
+          SizedBox(width: 8),
+          Expanded(
+            child: Text('Favoris, coupons et réglages sauvegardés dans ton compte : tu les retrouves sur n\'importe quel téléphone.',
+                style: TextStyle(color: K.muted, fontSize: 12.5)),
+          ),
+        ]),
         SizedBox(height: 18),
         Text(on ? 'Prolonger mon abonnement' : 'Choisir mon abonnement',
             style: TextStyle(color: K.text, fontSize: 16, fontWeight: FontWeight.w800)),
