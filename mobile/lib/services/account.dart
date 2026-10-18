@@ -116,6 +116,15 @@ class Account {
 
   static Future<void> logout() => _save(null, null);
 
+  /// Changer son mot de passe (connecté).
+  static Future<void> changePassword(String old, String pw, String pw2) async {
+    await _call('POST', '/kounadia/me/password', {'old': old, 'password': pw, 'password2': pw2});
+  }
+
+  /// Mot de passe oublié : code reçu sur WhatsApp + nouveau mot de passe (connecte directement).
+  static Future<void> resetPassword(String phone, String code, String pw, String pw2) async =>
+      _fromAuth(await _call('POST', '/kounadia/auth/reset', {'phone': phone, 'code': code, 'password': pw, 'password2': pw2}));
+
   /// Réveille le serveur (Render gratuit) avant que l'utilisateur ne choisisse une offre.
   static void warmUp() {
     http.get(Uri.parse(kApiBase)).timeout(Duration(seconds: 70)).then((_) {}, onError: (_) {});

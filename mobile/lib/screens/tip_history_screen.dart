@@ -16,12 +16,12 @@ class TipHistoryScreen extends StatefulWidget {
 class _TipHistoryScreenState extends State<TipHistoryScreen> {
   late Future<HistoryData> _f = _load();
 
-  /// IA + Expert + Coup sûr gagnants (hier et aujourd'hui).
+  /// IA + Expert + Coup sûr (jours passés, jusqu'à 2 semaines).
   Future<HistoryData> _load() async {
     final h = await KounadiaData.history();
     try {
       final v = await VipService.load();
-      final legs = [...?v.today?.singles, for (final d in v.history.take(2)) ...d.singles];
+      final legs = [for (final d in v.history.take(15)) ...d.singles];
       final seen = <int>{};
       final extra = <Forecast>[];
       for (final l in legs) {
@@ -32,7 +32,7 @@ class _TipHistoryScreenState extends State<TipHistoryScreen> {
       return h;
     }
   }
-  int? _day; // 0 = aujourd'hui, 1 = hier (null = automatique)
+  DateTime? _day; // jour choisi (par défaut : hier)
   String _src = 'all';
   final Set<String> _collapsed = {};
 
@@ -43,10 +43,12 @@ class _TipHistoryScreenState extends State<TipHistoryScreen> {
     } catch (_) {}
   }
 
-  int _dayDiff(DateTime d) {
-    final n = DateTime.now();
-    return DateTime(n.year, n.month, n.day).difference(DateTime(d.year, d.month, d.day)).inDays;
-  }
+  static const _wd = ['Lun', 'Mar', 'Mer', 'Jeu', 'Ven', 'Sam', 'Dim'];
+  static const _wdLong = ['lundi', 'mardi', 'mercredi', 'jeudi', 'vendredi', 'samedi', 'dimanche'];
+
+  DateTime _d0(DateTime d) => DateTime(d.year, d.month, d.day);
+  bool _same(DateTime a, DateTime b) => a.year == b.year && a.month == b.month && a.day == b.day;
+  String _dayName(DateTime d) => '${_wdLong[d.weekday - 1]} ${d.day}';
 
   @override
   Widget build(BuildContext context) {
@@ -61,24 +63,33 @@ class _TipHistoryScreenState extends State<TipHistoryScreen> {
           if (snap.hasError) return kMessage(snap.error.toString(), onRetry: _refresh);
           final data = snap.data!;
 
-          final wins = data.items.where((f) {
-            final d = _dayDiff(f.date);
-            return f.won == true && d >= 0 && d <= 1;
-          }).toList();
-          final today = wins.where((f) => _dayDiff(f.date) == 0).toList();
-          final yesterday = wins.where((f) => _dayDiff(f.date) == 1).toList();
-          final day = _day ?? (today.isNotEmpty ? 0 : 1);
-          final ofDay = day == 0 ? today : yesterday;
+          final today = _d0(DateTime.now());
+          final monday = today.subtract(Duration(days: today.weekday - 1));
+          final prevMonday = monday.subtract(Duration(days: 7));
+          // Jours affichés : de lundi à hier (aujourd'hui s'affiche demain). Le lundi : hier (dimanche).
+          final days = <DateTime>[
+            for (var d = monday; d.isBefore(today); d = d.add(Duration(days: 1))) d,
+          ];
+          if (days.isEmpty) days.add(today.subtract(Duration(days: 1)));
+          final played = data.items.where((f) => f.won != null && _d0(f.date).isBefore(today)).toList();
+          final wins = played.where((f) => f.won == true).toList();
+          final sel = (_day != null && days.any((d) => _same(d, _day!))) ? _day! : days.last;
+          final ofDay = wins.where((f) => _same(_d0(f.date), sel)).toList();
+          final week = wins.where((f) => !_d0(f.date).isBefore(monday)).toList();
+          final lastWeek = wins.where((f) => !_d0(f.date).isBefore(prevMonday) && _d0(f.date).isBefore(monday)).toList();
           final items = ofDay.where((f) => _src == 'all' || f.source == _src).toList()
             ..sort((a, b) => a.date.compareTo(b.date));
+          final countOf = {for (final d in days) d: wins.where((f) => _same(_d0(f.date), d)).length};
 
           final children = <Widget>[
             if (data.offline) kOfflineBanner(),
-            _daySwitch(day, yesterday.length, today.length),
+            _weekCard(week, lastWeek, today.weekday == 1),
+            SizedBox(height: 12),
+            _daySwitch(days, sel, countOf),
             SizedBox(height: 10),
             _srcChips(ofDay),
             SizedBox(height: 14),
-            _hero(ofDay, day),
+            _hero(ofDay, sel),
             SizedBox(height: 14),
             KndBanner(),
           ];
@@ -87,9 +98,7 @@ class _TipHistoryScreenState extends State<TipHistoryScreen> {
             children.addAll([
               SizedBox(height: 30),
               kMessage(ofDay.isEmpty
-                  ? (day == 0
-                      ? "Les pronostics gagnants du jour s'afficheront ici dès la fin des matchs."
-                      : "Aucun pronostic validé hier.")
+                  ? "Peu de matchs ce jour-là : rendez-vous sur les prochains jours pour de nouveaux pronostics gagnants."
                   : 'Aucun pronostic validé pour cette source.'),
             ]);
           } else {
@@ -101,7 +110,7 @@ class _TipHistoryScreenState extends State<TipHistoryScreen> {
             var block = 0;
             for (final e in groups.entries) {
               children
-                ..add(_group('$day|$_src|${e.key}', e.key, e.value))
+                ..add(_group('${sel.toIso8601String()}|$_src|${e.key}', e.key, e.value))
                 ..add(SizedBox(height: 10));
               rows += e.value.length;
               if (rows ~/ 10 > block) {
@@ -126,39 +135,75 @@ class _TipHistoryScreenState extends State<TipHistoryScreen> {
     );
   }
 
-  Widget _daySwitch(int day, int nYesterday, int nToday) {
-    Widget half(String label, int value, int count) {
-      final sel = day == value;
-      return Expanded(
-        child: GestureDetector(
-          onTap: () => setState(() => _day = value),
-          child: AnimatedContainer(
-            duration: Duration(milliseconds: 160),
-            height: 40,
-            alignment: Alignment.center,
-            decoration: BoxDecoration(
-              color: sel ? K.indigo : Colors.transparent,
-              borderRadius: BorderRadius.circular(10),
-            ),
-            child: Text('$label · $count',
-                style: TextStyle(
-                    color: sel ? Colors.white : K.muted, fontSize: 14, fontWeight: FontWeight.w800)),
-          ),
-        ),
-      );
-    }
-
+  /// Bilan de la semaine en cours (remis à zéro chaque lundi) + semaine précédente.
+  Widget _weekCard(List<Forecast> week, List<Forecast> lastWeek, bool isMonday) {
+    final n = week.length;
+    final p = lastWeek.length;
+    Widget stat(String label, String value, String sub) => Expanded(
+          child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+            Text(label.toUpperCase(),
+                style: TextStyle(color: Color(0xCCFFFFFF), fontSize: 10.5, fontWeight: FontWeight.w800, letterSpacing: .8)),
+            SizedBox(height: 4),
+            Text(value, style: TextStyle(color: Colors.white, fontSize: 26, fontWeight: FontWeight.w900)),
+            Text(sub, style: TextStyle(color: Color(0xDDFFFFFF), fontSize: 12)),
+          ]),
+        );
     return Container(
-      padding: EdgeInsets.all(3),
+      padding: EdgeInsets.all(16),
       decoration: BoxDecoration(
-        color: K.card,
-        borderRadius: BorderRadius.circular(13),
-        border: Border.all(color: K.border),
+        gradient: LinearGradient(colors: [Color(0xFF4F46E5), Color(0xFF7C3AED)], begin: Alignment.topLeft, end: Alignment.bottomRight),
+        borderRadius: BorderRadius.circular(18),
       ),
-      child: Row(children: [
-        half('Hier', 1, nYesterday),
-        half("Aujourd'hui", 0, nToday),
+      child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+        Row(children: [
+          Icon(Icons.calendar_month_rounded, color: Colors.white, size: 20),
+          SizedBox(width: 8),
+          Text('Bilan de la semaine', style: TextStyle(color: Colors.white, fontSize: 15, fontWeight: FontWeight.w900)),
+        ]),
+        SizedBox(height: 12),
+        Row(crossAxisAlignment: CrossAxisAlignment.start, children: [
+          stat('Cette semaine', isMonday ? '0' : '$n', isMonday ? 'nouveau départ ce lundi 🚀' : 'pronostic${n > 1 ? 's' : ''} validé${n > 1 ? 's' : ''}'),
+          Container(width: 1, height: 52, color: Color(0x44FFFFFF), margin: EdgeInsets.symmetric(horizontal: 12)),
+          stat('Semaine dernière', '$p', 'pronostic${p > 1 ? 's' : ''} validé${p > 1 ? 's' : ''}'),
+        ]),
       ]),
+    );
+  }
+
+  Widget _daySwitch(List<DateTime> days, DateTime sel, Map<DateTime, int> counts) {
+    final yesterday = _d0(DateTime.now()).subtract(Duration(days: 1));
+    return SizedBox(
+      height: 54,
+      child: ListView(
+        scrollDirection: Axis.horizontal,
+        reverse: true,
+        children: [
+          for (final d in days.reversed)
+            Padding(
+              padding: EdgeInsets.only(left: 8),
+              child: GestureDetector(
+                onTap: () => setState(() => _day = d),
+                child: AnimatedContainer(
+                  duration: Duration(milliseconds: 160),
+                  width: 74,
+                  alignment: Alignment.center,
+                  decoration: BoxDecoration(
+                    color: _same(d, sel) ? K.indigo : K.card,
+                    borderRadius: BorderRadius.circular(12),
+                    border: Border.all(color: _same(d, sel) ? K.indigo : K.border),
+                  ),
+                  child: Column(mainAxisAlignment: MainAxisAlignment.center, children: [
+                    Text(_same(d, yesterday) ? 'Hier' : '${_wd[d.weekday - 1]} ${d.day}',
+                        style: TextStyle(color: _same(d, sel) ? Colors.white : K.text, fontSize: 13, fontWeight: FontWeight.w800)),
+                    SizedBox(height: 2),
+                    Text('${counts[d] ?? 0} ✓',
+                        style: TextStyle(color: _same(d, sel) ? Color(0xDDFFFFFF) : K.green, fontSize: 12, fontWeight: FontWeight.w700)),
+                  ]),
+                ),
+              ),
+            ),
+        ],
+      ),
     );
   }
 
@@ -203,13 +248,14 @@ class _TipHistoryScreenState extends State<TipHistoryScreen> {
     ]);
   }
 
-  Widget _hero(List<Forecast> list, int day) {
+  Widget _hero(List<Forecast> list, DateTime day) {
     final n = list.length;
     final s = n > 1 ? 's' : '';
     final ia = list.where((f) => f.source == 'ia').length;
     final ex = list.where((f) => f.source == 'expert').length;
     final su = list.where((f) => f.source == 'sure').length;
-    final when = day == 0 ? 'du jour' : "d'hier";
+    final isYesterday = _same(day, _d0(DateTime.now()).subtract(Duration(days: 1)));
+    final when = isYesterday ? "d'hier" : 'du ${_dayName(day)}';
     Widget mini(String label, int v) => Container(
           margin: EdgeInsets.only(right: 8),
           padding: EdgeInsets.symmetric(horizontal: 10, vertical: 5),
@@ -237,13 +283,15 @@ class _TipHistoryScreenState extends State<TipHistoryScreen> {
         SizedBox(width: 14),
         Expanded(
           child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-            Text(n == 0 ? 'Résultats à venir' : '$n pronostic$s validé$s',
+            Text(n == 0 ? 'Journée calme' : '$n pronostic$s validé$s',
                 style: TextStyle(color: Colors.white, fontSize: 20, fontWeight: FontWeight.w900)),
             SizedBox(height: 4),
             Text(
               n == 0
-                  ? 'Nos pronostics gagnants $when apparaîtront ici dès la fin des matchs.'
-                  : 'Sur nos pronostics $when Kounadia IA, Expert et Coup sûr, au total $n pronostic$s validé$s.',
+                  ? 'Peu de matchs au programme $when. Les prochains jours apportent de nouvelles chances !'
+                  : n < 10
+                      ? 'Avec peu de matchs au programme $when, nos prédictions ont tout de même validé $n pronostic$s. 💪'
+                      : 'Kounadia IA, Expert et Coup sûr : $n pronostic$s validé$s $when. 🔥',
               style: TextStyle(color: Color(0xEEFFFFFF), fontSize: 13, height: 1.35),
             ),
             if (n > 0) ...[

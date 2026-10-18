@@ -75,6 +75,138 @@ class _AccountScreenState extends State<AccountScreen> {
     if (mounted) setState(() => _busy = false);
   }
 
+  Widget _pwField(TextEditingController c, String label, {bool pw = true, bool number = false}) => Padding(
+        padding: EdgeInsets.only(bottom: 10),
+        child: TextField(
+          controller: c,
+          obscureText: pw,
+          keyboardType: number ? TextInputType.number : TextInputType.text,
+          style: TextStyle(color: K.text),
+          decoration: _dec(label, number ? Icons.pin_rounded : Icons.lock_rounded),
+        ),
+      );
+
+  /// Changer son mot de passe (profil).
+  Future<void> _changePw() async {
+    final old = TextEditingController(), a = TextEditingController(), b = TextEditingController();
+    String? err;
+    var busy = false;
+    await showModalBottomSheet<void>(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: K.card,
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.vertical(top: Radius.circular(22))),
+      builder: (ctx) => StatefulBuilder(
+        builder: (ctx, set) => Padding(
+          padding: EdgeInsets.fromLTRB(20, 20, 20, 20 + MediaQuery.of(ctx).viewInsets.bottom),
+          child: Column(mainAxisSize: MainAxisSize.min, crossAxisAlignment: CrossAxisAlignment.stretch, children: [
+            Text('Changer mon mot de passe', style: TextStyle(color: K.text, fontSize: 19, fontWeight: FontWeight.w900)),
+            SizedBox(height: 14),
+            _pwField(old, 'Mot de passe actuel'),
+            _pwField(a, 'Nouveau mot de passe (6 caractères min.)'),
+            _pwField(b, 'Confirmer le nouveau mot de passe'),
+            if (err != null) Padding(padding: EdgeInsets.only(bottom: 8), child: Text(err!, style: TextStyle(color: K.red, fontWeight: FontWeight.w700))),
+            FilledButton(
+              style: FilledButton.styleFrom(backgroundColor: K.indigo, minimumSize: Size.fromHeight(50)),
+              onPressed: busy
+                  ? null
+                  : () async {
+                      set(() {
+                        busy = true;
+                        err = null;
+                      });
+                      try {
+                        await Account.changePassword(old.text, a.text, b.text);
+                        if (ctx.mounted) Navigator.pop(ctx);
+                        if (mounted) ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Mot de passe modifié ✅')));
+                        return;
+                      } catch (e) {
+                        err = e.toString();
+                      }
+                      if (ctx.mounted) set(() => busy = false);
+                    },
+              child: busy
+                  ? SizedBox(width: 22, height: 22, child: CircularProgressIndicator(strokeWidth: 2.5, color: Colors.white))
+                  : Text('Enregistrer', style: TextStyle(fontSize: 16, fontWeight: FontWeight.w800)),
+            ),
+          ]),
+        ),
+      ),
+    );
+  }
+
+  /// Mot de passe oublié : code envoyé sur WhatsApp par KOUNADIA, puis nouveau mot de passe.
+  Future<void> _forgot() async {
+    final code = TextEditingController(), a = TextEditingController(), b = TextEditingController();
+    String? err;
+    var busy = false;
+    await showModalBottomSheet<void>(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: K.card,
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.vertical(top: Radius.circular(22))),
+      builder: (ctx) => StatefulBuilder(
+        builder: (ctx, set) => Padding(
+          padding: EdgeInsets.fromLTRB(20, 20, 20, 20 + MediaQuery.of(ctx).viewInsets.bottom),
+          child: SingleChildScrollView(
+            child: Column(mainAxisSize: MainAxisSize.min, crossAxisAlignment: CrossAxisAlignment.stretch, children: [
+              Text('Mot de passe oublié', style: TextStyle(color: K.text, fontSize: 19, fontWeight: FontWeight.w900)),
+              SizedBox(height: 8),
+              Text('1. Demande ton code sur WhatsApp, depuis le numéro de ton compte.\n'
+                  '2. KOUNADIA t\'envoie un code à 6 chiffres (valable 30 min).\n'
+                  '3. Entre-le ici avec ton nouveau mot de passe.',
+                  style: TextStyle(color: K.muted, fontSize: 13, height: 1.45)),
+              SizedBox(height: 12),
+              Text('Numéro du compte : +${_fullPhone()}', style: TextStyle(color: K.text, fontWeight: FontWeight.w800)),
+              if (_phone.text.trim().isEmpty)
+                Text('Entre d\'abord ton numéro dans l\'écran de connexion.', style: TextStyle(color: K.amber, fontSize: 12.5)),
+              SizedBox(height: 10),
+              FilledButton.icon(
+                style: FilledButton.styleFrom(backgroundColor: Color(0xFF25D366), minimumSize: Size.fromHeight(48)),
+                onPressed: _phone.text.trim().isEmpty
+                    ? null
+                    : () => launchUrl(
+                          Uri.parse('https://wa.me/22655337782?text=' +
+                              Uri.encodeComponent('Bonjour KOUNADIA 👋\nJ\'ai oublié mon mot de passe.\nNuméro de mon compte : +${_fullPhone()}')),
+                          mode: LaunchMode.externalApplication),
+                icon: Icon(Icons.chat_rounded),
+                label: Text('Demander mon code sur WhatsApp', style: TextStyle(fontWeight: FontWeight.w800)),
+              ),
+              SizedBox(height: 14),
+              _pwField(code, 'Code reçu (6 chiffres)', pw: false, number: true),
+              _pwField(a, 'Nouveau mot de passe (6 caractères min.)'),
+              _pwField(b, 'Confirmer le nouveau mot de passe'),
+              if (err != null) Padding(padding: EdgeInsets.only(bottom: 8), child: Text(err!, style: TextStyle(color: K.red, fontWeight: FontWeight.w700))),
+              FilledButton(
+                style: FilledButton.styleFrom(backgroundColor: K.indigo, minimumSize: Size.fromHeight(50)),
+                onPressed: busy || _phone.text.trim().isEmpty
+                    ? null
+                    : () async {
+                        set(() {
+                          busy = true;
+                          err = null;
+                        });
+                        try {
+                          await Account.resetPassword(_fullPhone(), code.text.trim(), a.text, b.text);
+                          if (ctx.mounted) Navigator.pop(ctx);
+                          if (mounted) ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Mot de passe changé, tu es connecté ✅')));
+                          return;
+                        } catch (e) {
+                          err = e.toString();
+                        }
+                        if (ctx.mounted) set(() => busy = false);
+                      },
+                child: busy
+                    ? SizedBox(width: 22, height: 22, child: CircularProgressIndicator(strokeWidth: 2.5, color: Colors.white))
+                    : Text('Changer et me connecter', style: TextStyle(fontSize: 16, fontWeight: FontWeight.w800)),
+              ),
+            ]),
+          ),
+        ),
+      ),
+    );
+  }
+
   Future<void> _buy(KPlan p) async {
     setState(() => _busy = true);
     var waiting = true;
@@ -189,7 +321,14 @@ class _AccountScreenState extends State<AccountScreen> {
             ? SizedBox(width: 22, height: 22, child: CircularProgressIndicator(strokeWidth: 2.5, color: Colors.white))
             : Text(_signup ? 'Créer mon compte' : 'Me connecter', style: TextStyle(fontSize: 16, fontWeight: FontWeight.w800)),
       ),
-      SizedBox(height: 10),
+      if (!_signup)
+        Center(
+          child: TextButton(
+            onPressed: _forgot,
+            child: Text('Mot de passe oublié ?', style: TextStyle(color: K.indigoText, fontWeight: FontWeight.w700)),
+          ),
+        ),
+      SizedBox(height: 4),
       Text('La première connexion peut prendre jusqu\'à une minute.',
           textAlign: TextAlign.center, style: TextStyle(color: K.muted, fontSize: 12)),
     ]);
@@ -245,6 +384,12 @@ class _AccountScreenState extends State<AccountScreen> {
         SizedBox(height: 12),
         for (final p in kPlans) _planTile(p),
         SizedBox(height: 18),
+        OutlinedButton.icon(
+          onPressed: _changePw,
+          icon: Icon(Icons.lock_reset_rounded, color: K.text),
+          label: Text('Changer mon mot de passe', style: TextStyle(color: K.text)),
+        ),
+        SizedBox(height: 8),
         OutlinedButton.icon(
           onPressed: () => Account.logout(),
           icon: Icon(Icons.logout_rounded, color: K.muted),
