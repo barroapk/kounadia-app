@@ -1,5 +1,6 @@
 import 'dart:async';
 import 'dart:convert';
+import 'dart:math';
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
@@ -15,8 +16,10 @@ Color _hex(String s, Color fallback) {
   return v == null ? fallback : Color(0xFF000000 | v);
 }
 
+/// Une publicité : 1 à 5 pages photo (ou une carte texte si aucune photo).
 class BannerSlide {
-  final String id, title, text, cta, link, image;
+  final String id, title, text, cta, link;
+  final List<String> pages;
   final List<Color> colors;
   BannerSlide.fromAd(Map<String, dynamic> j)
       : id = j['id']?.toString() ?? '',
@@ -24,11 +27,21 @@ class BannerSlide {
         text = j['text']?.toString() ?? '',
         cta = j['cta']?.toString() ?? '',
         link = j['link']?.toString() ?? '',
-        image = j['image_url']?.toString() ?? '',
+        pages = _pages(j),
         colors = [
           _hex(j['color1']?.toString() ?? '', const Color(0xFF4F46E5)),
           _hex(j['color2']?.toString() ?? '', const Color(0xFF7C3AED)),
         ];
+
+  static List<String> _pages(Map<String, dynamic> j) {
+    final p = j['pages'];
+    final l = p is List ? p.map((e) => e.toString()).where((e) => e.startsWith('http')).take(5).toList() : <String>[];
+    final img = j['image_url']?.toString() ?? '';
+    if (l.isEmpty && img.startsWith('http')) l.add(img);
+    return l;
+  }
+
+  bool get hasButton => cta.isNotEmpty && link.isNotEmpty;
 }
 
 class BannerConfig {
@@ -58,7 +71,7 @@ class BannerService {
     try {
       final r = await http.get(
         Uri.parse('$kSupabaseUrl/rest/v1/kounadia_ads'
-            '?select=id,title,text,cta,link,image_url,color1,color2&active=eq.true&order=position.asc'),
+            '?select=id,title,text,cta,link,image_url,color1,color2,pages,ends_at&active=eq.true&order=position.asc'),
         headers: {'apikey': kSupabaseAnon, 'Authorization': 'Bearer $kSupabaseAnon'},
       ).timeout(const Duration(seconds: 15));
       if (r.statusCode == 200) {
@@ -70,10 +83,15 @@ class BannerService {
     _pending = null;
     if (body == null) return _mem;
     try {
-      final slides = (jsonDecode(body) as List)
-          .map((e) => BannerSlide.fromAd(Map<String, dynamic>.from(e as Map)))
-          .where((s) => s.title.isNotEmpty)
-          .toList();
+      final now = DateTime.now();
+      final slides = <BannerSlide>[];
+      for (final e in jsonDecode(body) as List) {
+        final j = Map<String, dynamic>.from(e as Map);
+        final end = DateTime.tryParse(j['ends_at']?.toString() ?? '');
+        if (end != null && end.isBefore(now)) continue;
+        final s = BannerSlide.fromAd(j);
+        if (s.pages.isNotEmpty || s.title.isNotEmpty) slides.add(s);
+      }
       final c = BannerConfig(slides.isNotEmpty, 10, slides);
       _mem = c;
       _at = DateTime.now();
@@ -99,57 +117,81 @@ class KndBanner extends StatelessWidget {
         if (afterCards > 0 && (afterCards % c.every != 0 || afterCards >= total)) {
           return const SizedBox.shrink();
         }
-        final start = afterCards == 0 ? 0 : afterCards ~/ c.every;
         return Padding(
           padding: const EdgeInsets.only(bottom: 14),
-          child: _Carousel(slides: c.slides, start: start),
+          child: _Carousel(slides: c.slides),
         );
       },
     );
   }
 }
 
+/// Défilement : pages d'une pub du bas vers le haut, puis pub suivante de droite à gauche.
+/// Ordre aléatoire à chaque bannière.
 class _Carousel extends StatefulWidget {
   final List<BannerSlide> slides;
-  final int start;
-  const _Carousel({required this.slides, required this.start});
+  const _Carousel({required this.slides});
   @override
   State<_Carousel> createState() => _CarouselState();
 }
 
 class _CarouselState extends State<_Carousel> {
-  late final PageController _pc;
-  late int _index;
-  Timer? _timer;
+  static const _pageTime = Duration(seconds: 4);
+  static const _singleTime = Duration(seconds: 6);
+  static const _anim = Duration(milliseconds: 650);
+  late final List<BannerSlide> _order = [...widget.slides]..shuffle(Random());
+  late int _ad = _order.length * 1000;
+  late final PageController _h = PageController(initialPage: _ad);
+  int _page = 0;
+  Timer? _t;
 
-  void _seen(int i) {
-    final s = widget.slides[i];
-    if (s.id.isNotEmpty) Analytics.once('adv_${s.id}', 'ad_view', {'ad': s.id});
-  }
+  BannerSlide _s(int i) => _order[i % _order.length];
 
   @override
   void initState() {
     super.initState();
-    _index = widget.start % widget.slides.length;
-    _pc = PageController(initialPage: _index);
-    _seen(_index);
-    if (widget.slides.length > 1) {
-      _timer = Timer.periodic(const Duration(seconds: 5), (_) {
-        if (!mounted || !_pc.hasClients) return;
-        final next = (_index + 1) % widget.slides.length;
-        _pc.animateToPage(next, duration: const Duration(milliseconds: 600), curve: Curves.easeInOutCubic);
-      });
-    }
+    _seen();
+    _schedule();
   }
 
   @override
   void dispose() {
-    _timer?.cancel();
-    _pc.dispose();
+    _t?.cancel();
+    _h.dispose();
     super.dispose();
   }
 
-  Future<void> _open(BannerSlide s) async {
+  void _seen() {
+    final s = _s(_ad);
+    if (s.id.isNotEmpty) Analytics.once('adv_${s.id}', 'ad_view', {'ad': s.id});
+  }
+
+  void _schedule() {
+    _t?.cancel();
+    _t = Timer(_s(_ad).pages.length > 1 ? _pageTime : _singleTime, _next);
+  }
+
+  void _next() {
+    if (!mounted) return;
+    final n = _s(_ad).pages.length;
+    if (_page < n - 1) {
+      setState(() => _page++);
+      _schedule();
+    } else if (_order.length > 1 && _h.hasClients) {
+      _h.nextPage(duration: _anim, curve: Curves.easeInOutCubic);
+    } else if (n > 1) {
+      setState(() => _page = 0);
+      _schedule();
+    } else {
+      _schedule();
+    }
+  }
+
+  Future<void> _tap(BannerSlide s) async {
+    if (_page < s.pages.length - 1) {
+      _next();
+      return;
+    }
     if (s.link.isEmpty) return;
     if (s.id.isNotEmpty) Analytics.log('ad_click', {'ad': s.id});
     try {
@@ -159,141 +201,182 @@ class _CarouselState extends State<_Carousel> {
 
   @override
   Widget build(BuildContext context) {
-    return SizedBox(
-      height: 100,
-      child: Stack(children: [
-        PageView.builder(
-          controller: _pc,
-          itemCount: widget.slides.length,
-          onPageChanged: (i) {
-            setState(() => _index = i);
-            _seen(i);
-          },
-          itemBuilder: (_, i) => _slide(widget.slides[i]),
-        ),
-        if (widget.slides.length > 1)
-          Positioned(
-            bottom: 8,
-            left: 0,
-            right: 0,
-            child: Row(
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: List.generate(widget.slides.length, (i) {
-                final on = i == _index;
-                return AnimatedContainer(
-                  duration: const Duration(milliseconds: 300),
-                  margin: const EdgeInsets.symmetric(horizontal: 3),
-                  width: on ? 16 : 6,
-                  height: 6,
-                  decoration: BoxDecoration(
-                    color: on ? Colors.white : Colors.white38,
-                    borderRadius: BorderRadius.circular(3),
-                  ),
-                );
-              }),
-            ),
-          ),
-      ]),
+    return AspectRatio(
+      aspectRatio: 2,
+      child: PageView.builder(
+        controller: _h,
+        onPageChanged: (i) {
+          setState(() {
+            _ad = i;
+            _page = 0;
+          });
+          _seen();
+          _schedule();
+        },
+        itemBuilder: (_, i) {
+          final s = _s(i);
+          return Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 2),
+            child: _AdView(slide: s, page: i == _ad ? _page : 0, onTap: () => _tap(s)),
+          );
+        },
+      ),
     );
   }
+}
 
-  Widget _slide(BannerSlide s) {
+class _AdView extends StatefulWidget {
+  final BannerSlide slide;
+  final int page;
+  final VoidCallback onTap;
+  const _AdView({required this.slide, required this.page, required this.onTap});
+  @override
+  State<_AdView> createState() => _AdViewState();
+}
+
+class _AdViewState extends State<_AdView> {
+  late final PageController _v = PageController(initialPage: widget.page);
+  bool _cached = false;
+
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    if (_cached) return;
+    _cached = true;
+    for (final u in widget.slide.pages) {
+      precacheImage(CachedNetworkImageProvider(u), context).catchError((_) {});
+    }
+  }
+
+  @override
+  void didUpdateWidget(_AdView old) {
+    super.didUpdateWidget(old);
+    if (old.page == widget.page || !_v.hasClients) return;
+    if (widget.page == 0) {
+      _v.jumpToPage(0);
+    } else {
+      _v.animateToPage(widget.page, duration: const Duration(milliseconds: 650), curve: Curves.easeInOutCubic);
+    }
+  }
+
+  @override
+  void dispose() {
+    _v.dispose();
+    super.dispose();
+  }
+
+  Widget _chip(String t, {double size = 10}) => Container(
+        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+        decoration: BoxDecoration(color: Colors.black.withAlpha(110), borderRadius: BorderRadius.circular(20)),
+        child: Text(t,
+            style: TextStyle(color: Colors.white, fontSize: size, fontWeight: FontWeight.w800, letterSpacing: .6)),
+      );
+
+  Widget _button(BannerSlide s, Color c) => Container(
+        padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
+        constraints: const BoxConstraints(maxWidth: 170),
+        decoration: BoxDecoration(
+          color: Colors.white,
+          borderRadius: BorderRadius.circular(22),
+          boxShadow: [BoxShadow(color: Colors.black.withAlpha(60), blurRadius: 10, offset: const Offset(0, 3))],
+        ),
+        child: Row(mainAxisSize: MainAxisSize.min, children: [
+          Flexible(
+            child: Text(s.cta,
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+                style: TextStyle(color: c, fontSize: 13, fontWeight: FontWeight.w900)),
+          ),
+          const SizedBox(width: 6),
+          Icon(Icons.arrow_forward_rounded, color: c, size: 15),
+        ]),
+      );
+
+  @override
+  Widget build(BuildContext context) {
+    final s = widget.slide;
     final c1 = s.colors[0];
     final c2 = s.colors[1];
-    final hasImage = s.image.isNotEmpty;
+    final n = s.pages.length;
+    final last = n == 0 || widget.page >= n - 1;
     return GestureDetector(
-      onTap: () => _open(s),
+      onTap: widget.onTap,
       child: Container(
-        margin: const EdgeInsets.symmetric(horizontal: 2),
         clipBehavior: Clip.antiAlias,
         decoration: BoxDecoration(
           gradient: LinearGradient(colors: [c1, c2], begin: Alignment.topLeft, end: Alignment.bottomRight),
           borderRadius: BorderRadius.circular(18),
-          boxShadow: [BoxShadow(color: c1.withAlpha(90), blurRadius: 16, offset: const Offset(0, 6))],
+          boxShadow: [BoxShadow(color: c1.withAlpha(70), blurRadius: 14, offset: const Offset(0, 5))],
         ),
         child: Stack(children: [
-          if (hasImage) ...[
+          if (n > 0)
             Positioned.fill(
-              child: CachedNetworkImage(
-                imageUrl: s.image,
-                fit: BoxFit.cover,
-                errorWidget: (_, __, ___) => const SizedBox.shrink(),
-              ),
-            ),
-            Positioned.fill(
-              child: DecoratedBox(
-                decoration: BoxDecoration(
-                  gradient: LinearGradient(
-                    colors: [Colors.black.withAlpha(200), Colors.black.withAlpha(40)],
-                    begin: Alignment.centerLeft,
-                    end: Alignment.centerRight,
-                  ),
+              child: PageView.builder(
+                controller: _v,
+                scrollDirection: Axis.vertical,
+                physics: const NeverScrollableScrollPhysics(),
+                itemCount: n,
+                itemBuilder: (_, i) => CachedNetworkImage(
+                  imageUrl: s.pages[i],
+                  fit: BoxFit.cover,
+                  fadeInDuration: const Duration(milliseconds: 250),
+                  placeholder: (_, __) => const SizedBox.shrink(),
+                  errorWidget: (_, __, ___) => const SizedBox.shrink(),
                 ),
               ),
-            ),
-          ] else ...[
+            )
+          else ...[
             Positioned(
-              right: -30,
-              top: -40,
+              right: -40,
+              top: -50,
               child: Container(
-                width: 120,
-                height: 120,
+                width: 170,
+                height: 170,
                 decoration: const BoxDecoration(shape: BoxShape.circle, color: Color(0x1FFFFFFF)),
               ),
             ),
             Positioned(
-              right: 60,
-              bottom: -50,
+              left: -30,
+              bottom: -60,
               child: Container(
-                width: 90,
-                height: 90,
+                width: 130,
+                height: 130,
                 decoration: const BoxDecoration(shape: BoxShape.circle, color: Color(0x14FFFFFF)),
               ),
             ),
-          ],
-          Padding(
-            padding: const EdgeInsets.fromLTRB(14, 10, 10, 16),
-            child: Row(children: [
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  children: [
-                    const Text('SPONSORISÉ',
-                        style: TextStyle(color: Colors.white70, fontSize: 9, fontWeight: FontWeight.w800, letterSpacing: 1.2)),
-                    const SizedBox(height: 2),
-                    Text(s.title,
-                        maxLines: 1,
-                        overflow: TextOverflow.ellipsis,
-                        style: const TextStyle(color: Colors.white, fontSize: 15, fontWeight: FontWeight.w800)),
-                    const SizedBox(height: 2),
+            Padding(
+              padding: const EdgeInsets.fromLTRB(18, 34, 18, 56),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  Text(s.title,
+                      maxLines: 2,
+                      overflow: TextOverflow.ellipsis,
+                      style: const TextStyle(color: Colors.white, fontSize: 19, fontWeight: FontWeight.w900, height: 1.15)),
+                  if (s.text.isNotEmpty) ...[
+                    const SizedBox(height: 6),
                     Text(s.text,
-                        maxLines: 2,
+                        maxLines: 3,
                         overflow: TextOverflow.ellipsis,
-                        style: const TextStyle(color: Color(0xE6FFFFFF), fontSize: 12, height: 1.2)),
+                        style: const TextStyle(color: Color(0xE6FFFFFF), fontSize: 13, height: 1.3)),
                   ],
-                ),
+                ],
               ),
-              if (s.cta.isNotEmpty && s.link.isNotEmpty) ...[
-                const SizedBox(width: 8),
-                Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 9, vertical: 6),
-                  constraints: const BoxConstraints(maxWidth: 92),
-                  decoration: BoxDecoration(color: Colors.white, borderRadius: BorderRadius.circular(20)),
-                  child: Row(mainAxisSize: MainAxisSize.min, children: [
-                    Flexible(
-                      child: Text(s.cta,
-                          maxLines: 1,
-                          overflow: TextOverflow.ellipsis,
-                          style: TextStyle(color: c1, fontSize: 11, fontWeight: FontWeight.w800)),
-                    ),
-                    const SizedBox(width: 4),
-                    Icon(Icons.arrow_forward_rounded, color: c1, size: 12),
-                  ]),
-                ),
-              ],
-            ]),
-          ),
+            ),
+          ],
+          Positioned(top: 10, left: 10, child: _chip('SPONSORISÉ', size: 9)),
+          if (n > 1) Positioned(top: 10, right: 10, child: _chip('${widget.page + 1}/$n', size: 11)),
+          if (s.hasButton)
+            Positioned(
+              right: 12,
+              bottom: 12,
+              child: AnimatedOpacity(
+                opacity: last ? 1 : 0,
+                duration: const Duration(milliseconds: 300),
+                child: IgnorePointer(ignoring: !last, child: _button(s, c1)),
+              ),
+            ),
         ]),
       ),
     );
