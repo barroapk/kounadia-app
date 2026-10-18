@@ -14,6 +14,20 @@ android {
         targetCompatibility = JavaVersion.VERSION_17
     }
 
+    // Clé de signature fixe (fournie par GitHub Actions) : les mises à jour s'installent par-dessus.
+    val releaseKs = System.getenv("KOUNADIA_KEYSTORE")?.let { file(it) }?.takeIf { it.exists() }
+    signingConfigs {
+        create("release") {
+            if (releaseKs != null) {
+                storeFile = releaseKs
+                storeType = "pkcs12"
+                storePassword = System.getenv("KOUNADIA_KEY_PASS")
+                keyAlias = "kounadia"
+                keyPassword = System.getenv("KOUNADIA_KEY_PASS")
+            }
+        }
+    }
+
     defaultConfig {
         // TODO: Specify your own unique Application ID (https://developer.android.com/studio/build/application-id.html).
         applicationId = "com.kounadia.kounadia"
@@ -27,9 +41,7 @@ android {
 
     buildTypes {
         release {
-            // TODO: Add your own signing config for the release build.
-            // Signing with the debug keys for now, so `flutter run --release` works.
-            signingConfig = signingConfigs.getByName("debug")
+            signingConfig = signingConfigs.getByName(if (releaseKs != null) "release" else "debug")
             isMinifyEnabled = false
             isShrinkResources = false
         }
