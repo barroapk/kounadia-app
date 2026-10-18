@@ -34,8 +34,10 @@ jobs:
 
       - name: Vérifier la signature
         run: |
-          keytool -printcert -jarfile mobile/build/app/outputs/flutter-apk/app-release.apk | grep -E "Owner|SHA256:" | head -2
-          keytool -printcert -jarfile mobile/build/app/outputs/flutter-apk/app-release.apk | grep -q "KOUNADIA SERVICE" || { echo "APK non signé avec la clé KOUNADIA"; exit 1; }
+          AS="$(ls -d "$ANDROID_HOME"/build-tools/*/ | sort -V | tail -1)apksigner"
+          "$AS" verify --print-certs mobile/build/app/outputs/flutter-apk/app-release.apk > "$RUNNER_TEMP/sig.txt"
+          head -3 "$RUNNER_TEMP/sig.txt"
+          grep -q "KOUNADIA SERVICE" "$RUNNER_TEMP/sig.txt" || { echo "APK non signé avec la clé KOUNADIA"; exit 1; }
 
       - name: Publier l'APK comme résultat téléchargeable
         uses: actions/upload-artifact@v4
