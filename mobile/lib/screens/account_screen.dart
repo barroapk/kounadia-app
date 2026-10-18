@@ -45,6 +45,7 @@ class _AccountScreenState extends State<AccountScreen> {
   void initState() {
     super.initState();
     Account.refresh();
+    Account.warmUp();
     Analytics.log('account_open');
   }
 
@@ -76,8 +77,21 @@ class _AccountScreenState extends State<AccountScreen> {
 
   Future<void> _buy(KPlan p) async {
     setState(() => _busy = true);
+    var waiting = true;
+    void close() {
+      if (waiting && mounted) {
+        waiting = false;
+        Navigator.of(context, rootNavigator: true).pop();
+      }
+    }
+    showDialog<void>(
+      context: context,
+      barrierDismissible: false,
+      builder: (_) => PopScope(canPop: false, child: _Connecting(plan: p)),
+    );
     try {
       final (token, url) = await Account.startPayment(p.id);
+      close();
       Analytics.log('pay_start', {'plan': p.id});
       await launchUrl(Uri.parse(url), mode: LaunchMode.externalApplication);
       if (mounted) await showModalBottomSheet<void>(
@@ -88,6 +102,7 @@ class _AccountScreenState extends State<AccountScreen> {
             builder: (_) => _PayWait(token: token, plan: p),
           );
     } catch (e) {
+      close();
       if (mounted) ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(e.toString())));
     }
     if (mounted) setState(() => _busy = false);
@@ -387,6 +402,73 @@ class _PayWaitState extends State<_PayWait> with WidgetsBindingObserver {
             onPressed: () => Navigator.pop(context),
             child: Text(paid ? 'Continuer' : 'Fermer'),
           ),
+        ]),
+      ),
+    );
+  }
+}
+
+/// Pendant la création du paiement (le serveur peut mettre jusqu'à une minute à se réveiller).
+class _Connecting extends StatefulWidget {
+  final KPlan plan;
+  _Connecting({required this.plan});
+
+  @override
+  State<_Connecting> createState() => _ConnectingState();
+}
+
+class _ConnectingState extends State<_Connecting> {
+  Timer? _t;
+  int _s = 0;
+
+  @override
+  void initState() {
+    super.initState();
+    _t = Timer.periodic(Duration(seconds: 1), (_) {
+      if (mounted) setState(() => _s++);
+    });
+  }
+
+  @override
+  void dispose() {
+    _t?.cancel();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final msg = _s < 6
+        ? 'Patiente un instant…'
+        : _s < 25
+            ? 'Connexion au serveur sécurisé, encore quelques secondes…'
+            : 'Le serveur se réveille, cela peut prendre jusqu\'à une minute. Ne ferme pas l\'application.';
+    return Dialog(
+      backgroundColor: K.card,
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(22)),
+      child: Padding(
+        padding: EdgeInsets.fromLTRB(22, 26, 22, 22),
+        child: Column(mainAxisSize: MainAxisSize.min, children: [
+          SizedBox(width: 46, height: 46, child: CircularProgressIndicator(color: K.indigo, strokeWidth: 3.5)),
+          SizedBox(height: 18),
+          Text('Paiement en cours',
+              textAlign: TextAlign.center, style: TextStyle(color: K.text, fontSize: 18, fontWeight: FontWeight.w900)),
+          SizedBox(height: 6),
+          Text('${widget.plan.label} · ${fcfa(widget.plan.price)}',
+              textAlign: TextAlign.center, style: TextStyle(color: K.indigoText, fontSize: 14, fontWeight: FontWeight.w800)),
+          SizedBox(height: 12),
+          AnimatedSwitcher(
+            duration: Duration(milliseconds: 300),
+            child: Text(msg,
+                key: ValueKey(msg),
+                textAlign: TextAlign.center,
+                style: TextStyle(color: K.muted, fontSize: 13.5, height: 1.4)),
+          ),
+          SizedBox(height: 14),
+          Row(mainAxisAlignment: MainAxisAlignment.center, children: [
+            Icon(Icons.lock_rounded, color: K.green, size: 15),
+            SizedBox(width: 6),
+            Text('Paiement sécurisé MoneyFusion', style: TextStyle(color: K.muted, fontSize: 12)),
+          ]),
         ]),
       ),
     );

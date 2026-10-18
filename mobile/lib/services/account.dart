@@ -103,6 +103,11 @@ class Account {
 
   static Future<void> logout() => _save(null, null);
 
+  /// Réveille le serveur (Render gratuit) avant que l'utilisateur ne choisisse une offre.
+  static void warmUp() {
+    http.get(Uri.parse(kApiBase)).timeout(Duration(seconds: 70)).then((_) {}, onError: (_) {});
+  }
+
   /// Met à jour le statut Premium depuis le serveur (silencieux en cas d'échec).
   static Future<void> refresh() async {
     if (_token == null) return;

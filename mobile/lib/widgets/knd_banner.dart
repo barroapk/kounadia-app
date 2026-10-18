@@ -16,10 +16,18 @@ Color _hex(String s, Color fallback) {
   return v == null ? fallback : Color(0xFF000000 | v);
 }
 
-/// Une publicité : 1 à 5 pages photo (ou une carte texte si aucune photo).
+/// Une page de publicité : une photo (url) ou un texte sur le fond de couleur.
+class AdPg {
+  final String? url;
+  final String title, text;
+  const AdPg(this.url, this.title, this.text);
+  bool get photo => url != null;
+}
+
+/// Une publicité : 1 à 5 pages (photo ou texte).
 class BannerSlide {
   final String id, title, text, cta, link;
-  final List<String> pages;
+  final List<AdPg> pages;
   final List<Color> colors;
   BannerSlide.fromAd(Map<String, dynamic> j)
       : id = j['id']?.toString() ?? '',
@@ -33,11 +41,30 @@ class BannerSlide {
           _hex(j['color2']?.toString() ?? '', const Color(0xFF7C3AED)),
         ];
 
-  static List<String> _pages(Map<String, dynamic> j) {
+  static List<AdPg> _pages(Map<String, dynamic> j) {
+    final l = <AdPg>[];
     final p = j['pages'];
-    final l = p is List ? p.map((e) => e.toString()).where((e) => e.startsWith('http')).take(5).toList() : <String>[];
-    final img = j['image_url']?.toString() ?? '';
-    if (l.isEmpty && img.startsWith('http')) l.add(img);
+    if (p is List) {
+      for (final e in p) {
+        if (l.length >= 5) break;
+        if (e is Map) {
+          final t = e['title']?.toString() ?? '';
+          final x = e['text']?.toString() ?? '';
+          if (t.isNotEmpty || x.isNotEmpty) l.add(AdPg(null, t, x));
+        } else if (e is String && e.startsWith('http')) {
+          l.add(AdPg(e, '', ''));
+        }
+      }
+    }
+    if (l.isEmpty) {
+      final img = j['image_url']?.toString() ?? '';
+      final t = j['title']?.toString() ?? '';
+      if (img.startsWith('http')) {
+        l.add(AdPg(img, '', ''));
+      } else if (t.isNotEmpty) {
+        l.add(AdPg(null, t, j['text']?.toString() ?? ''));
+      }
+    }
     return l;
   }
 
@@ -90,7 +117,7 @@ class BannerService {
         final end = DateTime.tryParse(j['ends_at']?.toString() ?? '');
         if (end != null && end.isBefore(now)) continue;
         final s = BannerSlide.fromAd(j);
-        if (s.pages.isNotEmpty || s.title.isNotEmpty) slides.add(s);
+        if (s.pages.isNotEmpty) slides.add(s);
       }
       final c = BannerConfig(slides.isNotEmpty, 10, slides);
       _mem = c;
@@ -243,8 +270,9 @@ class _AdViewState extends State<_AdView> {
     super.didChangeDependencies();
     if (_cached) return;
     _cached = true;
-    for (final u in widget.slide.pages) {
-      precacheImage(CachedNetworkImageProvider(u), context).catchError((_) {});
+    for (final p in widget.slide.pages) {
+      final u = p.url;
+      if (u != null) precacheImage(CachedNetworkImageProvider(u), context).catchError((_) {});
     }
   }
 
@@ -264,6 +292,48 @@ class _AdViewState extends State<_AdView> {
     _v.dispose();
     super.dispose();
   }
+
+  Widget _textPage(AdPg p) => Stack(children: [
+        Positioned(
+          right: -40,
+          top: -50,
+          child: Container(
+            width: 170,
+            height: 170,
+            decoration: const BoxDecoration(shape: BoxShape.circle, color: Color(0x1FFFFFFF)),
+          ),
+        ),
+        Positioned(
+          left: -30,
+          bottom: -60,
+          child: Container(
+            width: 130,
+            height: 130,
+            decoration: const BoxDecoration(shape: BoxShape.circle, color: Color(0x14FFFFFF)),
+          ),
+        ),
+        Padding(
+          padding: const EdgeInsets.fromLTRB(18, 34, 18, 56),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              if (p.title.isNotEmpty)
+                Text(p.title,
+                    maxLines: 2,
+                    overflow: TextOverflow.ellipsis,
+                    style: const TextStyle(color: Colors.white, fontSize: 19, fontWeight: FontWeight.w900, height: 1.15)),
+              if (p.text.isNotEmpty) ...[
+                const SizedBox(height: 6),
+                Text(p.text,
+                    maxLines: 3,
+                    overflow: TextOverflow.ellipsis,
+                    style: const TextStyle(color: Color(0xE6FFFFFF), fontSize: 13, height: 1.3)),
+              ],
+            ],
+          ),
+        ),
+      ]);
 
   Widget _chip(String t, {double size = 10}) => Container(
         padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
@@ -309,62 +379,28 @@ class _AdViewState extends State<_AdView> {
           boxShadow: [BoxShadow(color: c1.withAlpha(70), blurRadius: 14, offset: const Offset(0, 5))],
         ),
         child: Stack(children: [
-          if (n > 0)
-            Positioned.fill(
-              child: PageView.builder(
-                controller: _v,
-                scrollDirection: Axis.vertical,
-                physics: const NeverScrollableScrollPhysics(),
-                itemCount: n,
-                itemBuilder: (_, i) => CachedNetworkImage(
-                  imageUrl: s.pages[i],
-                  fit: BoxFit.cover,
-                  fadeInDuration: const Duration(milliseconds: 250),
-                  placeholder: (_, __) => const SizedBox.shrink(),
-                  errorWidget: (_, __, ___) => const SizedBox.shrink(),
-                ),
-              ),
-            )
-          else ...[
-            Positioned(
-              right: -40,
-              top: -50,
-              child: Container(
-                width: 170,
-                height: 170,
-                decoration: const BoxDecoration(shape: BoxShape.circle, color: Color(0x1FFFFFFF)),
-              ),
+          Positioned.fill(
+            child: PageView.builder(
+              controller: _v,
+              scrollDirection: Axis.vertical,
+              physics: const NeverScrollableScrollPhysics(),
+              itemCount: n,
+              itemBuilder: (_, i) {
+                final p = s.pages[i];
+                final u = p.url;
+                if (u != null) {
+                  return CachedNetworkImage(
+                    imageUrl: u,
+                    fit: BoxFit.cover,
+                    fadeInDuration: const Duration(milliseconds: 250),
+                    placeholder: (_, __) => const SizedBox.shrink(),
+                    errorWidget: (_, __, ___) => const SizedBox.shrink(),
+                  );
+                }
+                return _textPage(p);
+              },
             ),
-            Positioned(
-              left: -30,
-              bottom: -60,
-              child: Container(
-                width: 130,
-                height: 130,
-                decoration: const BoxDecoration(shape: BoxShape.circle, color: Color(0x14FFFFFF)),
-              ),
-            ),
-            Padding(
-              padding: const EdgeInsets.fromLTRB(18, 34, 18, 56),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  Text(s.title,
-                      maxLines: 2,
-                      overflow: TextOverflow.ellipsis,
-                      style: const TextStyle(color: Colors.white, fontSize: 19, fontWeight: FontWeight.w900, height: 1.15)),
-                  if (s.text.isNotEmpty) ...[
-                    const SizedBox(height: 6),
-                    Text(s.text,
-                        maxLines: 3,
-                        overflow: TextOverflow.ellipsis,
-                        style: const TextStyle(color: Color(0xE6FFFFFF), fontSize: 13, height: 1.3)),
-                  ],
-                ],
-              ),
-            ),
-          ],
+          ),
           Positioned(top: 10, left: 10, child: _chip('SPONSORISÉ', size: 9)),
           if (n > 1) Positioned(top: 10, right: 10, child: _chip('${widget.page + 1}/$n', size: 11)),
           if (s.hasButton)
