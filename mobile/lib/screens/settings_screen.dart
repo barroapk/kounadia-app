@@ -19,6 +19,7 @@ import '../widgets/region_pickers.dart';
 
 final kAppVersion = '1.0.0';
 final _supportEmail = 'pierreclavers56@gmail.com';
+final _businessWhatsApp = '22655337782';
 
 class SettingsScreen extends StatelessWidget {
   SettingsScreen({super.key});
@@ -28,20 +29,66 @@ class SettingsScreen extends StatelessWidget {
     Navigator.push(c, MaterialPageRoute(builder: (_) => w));
   }
 
-  void _snack(BuildContext c, String m) =>
-      ScaffoldMessenger.of(c).showSnackBar(SnackBar(content: Text(m)));
+  void _snack(BuildContext c, String m) => ScaffoldMessenger.of(c).showSnackBar(SnackBar(content: Text(m)));
 
-  Future<void> _contact(BuildContext c) async {
-    final uri = Uri(
-      scheme: 'mailto',
-      path: _supportEmail,
-      query: 'subject=${Uri.encodeComponent('KOUNADIA $kAppVersion - Support')}',
-    );
+  Future<void> _launch(BuildContext c, Uri uri, String fail) async {
     try {
-      if (!await launchUrl(uri) && c.mounted) _snack(c, 'Aucune application e-mail trouvée');
+      if (!await launchUrl(uri, mode: LaunchMode.externalApplication) && c.mounted) _snack(c, fail);
     } catch (_) {
-      if (c.mounted) _snack(c, 'Aucune application e-mail trouvée');
+      if (c.mounted) _snack(c, fail);
     }
+  }
+
+  Uri _mail(String subject) => Uri(
+        scheme: 'mailto',
+        path: _supportEmail,
+        query: 'subject=${Uri.encodeComponent(subject)}',
+      );
+
+  Uri _wa(String text) => Uri.parse('https://wa.me/$_businessWhatsApp?text=${Uri.encodeComponent(text)}');
+
+  /// Fenêtre de contact : WhatsApp ou e-mail, avec un message déjà préparé.
+  void _contactSheet(BuildContext c, {required String title, required String pitch, required String subject, required String message, required String event}) {
+    Analytics.log(event);
+    showModalBottomSheet<void>(
+      context: c,
+      backgroundColor: K.card,
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.vertical(top: Radius.circular(22))),
+      builder: (ctx) => SafeArea(
+        child: Padding(
+          padding: EdgeInsets.fromLTRB(20, 18, 20, 16),
+          child: Column(mainAxisSize: MainAxisSize.min, crossAxisAlignment: CrossAxisAlignment.stretch, children: [
+            Center(
+              child: Container(width: 40, height: 4, decoration: BoxDecoration(color: K.border, borderRadius: BorderRadius.circular(4))),
+            ),
+            SizedBox(height: 16),
+            Text(title, style: TextStyle(color: K.text, fontSize: 19, fontWeight: FontWeight.w900)),
+            SizedBox(height: 6),
+            Text(pitch, style: TextStyle(color: K.muted, fontSize: 13.5, height: 1.4)),
+            SizedBox(height: 18),
+            FilledButton.icon(
+              style: FilledButton.styleFrom(backgroundColor: Color(0xFF25D366), minimumSize: Size.fromHeight(50)),
+              onPressed: () {
+                Navigator.pop(ctx);
+                _launch(c, _wa(message), 'WhatsApp introuvable');
+              },
+              icon: Icon(Icons.chat_rounded),
+              label: Text('Écrire sur WhatsApp', style: TextStyle(fontWeight: FontWeight.w800)),
+            ),
+            SizedBox(height: 10),
+            OutlinedButton.icon(
+              style: OutlinedButton.styleFrom(minimumSize: Size.fromHeight(50), side: BorderSide(color: K.border)),
+              onPressed: () {
+                Navigator.pop(ctx);
+                _launch(c, _mail(subject), 'Aucune application e-mail trouvée');
+              },
+              icon: Icon(Icons.mail_rounded, color: K.text),
+              label: Text('Envoyer un e-mail', style: TextStyle(color: K.text, fontWeight: FontWeight.w800)),
+            ),
+          ]),
+        ),
+      ),
+    );
   }
 
   void _info(BuildContext c, String title, String body) {
@@ -51,9 +98,7 @@ class SettingsScreen extends StatelessWidget {
         backgroundColor: K.card,
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(18)),
         title: Text(title, style: TextStyle(color: K.text, fontWeight: FontWeight.w800)),
-        content: SingleChildScrollView(
-          child: Text(body, style: TextStyle(color: K.text, height: 1.45, fontSize: 14)),
-        ),
+        content: SingleChildScrollView(child: Text(body, style: TextStyle(color: K.text, height: 1.45, fontSize: 14))),
         actions: [
           FilledButton(
             style: FilledButton.styleFrom(backgroundColor: K.indigo),
@@ -65,7 +110,7 @@ class SettingsScreen extends StatelessWidget {
     );
   }
 
-  Widget _tile(IconData icon, Color color, String title, String sub, VoidCallback onTap) => InkWell(
+  Widget _tile(IconData icon, Color color, String title, String sub, VoidCallback onTap, {Widget? trailing}) => InkWell(
         onTap: onTap,
         child: Padding(
           padding: EdgeInsets.symmetric(horizontal: 14, vertical: 12),
@@ -80,43 +125,88 @@ class SettingsScreen extends StatelessWidget {
             Expanded(
               child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
                 Text(title, style: TextStyle(color: K.text, fontSize: 15, fontWeight: FontWeight.w700)),
-                SizedBox(height: 2),
-                Text(sub, style: TextStyle(color: K.muted, fontSize: 12.5)),
+                if (sub.isNotEmpty) ...[
+                  SizedBox(height: 2),
+                  Text(sub, style: TextStyle(color: K.muted, fontSize: 12.5)),
+                ],
               ]),
             ),
-            Icon(Icons.chevron_right_rounded, color: K.muted),
+            trailing ?? Icon(Icons.chevron_right_rounded, color: K.muted),
           ]),
         ),
       );
 
-  Widget _header() => Container(
-        margin: EdgeInsets.only(top: 4),
-        padding: EdgeInsets.all(18),
-        decoration: BoxDecoration(
-          gradient: LinearGradient(
-            colors: [Color(0xFF4F46E5), Color(0xFF7C3AED)],
-            begin: Alignment.topLeft,
-            end: Alignment.bottomRight,
-          ),
-          borderRadius: BorderRadius.circular(20),
-        ),
-        child: Row(children: [
-          CircleAvatar(
-            radius: 27,
-            backgroundColor: Color(0x33FFFFFF),
-            child: Icon(Icons.sports_soccer_rounded, color: Colors.white, size: 30),
-          ),
-          SizedBox(width: 14),
-          Expanded(
-            child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-              Text('KOUNADIA',
-                  style: TextStyle(color: Colors.white, fontSize: 20, fontWeight: FontWeight.w900, letterSpacing: 1)),
-              SizedBox(height: 3),
-              Text('Scores · Pronostics · Statistiques',
-                  style: TextStyle(color: Color(0xDDFFFFFF), fontSize: 13)),
-            ]),
-          ),
-        ]),
+  /// En-tête : profil + statut Premium (ou invitation à s'abonner).
+  Widget _header(BuildContext context) => ValueListenableBuilder<KUser?>(
+        valueListenable: Account.user,
+        builder: (_, u, __) {
+          final prem = u?.premium ?? false;
+          final title = u == null ? 'KOUNADIA' : u.username;
+          final sub = u == null
+              ? 'Connecte-toi pour sauvegarder tes favoris'
+              : prem
+                  ? '👑 Premium actif'
+                  : 'Compte gratuit';
+          return Material(
+            color: Colors.transparent,
+            child: InkWell(
+              borderRadius: BorderRadius.circular(20),
+              onTap: () => _open(context, AccountScreen()),
+              child: Container(
+                margin: EdgeInsets.only(top: 4),
+                padding: EdgeInsets.all(18),
+                decoration: BoxDecoration(
+                  gradient: LinearGradient(
+                    colors: prem ? [Color(0xFF8A6A12), Color(0xFFD4A017)] : [Color(0xFF4F46E5), Color(0xFF7C3AED)],
+                    begin: Alignment.topLeft,
+                    end: Alignment.bottomRight,
+                  ),
+                  borderRadius: BorderRadius.circular(20),
+                ),
+                child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+                  Row(children: [
+                    CircleAvatar(
+                      radius: 26,
+                      backgroundColor: Color(0x33FFFFFF),
+                      child: u == null
+                          ? Icon(Icons.sports_soccer_rounded, color: Colors.white, size: 28)
+                          : Text(u.username.isEmpty ? '?' : u.username[0].toUpperCase(),
+                              style: TextStyle(color: Colors.white, fontSize: 22, fontWeight: FontWeight.w900)),
+                    ),
+                    SizedBox(width: 14),
+                    Expanded(
+                      child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+                        Text(title,
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                            style: TextStyle(color: Colors.white, fontSize: 19, fontWeight: FontWeight.w900)),
+                        SizedBox(height: 3),
+                        Text(sub, style: TextStyle(color: Color(0xDDFFFFFF), fontSize: 13)),
+                      ]),
+                    ),
+                    Icon(Icons.chevron_right_rounded, color: Colors.white70),
+                  ]),
+                  if (!prem) ...[
+                    SizedBox(height: 14),
+                    Container(
+                      padding: EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+                      decoration: BoxDecoration(color: Colors.white, borderRadius: BorderRadius.circular(14)),
+                      child: Row(children: [
+                        Icon(Icons.workspace_premium_rounded, color: Color(0xFFD4A017), size: 20),
+                        SizedBox(width: 8),
+                        Expanded(
+                          child: Text('Passe à Premium · dès 250 F' + (Fx.approx(250) == null ? '' : ' (${Fx.approx(250)})'),
+                              style: TextStyle(color: Color(0xFF1F2937), fontSize: 13.5, fontWeight: FontWeight.w800)),
+                        ),
+                        Icon(Icons.arrow_forward_rounded, color: Color(0xFF4F46E5), size: 18),
+                      ]),
+                    ),
+                  ],
+                ]),
+              ),
+            ),
+          );
+        },
       );
 
   @override
@@ -127,40 +217,8 @@ class SettingsScreen extends StatelessWidget {
       body: ListView(
         padding: EdgeInsets.fromLTRB(16, 4, 16, 32),
         children: [
-          _header(),
-          kTitle('Compte'),
-          kDividers([
-            ValueListenableBuilder<KUser?>(
-              valueListenable: Account.user,
-              builder: (_, u, __) => _tile(Icons.workspace_premium_rounded, Color(0xFFD4A017), 'Mon compte',
-                  u == null ? 'Se connecter · S\'abonner à Premium' : (u.premium ? '👑 Premium actif' : '${u.username} · aucun abonnement'),
-                  () => _open(context, AccountScreen())),
-            ),
-          ]),
-          kTitle('Région et langue'),
-          ValueListenableBuilder<int>(
-            valueListenable: UserPrefs.changed,
-            builder: (_, __, ___) {
-              final c = UserPrefs.country;
-              return kDividers([
-                _tile(Icons.public_rounded, K.green, 'Pays', c == null ? 'Choisir mon pays' : '${c.flag} ${c.name} · +${c.dial}',
-                    () async {
-                  final n = await pickCountry(context, selected: c?.iso);
-                  if (n != null) await UserPrefs.setCountry(n);
-                }),
-                _tile(Icons.payments_rounded, K.amber, 'Devise', '${UserPrefs.currency} · ${Fx.symbol(UserPrefs.currency)}  (paiement en F CFA)',
-                    () async {
-                  final v = await pickCurrency(context, UserPrefs.currency);
-                  if (v != null) await UserPrefs.setCurrency(v);
-                }),
-                _tile(Icons.translate_rounded, K.indigoText, 'Langue', langName(UserPrefs.lang), () async {
-                  final v = await pickLang(context, UserPrefs.lang);
-                  if (v != null) await UserPrefs.setLang(v);
-                }),
-                _tile(Icons.schedule_rounded, Color(0xFF06B6D4), 'Fuseau horaire', '${UserPrefs.gmt()} · heure du téléphone', () {}),
-              ]);
-            },
-          ),
+          _header(context),
+
           kTitle('Football'),
           kDividers([
             _tile(Icons.star_rounded, K.amber, 'Mes championnats', 'Tes favoris en premier dans Matchs',
@@ -172,7 +230,7 @@ class SettingsScreen extends StatelessWidget {
                     standalone: true,
                     title: "Faits du jour",
                     pitch: "Les séries et chiffres clés des matchs du jour, pour parier en connaissance de cause.",
-                    perks: ["Séries en cours : victoires, buts, matchs nuls","Chiffres clés de chaque équipe","Mis à jour chaque jour"],
+                    perks: ["Séries en cours : victoires, buts, matchs nuls", "Chiffres clés de chaque équipe", "Mis à jour chaque jour"],
                     icon: Icons.lightbulb_rounded,
                     child: FactsScreen()))),
             _tile(Icons.trending_up_rounded, K.green, 'Forme des équipes', 'Les équipes en forme et en difficulté',
@@ -180,59 +238,90 @@ class SettingsScreen extends StatelessWidget {
                     standalone: true,
                     title: "Forme des équipes",
                     pitch: "Repère en un coup d'œil les équipes en forme et celles en difficulté.",
-                    perks: ["Équipes en forme et en difficulté","Résultats récents de chaque équipe","Tous les grands championnats"],
+                    perks: ["Équipes en forme et en difficulté", "Résultats récents de chaque équipe", "Tous les grands championnats"],
                     icon: Icons.trending_up_rounded,
                     child: FormScreen()))),
           ]),
-          kTitle('Affichage'),
+
+          kTitle('Préférences'),
+          ValueListenableBuilder<int>(
+            valueListenable: UserPrefs.changed,
+            builder: (_, __, ___) {
+              final c = UserPrefs.country;
+              return kDividers([
+                _tile(Icons.public_rounded, K.green, 'Pays', c == null ? 'Choisir mon pays' : '${c.flag} ${c.name} · +${c.dial}',
+                    () async {
+                  final n = await pickCountry(context, selected: c?.iso);
+                  if (n != null) await UserPrefs.setCountry(n);
+                }),
+                _tile(Icons.payments_rounded, K.amber, 'Devise', '${UserPrefs.currency} · ${Fx.symbol(UserPrefs.currency)}',
+                    () async {
+                  final v = await pickCurrency(context, UserPrefs.currency);
+                  if (v != null) await UserPrefs.setCurrency(v);
+                }),
+                _tile(Icons.translate_rounded, K.indigoText, 'Langue', langName(UserPrefs.lang), () async {
+                  final v = await pickLang(context, UserPrefs.lang);
+                  if (v != null) await UserPrefs.setLang(v);
+                }),
+                _tile(Icons.schedule_rounded, Color(0xFF06B6D4), 'Fuseau horaire', '${UserPrefs.gmt()} · heure du téléphone', () {},
+                    trailing: SizedBox.shrink()),
+              ]);
+            },
+          ),
+          SizedBox(height: 12),
           ThemeSelector(),
-          kTitle('Application'),
+
+          kTitle('KOUNADIA'),
           kDividers([
+            _tile(Icons.campaign_rounded, Color(0xFFEC4899), 'Partenariat & publicité', 'Fais connaître ta marque sur KOUNADIA',
+                () => _contactSheet(
+                      context,
+                      title: 'Partenariat & publicité',
+                      pitch: 'Bannières dans l\'application, partenariats, offres pour bookmakers et marques : '
+                          'parlons de ton projet. Réponse rapide de l\'équipe KOUNADIA.',
+                      subject: 'KOUNADIA - Partenariat / Publicité',
+                      message: 'Bonjour KOUNADIA 👋\nJe souhaite discuter d\'un partenariat / d\'une publicité sur l\'application.\n\nMon entreprise : \nMon projet : ',
+                      event: 'contact_partner',
+                    )),
             _tile(Icons.share_rounded, Color(0xFF06B6D4), 'Partager KOUNADIA', 'Invite tes amis',
-                () => Share.share(
-                    'Découvre KOUNADIA : scores en direct, classements et pronostics foot du jour, en français. ⚽')),
+                () => Share.share('⚽ KOUNADIA : scores en direct, prédictions IA et Coup sûr du jour, en français. Essaie-la !')),
+            _tile(Icons.auto_awesome_rounded, K.amber, 'Découvrir KOUNADIA', 'Tout ce que l\'application t\'offre',
+                () => showWelcome(context)),
           ]),
+
           kTitle('Aide'),
           kDividers([
-            _tile(Icons.waving_hand_rounded, K.green, 'Présentation de KOUNADIA', "Comment profiter de l'application",
-                () => showWelcome(context)),
-            _tile(Icons.mail_rounded, K.indigoText, 'Contacter le support', 'Signaler un problème ou une idée',
-                () => _contact(context)),
-            _tile(
-              Icons.health_and_safety_rounded,
-              K.red,
-              'Jeu responsable',
-              'À lire avant de parier',
-              () => _info(
-                context,
-                'Jeu responsable',
-                'Les paris sont réservés aux personnes majeures (18 ans et plus).\n\n'
-                    'Ne mise jamais plus que ce que tu peux te permettre de perdre, '
-                    'et ne cherche pas à « te refaire » après une perte.\n\n'
-                    "Aucun pronostic n'est garanti, même avec une forte probabilité.\n\n"
-                    'Si le jeu devient un problème, parles-en à un proche ou à un professionnel.',
-              ),
-            ),
-            _tile(
-              Icons.info_rounded,
-              K.muted,
-              'À propos',
-              'Version $kAppVersion',
-              () => _info(
-                context,
-                'KOUNADIA',
-                'Scores en direct, classements, statistiques et pronostics de football.\n\n'
-                    'Les pronostics sont fournis à titre informatif uniquement. '
-                    'Ils ne constituent ni une garantie de résultat ni un conseil financier.\n\n'
-                    'Fondateur & PDG : Pierre Clavers BARRO\nKOUNADIA SERVICE\n\nDéveloppé au Burkina Faso 🇧🇫',
-              ),
-            ),
+            _tile(Icons.support_agent_rounded, K.indigoText, 'Contacter le support', 'Un problème, une question, une idée',
+                () => _contactSheet(
+                      context,
+                      title: 'Contacter le support',
+                      pitch: 'Un souci avec l\'application ou ton abonnement ? Écris-nous, on te répond rapidement.',
+                      subject: 'KOUNADIA $kAppVersion - Support',
+                      message: 'Bonjour KOUNADIA 👋\nJ\'ai besoin d\'aide : ',
+                      event: 'contact_support',
+                    )),
+            _tile(Icons.health_and_safety_rounded, K.red, 'Jeu responsable', '18+ · À lire avant de parier', () => _info(
+                  context,
+                  'Jeu responsable',
+                  'Les paris sont réservés aux personnes majeures (18 ans et plus).\n\n'
+                      'Ne mise jamais plus que ce que tu peux te permettre de perdre, '
+                      'et ne cherche pas à « te refaire » après une perte.\n\n'
+                      "Aucun pronostic n'est garanti, même avec une forte probabilité.\n\n"
+                      'Si le jeu devient un problème, parles-en à un proche ou à un professionnel.',
+                )),
+            _tile(Icons.info_rounded, K.muted, 'À propos', 'Version $kAppVersion', () => _info(
+                  context,
+                  'KOUNADIA',
+                  'Scores en direct, classements, statistiques et pronostics de football.\n\n'
+                      'Les pronostics sont fournis à titre informatif uniquement. '
+                      'Ils ne constituent ni une garantie de résultat ni un conseil financier.\n\n'
+                      'Fondateur & PDG : Pierre Clavers BARRO\nKOUNADIA SERVICE\n\nDéveloppé au Burkina Faso 🇧🇫',
+                )),
           ]),
           SizedBox(height: 24),
           Center(
-            child: Text('KOUNADIA SERVICE · v$kAppVersion\nPierre Clavers BARRO, fondateur & PDG\nFait au Burkina Faso 🇧🇫',
-                textAlign: TextAlign.center,
-                style: TextStyle(color: K.muted, fontSize: 12)),
+            child: Text('KOUNADIA SERVICE · v$kAppVersion\nFait au Burkina Faso 🇧🇫',
+                textAlign: TextAlign.center, style: TextStyle(color: K.muted, fontSize: 12)),
           ),
         ],
       ),

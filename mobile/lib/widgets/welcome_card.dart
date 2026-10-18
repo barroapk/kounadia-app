@@ -1,8 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'forecast_card.dart' show K;
+import '../screens/account_screen.dart';
 
-final _seenKey = 'welcome_seen_v1';
+final _seenKey = 'welcome_seen_v2';
 
 Future<void> maybeShowWelcome(BuildContext context) async {
   try {
@@ -14,12 +15,15 @@ Future<void> maybeShowWelcome(BuildContext context) async {
   } catch (_) {}
 }
 
-Future<void> showWelcome(BuildContext context) {
-  return showDialog<void>(
+Future<void> showWelcome(BuildContext context) async {
+  final premium = await showDialog<bool>(
     context: context,
     barrierDismissible: false,
     builder: (ctx) => PopScope(canPop: false, child: _WelcomeDialog()),
   );
+  if (premium == true && context.mounted) {
+    Navigator.push(context, MaterialPageRoute(builder: (_) => AccountScreen()));
+  }
 }
 
 class _WelcomeDialog extends StatelessWidget {
@@ -98,7 +102,7 @@ class _WelcomeDialog extends StatelessWidget {
                     textAlign: TextAlign.center,
                     style: TextStyle(color: Colors.white, fontSize: 21, fontWeight: FontWeight.w900)),
                 SizedBox(height: 6),
-                Text('Mettez la chance de votre côté',
+                Text('« Kounadia » : la chance, en dioula. Mets-la de ton côté.',
                     textAlign: TextAlign.center,
                     style: TextStyle(color: Color(0xDDFFFFFF), fontSize: 14, fontWeight: FontWeight.w600)),
               ]),
@@ -106,25 +110,20 @@ class _WelcomeDialog extends StatelessWidget {
             Padding(
               padding: EdgeInsets.fromLTRB(18, 4, 18, 18),
               child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-                _section('KOUNADIA, la chance', Icons.auto_awesome_rounded, K.amber, [
-                  _para('« Kounadia » signifie la chance en dioula et en bambara. '
-                      'Scores en direct, statistiques et pronostics réunis au même endroit '
-                      'pour vous aider à parier plus malin.'),
+                _section('Gratuit, pour tous', Icons.sports_soccer_rounded, K.green, [
+                  _point('Scores en direct', 'tous les championnats, minute par minute.'),
+                  _point('Mes matchs', 'tes championnats favoris toujours en premier.'),
+                  _point('Classements', 'le monde entier en un geste.'),
                 ]),
-                _section('Comment ça marche', Icons.touch_app_rounded, K.indigoText, [
-                  _point('Matchs', "scores en direct d'hier, aujourd'hui et demain. "
-                      'Touchez un match : pronostics, forme, H2H, classement et stats. Appui long : favori ⭐.'),
-                  _point('Prédictions', 'les pronostics gratuits du jour Kounadia IA et Expert.'),
-                  _point('Coupons', 'créez un coupon selon la cote voulue, enregistrez-le et partagez-le en image.'),
-                  _point('Historique', "nos pronostics validés d'hier et d'aujourd'hui."),
-                  _point('Paramètres', 'classements, faits du jour, forme des équipes et thème clair / sombre.'),
+                _section('Premium, pour aller plus loin', Icons.workspace_premium_rounded, Color(0xFFD4A017), [
+                  _point('Prédictions', 'Kounadia IA et nos experts, chaque jour.'),
+                  _point('Coup sûr', 'les sélections du jour les mieux notées par nos analyses.'),
+                  _point('Coupons', 'un coupon prêt selon la cote que tu veux.'),
+                  _point('Fiches match', 'forme, faits du jour et statistiques complètes.'),
+                  _para('Dès 250 F pour 3 jours. Sans engagement.'),
                 ]),
-                _section('Dépôt & retrait 1xBet', Icons.swap_vert_rounded, K.green, [
-                  _point('Rapide', 'touchez « Dépôt · Retrait 1xBet » : un agent KOUNADIA SERVICE vous répond sur WhatsApp.'),
-                  _point('Code promo 99KND', '+200 % de bonus sur votre 1re recharge.'),
-                ]),
-                _section('Nous contacter', Icons.mail_rounded, Color(0xFF06B6D4), [
-                  _para('Avis, partenariat ou publicité : Paramètres → Contacter le support.'),
+                _section('Dépôt · Retrait 1xBet', Icons.swap_vert_rounded, K.indigoText, [
+                  _para('Rapide via WhatsApp avec KOUNADIA SERVICE · code promo 99KND.'),
                 ]),
                 SizedBox(height: 20),
                 Container(
@@ -141,19 +140,27 @@ class _WelcomeDialog extends StatelessWidget {
                   ),
                 ),
                 SizedBox(height: 10),
-                Text('18+ · Jouez de manière responsable',
+                Text("18+ · Joue de manière responsable · aucun pronostic n'est garanti",
                     textAlign: TextAlign.center, style: TextStyle(color: K.muted, fontSize: 11.5)),
                 SizedBox(height: 16),
                 SizedBox(
                   height: 52,
-                  child: FilledButton(
-                    onPressed: () => Navigator.of(context).pop(),
+                  child: FilledButton.icon(
+                    onPressed: () => Navigator.of(context).pop(true),
                     style: FilledButton.styleFrom(
-                      backgroundColor: K.indigo,
-                      foregroundColor: Colors.white,
+                      backgroundColor: Color(0xFFD4A017),
+                      foregroundColor: Colors.black,
                       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
                     ),
-                    child: Text('Compris', style: TextStyle(fontSize: 16, fontWeight: FontWeight.w800)),
+                    icon: Icon(Icons.workspace_premium_rounded),
+                    label: Text('Découvrir Premium', style: TextStyle(fontSize: 16, fontWeight: FontWeight.w900)),
+                  ),
+                ),
+                SizedBox(height: 6),
+                Center(
+                  child: TextButton(
+                    onPressed: () => Navigator.of(context).pop(false),
+                    child: Text('Explorer l\'application', style: TextStyle(color: K.muted, fontWeight: FontWeight.w700)),
                   ),
                 ),
               ]),
