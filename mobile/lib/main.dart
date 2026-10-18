@@ -5,11 +5,15 @@ import 'screens/main_screen.dart';
 import 'services/theme_controller.dart';
 import 'services/analytics.dart';
 import 'services/account.dart';
+import 'services/user_prefs.dart';
+import 'services/currency.dart';
 import 'widgets/forecast_card.dart' show K;
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
   await ThemeCtl.init();
+  await UserPrefs.init();
+  Fx.init();
   Analytics.init();
   Account.init();
   K.dark = ThemeCtl.isDark;

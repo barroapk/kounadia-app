@@ -3,6 +3,10 @@ import 'package:flutter/material.dart';
 import 'package:url_launcher/url_launcher.dart';
 import '../services/account.dart';
 import '../services/analytics.dart';
+import '../services/currency.dart';
+import '../services/user_prefs.dart';
+import '../config/countries.dart';
+import '../widgets/region_pickers.dart';
 import '../widgets/forecast_card.dart' show K, two;
 
 String fcfa(int v) => '${v.toString().replaceAllMapped(RegExp(r'\B(?=(\d{3})+(?!\d))'), (_) => ' ')} F';
@@ -10,26 +14,23 @@ String _date(DateTime d) => '${two(d.day)}/${two(d.month)}/${d.year} à ${two(d.
 
 /// Mon compte : connexion / inscription, profil, offres Premium et paiement.
 class AccountScreen extends StatefulWidget {
-  AccountScreen({super.key});
+  final bool signup;
+  AccountScreen({super.key, this.signup = false});
 
   @override
   State<AccountScreen> createState() => _AccountScreenState();
 }
 
 class _AccountScreenState extends State<AccountScreen> {
-  bool _signup = false;
+  late bool _signup = widget.signup;
   bool _busy = false;
   String? _err;
   final _name = TextEditingController();
   final _phone = TextEditingController();
   final _pw = TextEditingController();
   final _pw2 = TextEditingController();
-  String _cc = '226';
-  static const _countries = [
-    ('🇧🇫', '226'), ('🇨🇮', '225'), ('🇲🇱', '223'), ('🇸🇳', '221'), ('🇳🇪', '227'), ('🇹🇬', '228'),
-    ('🇧🇯', '229'), ('🇬🇳', '224'), ('🇨🇲', '237'), ('🇬🇦', '241'), ('🇨🇩', '243'), ('🇬🇭', '233'),
-    ('🇳🇬', '234'), ('🇲🇦', '212'), ('🇫🇷', '33'), ('🇧🇪', '32'),
-  ];
+  KCountry _country = UserPrefs.country ?? countryByIso('BF')!;
+  String get _cc => _country.dial;
 
   /// Numéro complet : « +… » ou « 00… » tel quel, sinon indicatif choisi + numéro.
   String _fullPhone() {
@@ -146,16 +147,15 @@ class _AccountScreenState extends State<AccountScreen> {
           margin: EdgeInsets.only(right: 8),
           padding: EdgeInsets.symmetric(horizontal: 8),
           decoration: BoxDecoration(color: K.card, borderRadius: BorderRadius.circular(12), border: Border.all(color: K.border)),
-          child: DropdownButtonHideUnderline(
-            child: DropdownButton<String>(
-              value: _cc,
-              dropdownColor: K.card,
-              items: [
-                for (final (flag, code) in _countries)
-                  DropdownMenuItem(value: code, child: Text('$flag +$code', style: TextStyle(color: K.text, fontSize: 15))),
-              ],
-              onChanged: (v) => setState(() => _cc = v ?? _cc),
-            ),
+          child: InkWell(
+            onTap: () async {
+              final c = await pickCountry(context, dial: true, selected: _country.iso);
+              if (c != null) setState(() => _country = c);
+            },
+            child: Row(mainAxisSize: MainAxisSize.min, children: [
+              Text('${_country.flag} +${_country.dial}', style: TextStyle(color: K.text, fontSize: 15)),
+              Icon(Icons.arrow_drop_down_rounded, color: K.muted),
+            ]),
           ),
         ),
         Expanded(child: _field(_phone, 'Numéro de téléphone', Icons.phone_rounded, phone: true)),
@@ -268,7 +268,11 @@ class _AccountScreenState extends State<AccountScreen> {
                   Text(sub, style: TextStyle(color: K.muted, fontSize: 12.5)),
                 ]),
               ),
-              Text(fcfa(p.price), style: TextStyle(color: K.indigoText, fontSize: 18, fontWeight: FontWeight.w900)),
+              Column(crossAxisAlignment: CrossAxisAlignment.end, children: [
+                Text(fcfa(p.price), style: TextStyle(color: K.indigoText, fontSize: 18, fontWeight: FontWeight.w900)),
+                if (Fx.approx(p.price) != null)
+                  Text(Fx.approx(p.price)!, style: TextStyle(color: K.muted, fontSize: 12, fontWeight: FontWeight.w700)),
+              ]),
             ]),
           ),
         ),
@@ -286,7 +290,10 @@ class _AccountScreenState extends State<AccountScreen> {
           title: Text('Mon compte', style: TextStyle(fontWeight: FontWeight.w800))),
       body: ValueListenableBuilder<KUser?>(
         valueListenable: Account.user,
-        builder: (_, u, __) => u == null ? _auth() : _profile(u),
+        builder: (_, u, __) => ValueListenableBuilder<int>(
+          valueListenable: UserPrefs.changed,
+          builder: (_, __, ___) => u == null ? _auth() : _profile(u),
+        ),
       ),
     );
   }

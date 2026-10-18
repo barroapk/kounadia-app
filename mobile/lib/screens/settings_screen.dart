@@ -13,6 +13,9 @@ import 'fav_leagues_screen.dart';
 import 'account_screen.dart';
 import '../widgets/premium_gate.dart';
 import '../services/account.dart';
+import '../services/user_prefs.dart';
+import '../services/currency.dart';
+import '../widgets/region_pickers.dart';
 
 final kAppVersion = '1.0.0';
 final _supportEmail = 'pierreclavers56@gmail.com';
@@ -134,6 +137,30 @@ class SettingsScreen extends StatelessWidget {
                   () => _open(context, AccountScreen())),
             ),
           ]),
+          kTitle('Région et langue'),
+          ValueListenableBuilder<int>(
+            valueListenable: UserPrefs.changed,
+            builder: (_, __, ___) {
+              final c = UserPrefs.country;
+              return kDividers([
+                _tile(Icons.public_rounded, K.green, 'Pays', c == null ? 'Choisir mon pays' : '${c.flag} ${c.name} · +${c.dial}',
+                    () async {
+                  final n = await pickCountry(context, selected: c?.iso);
+                  if (n != null) await UserPrefs.setCountry(n);
+                }),
+                _tile(Icons.payments_rounded, K.amber, 'Devise', '${UserPrefs.currency} · ${Fx.symbol(UserPrefs.currency)}  (paiement en F CFA)',
+                    () async {
+                  final v = await pickCurrency(context, UserPrefs.currency);
+                  if (v != null) await UserPrefs.setCurrency(v);
+                }),
+                _tile(Icons.translate_rounded, K.indigoText, 'Langue', langName(UserPrefs.lang), () async {
+                  final v = await pickLang(context, UserPrefs.lang);
+                  if (v != null) await UserPrefs.setLang(v);
+                }),
+                _tile(Icons.schedule_rounded, Color(0xFF06B6D4), 'Fuseau horaire', '${UserPrefs.gmt()} · heure du téléphone', () {}),
+              ]);
+            },
+          ),
           kTitle('Football'),
           kDividers([
             _tile(Icons.star_rounded, K.amber, 'Mes championnats', 'Tes favoris en premier dans Matchs',

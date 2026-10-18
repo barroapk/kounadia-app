@@ -10,6 +10,8 @@ import 'tip_history_screen.dart';
 import 'coupon_tab.dart';
 import '../widgets/premium_gate.dart';
 import '../widgets/welcome_card.dart';
+import '../widgets/setup_card.dart';
+import 'account_screen.dart';
 
 final k1xBet = Color(0xFF1A5BA6);
 
@@ -27,8 +29,17 @@ class _MainScreenState extends State<MainScreen> {
   void initState() {
     super.initState();
     WidgetsBinding.instance.addPostFrameCallback((_) {
-      if (mounted) maybeShowWelcome(context);
+      if (mounted) _start();
     });
+  }
+
+  Future<void> _start() async {
+    final auth = await maybeShowSetup(context);
+    if (!mounted) return;
+    await maybeShowWelcome(context);
+    if (auth != null && mounted) {
+      Navigator.push(context, MaterialPageRoute(builder: (_) => AccountScreen(signup: auth)));
+    }
   }
   static List<Widget> _screens = [
     ScoresScreen(),
