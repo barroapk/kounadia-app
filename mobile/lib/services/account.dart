@@ -28,7 +28,7 @@ class KPlan {
 }
 
 const kPlans = [
-  KPlan('day', 'Journalier', 100, 1),
+  KPlan('day', '3 jours', 250, 3),
   KPlan('week', 'Hebdomadaire', 500, 7),
   KPlan('month', 'Mensuel', 2000, 30),
   KPlan('year', 'Annuel', 20000, 365),

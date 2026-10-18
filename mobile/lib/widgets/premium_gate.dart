@@ -84,7 +84,7 @@ class PremiumGate extends StatelessWidget {
         ]),
       ),
       SizedBox(height: 18),
-      Text('À partir de ${fcfa(kPlans.first.price)} par jour · ${fcfa(kPlans[2].price)} le mois',
+      Text('Dès ${fcfa(kPlans.first.price)} les 3 jours · ${fcfa(kPlans[2].price)} le mois',
           textAlign: TextAlign.center, style: TextStyle(color: K.amber, fontSize: 14, fontWeight: FontWeight.w800)),
       SizedBox(height: 12),
       FilledButton.icon(

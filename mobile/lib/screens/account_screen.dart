@@ -24,6 +24,21 @@ class _AccountScreenState extends State<AccountScreen> {
   final _phone = TextEditingController();
   final _pw = TextEditingController();
   final _pw2 = TextEditingController();
+  String _cc = '226';
+  static const _countries = [
+    ('🇧🇫', '226'), ('🇨🇮', '225'), ('🇲🇱', '223'), ('🇸🇳', '221'), ('🇳🇪', '227'), ('🇹🇬', '228'),
+    ('🇧🇯', '229'), ('🇬🇳', '224'), ('🇨🇲', '237'), ('🇬🇦', '241'), ('🇨🇩', '243'), ('🇬🇭', '233'),
+    ('🇳🇬', '234'), ('🇲🇦', '212'), ('🇫🇷', '33'), ('🇧🇪', '32'),
+  ];
+
+  /// Numéro complet : « +… » ou « 00… » tel quel, sinon indicatif choisi + numéro.
+  String _fullPhone() {
+    final t = _phone.text.trim();
+    final d = t.replaceAll(RegExp(r'\D'), '');
+    if (t.startsWith('+')) return d;
+    if (d.startsWith('00')) return d.substring(2);
+    return '$_cc$d';
+  }
 
   @override
   void initState() {
@@ -47,10 +62,10 @@ class _AccountScreenState extends State<AccountScreen> {
     });
     try {
       if (_signup) {
-        await Account.register(_name.text.trim(), _phone.text.trim(), _pw.text, _pw2.text);
+        await Account.register(_name.text.trim(), _fullPhone(), _pw.text, _pw2.text);
         Analytics.log('account_register');
       } else {
-        await Account.login(_phone.text.trim(), _pw.text);
+        await Account.login(_fullPhone(), _pw.text);
       }
     } catch (e) {
       _err = e.toString();
@@ -125,7 +140,26 @@ class _AccountScreenState extends State<AccountScreen> {
       ),
       SizedBox(height: 18),
       if (_signup) _field(_name, "Nom d'utilisateur", Icons.person_rounded),
-      _field(_phone, 'Numéro de téléphone', Icons.phone_rounded, phone: true),
+      Row(crossAxisAlignment: CrossAxisAlignment.start, children: [
+        Container(
+          height: 58,
+          margin: EdgeInsets.only(right: 8),
+          padding: EdgeInsets.symmetric(horizontal: 8),
+          decoration: BoxDecoration(color: K.card, borderRadius: BorderRadius.circular(12), border: Border.all(color: K.border)),
+          child: DropdownButtonHideUnderline(
+            child: DropdownButton<String>(
+              value: _cc,
+              dropdownColor: K.card,
+              items: [
+                for (final (flag, code) in _countries)
+                  DropdownMenuItem(value: code, child: Text('$flag +$code', style: TextStyle(color: K.text, fontSize: 15))),
+              ],
+              onChanged: (v) => setState(() => _cc = v ?? _cc),
+            ),
+          ),
+        ),
+        Expanded(child: _field(_phone, 'Numéro de téléphone', Icons.phone_rounded, phone: true)),
+      ]),
       _field(_pw, 'Mot de passe (6 caractères min.)', Icons.lock_rounded, pw: true),
       if (_signup) _field(_pw2, 'Confirmer le mot de passe', Icons.lock_outline_rounded, pw: true),
       if (_err != null)
@@ -199,7 +233,7 @@ class _AccountScreenState extends State<AccountScreen> {
   Widget _planTile(KPlan p) {
     final best = p.id == 'month';
     final sub = switch (p.id) {
-      'day' => '24 heures d\'accès complet',
+      'day' => '3 jours d\'accès complet · idéal pour essayer',
       'week' => '7 jours · soit 71 F par jour',
       'month' => '30 jours · le plus choisi',
       _ => '365 jours · 2 mois offerts',
