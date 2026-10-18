@@ -437,11 +437,7 @@ class _ConnectingState extends State<_Connecting> {
 
   @override
   Widget build(BuildContext context) {
-    final msg = _s < 6
-        ? 'Patiente un instant…'
-        : _s < 25
-            ? 'Connexion au serveur sécurisé, encore quelques secondes…'
-            : 'Le serveur se réveille, cela peut prendre jusqu\'à une minute. Ne ferme pas l\'application.';
+    final msg = _s < 8 ? 'Patiente un instant…' : 'Préparation de ton paiement sécurisé…';
     return Dialog(
       backgroundColor: K.card,
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(22)),
