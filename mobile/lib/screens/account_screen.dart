@@ -1,18 +1,17 @@
 import 'dart:async';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:url_launcher/url_launcher.dart';
 import '../services/account.dart';
 import '../services/analytics.dart';
 import '../services/currency.dart';
 import '../services/user_prefs.dart';
-import '../config/countries.dart';
-import '../widgets/region_pickers.dart';
 import '../widgets/forecast_card.dart' show K, two;
 
 String fcfa(int v) => '${v.toString().replaceAllMapped(RegExp(r'\B(?=(\d{3})+(?!\d))'), (_) => ' ')} F';
 String _date(DateTime d) => '${two(d.day)}/${two(d.month)}/${d.year} à ${two(d.hour)}h${two(d.minute)}';
 
-/// Mon compte : connexion / inscription, profil, offres Premium et paiement.
+/// Mon compte : connexion / inscription par e-mail, profil, offres Premium et paiement.
 class AccountScreen extends StatefulWidget {
   final bool signup;
   AccountScreen({super.key, this.signup = false});
@@ -24,22 +23,13 @@ class AccountScreen extends StatefulWidget {
 class _AccountScreenState extends State<AccountScreen> {
   late bool _signup = widget.signup;
   bool _busy = false;
+  bool _tried = false;
+  bool _showPw = false;
   String? _err;
   final _name = TextEditingController();
-  final _phone = TextEditingController();
+  final _mail = TextEditingController();
   final _pw = TextEditingController();
   final _pw2 = TextEditingController();
-  KCountry _country = UserPrefs.country ?? countryByIso('BF')!;
-  String get _cc => _country.dial;
-
-  /// Numéro complet : « +… » ou « 00… » tel quel, sinon indicatif choisi + numéro.
-  String _fullPhone() {
-    final t = _phone.text.trim();
-    final d = t.replaceAll(RegExp(r'\D'), '');
-    if (t.startsWith('+')) return d;
-    if (d.startsWith('00')) return d.substring(2);
-    return '$_cc$d';
-  }
 
   @override
   void initState() {
@@ -47,100 +37,162 @@ class _AccountScreenState extends State<AccountScreen> {
     Account.refresh();
     Account.warmUp();
     Analytics.log('account_open');
+    for (final c in [_name, _mail, _pw, _pw2]) {
+      c.addListener(() {
+        if (_tried && mounted) setState(() {});
+      });
+    }
   }
 
   @override
   void dispose() {
-    for (final c in [_name, _phone, _pw, _pw2]) {
+    for (final c in [_name, _mail, _pw, _pw2]) {
       c.dispose();
     }
     super.dispose();
   }
 
+  // Vérifications affichées sous chaque champ (après le premier essai).
+  String? get _nameErr => !_signup || _name.text.trim().length >= 2 ? null : '2 caractères minimum';
+  String? get _mailErr => isEmail(_mail.text) || (!_signup && RegExp(r'^\+?\d{8,15}$').hasMatch(_mail.text.trim())) ? null : (_mail.text.trim().isEmpty ? 'Entre ton adresse e-mail' : 'Adresse e-mail invalide (ex. : nom@gmail.com)');
+  String? get _pwErr => _pw.text.length >= 6 ? null : '6 caractères minimum';
+  String? get _pw2Err => !_signup || _pw2.text == _pw.text ? null : 'Les deux mots de passe ne sont pas identiques';
+
   Future<void> _submit() async {
+    FocusScope.of(context).unfocus();
     setState(() {
-      _busy = true;
+      _tried = true;
       _err = null;
     });
+    if (_nameErr != null || _mailErr != null || _pwErr != null || _pw2Err != null) return;
+    setState(() => _busy = true);
     try {
       if (_signup) {
-        await Account.register(_name.text.trim(), _fullPhone(), _pw.text, _pw2.text);
+        await Account.register(_name.text.trim(), _mail.text, _pw.text, _pw2.text);
         Analytics.log('account_register');
       } else {
-        await Account.login(_fullPhone(), _pw.text);
+        await Account.login(_mail.text, _pw.text);
       }
+      // Propose au gestionnaire de mots de passe (Google) d'enregistrer l'e-mail et le mot de passe.
+      TextInput.finishAutofillContext(shouldSave: true);
     } catch (e) {
       _err = e.toString();
     }
     if (mounted) setState(() => _busy = false);
   }
 
-  Widget _pwField(TextEditingController c, String label, {bool pw = true, bool number = false}) => Padding(
+  Widget _input(TextEditingController c, String label, IconData icon,
+          {bool pw = false, String? error, Iterable<String>? hints, TextInputType? type, TextInputAction? action, VoidCallback? onDone}) =>
+      Padding(
+        padding: EdgeInsets.only(bottom: 12),
+        child: TextField(
+          controller: c,
+          obscureText: pw && !_showPw,
+          enableSuggestions: !pw,
+          autocorrect: false,
+          keyboardType: type,
+          textInputAction: action ?? TextInputAction.next,
+          autofillHints: hints,
+          onSubmitted: onDone == null ? null : (_) => onDone(),
+          style: TextStyle(color: K.text),
+          decoration: _dec(label, icon).copyWith(
+            errorText: _tried ? error : null,
+            suffixIcon: pw
+                ? IconButton(
+                    icon: Icon(_showPw ? Icons.visibility_off_rounded : Icons.visibility_rounded, color: K.muted),
+                    onPressed: () => setState(() => _showPw = !_showPw),
+                  )
+                : null,
+          ),
+        ),
+      );
+
+  Widget _auth() {
+    return AutofillGroup(
+      child: ListView(padding: EdgeInsets.fromLTRB(16, 12, 16, 32), children: [
+        Container(
+          padding: EdgeInsets.all(3),
+          decoration: BoxDecoration(color: K.card, borderRadius: BorderRadius.circular(13), border: Border.all(color: K.border)),
+          child: Row(children: [
+            for (final (v, l) in [(false, 'Se connecter'), (true, 'Créer un compte')])
+              Expanded(
+                child: GestureDetector(
+                  onTap: () => setState(() {
+                    _signup = v;
+                    _err = null;
+                    _tried = false;
+                  }),
+                  child: Container(
+                    height: 40,
+                    alignment: Alignment.center,
+                    decoration: BoxDecoration(color: _signup == v ? K.indigo : Colors.transparent, borderRadius: BorderRadius.circular(10)),
+                    child: Text(l, style: TextStyle(color: _signup == v ? Colors.white : K.muted, fontWeight: FontWeight.w800)),
+                  ),
+                ),
+              ),
+          ]),
+        ),
+        SizedBox(height: 18),
+        if (_signup)
+          _input(_name, "Nom d'utilisateur", Icons.person_rounded, error: _nameErr, hints: [AutofillHints.nickname]),
+        _input(_mail, 'Adresse e-mail', Icons.alternate_email_rounded,
+            error: _mailErr, type: TextInputType.emailAddress, hints: [AutofillHints.email, AutofillHints.username]),
+        _input(_pw, _signup ? 'Mot de passe (6 caractères min.)' : 'Mot de passe', Icons.lock_rounded,
+            pw: true,
+            error: _pwErr,
+            hints: [_signup ? AutofillHints.newPassword : AutofillHints.password],
+            action: _signup ? TextInputAction.next : TextInputAction.done,
+            onDone: _signup ? null : _submit),
+        if (_signup)
+          _input(_pw2, 'Confirmer le mot de passe', Icons.lock_outline_rounded,
+              pw: true, error: _pw2Err, hints: [AutofillHints.newPassword], action: TextInputAction.done, onDone: _submit),
+        if (_err != null)
+          Padding(
+            padding: EdgeInsets.only(bottom: 10),
+            child: Text(_err!, style: TextStyle(color: K.red, fontWeight: FontWeight.w700)),
+          ),
+        FilledButton(
+          style: FilledButton.styleFrom(backgroundColor: K.indigo, minimumSize: Size.fromHeight(50)),
+          onPressed: _busy ? null : _submit,
+          child: _busy
+              ? SizedBox(width: 22, height: 22, child: CircularProgressIndicator(strokeWidth: 2.5, color: Colors.white))
+              : Text(_signup ? 'Créer mon compte' : 'Me connecter', style: TextStyle(fontSize: 16, fontWeight: FontWeight.w800)),
+        ),
+        if (!_signup)
+          Center(
+            child: TextButton(
+              onPressed: _forgot,
+              child: Text('Mot de passe oublié ?', style: TextStyle(color: K.indigoText, fontWeight: FontWeight.w700)),
+            ),
+          ),
+      ]),
+    );
+  }
+
+  Widget _sheetField(TextEditingController c, String label, IconData icon, {bool pw = false, TextInputType? type, Iterable<String>? hints}) => Padding(
         padding: EdgeInsets.only(bottom: 10),
         child: TextField(
           controller: c,
           obscureText: pw,
-          keyboardType: number ? TextInputType.number : TextInputType.text,
+          autocorrect: false,
+          keyboardType: type,
+          autofillHints: hints,
           style: TextStyle(color: K.text),
-          decoration: _dec(label, number ? Icons.pin_rounded : Icons.lock_rounded),
+          decoration: _dec(label, icon),
         ),
       );
 
-  /// Changer son mot de passe (profil).
-  Future<void> _changePw() async {
-    final old = TextEditingController(), a = TextEditingController(), b = TextEditingController();
+  /// Fenêtre en bas d'écran avec titre, champs et bouton (gère l'attente et les erreurs).
+  Future<void> _sheet({
+    required String title,
+    String? intro,
+    required List<Widget> Function(void Function(VoidCallback) set) fields,
+    required String action,
+    required Future<void> Function(void Function(VoidCallback) set) run,
+  }) {
     String? err;
     var busy = false;
-    await showModalBottomSheet<void>(
-      context: context,
-      isScrollControlled: true,
-      backgroundColor: K.card,
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.vertical(top: Radius.circular(22))),
-      builder: (ctx) => StatefulBuilder(
-        builder: (ctx, set) => Padding(
-          padding: EdgeInsets.fromLTRB(20, 20, 20, 20 + MediaQuery.of(ctx).viewInsets.bottom),
-          child: Column(mainAxisSize: MainAxisSize.min, crossAxisAlignment: CrossAxisAlignment.stretch, children: [
-            Text('Changer mon mot de passe', style: TextStyle(color: K.text, fontSize: 19, fontWeight: FontWeight.w900)),
-            SizedBox(height: 14),
-            _pwField(old, 'Mot de passe actuel'),
-            _pwField(a, 'Nouveau mot de passe (6 caractères min.)'),
-            _pwField(b, 'Confirmer le nouveau mot de passe'),
-            if (err != null) Padding(padding: EdgeInsets.only(bottom: 8), child: Text(err!, style: TextStyle(color: K.red, fontWeight: FontWeight.w700))),
-            FilledButton(
-              style: FilledButton.styleFrom(backgroundColor: K.indigo, minimumSize: Size.fromHeight(50)),
-              onPressed: busy
-                  ? null
-                  : () async {
-                      set(() {
-                        busy = true;
-                        err = null;
-                      });
-                      try {
-                        await Account.changePassword(old.text, a.text, b.text);
-                        if (ctx.mounted) Navigator.pop(ctx);
-                        if (mounted) ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Mot de passe modifié ✅')));
-                        return;
-                      } catch (e) {
-                        err = e.toString();
-                      }
-                      if (ctx.mounted) set(() => busy = false);
-                    },
-              child: busy
-                  ? SizedBox(width: 22, height: 22, child: CircularProgressIndicator(strokeWidth: 2.5, color: Colors.white))
-                  : Text('Enregistrer', style: TextStyle(fontSize: 16, fontWeight: FontWeight.w800)),
-            ),
-          ]),
-        ),
-      ),
-    );
-  }
-
-  /// Mot de passe oublié : code envoyé sur WhatsApp par KOUNADIA, puis nouveau mot de passe.
-  Future<void> _forgot() async {
-    final code = TextEditingController(), a = TextEditingController(), b = TextEditingController();
-    String? err;
-    var busy = false;
-    await showModalBottomSheet<void>(
+    return showModalBottomSheet<void>(
       context: context,
       isScrollControlled: true,
       backgroundColor: K.card,
@@ -149,61 +201,124 @@ class _AccountScreenState extends State<AccountScreen> {
         builder: (ctx, set) => Padding(
           padding: EdgeInsets.fromLTRB(20, 20, 20, 20 + MediaQuery.of(ctx).viewInsets.bottom),
           child: SingleChildScrollView(
-            child: Column(mainAxisSize: MainAxisSize.min, crossAxisAlignment: CrossAxisAlignment.stretch, children: [
-              Text('Mot de passe oublié', style: TextStyle(color: K.text, fontSize: 19, fontWeight: FontWeight.w900)),
-              SizedBox(height: 8),
-              Text('1. Demande ton code sur WhatsApp, depuis le numéro de ton compte.\n'
-                  '2. KOUNADIA t\'envoie un code à 6 chiffres (valable 30 min).\n'
-                  '3. Entre-le ici avec ton nouveau mot de passe.',
-                  style: TextStyle(color: K.muted, fontSize: 13, height: 1.45)),
-              SizedBox(height: 12),
-              Text('Numéro du compte : +${_fullPhone()}', style: TextStyle(color: K.text, fontWeight: FontWeight.w800)),
-              if (_phone.text.trim().isEmpty)
-                Text('Entre d\'abord ton numéro dans l\'écran de connexion.', style: TextStyle(color: K.amber, fontSize: 12.5)),
-              SizedBox(height: 10),
-              FilledButton.icon(
-                style: FilledButton.styleFrom(backgroundColor: Color(0xFF25D366), minimumSize: Size.fromHeight(48)),
-                onPressed: _phone.text.trim().isEmpty
-                    ? null
-                    : () => launchUrl(
-                          Uri.parse('https://wa.me/22655337782?text=' +
-                              Uri.encodeComponent('Bonjour KOUNADIA 👋\nJ\'ai oublié mon mot de passe.\nNuméro de mon compte : +${_fullPhone()}')),
-                          mode: LaunchMode.externalApplication),
-                icon: Icon(Icons.chat_rounded),
-                label: Text('Demander mon code sur WhatsApp', style: TextStyle(fontWeight: FontWeight.w800)),
-              ),
-              SizedBox(height: 14),
-              _pwField(code, 'Code reçu (6 chiffres)', pw: false, number: true),
-              _pwField(a, 'Nouveau mot de passe (6 caractères min.)'),
-              _pwField(b, 'Confirmer le nouveau mot de passe'),
-              if (err != null) Padding(padding: EdgeInsets.only(bottom: 8), child: Text(err!, style: TextStyle(color: K.red, fontWeight: FontWeight.w700))),
-              FilledButton(
-                style: FilledButton.styleFrom(backgroundColor: K.indigo, minimumSize: Size.fromHeight(50)),
-                onPressed: busy || _phone.text.trim().isEmpty
-                    ? null
-                    : () async {
-                        set(() {
-                          busy = true;
-                          err = null;
-                        });
-                        try {
-                          await Account.resetPassword(_fullPhone(), code.text.trim(), a.text, b.text);
-                          if (ctx.mounted) Navigator.pop(ctx);
-                          if (mounted) ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Mot de passe changé, tu es connecté ✅')));
-                          return;
-                        } catch (e) {
-                          err = e.toString();
-                        }
-                        if (ctx.mounted) set(() => busy = false);
-                      },
-                child: busy
-                    ? SizedBox(width: 22, height: 22, child: CircularProgressIndicator(strokeWidth: 2.5, color: Colors.white))
-                    : Text('Changer et me connecter', style: TextStyle(fontSize: 16, fontWeight: FontWeight.w800)),
-              ),
-            ]),
+            child: AutofillGroup(
+              child: Column(mainAxisSize: MainAxisSize.min, crossAxisAlignment: CrossAxisAlignment.stretch, children: [
+                Text(title, style: TextStyle(color: K.text, fontSize: 19, fontWeight: FontWeight.w900)),
+                if (intro != null) ...[
+                  SizedBox(height: 6),
+                  Text(intro, style: TextStyle(color: K.muted, fontSize: 13, height: 1.4)),
+                ],
+                SizedBox(height: 14),
+                ...fields(set),
+                if (err != null)
+                  Padding(padding: EdgeInsets.only(bottom: 8), child: Text(err!, style: TextStyle(color: K.red, fontWeight: FontWeight.w700))),
+                FilledButton(
+                  style: FilledButton.styleFrom(backgroundColor: K.indigo, minimumSize: Size.fromHeight(50)),
+                  onPressed: busy
+                      ? null
+                      : () async {
+                          set(() {
+                            busy = true;
+                            err = null;
+                          });
+                          try {
+                            await run(set);
+                          } catch (e) {
+                            err = e.toString();
+                          }
+                          if (ctx.mounted) set(() => busy = false);
+                        },
+                  child: busy
+                      ? SizedBox(width: 22, height: 22, child: CircularProgressIndicator(strokeWidth: 2.5, color: Colors.white))
+                      : Text(action, style: TextStyle(fontSize: 16, fontWeight: FontWeight.w800)),
+                ),
+              ]),
+            ),
           ),
         ),
       ),
+    );
+  }
+
+  /// Mot de passe oublié : un code est envoyé à l'e-mail du compte.
+  Future<void> _forgot() async {
+    final mail = TextEditingController(text: _mail.text.trim());
+    final code = TextEditingController(), a = TextEditingController(), b = TextEditingController();
+    var sent = false;
+    await _sheet(
+      title: 'Mot de passe oublié',
+      intro: 'Entre l\'e-mail de ton compte : tu vas recevoir un code à 6 chiffres.',
+      fields: (set) => [
+        _sheetField(mail, 'Adresse e-mail', Icons.alternate_email_rounded, type: TextInputType.emailAddress, hints: [AutofillHints.email]),
+        if (sent) ...[
+          Padding(
+            padding: EdgeInsets.only(bottom: 10),
+            child: Text('Code envoyé ✅ Regarde ta boîte de réception (et les spams).',
+                style: TextStyle(color: K.green, fontSize: 12.5, fontWeight: FontWeight.w700)),
+          ),
+          _sheetField(code, 'Code reçu (6 chiffres)', Icons.pin_rounded, type: TextInputType.number, hints: [AutofillHints.oneTimeCode]),
+          _sheetField(a, 'Nouveau mot de passe (6 caractères min.)', Icons.lock_rounded, pw: true, hints: [AutofillHints.newPassword]),
+          _sheetField(b, 'Confirmer le nouveau mot de passe', Icons.lock_outline_rounded, pw: true, hints: [AutofillHints.newPassword]),
+        ],
+      ],
+      action: 'Valider',
+      run: (set) async {
+        if (!isEmail(mail.text)) throw 'Adresse e-mail invalide';
+        if (!sent) {
+          await Account.forgot(mail.text);
+          set(() => sent = true);
+          return;
+        }
+        if (code.text.trim().length != 6) throw 'Entre le code à 6 chiffres reçu par e-mail';
+        if (a.text.length < 6) throw 'Mot de passe : 6 caractères minimum';
+        if (a.text != b.text) throw 'Les deux mots de passe ne sont pas identiques';
+        await Account.resetPassword(mail.text, code.text.trim(), a.text, b.text);
+        TextInput.finishAutofillContext(shouldSave: true);
+        if (mounted) {
+          Navigator.pop(context);
+          ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Mot de passe changé, tu es connecté ✅')));
+        }
+      },
+    );
+  }
+
+  /// Changer son mot de passe (profil).
+  Future<void> _changePw() async {
+    final old = TextEditingController(), a = TextEditingController(), b = TextEditingController();
+    await _sheet(
+      title: 'Changer mon mot de passe',
+      fields: (_) => [
+        _sheetField(old, 'Mot de passe actuel', Icons.lock_rounded, pw: true, hints: [AutofillHints.password]),
+        _sheetField(a, 'Nouveau mot de passe (6 caractères min.)', Icons.lock_rounded, pw: true, hints: [AutofillHints.newPassword]),
+        _sheetField(b, 'Confirmer le nouveau mot de passe', Icons.lock_outline_rounded, pw: true, hints: [AutofillHints.newPassword]),
+      ],
+      action: 'Enregistrer',
+      run: (_) async {
+        if (a.text.length < 6) throw 'Mot de passe : 6 caractères minimum';
+        if (a.text != b.text) throw 'Les deux mots de passe ne sont pas identiques';
+        await Account.changePassword(old.text, a.text, b.text);
+        TextInput.finishAutofillContext(shouldSave: true);
+        if (mounted) {
+          Navigator.pop(context);
+          ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Mot de passe modifié ✅')));
+        }
+      },
+    );
+  }
+
+  /// Ajouter / modifier l'e-mail du compte.
+  Future<void> _editEmail() async {
+    final c = TextEditingController(text: Account.user.value?.email ?? '');
+    await _sheet(
+      title: 'Mon adresse e-mail',
+      intro: 'Elle sert à te connecter et à récupérer ton compte.',
+      fields: (_) => [_sheetField(c, 'Adresse e-mail', Icons.alternate_email_rounded, type: TextInputType.emailAddress, hints: [AutofillHints.email])],
+      action: 'Enregistrer',
+      run: (_) async {
+        if (!isEmail(c.text)) throw 'Adresse e-mail invalide';
+        await Account.setEmail(c.text);
+        if (mounted) Navigator.pop(context);
+      },
     );
   }
 
@@ -250,90 +365,6 @@ class _AccountScreenState extends State<AccountScreen> {
         enabledBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: BorderSide(color: K.border)),
       );
 
-  Widget _field(TextEditingController c, String label, IconData icon, {bool pw = false, bool phone = false}) => Padding(
-        padding: EdgeInsets.only(bottom: 12),
-        child: TextField(
-          controller: c,
-          obscureText: pw,
-          keyboardType: phone ? TextInputType.phone : TextInputType.text,
-          style: TextStyle(color: K.text),
-          decoration: _dec(label, icon),
-        ),
-      );
-
-  Widget _auth() {
-    return ListView(padding: EdgeInsets.fromLTRB(16, 12, 16, 32), children: [
-      Container(
-        padding: EdgeInsets.all(3),
-        decoration: BoxDecoration(color: K.card, borderRadius: BorderRadius.circular(13), border: Border.all(color: K.border)),
-        child: Row(children: [
-          for (final (v, l) in [(false, 'Se connecter'), (true, 'Créer un compte')])
-            Expanded(
-              child: GestureDetector(
-                onTap: () => setState(() {
-                  _signup = v;
-                  _err = null;
-                }),
-                child: Container(
-                  height: 40,
-                  alignment: Alignment.center,
-                  decoration: BoxDecoration(
-                      color: _signup == v ? K.indigo : Colors.transparent, borderRadius: BorderRadius.circular(10)),
-                  child: Text(l,
-                      style: TextStyle(color: _signup == v ? Colors.white : K.muted, fontWeight: FontWeight.w800)),
-                ),
-              ),
-            ),
-        ]),
-      ),
-      SizedBox(height: 18),
-      if (_signup) _field(_name, "Nom d'utilisateur", Icons.person_rounded),
-      Row(crossAxisAlignment: CrossAxisAlignment.start, children: [
-        Container(
-          height: 58,
-          margin: EdgeInsets.only(right: 8),
-          padding: EdgeInsets.symmetric(horizontal: 8),
-          decoration: BoxDecoration(color: K.card, borderRadius: BorderRadius.circular(12), border: Border.all(color: K.border)),
-          child: InkWell(
-            onTap: () async {
-              final c = await pickCountry(context, dial: true, selected: _country.iso);
-              if (c != null) setState(() => _country = c);
-            },
-            child: Row(mainAxisSize: MainAxisSize.min, children: [
-              Text('${_country.flag} +${_country.dial}', style: TextStyle(color: K.text, fontSize: 15)),
-              Icon(Icons.arrow_drop_down_rounded, color: K.muted),
-            ]),
-          ),
-        ),
-        Expanded(child: _field(_phone, 'Numéro de téléphone', Icons.phone_rounded, phone: true)),
-      ]),
-      _field(_pw, 'Mot de passe (6 caractères min.)', Icons.lock_rounded, pw: true),
-      if (_signup) _field(_pw2, 'Confirmer le mot de passe', Icons.lock_outline_rounded, pw: true),
-      if (_err != null)
-        Padding(
-          padding: EdgeInsets.only(bottom: 10),
-          child: Text(_err!, style: TextStyle(color: K.red, fontWeight: FontWeight.w700)),
-        ),
-      FilledButton(
-        style: FilledButton.styleFrom(backgroundColor: K.indigo, minimumSize: Size.fromHeight(50)),
-        onPressed: _busy ? null : _submit,
-        child: _busy
-            ? SizedBox(width: 22, height: 22, child: CircularProgressIndicator(strokeWidth: 2.5, color: Colors.white))
-            : Text(_signup ? 'Créer mon compte' : 'Me connecter', style: TextStyle(fontSize: 16, fontWeight: FontWeight.w800)),
-      ),
-      if (!_signup)
-        Center(
-          child: TextButton(
-            onPressed: _forgot,
-            child: Text('Mot de passe oublié ?', style: TextStyle(color: K.indigoText, fontWeight: FontWeight.w700)),
-          ),
-        ),
-      SizedBox(height: 4),
-      Text('La première connexion peut prendre jusqu\'à une minute.',
-          textAlign: TextAlign.center, style: TextStyle(color: K.muted, fontSize: 12)),
-    ]);
-  }
-
   Widget _profile(KUser u) {
     final on = u.premium;
     return RefreshIndicator(
@@ -358,7 +389,7 @@ class _AccountScreenState extends State<AccountScreen> {
             Expanded(
               child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
                 Text(u.username, style: TextStyle(color: Colors.white, fontSize: 19, fontWeight: FontWeight.w900)),
-                Text('+${u.phone}', style: TextStyle(color: Color(0xDDFFFFFF), fontSize: 13)),
+                if (u.email != null) Text(u.email!, style: TextStyle(color: Color(0xDDFFFFFF), fontSize: 13)),
                 SizedBox(height: 6),
                 Text(on ? '👑 Premium actif jusqu\'au ${_date(u.premiumUntil!)}' : 'Aucun abonnement actif',
                     style: TextStyle(color: Colors.white, fontSize: 13, fontWeight: FontWeight.w800)),
@@ -366,12 +397,27 @@ class _AccountScreenState extends State<AccountScreen> {
             ),
           ]),
         ),
+        if (u.email == null) ...[
+          SizedBox(height: 12),
+          Material(
+            color: K.amber.withAlpha(30),
+            borderRadius: BorderRadius.circular(14),
+            child: ListTile(
+              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14), side: BorderSide(color: K.amber)),
+              leading: Icon(Icons.shield_rounded, color: K.amber),
+              title: Text('Ajoute ton adresse e-mail', style: TextStyle(color: K.text, fontWeight: FontWeight.w800)),
+              subtitle: Text('Pour te connecter et récupérer ton compte facilement.', style: TextStyle(color: K.muted, fontSize: 12)),
+              trailing: Icon(Icons.chevron_right_rounded, color: K.muted),
+              onTap: _editEmail,
+            ),
+          ),
+        ],
         SizedBox(height: 10),
         Row(children: [
           Icon(Icons.cloud_done_rounded, color: K.green, size: 18),
           SizedBox(width: 8),
           Expanded(
-            child: Text('Favoris, coupons et réglages sauvegardés dans ton compte : tu les retrouves sur n\'importe quel téléphone.',
+            child: Text('Favoris, coupons et réglages sauvegardés dans ton compte.',
                 style: TextStyle(color: K.muted, fontSize: 12.5)),
           ),
         ]),
@@ -379,11 +425,17 @@ class _AccountScreenState extends State<AccountScreen> {
         Text(on ? 'Prolonger mon abonnement' : 'Choisir mon abonnement',
             style: TextStyle(color: K.text, fontSize: 16, fontWeight: FontWeight.w800)),
         SizedBox(height: 4),
-        Text('Paiement sécurisé par Mobile Money (MoneyFusion). Les jours s\'ajoutent à ton abonnement en cours.',
+        Text('Paiement sécurisé par Mobile Money. Les jours s\'ajoutent à ton abonnement en cours.',
             style: TextStyle(color: K.muted, fontSize: 12.5)),
         SizedBox(height: 12),
         for (final p in kPlans) _planTile(p),
         SizedBox(height: 18),
+        OutlinedButton.icon(
+          onPressed: _editEmail,
+          icon: Icon(Icons.alternate_email_rounded, color: K.text),
+          label: Text('Modifier mon e-mail', style: TextStyle(color: K.text)),
+        ),
+        SizedBox(height: 8),
         OutlinedButton.icon(
           onPressed: _changePw,
           icon: Icon(Icons.lock_reset_rounded, color: K.text),
@@ -468,7 +520,7 @@ class _AccountScreenState extends State<AccountScreen> {
   }
 }
 
-/// Attente du paiement : vérifie toutes les 5 s (le serveur vérifie auprès de MoneyFusion).
+/// Attente du paiement : vérification automatique toutes les 5 s.
 class _PayWait extends StatefulWidget {
   final String token;
   final KPlan plan;
@@ -562,7 +614,7 @@ class _PayWaitState extends State<_PayWait> with WidgetsBindingObserver {
   }
 }
 
-/// Pendant la création du paiement (le serveur peut mettre jusqu'à une minute à se réveiller).
+/// Pendant la préparation du paiement.
 class _Connecting extends StatefulWidget {
   final KPlan plan;
   _Connecting({required this.plan});
@@ -617,7 +669,7 @@ class _ConnectingState extends State<_Connecting> {
           Row(mainAxisAlignment: MainAxisAlignment.center, children: [
             Icon(Icons.lock_rounded, color: K.green, size: 15),
             SizedBox(width: 6),
-            Text('Paiement sécurisé MoneyFusion', style: TextStyle(color: K.muted, fontSize: 12)),
+            Text('Paiement sécurisé', style: TextStyle(color: K.muted, fontSize: 12)),
           ]),
         ]),
       ),

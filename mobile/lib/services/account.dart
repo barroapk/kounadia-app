@@ -6,20 +6,27 @@ import 'sync.dart';
 
 const kApiBase = String.fromEnvironment('API_BASE', defaultValue: 'https://knd-api-5bgz.onrender.com');
 
+/// Adresse e-mail valide (même règle que le serveur).
+final kEmailRe = RegExp(r'^[a-z0-9._%+-]+@[a-z0-9-]+(\.[a-z0-9-]+)*\.[a-z]{2,}$');
+bool isEmail(String s) => kEmailRe.hasMatch(s.trim().toLowerCase());
+
 class KUser {
   final String username;
-  final String phone;
+  final String? email;
   final DateTime? premiumUntil;
-  KUser(this.username, this.phone, this.premiumUntil);
+  KUser(this.username, this.email, this.premiumUntil);
   bool get premium => premiumUntil != null && premiumUntil!.isAfter(DateTime.now());
 
-  factory KUser.fromJson(Map<String, dynamic> j) => KUser(
-        (j['username'] ?? '').toString(),
-        (j['phone'] ?? '').toString(),
-        DateTime.tryParse((j['premiumUntil'] ?? '').toString())?.toLocal(),
-      );
+  factory KUser.fromJson(Map<String, dynamic> j) {
+    final e = (j['email'] ?? '').toString();
+    return KUser(
+      (j['username'] ?? '').toString(),
+      e.isEmpty ? null : e,
+      DateTime.tryParse((j['premiumUntil'] ?? '').toString())?.toLocal(),
+    );
+  }
   Map<String, dynamic> toJson() =>
-      {'username': username, 'phone': phone, 'premiumUntil': premiumUntil?.toUtc().toIso8601String()};
+      {'username': username, 'email': email, 'premiumUntil': premiumUntil?.toUtc().toIso8601String()};
 }
 
 class KPlan {
@@ -50,8 +57,11 @@ class Account {
       final u = p.getString('k_user');
       if (_token != null && u != null) user.value = KUser.fromJson(jsonDecode(u) as Map<String, dynamic>);
     } catch (_) {}
-    if (_token != null) refresh();
+    if (_token != null) refresh(renew: true);
   }
+
+  /// Certaines réponses ne contiennent pas l'e-mail : on garde celui déjà connu.
+  static KUser _keepEmail(KUser u) => u.email != null || user.value?.email == null ? u : KUser(u.username, user.value!.email, u.premiumUntil);
 
   static Future<void> _save(String? token, KUser? u) async {
     _token = token;
@@ -107,12 +117,12 @@ class Account {
     await _call('POST', '/kounadia/me/prefs', {'prefs': prefs});
   }
 
-  static Future<void> register(String username, String phone, String pw, String pw2) async =>
-      _fromAuth(await _call('POST', '/kounadia/auth/register',
-          {'username': username, 'phone': phone, 'password': pw, 'password2': pw2}));
+  static Future<void> register(String username, String email, String pw, String pw2) async =>
+      _fromAuth(await _call('POST', '/kounadia/auth/signup',
+          {'username': username, 'email': email.trim().toLowerCase(), 'password': pw, 'password2': pw2}));
 
-  static Future<void> login(String phone, String pw) async =>
-      _fromAuth(await _call('POST', '/kounadia/auth/login', {'phone': phone, 'password': pw}));
+  static Future<void> login(String email, String pw) async =>
+      _fromAuth(await _call('POST', '/kounadia/auth/signin', {'email': email.trim().toLowerCase(), 'password': pw}));
 
   static Future<void> logout() => _save(null, null);
 
@@ -121,21 +131,38 @@ class Account {
     await _call('POST', '/kounadia/me/password', {'old': old, 'password': pw, 'password2': pw2});
   }
 
-  /// Mot de passe oublié : code reçu sur WhatsApp + nouveau mot de passe (connecte directement).
-  static Future<void> resetPassword(String phone, String code, String pw, String pw2) async =>
-      _fromAuth(await _call('POST', '/kounadia/auth/reset', {'phone': phone, 'code': code, 'password': pw, 'password2': pw2}));
+  /// Mot de passe oublié : envoie un code à l'e-mail du compte.
+  static Future<void> forgot(String email) async {
+    await _call('POST', '/kounadia/auth/forgot', {'email': email.trim().toLowerCase()});
+  }
+
+  /// Code reçu par e-mail + nouveau mot de passe (connecte directement).
+  static Future<void> resetPassword(String email, String code, String pw, String pw2) async =>
+      _fromAuth(await _call('POST', '/kounadia/auth/reset',
+          {'email': email.trim().toLowerCase(), 'code': code, 'password': pw, 'password2': pw2}));
+
+  /// Ajouter / modifier l'e-mail du compte (anciens comptes).
+  static Future<void> setEmail(String email) async {
+    final j = await _call('POST', '/kounadia/me/email', {'email': email.trim().toLowerCase()});
+    await _save(_token, KUser.fromJson(Map<String, dynamic>.from(j['user'] as Map)));
+  }
 
   /// Réveille le serveur (Render gratuit) avant que l'utilisateur ne choisisse une offre.
   static void warmUp() {
     http.get(Uri.parse(kApiBase)).timeout(Duration(seconds: 70)).then((_) {}, onError: (_) {});
   }
 
-  /// Met à jour le statut Premium depuis le serveur (silencieux en cas d'échec).
-  static Future<void> refresh() async {
+  /// Met à jour le statut Premium ; [renew] renouvelle aussi la session (elle n'expire pas tant que l'app est utilisée).
+  static Future<void> refresh({bool renew = false}) async {
     if (_token == null) return;
     try {
       final j = await _call('GET', '/kounadia/me');
-      await _save(_token, KUser.fromJson(Map<String, dynamic>.from(j['user'] as Map)));
+      await _save(_token, _keepEmail(KUser.fromJson(Map<String, dynamic>.from(j['user'] as Map))));
+    } catch (_) {}
+    if (!renew || _token == null) return;
+    try {
+      final j = await _call('GET', '/kounadia/me/session');
+      await _save(j['token'].toString(), KUser.fromJson(Map<String, dynamic>.from(j['user'] as Map)));
     } catch (_) {}
   }
 
@@ -150,7 +177,7 @@ class Account {
     final j = await _call('GET', '/kounadia/pay/status/${Uri.encodeComponent(token)}');
     final st = (j['status'] ?? 'pending').toString();
     if (st == 'paid' && j['user'] is Map) {
-      await _save(_token, KUser.fromJson(Map<String, dynamic>.from(j['user'] as Map)));
+      await _save(_token, _keepEmail(KUser.fromJson(Map<String, dynamic>.from(j['user'] as Map))));
     }
     return st;
   }
