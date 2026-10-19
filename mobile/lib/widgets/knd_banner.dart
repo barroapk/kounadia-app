@@ -8,6 +8,7 @@ import 'package:shared_preferences/shared_preferences.dart';
 import 'package:url_launcher/url_launcher.dart';
 import '../config/supabase_config.dart';
 import '../services/analytics.dart';
+import '../services/user_prefs.dart';
 
 Color _hex(String s, Color fallback) {
   var h = s.replaceAll('#', '');
@@ -29,7 +30,29 @@ class BannerSlide {
   final String id, title, text, cta, link;
   final List<AdPg> pages;
   final List<Color> colors;
-  BannerSlide.fromAd(Map<String, dynamic> j)
+  BannerSlide.fromAd(Map<String, dynamic> raw) : this._(_localized(raw));
+
+  /// Textes dans la langue de l'utilisateur (traduits à la publication), sinon d'origine.
+  static Map<String, dynamic> _localized(Map<String, dynamic> j) {
+    final all = j['i18n'];
+    final t = all is Map ? all[UserPrefs.lang] : null;
+    if (t is! Map) return j;
+    final out = Map<String, dynamic>.from(j);
+    for (final k in ['title', 'text', 'cta']) {
+      final v = t[k]?.toString() ?? '';
+      if (v.isNotEmpty) out[k] = v;
+    }
+    final tp = t['pages'];
+    final pg = j['pages'];
+    if (tp is List && pg is List && tp.length == pg.length) {
+      out['pages'] = [
+        for (var i = 0; i < pg.length; i++) (pg[i] is Map && tp[i] is Map) ? {...Map<String, dynamic>.from(pg[i] as Map), ...Map<String, dynamic>.from(tp[i] as Map)} : pg[i],
+      ];
+    }
+    return out;
+  }
+
+  BannerSlide._(Map<String, dynamic> j)
       : id = j['id']?.toString() ?? '',
         title = j['title']?.toString() ?? '',
         text = j['text']?.toString() ?? '',
@@ -98,7 +121,7 @@ class BannerService {
     try {
       final r = await http.get(
         Uri.parse('$kSupabaseUrl/rest/v1/kounadia_ads'
-            '?select=id,title,text,cta,link,image_url,color1,color2,pages,ends_at&active=eq.true&order=position.asc'),
+            '?select=id,title,text,cta,link,image_url,color1,color2,pages,ends_at,countries,i18n&active=eq.true&order=position.asc'),
         headers: {'apikey': kSupabaseAnon, 'Authorization': 'Bearer $kSupabaseAnon'},
       ).timeout(const Duration(seconds: 15));
       if (r.statusCode == 200) {
@@ -116,6 +139,9 @@ class BannerService {
         final j = Map<String, dynamic>.from(e as Map);
         final end = DateTime.tryParse(j['ends_at']?.toString() ?? '');
         if (end != null && end.isBefore(now)) continue;
+        // Pays de diffusion choisis dans KND Tigui (liste vide = tous les pays).
+        final cs = j['countries'];
+        if (cs is List && cs.isNotEmpty && !cs.map((e) => e.toString()).contains(UserPrefs.iso)) continue;
         final s = BannerSlide.fromAd(j);
         if (s.pages.isNotEmpty) slides.add(s);
       }
