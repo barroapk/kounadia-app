@@ -54,7 +54,7 @@ class _AccountScreenState extends State<AccountScreen> {
 
   // Vérifications affichées sous chaque champ (après le premier essai).
   String? get _nameErr => !_signup || _name.text.trim().length >= 2 ? null : '2 caractères minimum';
-  String? get _mailErr => isEmail(_mail.text) || (!_signup && RegExp(r'^\+?\d{8,15}$').hasMatch(_mail.text.trim())) ? null : (_mail.text.trim().isEmpty ? 'Entre ton adresse e-mail' : 'Adresse e-mail invalide (ex. : nom@gmail.com)');
+  String? get _mailErr => isEmail(_mail.text) ? null : (_mail.text.trim().isEmpty ? 'Entre ton adresse e-mail' : 'Adresse e-mail invalide (ex. : nom@gmail.com)');
   String? get _pwErr => _pw.text.length >= 6 ? null : '6 caractères minimum';
   String? get _pw2Err => !_signup || _pw2.text == _pw.text ? null : 'Les deux mots de passe ne sont pas identiques';
 
