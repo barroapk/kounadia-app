@@ -81,12 +81,8 @@ class BannerSlide {
     }
     if (l.isEmpty) {
       final img = j['image_url']?.toString() ?? '';
-      final t = j['title']?.toString() ?? '';
-      if (img.startsWith('http')) {
-        l.add(AdPg(img, '', ''));
-      } else if (t.isNotEmpty) {
-        l.add(AdPg(null, t, j['text']?.toString() ?? ''));
-      }
+      // Le titre est un nom interne (KND Tigui) : jamais affiché seul.
+      if (img.startsWith('http')) l.add(AdPg(img, '', ''));
     }
     return l;
   }
