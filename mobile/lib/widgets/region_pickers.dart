@@ -61,11 +61,6 @@ Future<T?> _sheet<T>(BuildContext context, String title, Widget Function(String 
   );
 }
 
-Widget _head(String t) => Padding(
-      padding: EdgeInsets.fromLTRB(18, 14, 18, 6),
-      child: Text(t, style: TextStyle(color: K.muted, fontSize: 12, fontWeight: FontWeight.w800, letterSpacing: 1)),
-    );
-
 /// Choix du pays avec recherche (nom ou code).
 Future<KCountry?> pickCountry(BuildContext context, {String? selected}) {
   return _sheet<KCountry>(context, 'Choisis ton pays', (q) {
@@ -74,24 +69,18 @@ Future<KCountry?> pickCountry(BuildContext context, {String? selected}) {
         _n(c.name).contains(q) ||
         c.aliases.any((a) => _n(a).contains(q)) ||
         c.iso.toLowerCase() == q;
-    final momo = kCountries.where((c) => c.momo && hit(c)).toList();
-    final other = kCountries.where((c) => !c.momo && hit(c)).toList();
+    final list = kCountries.where(hit).toList()..sort((a, b) => _n(a.name).compareTo(_n(b.name)));
     Widget row(KCountry c) => ListTile(
           onTap: () => Navigator.pop(context, c),
           leading: Text(c.flag, style: TextStyle(fontSize: 24)),
           title: Text(c.name, style: TextStyle(color: K.text, fontWeight: c.iso == selected ? FontWeight.w900 : FontWeight.w600)),
-          subtitle: Text(c.momo ? 'Mobile Money' : 'Paiement crypto', style: TextStyle(color: K.muted, fontSize: 12)),
+          subtitle: Text('${c.currency} · ${Fx.symbol(c.currency)}', style: TextStyle(color: K.muted, fontSize: 12)),
           trailing: c.iso == selected ? Icon(Icons.check_circle_rounded, color: K.indigoText) : null,
         );
-    if (momo.isEmpty && other.isEmpty) {
+    if (list.isEmpty) {
       return Center(child: Text('Aucun pays trouvé', style: TextStyle(color: K.muted)));
     }
-    return ListView(children: [
-      if (momo.isNotEmpty) _head('📱 MOBILE MONEY'),
-      ...momo.map(row),
-      if (other.isNotEmpty) _head('🌍 AUTRES PAYS · PAIEMENT CRYPTO'),
-      ...other.map(row),
-    ]);
+    return ListView(children: list.map(row).toList());
   });
 }
 

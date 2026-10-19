@@ -16,6 +16,8 @@ import '../services/account.dart';
 import '../services/user_prefs.dart';
 import '../services/currency.dart';
 import '../widgets/region_pickers.dart';
+import 'guide_screen.dart';
+import 'legal_screen.dart';
 
 final kAppVersion = '1.0.0';
 final _supportEmail = 'pierreclavers56@gmail.com';
@@ -291,6 +293,8 @@ class SettingsScreen extends StatelessWidget {
 
           kTitle('Aide'),
           kDividers([
+            _tile(Icons.menu_book_rounded, K.green, "Guide d'utilisation", 'Tout savoir sur KOUNADIA',
+                () => _open(context, GuideScreen())),
             _tile(Icons.support_agent_rounded, K.indigoText, 'Contacter le support', 'Un problème, une question, une idée',
                 () => _contactSheet(
                       context,
@@ -300,15 +304,16 @@ class SettingsScreen extends StatelessWidget {
                       message: 'Bonjour KOUNADIA 👋\nJ\'ai besoin d\'aide : ',
                       event: 'contact_support',
                     )),
-            _tile(Icons.health_and_safety_rounded, K.red, 'Jeu responsable', '18+ · À lire avant de parier', () => _info(
-                  context,
-                  'Jeu responsable',
-                  'Les paris sont réservés aux personnes majeures (18 ans et plus).\n\n'
-                      'Ne mise jamais plus que ce que tu peux te permettre de perdre, '
-                      'et ne cherche pas à « te refaire » après une perte.\n\n'
-                      "Aucun pronostic n'est garanti, même avec une forte probabilité.\n\n"
-                      'Si le jeu devient un problème, parles-en à un proche ou à un professionnel.',
-                )),
+            _tile(Icons.health_and_safety_rounded, K.red, 'Jeu responsable', '18+ · À lire avant de parier',
+                () => _open(context, ResponsibleScreen())),
+          ]),
+
+          kTitle('Informations légales'),
+          kDividers([
+            _tile(Icons.description_rounded, K.indigoText, "Conditions d'utilisation", 'Les règles du service',
+                () => _open(context, TermsScreen())),
+            _tile(Icons.privacy_tip_rounded, K.green, 'Confidentialité', 'Tes données et tes droits',
+                () => _open(context, PrivacyScreen())),
             _tile(Icons.info_rounded, K.muted, 'À propos', 'Version $kAppVersion', () => _info(
                   context,
                   'KOUNADIA',

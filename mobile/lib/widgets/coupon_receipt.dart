@@ -6,6 +6,7 @@ import 'package:path_provider/path_provider.dart';
 import 'package:share_plus/share_plus.dart';
 import '../models/coupon.dart';
 import '../services/analytics.dart';
+import '../services/user_prefs.dart';
 import 'forecast_card.dart' show K, hm, two;
 
 /// Reçu visuel d'un coupon (partagé en image).
@@ -126,6 +127,7 @@ class CouponReceipt extends StatelessWidget {
             ),
           ]),
         ),
+        if (UserPrefs.iso == 'BF')
         Container(
           margin: EdgeInsets.fromLTRB(12, 0, 12, 10),
           padding: EdgeInsets.all(12),

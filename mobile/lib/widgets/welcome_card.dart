@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'forecast_card.dart' show K;
 import '../screens/account_screen.dart';
+import '../services/user_prefs.dart';
 
 final _seenKey = 'welcome_seen_v2';
 
@@ -122,9 +123,10 @@ class _WelcomeDialog extends StatelessWidget {
                   _point('Fiches match', 'forme, faits du jour et statistiques complètes.'),
                   _para('Dès 250 F pour 3 jours. Sans engagement.'),
                 ]),
-                _section('Dépôt · Retrait 1xBet', Icons.swap_vert_rounded, K.indigoText, [
-                  _para('Rapide via WhatsApp avec KOUNADIA SERVICE · code promo 99KND.'),
-                ]),
+                if (UserPrefs.iso == 'BF')
+                  _section('Dépôt · Retrait 1xBet', Icons.swap_vert_rounded, K.indigoText, [
+                    _para('Rapide via WhatsApp avec KOUNADIA SERVICE · code promo 99KND.'),
+                  ]),
                 SizedBox(height: 20),
                 Container(
                   padding: EdgeInsets.all(14),

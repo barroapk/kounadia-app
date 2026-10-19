@@ -141,7 +141,7 @@ class _SureTabState extends State<SureTab> {
     children.add(Padding(
       padding: EdgeInsets.only(top: 8),
       child: Text(
-        "Sélection la plus fiable selon l'analyse KOUNADIA (confiance ≥ 70 %, modèle et PrimaTips d'accord). "
+        "Les sélections les plus fiables du jour selon l'analyse KOUNADIA. "
         "Paris à jouer séparément. Aucun gain n'est garanti. 18+ · Jouez de manière responsable.",
         textAlign: TextAlign.center,
         style: TextStyle(color: K.muted, fontSize: 11.5, height: 1.4),

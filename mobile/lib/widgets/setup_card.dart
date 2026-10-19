@@ -106,7 +106,7 @@ class _SetupDialogState extends State<_SetupDialog> {
           Text('Choisis ton pays et ta langue pour une application faite pour toi.',
               textAlign: TextAlign.center, style: TextStyle(color: K.muted, fontSize: 13.5, height: 1.35)),
           SizedBox(height: 18),
-          _box('PAYS', _c.flag, _c.name, '${_c.momo ? 'Mobile Money' : 'Paiement crypto'} · ${Fx.symbol(_c.currency)} · ${UserPrefs.gmt()}',
+          _box('PAYS', _c.flag, _c.name, '${_c.currency} · ${Fx.symbol(_c.currency)} · ${UserPrefs.gmt()}',
               () async {
             final c = await pickCountry(context, selected: _c.iso);
             if (c != null) {

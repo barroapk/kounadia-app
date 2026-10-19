@@ -1,3 +1,5 @@
+import '../services/user_prefs.dart';
+
 String fx(double v) => v.toStringAsFixed(2).replaceAll('.', ',');
 String _two(int n) => n.toString().padLeft(2, '0');
 
@@ -148,7 +150,7 @@ class Coupon {
     b.writeln('\nProbabilité estimée ≈ ${pctText()}');
     b.writeln('📲 Pronostics gratuits sur KOUNADIA');
     b.writeln('🎁 Code promo 1xBet : 99KND');
-    b.writeln('💬 Dépôt / retrait 1xBet : KOUNADIA SERVICE sur WhatsApp +226 55 33 77 82');
+    if (UserPrefs.iso == 'BF') b.writeln('💬 Dépôt / retrait 1xBet : KOUNADIA SERVICE sur WhatsApp +226 55 33 77 82');
     b.write('18+ · Jouez de manière responsable.');
     return b.toString();
   }

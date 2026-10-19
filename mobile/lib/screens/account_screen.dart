@@ -6,6 +6,7 @@ import '../services/account.dart';
 import '../services/analytics.dart';
 import '../services/currency.dart';
 import '../services/user_prefs.dart';
+import 'legal_screen.dart';
 import '../widgets/forecast_card.dart' show K, two;
 
 String fcfa(int v) => '${v.toString().replaceAllMapped(RegExp(r'\B(?=(\d{3})+(?!\d))'), (_) => ' ')} F';
@@ -158,6 +159,23 @@ class _AccountScreenState extends State<AccountScreen> {
               ? SizedBox(width: 22, height: 22, child: CircularProgressIndicator(strokeWidth: 2.5, color: Colors.white))
               : Text(_signup ? 'Créer mon compte' : 'Me connecter', style: TextStyle(fontSize: 16, fontWeight: FontWeight.w800)),
         ),
+        if (_signup)
+          Padding(
+            padding: EdgeInsets.only(top: 12),
+            child: Wrap(alignment: WrapAlignment.center, children: [
+              Text('En créant un compte, tu acceptes les ', style: TextStyle(color: K.muted, fontSize: 12)),
+              GestureDetector(
+                onTap: () => Navigator.push(context, MaterialPageRoute(builder: (_) => TermsScreen())),
+                child: Text("Conditions d'utilisation", style: TextStyle(color: K.indigoText, fontSize: 12, fontWeight: FontWeight.w700)),
+              ),
+              Text(' et la ', style: TextStyle(color: K.muted, fontSize: 12)),
+              GestureDetector(
+                onTap: () => Navigator.push(context, MaterialPageRoute(builder: (_) => PrivacyScreen())),
+                child: Text('Politique de confidentialité', style: TextStyle(color: K.indigoText, fontSize: 12, fontWeight: FontWeight.w700)),
+              ),
+              Text('.', style: TextStyle(color: K.muted, fontSize: 12)),
+            ]),
+          ),
         if (!_signup)
           Center(
             child: TextButton(
