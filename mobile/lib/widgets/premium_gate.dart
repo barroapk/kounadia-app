@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import '../screens/account_screen.dart';
 import '../services/account.dart';
 import 'forecast_card.dart' show K;
+import '../l10n/tr.dart';
 
 /// Affiche [child] aux abonnés Premium ; sinon une présentation de la rubrique + les offres.
 class PremiumGate extends StatelessWidget {
@@ -32,7 +33,7 @@ class PremiumGate extends StatelessWidget {
         return Scaffold(
           backgroundColor: K.bg,
           appBar: AppBar(
-              backgroundColor: K.bg, foregroundColor: K.text, title: Text(title, style: TextStyle(fontWeight: FontWeight.w800))),
+              backgroundColor: K.bg, foregroundColor: K.text, title: T(title, style: TextStyle(fontWeight: FontWeight.w800))),
           body: promo,
         );
       },
@@ -64,9 +65,9 @@ class PremiumGate extends StatelessWidget {
         ),
       ),
       SizedBox(height: 16),
-      Text(title, textAlign: TextAlign.center, style: TextStyle(color: K.text, fontSize: 22, fontWeight: FontWeight.w900)),
+      T(title, textAlign: TextAlign.center, style: TextStyle(color: K.text, fontSize: 22, fontWeight: FontWeight.w900)),
       SizedBox(height: 8),
-      Text(pitch, textAlign: TextAlign.center, style: TextStyle(color: K.muted, fontSize: 14, height: 1.45)),
+      T(pitch, textAlign: TextAlign.center, style: TextStyle(color: K.muted, fontSize: 14, height: 1.45)),
       SizedBox(height: 18),
       Container(
         padding: EdgeInsets.all(14),
@@ -78,24 +79,24 @@ class PremiumGate extends StatelessWidget {
               child: Row(crossAxisAlignment: CrossAxisAlignment.start, children: [
                 Icon(Icons.check_circle_rounded, color: K.green, size: 19),
                 SizedBox(width: 10),
-                Expanded(child: Text(p, style: TextStyle(color: K.text, fontSize: 14, height: 1.35))),
+                Expanded(child: T(p, style: TextStyle(color: K.text, fontSize: 14, height: 1.35))),
               ]),
             ),
         ]),
       ),
       SizedBox(height: 18),
-      Text('Dès ${fcfa(kPlans.first.price)} les 3 jours · ${fcfa(kPlans[2].price)} le mois',
+      T('Dès ${fcfa(kPlans.first.price)} les 3 jours · ${fcfa(kPlans[2].price)} le mois',
           textAlign: TextAlign.center, style: TextStyle(color: K.amber, fontSize: 14, fontWeight: FontWeight.w800)),
       SizedBox(height: 12),
       FilledButton.icon(
         style: FilledButton.styleFrom(backgroundColor: Color(0xFFD4A017), foregroundColor: Colors.black, minimumSize: Size.fromHeight(52)),
         onPressed: () => Navigator.push(context, MaterialPageRoute(builder: (_) => AccountScreen())),
         icon: Icon(Icons.workspace_premium_rounded),
-        label: Text(logged ? 'Débloquer avec Premium' : 'Créer mon compte et débloquer',
+        label: T(logged ? 'Débloquer avec Premium' : 'Créer mon compte et débloquer',
             style: TextStyle(fontSize: 15.5, fontWeight: FontWeight.w900)),
       ),
       SizedBox(height: 10),
-      Text('Paiement Mobile Money · Sans engagement · 18+ · Aucun gain garanti',
+      T('Paiement Mobile Money · Sans engagement · 18+ · Aucun gain garanti',
           textAlign: TextAlign.center, style: TextStyle(color: K.muted, fontSize: 11.5)),
     ]);
   }

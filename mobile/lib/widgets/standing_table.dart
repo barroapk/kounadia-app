@@ -4,6 +4,7 @@ import '../services/match_detail_service.dart' show StandRow;
 import 'forecast_card.dart' show K;
 import 'jersey.dart';
 import 'k_ui.dart';
+import '../l10n/tr.dart';
 
 String frZone(String z) {
   var s = z;
@@ -40,7 +41,7 @@ class StandingTable extends StatelessWidget {
     }
     final hs = TextStyle(color: K.muted, fontSize: 11.5, fontWeight: FontWeight.w700);
     Widget cell(String t, double w, TextStyle s) =>
-        SizedBox(width: w, child: Text(t, textAlign: TextAlign.center, style: s));
+        SizedBox(width: w, child: T(t, textAlign: TextAlign.center, style: s));
     List<Widget> nums(StandRow? r, TextStyle s) => [
           cell(r?.mp ?? 'J', 26, s),
           if (full) ...[cell(r?.w ?? 'G', 24, s), cell(r?.d ?? 'N', 24, s), cell(r?.l ?? 'P', 24, s)],
@@ -54,7 +55,7 @@ class StandingTable extends StatelessWidget {
         child: Row(children: [
           cell('#', 24, hs),
           SizedBox(width: 30),
-          Expanded(child: Text('Équipe', style: hs)),
+          Expanded(child: T('Équipe', style: hs)),
           ...nums(null, hs),
         ]),
       ),
@@ -72,7 +73,7 @@ class StandingTable extends StatelessWidget {
           cell('${r.pos}', 24, ts),
           TeamCrest(name: r.team, logo: LogoCache.get(r.team), size: 20),
           SizedBox(width: 10),
-          Expanded(child: Text(r.team, maxLines: 1, overflow: TextOverflow.ellipsis, style: ts)),
+          Expanded(child: T(r.team, maxLines: 1, overflow: TextOverflow.ellipsis, style: ts)),
           ...nums(r, ts),
         ]),
       ));
@@ -93,7 +94,7 @@ class StandingTable extends StatelessWidget {
                           height: 10,
                           decoration: BoxDecoration(color: e.value, borderRadius: BorderRadius.circular(2))),
                       SizedBox(width: 6),
-                      Text(frZone(e.key), style: TextStyle(color: K.muted, fontSize: 12)),
+                      T(frZone(e.key), style: TextStyle(color: K.muted, fontSize: 12)),
                     ]))
                 .toList(),
           ),

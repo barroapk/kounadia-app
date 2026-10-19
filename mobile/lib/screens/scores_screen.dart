@@ -14,6 +14,7 @@ import '../widgets/premium_gate.dart';
 import 'fav_leagues_screen.dart';
 import '../services/fav_leagues.dart';
 import '../services/primatips_service.dart' show frLeague;
+import '../l10n/tr.dart';
 
 class ScoresScreen extends StatefulWidget {
   ScoresScreen({super.key});
@@ -108,7 +109,7 @@ class _ScoresScreenState extends State<ScoresScreen> with WidgetsBindingObserver
       ..hideCurrentSnackBar()
       ..showSnackBar(SnackBar(
         duration: Duration(seconds: 1),
-        content: Text(added ? '⭐ Ajouté aux favoris' : 'Retiré des favoris'),
+        content: T(added ? '⭐ Ajouté aux favoris' : 'Retiré des favoris'),
       ));
     try {
       final p = await SharedPreferences.getInstance();
@@ -233,7 +234,7 @@ class _ScoresScreenState extends State<ScoresScreen> with WidgetsBindingObserver
                   child: Center(
                     child: FittedBox(
                       fit: BoxFit.scaleDown,
-                      child: Text('$label (${two(day.day)}/${two(day.month)})',
+                      child: T('${tr(label)} (${two(day.day)}/${two(day.month)})',
                           style: TextStyle(
                               color: K.text, fontSize: 16, fontWeight: FontWeight.w800)),
                     ),
@@ -257,7 +258,7 @@ class _ScoresScreenState extends State<ScoresScreen> with WidgetsBindingObserver
                 onChanged: (v) => setState(() => _q = v),
                 style: TextStyle(color: K.text),
                 decoration: InputDecoration(
-                  hintText: 'Équipe ou championnat…',
+                  hintText: tr('Équipe ou championnat…'),
                   hintStyle: TextStyle(color: K.muted),
                   prefixIcon: Icon(Icons.search_rounded, color: K.muted),
                   filled: true,
@@ -331,7 +332,7 @@ class _ScoresScreenState extends State<ScoresScreen> with WidgetsBindingObserver
                     decoration: BoxDecoration(color: K.red, shape: BoxShape.circle)),
                 SizedBox(width: 5),
               ],
-              Text('$label · $count',
+              T('${tr(label)} · $count',
                   style: TextStyle(
                       color: sel ? Colors.white : K.muted,
                       fontWeight: FontWeight.w700,
@@ -361,7 +362,7 @@ class _ScoresScreenState extends State<ScoresScreen> with WidgetsBindingObserver
           child: Row(children: [
             Icon(Icons.star_rounded, color: K.amber, size: 18),
             SizedBox(width: 6),
-            Expanded(child: Text('Uniquement mes championnats', style: TextStyle(color: K.text, fontSize: 13.5, fontWeight: FontWeight.w600))),
+            Expanded(child: T('Uniquement mes championnats', style: TextStyle(color: K.text, fontSize: 13.5, fontWeight: FontWeight.w600))),
             Switch(value: _onlyFav, activeColor: K.amber, onChanged: (v) => setState(() => _onlyFav = v)),
           ]),
         ),
@@ -382,7 +383,7 @@ class _ScoresScreenState extends State<ScoresScreen> with WidgetsBindingObserver
               style: FilledButton.styleFrom(backgroundColor: K.indigo),
               onPressed: () => Navigator.push(context, MaterialPageRoute(builder: (_) => FavLeaguesScreen())),
               icon: Icon(Icons.star_rounded),
-              label: Text('Choisir mes championnats'),
+              label: T('Choisir mes championnats'),
             ),
           ),
       ]);
@@ -459,7 +460,7 @@ class _ScoresScreenState extends State<ScoresScreen> with WidgetsBindingObserver
                     SizedBox(width: 8),
                   ],
                   Expanded(
-                    child: Text(frLeague(title),
+                    child: T(frLeague(title),
                         maxLines: 1,
                         overflow: TextOverflow.ellipsis,
                         style: TextStyle(
@@ -480,7 +481,7 @@ class _ScoresScreenState extends State<ScoresScreen> with WidgetsBindingObserver
                           color: FavLeagues.has(title) ? K.amber : K.muted, size: 19),
                     ),
                   ),
-                  Text('${list.length}', style: TextStyle(color: K.muted, fontSize: 12)),
+                  T('${list.length}', style: TextStyle(color: K.muted, fontSize: 12)),
                   Icon(collapsed ? Icons.expand_more_rounded : Icons.expand_less_rounded,
                       color: K.muted, size: 22),
                 ],
@@ -496,16 +497,16 @@ class _ScoresScreenState extends State<ScoresScreen> with WidgetsBindingObserver
   Widget _timeCell(LiveMatch m) {
     switch (m.status) {
       case 'live':
-        return Text(m.minute ?? 'Live',
+        return T(m.minute ?? 'Live',
             style: TextStyle(color: K.red, fontSize: 13, fontWeight: FontWeight.w800));
       case 'finished':
-        return Text('Fin',
+        return T('Fin',
             style: TextStyle(color: K.muted, fontSize: 12.5, fontWeight: FontWeight.w700));
       case 'postponed':
-        return Text('Rep.',
+        return T('Rep.',
             style: TextStyle(color: K.amber, fontSize: 12, fontWeight: FontWeight.w700));
       default:
-        return Text(m.date != null ? hm(m.date!) : '--:--',
+        return T(m.date != null ? hm(m.date!) : '--:--',
             style: TextStyle(color: K.text, fontSize: 13, fontWeight: FontWeight.w700));
     }
   }
@@ -516,7 +517,7 @@ class _ScoresScreenState extends State<ScoresScreen> with WidgetsBindingObserver
         TeamCrest(name: name, logo: _logos[name] ?? LogoCache.get(name), size: 16),
         SizedBox(width: 7),
         Expanded(
-          child: Text(name,
+          child: T(name,
               maxLines: 1,
               overflow: TextOverflow.ellipsis,
               style: TextStyle(
@@ -525,7 +526,7 @@ class _ScoresScreenState extends State<ScoresScreen> with WidgetsBindingObserver
                   fontWeight: win ? FontWeight.w800 : FontWeight.w500)),
         ),
         SizedBox(width: 6),
-        Text(goals?.toString() ?? '',
+        T(goals?.toString() ?? '',
             style: TextStyle(
                 color: m_scoreColor(goals),
                 fontSize: 13.5,
@@ -591,14 +592,14 @@ class _ScoresScreenState extends State<ScoresScreen> with WidgetsBindingObserver
                 crossAxisAlignment: CrossAxisAlignment.end,
                 children: [
                   if (prob != null)
-                    Text('$prob %',
+                    T('$prob %',
                         style: TextStyle(color: color, fontSize: 13, fontWeight: FontWeight.w800)),
-                  Text(m.tipShort,
+                  T(m.tipShort,
                       maxLines: 1,
                       overflow: TextOverflow.ellipsis,
                       style: TextStyle(color: color, fontSize: 11, fontWeight: FontWeight.w600)),
                   if (m.tipOdd != null)
-                    Text('@${m.tipOdd!.toStringAsFixed(2)}',
+                    T('@${m.tipOdd!.toStringAsFixed(2)}',
                         style: TextStyle(color: K.muted, fontSize: 10.5)),
                 ],
               ),

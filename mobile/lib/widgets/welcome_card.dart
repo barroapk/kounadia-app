@@ -3,6 +3,7 @@ import 'package:shared_preferences/shared_preferences.dart';
 import 'forecast_card.dart' show K;
 import '../screens/account_screen.dart';
 import '../services/user_prefs.dart';
+import '../l10n/tr.dart';
 
 final _seenKey = 'welcome_seen_v2';
 
@@ -40,7 +41,7 @@ class _WelcomeDialog extends StatelessWidget {
             ),
             SizedBox(width: 10),
             Expanded(
-              child: Text(title, style: TextStyle(color: K.text, fontSize: 16, fontWeight: FontWeight.w900)),
+              child: T(title, style: TextStyle(color: K.text, fontSize: 16, fontWeight: FontWeight.w900)),
             ),
           ]),
           SizedBox(height: 8),
@@ -59,8 +60,8 @@ class _WelcomeDialog extends StatelessWidget {
           Expanded(
             child: Text.rich(
               TextSpan(children: [
-                TextSpan(text: '$title : ', style: TextStyle(color: K.text, fontWeight: FontWeight.w800)),
-                TextSpan(text: text, style: TextStyle(color: K.muted)),
+                TextSpan(text: '${tr(title)} : ', style: TextStyle(color: K.text, fontWeight: FontWeight.w800)),
+                TextSpan(text: tr(text), style: TextStyle(color: K.muted)),
               ]),
               style: TextStyle(fontSize: 13.5, height: 1.4),
             ),
@@ -68,7 +69,7 @@ class _WelcomeDialog extends StatelessWidget {
         ]),
       );
 
-  Widget _para(String t) => Text(t, style: TextStyle(color: K.muted, fontSize: 13.5, height: 1.45));
+  Widget _para(String t) => T(t, style: TextStyle(color: K.muted, fontSize: 13.5, height: 1.45));
 
   @override
   Widget build(BuildContext context) {
@@ -99,11 +100,11 @@ class _WelcomeDialog extends StatelessWidget {
                   child: Icon(Icons.sports_soccer_rounded, color: Colors.white, size: 34),
                 ),
                 SizedBox(height: 12),
-                Text('Bienvenue sur KOUNADIA',
+                T('Bienvenue sur KOUNADIA',
                     textAlign: TextAlign.center,
                     style: TextStyle(color: Colors.white, fontSize: 21, fontWeight: FontWeight.w900)),
                 SizedBox(height: 6),
-                Text('« Kounadia » : la chance, en dioula. Mets-la de ton côté.',
+                T('« Kounadia » : la chance, en dioula. Mets-la de ton côté.',
                     textAlign: TextAlign.center,
                     style: TextStyle(color: Color(0xDDFFFFFF), fontSize: 14, fontWeight: FontWeight.w600)),
               ]),
@@ -135,14 +136,14 @@ class _WelcomeDialog extends StatelessWidget {
                     borderRadius: BorderRadius.circular(14),
                     border: Border.all(color: K.border),
                   ),
-                  child: Text(
+                  child: T(
                     'Fondé par M. Pierre Clavers BARRO,\njeune entrepreneur burkinabè 🇧🇫',
                     textAlign: TextAlign.center,
                     style: TextStyle(color: K.text, fontSize: 13.5, fontWeight: FontWeight.w700, height: 1.4),
                   ),
                 ),
                 SizedBox(height: 10),
-                Text("18+ · Joue de manière responsable · aucun pronostic n'est garanti",
+                T("18+ · Joue de manière responsable · aucun pronostic n'est garanti",
                     textAlign: TextAlign.center, style: TextStyle(color: K.muted, fontSize: 11.5)),
                 SizedBox(height: 16),
                 SizedBox(
@@ -155,14 +156,14 @@ class _WelcomeDialog extends StatelessWidget {
                       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
                     ),
                     icon: Icon(Icons.workspace_premium_rounded),
-                    label: Text('Découvrir Premium', style: TextStyle(fontSize: 16, fontWeight: FontWeight.w900)),
+                    label: T('Découvrir Premium', style: TextStyle(fontSize: 16, fontWeight: FontWeight.w900)),
                   ),
                 ),
                 SizedBox(height: 6),
                 Center(
                   child: TextButton(
                     onPressed: () => Navigator.of(context).pop(false),
-                    child: Text('Explorer l\'application', style: TextStyle(color: K.muted, fontWeight: FontWeight.w700)),
+                    child: T('Explorer l\'application', style: TextStyle(color: K.muted, fontWeight: FontWeight.w700)),
                   ),
                 ),
               ]),

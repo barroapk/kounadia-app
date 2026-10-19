@@ -13,6 +13,7 @@ import '../widgets/k_ui.dart';
 import '../widgets/knd_banner.dart';
 import '../widgets/coupon_receipt.dart';
 import 'pt_match_screen.dart';
+import '../l10n/tr.dart';
 
 class CouponTab extends StatefulWidget {
   CouponTab({super.key});
@@ -93,7 +94,7 @@ class _CouponTabState extends State<CouponTab> with AutomaticKeepAliveClientMixi
     if (!mounted) return;
     ScaffoldMessenger.of(context)
       ..hideCurrentSnackBar()
-      ..showSnackBar(SnackBar(content: Text(m), duration: Duration(seconds: 2)));
+      ..showSnackBar(SnackBar(content: T(m), duration: Duration(seconds: 2)));
   }
 
   void _applyPreset(String k) {
@@ -207,7 +208,7 @@ class _CouponTabState extends State<CouponTab> with AutomaticKeepAliveClientMixi
               color: sel ? K.indigoSoft : Colors.transparent,
               borderRadius: BorderRadius.circular(9),
             ),
-            child: Text(label,
+            child: T(label,
                 style: TextStyle(color: sel ? K.text : K.muted, fontSize: 13.5, fontWeight: FontWeight.w800)),
           ),
         ),
@@ -240,10 +241,10 @@ class _CouponTabState extends State<CouponTab> with AutomaticKeepAliveClientMixi
           SizedBox(width: 14),
           Expanded(
             child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-              Text('Créateur de coupons',
+              T('Créateur de coupons',
                   style: TextStyle(color: Colors.white, fontSize: 18, fontWeight: FontWeight.w900)),
               SizedBox(height: 4),
-              Text(
+              T(
                 'Fixe tes critères : KOUNADIA IA analyse les matchs à venir et compose les meilleurs coupons.',
                 style: TextStyle(color: Color(0xEEFFFFFF), fontSize: 13, height: 1.35),
               ),
@@ -267,7 +268,7 @@ class _CouponTabState extends State<CouponTab> with AutomaticKeepAliveClientMixi
                     color: i == sel ? K.indigo : Colors.transparent,
                     borderRadius: BorderRadius.circular(8),
                   ),
-                  child: Text(labels[i],
+                  child: T(labels[i],
                       style: TextStyle(
                           color: i == sel ? Colors.white : K.muted, fontSize: 12.5, fontWeight: FontWeight.w700)),
                 ),
@@ -280,9 +281,9 @@ class _CouponTabState extends State<CouponTab> with AutomaticKeepAliveClientMixi
         padding: EdgeInsets.fromLTRB(2, 14, 2, 0),
         child: Row(children: [
           Expanded(
-            child: Text(title, style: TextStyle(color: K.text, fontSize: 13.5, fontWeight: FontWeight.w700)),
+            child: T(title, style: TextStyle(color: K.text, fontSize: 13.5, fontWeight: FontWeight.w700)),
           ),
-          Text(value, style: TextStyle(color: K.indigoText, fontSize: 13.5, fontWeight: FontWeight.w800)),
+          T(value, style: TextStyle(color: K.indigoText, fontSize: 13.5, fontWeight: FontWeight.w800)),
         ]),
       );
 
@@ -310,7 +311,7 @@ class _CouponTabState extends State<CouponTab> with AutomaticKeepAliveClientMixi
           child: Row(mainAxisSize: MainAxisSize.min, children: [
             Icon(on ? Icons.check_rounded : Icons.add_rounded, size: 15, color: on ? K.text : K.muted),
             SizedBox(width: 4),
-            Text(label,
+            T(label,
                 style: TextStyle(color: on ? K.text : K.muted, fontSize: 12.5, fontWeight: FontWeight.w700)),
           ]),
         ),
@@ -325,7 +326,7 @@ class _CouponTabState extends State<CouponTab> with AutomaticKeepAliveClientMixi
         padding: EdgeInsets.fromLTRB(14, 14, 14, 10),
         decoration: kBox(r: 16),
         child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-          Text('Période', style: TextStyle(color: K.text, fontSize: 13.5, fontWeight: FontWeight.w700)),
+          T('Période', style: TextStyle(color: K.text, fontSize: 13.5, fontWeight: FontWeight.w700)),
           SizedBox(height: 8),
           _seg(["Aujourd'hui", 'Demain', 'Les deux'], _c.period, (i) => setState(() => _c.period = i)),
           _head('Cote totale', '×${fx(_c.totalMin)} – ×${fx(_c.totalMax)}'),
@@ -348,7 +349,7 @@ class _CouponTabState extends State<CouponTab> with AutomaticKeepAliveClientMixi
                 Icon(Icons.tune_rounded, color: K.muted, size: 18),
                 SizedBox(width: 8),
                 Expanded(
-                  child: Text('Critères avancés',
+                  child: T('Critères avancés',
                       style: TextStyle(color: K.muted, fontSize: 13, fontWeight: FontWeight.w700)),
                 ),
                 Icon(_advanced ? Icons.expand_less_rounded : Icons.expand_more_rounded, color: K.muted),
@@ -369,7 +370,7 @@ class _CouponTabState extends State<CouponTab> with AutomaticKeepAliveClientMixi
                       _c.probMax = v.end.round();
                     })),
             SizedBox(height: 6),
-            Text('Types de paris',
+            T('Types de paris',
                 style: TextStyle(color: K.text, fontSize: 13.5, fontWeight: FontWeight.w700)),
             SizedBox(height: 8),
             Wrap(spacing: 8, runSpacing: 8, children: [
@@ -404,7 +405,7 @@ class _CouponTabState extends State<CouponTab> with AutomaticKeepAliveClientMixi
         child: Row(crossAxisAlignment: CrossAxisAlignment.start, children: [
           Icon(Icons.info_outline_rounded, color: K.amber, size: 18),
           SizedBox(width: 10),
-          Expanded(child: Text(t, style: TextStyle(color: K.text, fontSize: 13, height: 1.4))),
+          Expanded(child: T(t, style: TextStyle(color: K.text, fontSize: 13, height: 1.4))),
         ]),
       );
 
@@ -436,7 +437,7 @@ class _CouponTabState extends State<CouponTab> with AutomaticKeepAliveClientMixi
                 ? SizedBox(
                     width: 18, height: 18, child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white))
                 : Icon(Icons.auto_awesome_rounded),
-            label: Text(_busy ? 'Analyse en cours…' : 'Générer mes coupons',
+            label: T(_busy ? 'Analyse en cours…' : 'Générer mes coupons',
                 style: TextStyle(fontSize: 16, fontWeight: FontWeight.w800)),
           ),
         ),
@@ -446,7 +447,7 @@ class _CouponTabState extends State<CouponTab> with AutomaticKeepAliveClientMixi
         if (_results.isNotEmpty) ...[
           Padding(
             padding: EdgeInsets.fromLTRB(4, 0, 4, 10),
-            child: Text(
+            child: T(
               '${_results.length} coupon${_results.length > 1 ? 's' : ''} proposé${_results.length > 1 ? 's' : ''} · $_analyzed matchs analysés',
               style: TextStyle(color: K.muted, fontSize: 12.5, fontWeight: FontWeight.w600),
             ),
@@ -472,12 +473,12 @@ class _CouponTabState extends State<CouponTab> with AutomaticKeepAliveClientMixi
                 shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
               ),
               icon: Icon(Icons.refresh_rounded),
-              label: Text("Générer d'autres coupons", style: TextStyle(fontWeight: FontWeight.w700)),
+              label: T("Générer d'autres coupons", style: TextStyle(fontWeight: FontWeight.w700)),
             ),
           ),
         ],
         SizedBox(height: 16),
-        Text(
+        T(
           "Cotes moyennes indicatives : elles peuvent varier chez le bookmaker. Aucun coupon n'est garanti. 18+ · Jouez de manière responsable.",
           textAlign: TextAlign.center,
           style: TextStyle(color: K.muted, fontSize: 11.5, height: 1.4),
@@ -495,13 +496,13 @@ class _CouponTabState extends State<CouponTab> with AutomaticKeepAliveClientMixi
     return [
       Row(children: [
         Expanded(
-          child: Text('${_saved.length} coupon${_saved.length > 1 ? 's' : ''} enregistré${_saved.length > 1 ? 's' : ''}',
+          child: T('${_saved.length} coupon${_saved.length > 1 ? 's' : ''} enregistré${_saved.length > 1 ? 's' : ''}',
               style: TextStyle(color: K.muted, fontSize: 12.5, fontWeight: FontWeight.w600)),
         ),
         TextButton.icon(
           onPressed: _loadSaved,
           icon: Icon(Icons.sync_rounded, size: 18, color: K.indigoText),
-          label: Text('Actualiser', style: TextStyle(color: K.indigoText, fontWeight: FontWeight.w700)),
+          label: T('Actualiser', style: TextStyle(color: K.indigoText, fontWeight: FontWeight.w700)),
         ),
       ]),
       KndBanner(),
@@ -556,9 +557,9 @@ class _CouponCard extends StatelessWidget {
           SizedBox(
             width: 46,
             child: Column(children: [
-              Text(d == null ? '--:--' : hm(d),
+              T(d == null ? '--:--' : hm(d),
                   style: TextStyle(color: K.text, fontSize: 13, fontWeight: FontWeight.w700)),
-              Text(d == null ? '' : '${two(d.day)}/${two(d.month)}',
+              T(d == null ? '' : '${two(d.day)}/${two(d.month)}',
                   style: TextStyle(color: K.muted, fontSize: 10.5)),
               if (l.result != 'pending')
                 Padding(
@@ -580,15 +581,15 @@ class _CouponCard extends StatelessWidget {
           SizedBox(width: 6),
           Expanded(
             child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-              Text(l.league,
+              T(l.league,
                   maxLines: 1, overflow: TextOverflow.ellipsis, style: TextStyle(color: K.muted, fontSize: 11)),
               SizedBox(height: 2),
-              Text('${l.home} – ${l.away}',
+              T('${l.home} – ${l.away}',
                   maxLines: 1,
                   overflow: TextOverflow.ellipsis,
                   style: TextStyle(color: K.text, fontSize: 13.5, fontWeight: FontWeight.w600)),
               SizedBox(height: 3),
-              Text(l.label,
+              T(l.label,
                   maxLines: 1,
                   overflow: TextOverflow.ellipsis,
                   style: TextStyle(
@@ -599,8 +600,8 @@ class _CouponCard extends StatelessWidget {
           ),
           SizedBox(width: 8),
           Column(crossAxisAlignment: CrossAxisAlignment.end, children: [
-            Text('@${fx(l.odd)}', style: TextStyle(color: K.text, fontSize: 14.5, fontWeight: FontWeight.w800)),
-            Text('${l.prob} %', style: TextStyle(color: K.muted, fontSize: 11.5)),
+            T('@${fx(l.odd)}', style: TextStyle(color: K.text, fontSize: 14.5, fontWeight: FontWeight.w800)),
+            T('${l.prob} %', style: TextStyle(color: K.muted, fontSize: 11.5)),
           ]),
         ]),
       ),
@@ -631,25 +632,25 @@ class _CouponCard extends StatelessWidget {
           child: Row(children: [
             Expanded(
               child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-                Text(title, style: TextStyle(color: K.text, fontSize: 14.5, fontWeight: FontWeight.w800)),
+                T(title, style: TextStyle(color: K.text, fontSize: 14.5, fontWeight: FontWeight.w800)),
                 SizedBox(height: 4),
                 Row(children: [
-                  Text('${coupon.legs.length} matchs', style: TextStyle(color: K.muted, fontSize: 12)),
+                  T('${coupon.legs.length} matchs', style: TextStyle(color: K.muted, fontSize: 12)),
                   if (saved) ...[
                     SizedBox(width: 8),
                     Container(
                       padding: EdgeInsets.symmetric(horizontal: 8, vertical: 2),
                       decoration: BoxDecoration(color: stColor.withAlpha(45), borderRadius: BorderRadius.circular(10)),
-                      child: Text(stLabel, style: TextStyle(color: stColor, fontSize: 11.5, fontWeight: FontWeight.w800)),
+                      child: T(stLabel, style: TextStyle(color: stColor, fontSize: 11.5, fontWeight: FontWeight.w800)),
                     ),
                   ],
                 ]),
               ]),
             ),
             Column(crossAxisAlignment: CrossAxisAlignment.end, children: [
-              Text('×${fx(coupon.total)}',
+              T('×${fx(coupon.total)}',
                   style: TextStyle(color: K.green, fontSize: 22, fontWeight: FontWeight.w900)),
-              Text('cote totale', style: TextStyle(color: K.muted, fontSize: 11)),
+              T('cote totale', style: TextStyle(color: K.muted, fontSize: 11)),
             ]),
           ]),
         ),
@@ -661,16 +662,16 @@ class _CouponCard extends StatelessWidget {
             Icon(Icons.insights_rounded, color: K.muted, size: 16),
             SizedBox(width: 6),
             Expanded(
-              child: Text('Probabilité estimée ≈ ${coupon.pctText()}',
+              child: T('${tr('Probabilité estimée')} ≈ ${coupon.pctText()}',
                   style: TextStyle(color: K.muted, fontSize: 12.5)),
             ),
             IconButton(
-              tooltip: 'Partager',
+              tooltip: tr('Partager'),
               onPressed: onShare,
               icon: Icon(Icons.share_rounded, color: K.muted, size: 20),
             ),
             IconButton(
-              tooltip: saved ? 'Supprimer' : 'Enregistrer',
+              tooltip: tr(saved ? 'Supprimer' : 'Enregistrer'),
               onPressed: onAction,
               icon: Icon(saved ? Icons.delete_outline_rounded : Icons.star_border_rounded,
                   color: saved ? K.red : K.amber, size: 22),

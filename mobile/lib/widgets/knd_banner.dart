@@ -9,6 +9,7 @@ import 'package:url_launcher/url_launcher.dart';
 import '../config/supabase_config.dart';
 import '../services/analytics.dart';
 import '../services/user_prefs.dart';
+import '../l10n/tr.dart';
 
 Color _hex(String s, Color fallback) {
   var h = s.replaceAll('#', '');
@@ -341,13 +342,13 @@ class _AdViewState extends State<_AdView> {
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
               if (p.title.isNotEmpty)
-                Text(p.title,
+                T(p.title,
                     maxLines: 2,
                     overflow: TextOverflow.ellipsis,
                     style: const TextStyle(color: Colors.white, fontSize: 19, fontWeight: FontWeight.w900, height: 1.15)),
               if (p.text.isNotEmpty) ...[
                 const SizedBox(height: 6),
-                Text(p.text,
+                T(p.text,
                     maxLines: 3,
                     overflow: TextOverflow.ellipsis,
                     style: const TextStyle(color: Color(0xE6FFFFFF), fontSize: 13, height: 1.3)),
@@ -360,7 +361,7 @@ class _AdViewState extends State<_AdView> {
   Widget _chip(String t, {double size = 10}) => Container(
         padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
         decoration: BoxDecoration(color: Colors.black.withAlpha(110), borderRadius: BorderRadius.circular(20)),
-        child: Text(t,
+        child: T(t,
             style: TextStyle(color: Colors.white, fontSize: size, fontWeight: FontWeight.w800, letterSpacing: .6)),
       );
 
@@ -374,7 +375,7 @@ class _AdViewState extends State<_AdView> {
         ),
         child: Row(mainAxisSize: MainAxisSize.min, children: [
           Flexible(
-            child: Text(s.cta,
+            child: T(s.cta,
                 maxLines: 1,
                 overflow: TextOverflow.ellipsis,
                 style: TextStyle(color: c, fontSize: 13, fontWeight: FontWeight.w900)),

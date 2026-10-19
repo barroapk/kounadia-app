@@ -1,10 +1,14 @@
 // Pays, devise et langue par défaut.
 // momo = Mobile Money disponible.
+import '../l10n/tr.dart';
+
 class KCountry {
   final String iso, name, currency, lang;
   final List<String> aliases;
   final bool momo;
   const KCountry(this.iso, this.name, this.aliases, this.currency, this.lang, this.momo);
+  /// Nom affiché : français, sinon nom international.
+  String get label => appLang == 'fr' || aliases.isEmpty ? name : aliases.first;
   String get flag => String.fromCharCodes(iso.toUpperCase().codeUnits.map((c) => 0x1F1E6 + c - 65));
 }
 

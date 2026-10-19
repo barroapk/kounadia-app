@@ -8,6 +8,7 @@ import '../services/vip_service.dart';
 import '../services/tip_eval.dart';
 import '../widgets/forecast_card.dart';
 import '../widgets/knd_banner.dart';
+import '../l10n/tr.dart';
 
 /// Convertit un Coup sûr en carte de pronostic (même style que Kounadia IA / Expert).
 Forecast sureForecast(VipLeg l, [LiveMatch? m, (int?, int?, String)? x]) {
@@ -124,7 +125,7 @@ class _SureTabState extends State<SureTab> {
       if (day != null && day.date != ymd) {
         children.add(Padding(
           padding: EdgeInsets.only(bottom: 10),
-          child: Text('Sélection du ${day.date.split('-').reversed.join('/')} · nouvelle sélection à 6h',
+          child: T('Sélection du ${day.date.split('-').reversed.join('/')} · nouvelle sélection à 6h',
               style: TextStyle(color: K.amber, fontSize: 12.5, fontWeight: FontWeight.w700)),
         ));
       }
@@ -140,7 +141,7 @@ class _SureTabState extends State<SureTab> {
     }
     children.add(Padding(
       padding: EdgeInsets.only(top: 8),
-      child: Text(
+      child: T(
         "Les sélections les plus fiables du jour selon l'analyse KOUNADIA. "
         "Paris à jouer séparément. Aucun gain n'est garanti. 18+ · Jouez de manière responsable.",
         textAlign: TextAlign.center,
@@ -182,9 +183,9 @@ class _SureTabState extends State<SureTab> {
         SizedBox(width: 14),
         Expanded(
           child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-            Text('Coup sûr du jour', style: TextStyle(color: Colors.white, fontSize: 19, fontWeight: FontWeight.w900)),
+            T('Coup sûr du jour', style: TextStyle(color: Colors.white, fontSize: 19, fontWeight: FontWeight.w900)),
             SizedBox(height: 4),
-            Text(
+            T(
               items.isEmpty
                   ? 'Publié chaque matin à 6h · matchs de 8h à 4h'
                   : '${items.length} pronostic${items.length > 1 ? 's' : ''} simples · résultats en direct',
@@ -196,7 +197,7 @@ class _SureTabState extends State<SureTab> {
           Container(
             padding: EdgeInsets.symmetric(horizontal: 10, vertical: 5),
             decoration: BoxDecoration(color: Color(0x33000000), borderRadius: BorderRadius.circular(12)),
-            child: Text('$won/$done ✓', style: TextStyle(color: Colors.white, fontSize: 13, fontWeight: FontWeight.w900)),
+            child: T('$won/$done ✓', style: TextStyle(color: Colors.white, fontSize: 13, fontWeight: FontWeight.w900)),
           ),
       ]),
     );
@@ -228,12 +229,12 @@ class _SureTabState extends State<SureTab> {
               Icon(Icons.emoji_events_outlined, color: K.amber, size: 15),
               SizedBox(width: 8),
               Expanded(
-                child: Text(title,
+                child: T(title,
                     maxLines: 1,
                     overflow: TextOverflow.ellipsis,
                     style: TextStyle(color: K.text, fontSize: 13, fontWeight: FontWeight.w700)),
               ),
-              Text('${list.length}', style: TextStyle(color: K.muted, fontSize: 12)),
+              T('${list.length}', style: TextStyle(color: K.muted, fontSize: 12)),
               Icon(collapsed ? Icons.expand_more_rounded : Icons.expand_less_rounded, color: K.muted, size: 22),
             ]),
           ),

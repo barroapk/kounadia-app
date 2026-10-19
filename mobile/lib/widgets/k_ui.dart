@@ -1,6 +1,7 @@
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
 import 'forecast_card.dart' show K;
+import '../l10n/tr.dart';
 
 BoxDecoration kBox({double r = 14}) => BoxDecoration(
       color: K.card,
@@ -10,7 +11,7 @@ BoxDecoration kBox({double r = 14}) => BoxDecoration(
 
 Widget kTitle(String t) => Padding(
       padding: EdgeInsets.fromLTRB(4, 18, 4, 10),
-      child: Text(t.toUpperCase(),
+      child: T(tr(t).toUpperCase(),
           style: TextStyle(color: K.muted, fontSize: 12, fontWeight: FontWeight.w800, letterSpacing: 1.1)),
     );
 
@@ -21,7 +22,7 @@ PreferredSizeWidget kAppBar(String title) => AppBar(
       foregroundColor: K.text,
       elevation: 0,
       scrolledUnderElevation: 0,
-      title: Text(title, style: TextStyle(fontSize: 18, fontWeight: FontWeight.w800)),
+      title: T(title, style: TextStyle(fontSize: 18, fontWeight: FontWeight.w800)),
     );
 
 Widget kPill(String t, bool sel, VoidCallback onTap, {double? height = 38}) => Material(
@@ -38,7 +39,7 @@ Widget kPill(String t, bool sel, VoidCallback onTap, {double? height = 38}) => M
             borderRadius: BorderRadius.circular(12),
             border: Border.all(color: sel ? K.indigo : K.border),
           ),
-          child: Text(t,
+          child: T(t,
               style: TextStyle(
                   color: sel ? Colors.white : K.muted, fontWeight: FontWeight.w700, fontSize: 13.5)),
         ),

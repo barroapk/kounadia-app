@@ -8,6 +8,7 @@ import '../models/coupon.dart';
 import '../services/analytics.dart';
 import '../services/user_prefs.dart';
 import 'forecast_card.dart' show K, hm, two;
+import '../l10n/tr.dart';
 
 /// Reçu visuel d'un coupon (partagé en image).
 class CouponReceipt extends StatelessWidget {
@@ -30,26 +31,26 @@ class CouponReceipt extends StatelessWidget {
           Icon(Icons.emoji_events_rounded, color: K.amber, size: 14),
           SizedBox(width: 5),
           Expanded(
-            child: Text(l.league,
+            child: T(l.league,
                 maxLines: 1,
                 overflow: TextOverflow.ellipsis,
                 style: TextStyle(color: K.amber, fontSize: 11.5, fontWeight: FontWeight.w700)),
           ),
-          Text(when, style: TextStyle(color: K.muted, fontSize: 11)),
+          T(when, style: TextStyle(color: K.muted, fontSize: 11)),
         ]),
         SizedBox(height: 6),
-        Text('${l.home} – ${l.away}',
+        T('${l.home} – ${l.away}',
             style: TextStyle(color: K.text, fontSize: 14, fontWeight: FontWeight.w700)),
         SizedBox(height: 5),
         Row(children: [
           Expanded(
-            child: Text(l.label,
+            child: T(l.label,
                 style: TextStyle(color: K.indigoText, fontSize: 13, fontWeight: FontWeight.w800)),
           ),
           Container(
             padding: EdgeInsets.symmetric(horizontal: 8, vertical: 3),
             decoration: BoxDecoration(color: Color(0x3322C55E), borderRadius: BorderRadius.circular(8)),
-            child: Text('@${fx(l.odd)}',
+            child: T('@${fx(l.odd)}',
                 style: TextStyle(color: K.green, fontSize: 13, fontWeight: FontWeight.w900)),
           ),
         ]),
@@ -84,16 +85,16 @@ class CouponReceipt extends StatelessWidget {
             SizedBox(width: 10),
             Expanded(
               child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-                Text('KOUNADIA',
+                T('KOUNADIA',
                     style: TextStyle(color: Colors.white, fontSize: 18, fontWeight: FontWeight.w900, letterSpacing: 1.2)),
-                Text('Coupon du ${two(now.day)}/${two(now.month)}/${now.year}',
+                T('Coupon du ${two(now.day)}/${two(now.month)}/${now.year}',
                     style: TextStyle(color: Color(0xCCFFFFFF), fontSize: 11.5)),
               ]),
             ),
             Column(crossAxisAlignment: CrossAxisAlignment.end, children: [
-              Text('×${fx(c.total)}',
+              T('×${fx(c.total)}',
                   style: TextStyle(color: Colors.white, fontSize: 24, fontWeight: FontWeight.w900)),
-              Text('cote totale', style: TextStyle(color: Color(0xCCFFFFFF), fontSize: 11)),
+              T('cote totale', style: TextStyle(color: Color(0xCCFFFFFF), fontSize: 11)),
             ]),
           ]),
         ),
@@ -104,10 +105,10 @@ class CouponReceipt extends StatelessWidget {
         Padding(
           padding: EdgeInsets.fromLTRB(14, 0, 14, 10),
           child: Row(children: [
-            Text('${c.legs.length} matchs',
+            T('${c.legs.length} matchs',
                 style: TextStyle(color: K.text, fontSize: 12.5, fontWeight: FontWeight.w700)),
             Spacer(),
-            Text('Probabilité estimée ≈ ${c.pctText()}',
+            T('${tr('Probabilité estimée')} ≈ ${c.pctText()}',
                 style: TextStyle(color: K.muted, fontSize: 12)),
           ]),
         ),
@@ -122,7 +123,7 @@ class CouponReceipt extends StatelessWidget {
             Icon(Icons.card_giftcard_rounded, color: Colors.white, size: 22),
             SizedBox(width: 10),
             Expanded(
-              child: Text('Code promo 1xBet : 99KND\n+200 % de bonus sur ta 1re recharge',
+              child: T('Code promo 1xBet : 99KND\n+200 % de bonus sur ta 1re recharge',
                   style: TextStyle(color: Colors.white, fontSize: 12.5, fontWeight: FontWeight.w800, height: 1.35)),
             ),
           ]),
@@ -140,7 +141,7 @@ class CouponReceipt extends StatelessWidget {
             Icon(Icons.chat_rounded, color: Color(0xFF25D366), size: 22),
             SizedBox(width: 10),
             Expanded(
-              child: Text(
+              child: T(
                 'Pour tout besoin de dépôt / retrait 1xBet, contactez KOUNADIA SERVICE sur WhatsApp : +226 55 33 77 82',
                 style: TextStyle(color: K.text, fontSize: 12, fontWeight: FontWeight.w600, height: 1.35),
               ),
@@ -149,7 +150,7 @@ class CouponReceipt extends StatelessWidget {
         ),
         Padding(
           padding: EdgeInsets.only(bottom: 12),
-          child: Text('18+ · Jouez de manière responsable · KOUNADIA',
+          child: T('18+ · Jouez de manière responsable · KOUNADIA',
               textAlign: TextAlign.center, style: TextStyle(color: K.muted, fontSize: 10.5)),
         ),
       ]),
@@ -168,7 +169,7 @@ Future<void> _shareImage(GlobalKey key, Coupon c) async {
     final f = File('${dir.path}/coupon_kounadia_${DateTime.now().millisecondsSinceEpoch}.png');
     await f.writeAsBytes(data.buffer.asUint8List());
     await Share.shareXFiles([XFile(f.path)],
-        text: 'Coupon KOUNADIA · cote ×${fx(c.total)} · Code promo 1xBet : 99KND');
+        text: 'Coupon KOUNADIA · ${tr('cote')} ×${fx(c.total)} · ${tr('Code promo 1xBet')} : 99KND');
   } catch (_) {
     await Share.share(c.shareText());
   }
@@ -208,7 +209,7 @@ Future<void> shareCoupon(BuildContext context, Coupon c) async {
                   shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
                 ),
                 icon: Icon(Icons.notes_rounded, size: 18),
-                label: Text('Texte'),
+                label: T('Texte'),
               ),
             ),
             SizedBox(width: 10),
@@ -223,7 +224,7 @@ Future<void> shareCoupon(BuildContext context, Coupon c) async {
                   shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
                 ),
                 icon: Icon(Icons.image_rounded, size: 18),
-                label: Text("Partager l'image", style: TextStyle(fontWeight: FontWeight.w800)),
+                label: T("Partager l'image", style: TextStyle(fontWeight: FontWeight.w800)),
               ),
             ),
           ]),

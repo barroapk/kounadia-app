@@ -5,9 +5,7 @@ import '../config/countries.dart';
 
 /// Langues proposées (code, nom affiché).
 const kLangs = <(String, String)>[
-  ('fr', 'Français'), ('en', 'English'), ('es', 'Español'), ('pt', 'Português'),
-  ('ar', 'العربية'), ('sw', 'Kiswahili'), ('zh', '中文'), ('hi', 'हिन्दी'),
-  ('ru', 'Русский'), ('de', 'Deutsch'), ('it', 'Italiano'), ('tr', 'Türkçe'),
+  ('fr', 'Français'), ('en', 'English'), ('es', 'Español'), ('pt', 'Português'), ('ar', 'العربية'),
 ];
 
 String langName(String code) {
@@ -26,6 +24,9 @@ class UserPrefs {
   static bool done = false;
 
   static KCountry? get country => countryByIso(iso);
+
+  /// Langue disponible dans l'application (sinon anglais).
+  static String supported(String l) => kLangs.any((e) => e.$1 == l) ? l : 'en';
 
   /// Pays deviné d'après le téléphone (sinon Burkina Faso).
   static KCountry guess() {
@@ -52,7 +53,7 @@ class UserPrefs {
     try {
       final p = await SharedPreferences.getInstance();
       iso = p.getString('u_country');
-      lang = p.getString('u_lang') ?? 'fr';
+      lang = supported(p.getString('u_lang') ?? 'fr');
       currency = p.getString('u_currency') ?? country?.currency ?? 'XOF';
       done = p.getBool('u_setup') ?? false;
     } catch (_) {}
@@ -77,7 +78,7 @@ class UserPrefs {
   }
 
   static Future<void> setLang(String l) {
-    lang = l;
+    lang = supported(l);
     return _store();
   }
 
@@ -89,7 +90,7 @@ class UserPrefs {
   static Future<void> finishSetup(KCountry c, String l) {
     iso = c.iso;
     currency = c.currency;
-    lang = l;
+    lang = supported(l);
     done = true;
     return _store();
   }

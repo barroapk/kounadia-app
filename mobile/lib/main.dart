@@ -9,6 +9,7 @@ import 'services/user_prefs.dart';
 import 'services/currency.dart';
 import 'services/sync.dart';
 import 'widgets/forecast_card.dart' show K;
+import 'l10n/tr.dart';
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -31,12 +32,14 @@ class KounadiaApp extends StatefulWidget {
 
 class _KounadiaAppState extends State<KounadiaApp> with WidgetsBindingObserver {
   Timer? _timer;
+  String _lang = appLang;
 
   @override
   void initState() {
     super.initState();
     WidgetsBinding.instance.addObserver(this);
     ThemeCtl.mode.addListener(_check);
+    UserPrefs.changed.addListener(_langCheck);
     _timer = Timer.periodic(Duration(minutes: 1), (_) => _check());
   }
 
@@ -44,6 +47,7 @@ class _KounadiaAppState extends State<KounadiaApp> with WidgetsBindingObserver {
   void dispose() {
     _timer?.cancel();
     ThemeCtl.mode.removeListener(_check);
+    UserPrefs.changed.removeListener(_langCheck);
     WidgetsBinding.instance.removeObserver(this);
     super.dispose();
   }
@@ -57,16 +61,27 @@ class _KounadiaAppState extends State<KounadiaApp> with WidgetsBindingObserver {
     }
   }
 
-  void _check() {
-    final d = ThemeCtl.isDark;
-    if (d == K.dark) return;
-    K.dark = d;
+  void _rebuildAll() {
     setState(() {});
     void rebuild(Element e) {
       e.markNeedsBuild();
       e.visitChildren(rebuild);
     }
     (context as Element).visitChildren(rebuild);
+  }
+
+  void _check() {
+    final d = ThemeCtl.isDark;
+    if (d == K.dark) return;
+    K.dark = d;
+    _rebuildAll();
+  }
+
+  /// Nouvelle langue : toute l'application est réaffichée (et de droite à gauche en arabe).
+  void _langCheck() {
+    if (appLang == _lang || !mounted) return;
+    _lang = appLang;
+    _rebuildAll();
   }
 
   @override
@@ -102,7 +117,7 @@ class _KounadiaAppState extends State<KounadiaApp> with WidgetsBindingObserver {
         final mq = MediaQuery.of(context);
         return MediaQuery(
           data: mq.copyWith(textScaler: mq.textScaler.clamp(minScaleFactor: 0.85, maxScaleFactor: 1.1)),
-          child: child!,
+          child: Directionality(textDirection: isRtl ? TextDirection.rtl : TextDirection.ltr, child: child!),
         );
       },
       home: MainScreen(),

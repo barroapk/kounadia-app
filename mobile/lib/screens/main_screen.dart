@@ -13,6 +13,7 @@ import '../widgets/premium_gate.dart';
 import '../widgets/welcome_card.dart';
 import '../widgets/setup_card.dart';
 import 'account_screen.dart';
+import '../l10n/tr.dart';
 
 final k1xBet = Color(0xFF1A5BA6);
 
@@ -95,9 +96,9 @@ class _MainScreenState extends State<MainScreen> {
             SizedBox(width: 12),
             Expanded(
               child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-                Text(t, style: TextStyle(color: K.text, fontSize: 15.5, fontWeight: FontWeight.w800)),
+                T(t, style: TextStyle(color: K.text, fontSize: 15.5, fontWeight: FontWeight.w800)),
                 SizedBox(height: 2),
-                Text(s, style: TextStyle(color: K.muted, fontSize: 12.5)),
+                T(s, style: TextStyle(color: K.muted, fontSize: 12.5)),
               ]),
             ),
             Icon(Icons.chevron_right_rounded, color: K.muted),
@@ -120,10 +121,10 @@ class _MainScreenState extends State<MainScreen> {
             mainAxisSize: MainAxisSize.min,
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              Text('1xBet · KOUNADIA SERVICE',
+              T('1xBet · KOUNADIA SERVICE',
                   style: TextStyle(color: K.text, fontSize: 17, fontWeight: FontWeight.w800)),
               SizedBox(height: 4),
-              Text('Traitement rapide par un agent sur WhatsApp',
+              T('Traitement rapide par un agent sur WhatsApp',
                   style: TextStyle(color: K.muted, fontSize: 13)),
               SizedBox(height: 14),
               _action(ctx, Icons.south_west_rounded, K.green, 'Dépôt 1xBet', 'Recharger mon compte 1xBet',
@@ -156,11 +157,11 @@ class _MainScreenState extends State<MainScreen> {
             child: Icon(Icons.sports_soccer_rounded, color: Colors.white, size: 19),
           ),
           SizedBox(width: 10),
-          Text('KOUNADIA',
+          T('KOUNADIA',
               style: TextStyle(color: K.text, fontSize: 19, fontWeight: FontWeight.w900, letterSpacing: 1)),
           SizedBox(width: 8),
           Flexible(
-            child: Text('· ${_titles[_i]}',
+            child: T('· ${tr(_titles[_i])}',
                 maxLines: 1,
                 overflow: TextOverflow.ellipsis,
                 style: TextStyle(color: K.muted, fontSize: 14, fontWeight: FontWeight.w600)),
@@ -168,7 +169,7 @@ class _MainScreenState extends State<MainScreen> {
         ]),
         actions: [
           IconButton(
-            tooltip: 'Paramètres',
+            tooltip: tr('Paramètres'),
             icon: Icon(Icons.settings_rounded, color: K.muted),
             onPressed: () => _push(SettingsScreen()),
           ),
@@ -196,13 +197,13 @@ class _MainScreenState extends State<MainScreen> {
             child: Row(mainAxisSize: MainAxisSize.min, children: [
               Icon(Icons.swap_vert_rounded, color: Colors.white, size: 18),
               SizedBox(width: 6),
-              Text('Dépôt · Retrait',
+              T('Dépôt · Retrait',
                   style: TextStyle(color: Colors.white, fontSize: 12.5, fontWeight: FontWeight.w700)),
               SizedBox(width: 7),
               Container(
                 padding: EdgeInsets.symmetric(horizontal: 6, vertical: 2),
                 decoration: BoxDecoration(color: Colors.white, borderRadius: BorderRadius.circular(6)),
-                child: Text('1xBet',
+                child: T('1xBet',
                     style: TextStyle(color: k1xBet, fontSize: 11.5, fontWeight: FontWeight.w900)),
               ),
             ]),
@@ -232,13 +233,13 @@ class _MainScreenState extends State<MainScreen> {
             },
             destinations: [
               NavigationDestination(
-                  icon: Icon(Icons.sports_soccer_outlined), selectedIcon: Icon(Icons.sports_soccer), label: 'Matchs'),
+                  icon: Icon(Icons.sports_soccer_outlined), selectedIcon: Icon(Icons.sports_soccer), label: tr('Matchs')),
               NavigationDestination(
-                  icon: Icon(Icons.insights_outlined), selectedIcon: Icon(Icons.insights), label: 'Prédictions'),
+                  icon: Icon(Icons.insights_outlined), selectedIcon: Icon(Icons.insights), label: tr('Prédictions')),
               NavigationDestination(
-                  icon: Icon(Icons.confirmation_number_outlined), selectedIcon: Icon(Icons.confirmation_number), label: 'Coupon'),
+                  icon: Icon(Icons.confirmation_number_outlined), selectedIcon: Icon(Icons.confirmation_number), label: tr('Coupon')),
               NavigationDestination(
-                  icon: Icon(Icons.history_rounded), selectedIcon: Icon(Icons.history), label: 'Historique'),
+                  icon: Icon(Icons.history_rounded), selectedIcon: Icon(Icons.history), label: tr('Historique')),
             ],
           ),
         ),

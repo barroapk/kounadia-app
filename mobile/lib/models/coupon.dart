@@ -1,4 +1,5 @@
 import '../services/user_prefs.dart';
+import '../l10n/tr.dart';
 
 String fx(double v) => v.toStringAsFixed(2).replaceAll('.', ',');
 String _two(int n) => n.toString().padLeft(2, '0');
@@ -138,20 +139,20 @@ class Coupon {
   }
 
   String shareText() {
-    final b = StringBuffer('🎟️ Coupon KOUNADIA · cote ×${fx(total)}\n\n');
+    final b = StringBuffer('🎟️ Coupon KOUNADIA · ${tr('cote')} ×${fx(total)}\n\n');
     for (var i = 0; i < legs.length; i++) {
       final l = legs[i];
       final d = l.date;
       final t = d == null ? '' : '${_two(d.day)}/${_two(d.month)} ${_two(d.hour)}:${_two(d.minute)} · ';
       b.writeln('${i + 1}. ${l.league}');
       b.writeln('   $t${l.home} – ${l.away}');
-      b.writeln('   ➜ ${l.label} @${fx(l.odd)}');
+      b.writeln('   ➜ ${tr(l.label)} @${fx(l.odd)}');
     }
-    b.writeln('\nProbabilité estimée ≈ ${pctText()}');
-    b.writeln('📲 Pronostics gratuits sur KOUNADIA');
-    b.writeln('🎁 Code promo 1xBet : 99KND');
+    b.writeln('\n${tr('Probabilité estimée')} ≈ ${pctText()}');
+    b.writeln(tr('📲 Pronostics gratuits sur KOUNADIA'));
+    b.writeln('🎁 ${tr('Code promo 1xBet')} : 99KND');
     if (UserPrefs.iso == 'BF') b.writeln('💬 Dépôt / retrait 1xBet : KOUNADIA SERVICE sur WhatsApp +226 55 33 77 82');
-    b.write('18+ · Jouez de manière responsable.');
+    b.write(tr('18+ · Jouez de manière responsable.'));
     return b.toString();
   }
 

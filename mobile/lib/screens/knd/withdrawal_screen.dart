@@ -4,6 +4,7 @@ import 'package:url_launcher/url_launcher.dart';
 import '../../services/analytics.dart';
 import '../../widgets/forecast_card.dart' show K;
 import 'deposit_screen.dart' show kWhatsAppNumber;
+import '../../l10n/tr.dart';
 
 final kMinWithdrawal = 500;
 
@@ -40,7 +41,7 @@ class _WithdrawalScreenState extends State<WithdrawalScreen> {
 
   void _snack(String msg) {
     if (!mounted) return;
-    ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(msg)));
+    ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: T(msg)));
   }
 
   Future<void> _send() async {
@@ -76,9 +77,9 @@ class _WithdrawalScreenState extends State<WithdrawalScreen> {
   }
 
   InputDecoration _deco(String hint, String? error, IconData icon) => InputDecoration(
-        hintText: hint,
+        hintText: tr(hint),
         hintStyle: TextStyle(color: K.muted),
-        errorText: error,
+        errorText: error == null ? null : tr(error),
         counterText: '',
         prefixIcon: Icon(icon, color: K.muted),
         filled: true,
@@ -94,7 +95,7 @@ class _WithdrawalScreenState extends State<WithdrawalScreen> {
 
   Widget _label(String t) => Padding(
         padding: EdgeInsets.fromLTRB(4, 22, 4, 8),
-        child: Text(t, style: TextStyle(color: K.text, fontSize: 14, fontWeight: FontWeight.w700)),
+        child: T(t, style: TextStyle(color: K.text, fontSize: 14, fontWeight: FontWeight.w700)),
       );
 
   Widget _pill(String text, VoidCallback onTap) => GestureDetector(
@@ -106,7 +107,7 @@ class _WithdrawalScreenState extends State<WithdrawalScreen> {
             borderRadius: BorderRadius.circular(20),
             border: Border.all(color: K.border),
           ),
-          child: Text(text, style: TextStyle(color: K.text, fontSize: 13, fontWeight: FontWeight.w600)),
+          child: T(text, style: TextStyle(color: K.text, fontSize: 13, fontWeight: FontWeight.w600)),
         ),
       );
 
@@ -119,7 +120,7 @@ class _WithdrawalScreenState extends State<WithdrawalScreen> {
         foregroundColor: K.text,
         elevation: 0,
         scrolledUnderElevation: 0,
-        title: Text('Retrait 1xBet', style: TextStyle(fontWeight: FontWeight.w800)),
+        title: T('Retrait 1xBet', style: TextStyle(fontWeight: FontWeight.w800)),
       ),
       body: ListView(
         padding: EdgeInsets.fromLTRB(20, 8, 20, 32),
@@ -135,7 +136,7 @@ class _WithdrawalScreenState extends State<WithdrawalScreen> {
               Icon(Icons.north_east_rounded, color: K.amber, size: 28),
               SizedBox(width: 12),
               Expanded(
-                child: Text(
+                child: T(
                   'Ton retrait est traité par notre agent sur WhatsApp. '
                   'Remplis le formulaire puis envoie le message pré-rempli.',
                   style: TextStyle(color: K.text, fontSize: 14, height: 1.4),
@@ -192,11 +193,11 @@ class _WithdrawalScreenState extends State<WithdrawalScreen> {
                   ? SizedBox(
                       width: 18, height: 18, child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white))
                   : Icon(Icons.send_rounded),
-              label: Text('Envoyer sur WhatsApp', style: TextStyle(fontSize: 16, fontWeight: FontWeight.w800)),
+              label: T('Envoyer sur WhatsApp', style: TextStyle(fontSize: 16, fontWeight: FontWeight.w800)),
             ),
           ),
           SizedBox(height: 18),
-          Text(
+          T(
             'Réservé aux personnes majeures. Jouez de manière responsable.',
             textAlign: TextAlign.center,
             style: TextStyle(color: K.muted, fontSize: 12),

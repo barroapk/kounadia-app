@@ -5,6 +5,7 @@ import '../services/analytics.dart';
 import '../services/logo_cache.dart';
 import '../widgets/forecast_card.dart' show K, kMessage, hm;
 import '../widgets/jersey.dart';
+import '../l10n/tr.dart';
 
 class PtMatchScreen extends StatefulWidget {
   final LiveMatch match;
@@ -36,7 +37,7 @@ class _PtMatchScreenState extends State<PtMatchScreen> {
           foregroundColor: K.text,
           elevation: 0,
           scrolledUnderElevation: 0,
-          title: Text(m.leagueLabel,
+          title: T(m.leagueLabel,
               maxLines: 1,
               overflow: TextOverflow.ellipsis,
               style: TextStyle(fontSize: 15, fontWeight: FontWeight.w700)),
@@ -65,11 +66,11 @@ class _PtMatchScreenState extends State<PtMatchScreen> {
                   dividerColor: K.border,
                   labelStyle: TextStyle(fontSize: 14, fontWeight: FontWeight.w800),
                   tabs: [
-                    Tab(text: 'Pronostics'),
-                    Tab(text: 'Forme'),
-                    Tab(text: 'H2H'),
-                    Tab(text: 'Classement'),
-                    Tab(text: 'Stats'),
+                    Tab(text: tr('Pronostics')),
+                    Tab(text: tr('Forme')),
+                    Tab(text: tr('H2H')),
+                    Tab(text: tr('Classement')),
+                    Tab(text: tr('Stats')),
                   ],
                 ),
                 Expanded(
@@ -100,7 +101,7 @@ class _PtMatchScreenState extends State<PtMatchScreen> {
 
   Widget _title(String t) => Padding(
         padding: EdgeInsets.fromLTRB(2, 6, 2, 10),
-        child: Text(t.toUpperCase(),
+        child: T(tr(t).toUpperCase(),
             style: TextStyle(color: K.muted, fontSize: 12, fontWeight: FontWeight.w800, letterSpacing: 1.1)),
       );
 
@@ -137,7 +138,7 @@ class _PtMatchScreenState extends State<PtMatchScreen> {
         margin: EdgeInsets.only(left: 4),
         alignment: Alignment.center,
         decoration: BoxDecoration(color: _oc(o), borderRadius: BorderRadius.circular(6)),
-        child: Text(_ol(o),
+        child: T(_ol(o),
             style: TextStyle(color: Colors.white, fontSize: 11.5, fontWeight: FontWeight.w800)),
       );
 
@@ -146,9 +147,9 @@ class _PtMatchScreenState extends State<PtMatchScreen> {
       padding: EdgeInsets.symmetric(horizontal: 12, vertical: 8),
       child: Row(
         children: [
-          SizedBox(width: 62, child: Text(_d(g.date), style: TextStyle(color: K.muted, fontSize: 11.5))),
+          SizedBox(width: 62, child: T(_d(g.date), style: TextStyle(color: K.muted, fontSize: 11.5))),
           Expanded(
-            child: Text(g.home,
+            child: T(g.home,
                 textAlign: TextAlign.right,
                 maxLines: 1,
                 overflow: TextOverflow.ellipsis,
@@ -165,11 +166,11 @@ class _PtMatchScreenState extends State<PtMatchScreen> {
               borderRadius: BorderRadius.circular(6),
               border: Border.all(color: _oc(g.outcome).withAlpha(140)),
             ),
-            child: Text(g.score,
+            child: T(g.score,
                 style: TextStyle(color: K.text, fontSize: 13, fontWeight: FontWeight.w800)),
           ),
           Expanded(
-            child: Text(g.away,
+            child: T(g.away,
                 maxLines: 1,
                 overflow: TextOverflow.ellipsis,
                 style: TextStyle(
@@ -195,7 +196,7 @@ class _PtMatchScreenState extends State<PtMatchScreen> {
         children: [
           TeamCrest(name: name, logo: logo ?? LogoCache.get(name), size: 48),
           SizedBox(height: 8),
-          Text(name,
+          T(name,
               textAlign: TextAlign.center,
               maxLines: 2,
               overflow: TextOverflow.ellipsis,
@@ -247,11 +248,11 @@ class _PtMatchScreenState extends State<PtMatchScreen> {
             child: Column(children: [
               SizedBox(height: 10),
               FittedBox(
-                child: Text(center,
+                child: T(center,
                     style: TextStyle(color: K.text, fontSize: 26, fontWeight: FontWeight.w800)),
               ),
               SizedBox(height: 6),
-              Text(status,
+              T(status,
                   textAlign: TextAlign.center,
                   style: TextStyle(color: sc, fontSize: 12.5, fontWeight: FontWeight.w800)),
             ]),
@@ -271,7 +272,7 @@ class _PtMatchScreenState extends State<PtMatchScreen> {
       if (d.updated != null)
         Padding(
           padding: EdgeInsets.only(top: 6),
-          child: Text('Cotes moyennes avant-match · mise à jour ${d.updated}',
+          child: T('${tr('Cotes moyennes avant-match')} · ${tr('mise à jour')} ${d.updated}',
               style: TextStyle(color: K.muted, fontSize: 11.5)),
         ),
     ]);
@@ -293,9 +294,9 @@ class _PtMatchScreenState extends State<PtMatchScreen> {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text(x.nameFr, style: TextStyle(color: K.muted, fontSize: 12.5, fontWeight: FontWeight.w600)),
+                T(x.nameFr, style: TextStyle(color: K.muted, fontSize: 12.5, fontWeight: FontWeight.w600)),
                 SizedBox(height: 4),
-                Text(x.pickFr(m.home, m.away),
+                T(x.pickFr(m.home, m.away),
                     maxLines: 2,
                     overflow: TextOverflow.ellipsis,
                     style: TextStyle(color: c, fontSize: 16, fontWeight: FontWeight.w800)),
@@ -307,8 +308,8 @@ class _PtMatchScreenState extends State<PtMatchScreen> {
             crossAxisAlignment: CrossAxisAlignment.end,
             children: [
               if (x.odd.isNotEmpty)
-                Text('@ ${x.odd}', style: TextStyle(color: K.text, fontSize: 15, fontWeight: FontWeight.w800)),
-              if (x.prob != null) Text('${x.prob} %', style: TextStyle(color: K.muted, fontSize: 12.5)),
+                T('@ ${x.odd}', style: TextStyle(color: K.text, fontSize: 15, fontWeight: FontWeight.w800)),
+              if (x.prob != null) T('${x.prob} %', style: TextStyle(color: K.muted, fontSize: 12.5)),
             ],
           ),
           if (x.status != 'pending')
@@ -332,7 +333,7 @@ class _PtMatchScreenState extends State<PtMatchScreen> {
           TeamCrest(name: name, logo: logo ?? LogoCache.get(name), size: 24),
           SizedBox(width: 10),
           Expanded(
-            child: Text(name,
+            child: T(name,
                 maxLines: 1,
                 overflow: TextOverflow.ellipsis,
                 style: TextStyle(color: K.text, fontSize: 15, fontWeight: FontWeight.w800)),
@@ -373,8 +374,8 @@ class _PtMatchScreenState extends State<PtMatchScreen> {
     Widget cnt(String label, int v, Color c, CrossAxisAlignment a) => Column(
           crossAxisAlignment: a,
           children: [
-            Text('$v', style: TextStyle(color: c, fontSize: 22, fontWeight: FontWeight.w800)),
-            Text(label, maxLines: 1, overflow: TextOverflow.ellipsis, style: TextStyle(color: K.muted, fontSize: 12)),
+            T('$v', style: TextStyle(color: c, fontSize: 22, fontWeight: FontWeight.w800)),
+            T(label, maxLines: 1, overflow: TextOverflow.ellipsis, style: TextStyle(color: K.muted, fontSize: 12)),
           ],
         );
     return _list([
@@ -413,14 +414,14 @@ class _PtMatchScreenState extends State<PtMatchScreen> {
           : palette[zones.length % palette.length];
     }
     final hs = TextStyle(color: K.muted, fontSize: 11.5, fontWeight: FontWeight.w700);
-    Widget cell(String t, double w, TextStyle s) => SizedBox(width: w, child: Text(t, textAlign: TextAlign.center, style: s));
+    Widget cell(String t, double w, TextStyle s) => SizedBox(width: w, child: T(t, textAlign: TextAlign.center, style: s));
 
     final rows = <Widget>[
       Padding(
         padding: EdgeInsets.fromLTRB(12, 10, 12, 8),
         child: Row(children: [
           cell('#', 26, hs),
-          Expanded(child: Text('Équipe', style: hs)),
+          Expanded(child: T('Équipe', style: hs)),
           cell('J', 28, hs),
           cell('Diff', 38, hs),
           cell('Pts', 34, hs),
@@ -438,7 +439,7 @@ class _PtMatchScreenState extends State<PtMatchScreen> {
           Container(width: 4, height: 20, color: zones[r.zone] ?? Colors.transparent),
           SizedBox(width: 8),
           cell('${r.pos}', 26, ts),
-          Expanded(child: Text(r.team, maxLines: 1, overflow: TextOverflow.ellipsis, style: ts)),
+          Expanded(child: T(r.team, maxLines: 1, overflow: TextOverflow.ellipsis, style: ts)),
           cell(r.mp, 28, ts),
           cell(r.diff, 38, ts),
           cell(r.pts, 34, ts.copyWith(fontWeight: FontWeight.w800)),
@@ -457,7 +458,7 @@ class _PtMatchScreenState extends State<PtMatchScreen> {
               .map((e) => Row(mainAxisSize: MainAxisSize.min, children: [
                     Container(width: 10, height: 10, decoration: BoxDecoration(color: e.value, borderRadius: BorderRadius.circular(2))),
                     SizedBox(width: 6),
-                    Text(e.key, style: TextStyle(color: K.muted, fontSize: 12)),
+                    T(e.key, style: TextStyle(color: K.muted, fontSize: 12)),
                   ]))
               .toList(),
         ),
@@ -479,13 +480,13 @@ class _PtMatchScreenState extends State<PtMatchScreen> {
       padding: EdgeInsets.symmetric(horizontal: 14, vertical: 9),
       child: Column(children: [
         Row(children: [
-          Text(s.a, style: TextStyle(color: K.text, fontSize: 13.5, fontWeight: FontWeight.w800)),
+          T(s.a, style: TextStyle(color: K.text, fontSize: 13.5, fontWeight: FontWeight.w800)),
           Expanded(
-            child: Text(s.label,
+            child: T(s.label,
                 textAlign: TextAlign.center,
                 style: TextStyle(color: K.muted, fontSize: 12.5, fontWeight: FontWeight.w600)),
           ),
-          Text(s.b, style: TextStyle(color: K.text, fontSize: 13.5, fontWeight: FontWeight.w800)),
+          T(s.b, style: TextStyle(color: K.text, fontSize: 13.5, fontWeight: FontWeight.w800)),
         ]),
         SizedBox(height: 6),
         ClipRRect(
@@ -512,14 +513,14 @@ class _PtMatchScreenState extends State<PtMatchScreen> {
       if (s.header) {
         league.add(Padding(
           padding: EdgeInsets.fromLTRB(14, 12, 14, 6),
-          child: Text(s.label, style: TextStyle(color: K.text, fontSize: 13.5, fontWeight: FontWeight.w800)),
+          child: T(s.label, style: TextStyle(color: K.text, fontSize: 13.5, fontWeight: FontWeight.w800)),
         ));
       } else {
         league.add(Padding(
           padding: EdgeInsets.fromLTRB(14, 6, 14, 6),
           child: Row(children: [
-            Expanded(child: Text(s.label, style: TextStyle(color: K.muted, fontSize: 13))),
-            Text(s.value, style: TextStyle(color: K.text, fontSize: 13, fontWeight: FontWeight.w700)),
+            Expanded(child: T(s.label, style: TextStyle(color: K.muted, fontSize: 13))),
+            T(s.value, style: TextStyle(color: K.text, fontSize: 13, fontWeight: FontWeight.w700)),
           ]),
         ));
       }
@@ -529,9 +530,9 @@ class _PtMatchScreenState extends State<PtMatchScreen> {
         Padding(
           padding: EdgeInsets.only(bottom: 10),
           child: Row(children: [
-            Expanded(child: Text(m.home, maxLines: 1, overflow: TextOverflow.ellipsis, style: TextStyle(color: K.indigo, fontSize: 13.5, fontWeight: FontWeight.w800))),
-            Text('vs', style: TextStyle(color: K.muted, fontSize: 12)),
-            Expanded(child: Text(m.away, textAlign: TextAlign.right, maxLines: 1, overflow: TextOverflow.ellipsis, style: TextStyle(color: K.amber, fontSize: 13.5, fontWeight: FontWeight.w800))),
+            Expanded(child: T(m.home, maxLines: 1, overflow: TextOverflow.ellipsis, style: TextStyle(color: K.indigo, fontSize: 13.5, fontWeight: FontWeight.w800))),
+            T('vs', style: TextStyle(color: K.muted, fontSize: 12)),
+            Expanded(child: T(m.away, textAlign: TextAlign.right, maxLines: 1, overflow: TextOverflow.ellipsis, style: TextStyle(color: K.amber, fontSize: 13.5, fontWeight: FontWeight.w800))),
           ]),
         ),
         Container(decoration: _box, clipBehavior: Clip.antiAlias, child: Column(children: rows)),

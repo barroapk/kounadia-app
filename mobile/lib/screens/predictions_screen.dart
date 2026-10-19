@@ -5,6 +5,7 @@ import '../services/kounadia_data_service.dart';
 import '../widgets/forecast_card.dart';
 import '../widgets/knd_banner.dart';
 import 'sure_tab.dart';
+import '../l10n/tr.dart';
 
 class PredictionsScreen extends StatefulWidget {
   PredictionsScreen({super.key});
@@ -68,7 +69,7 @@ class _PredictionsScreenState extends State<PredictionsScreen> {
                   labelColor: Colors.white,
                   unselectedLabelColor: K.muted,
                   labelStyle: TextStyle(fontSize: 13.5, fontWeight: FontWeight.w800),
-                  tabs: [Tab(text: 'Kounadia IA'), Tab(text: 'Expert'), Tab(text: 'Coup sûr')],
+                  tabs: [Tab(text: tr('Kounadia IA')), Tab(text: tr('Expert')), Tab(text: tr('Coup sûr'))],
                 ),
               ),
             ),
@@ -121,12 +122,12 @@ class _PredictionsScreenState extends State<PredictionsScreen> {
               Icon(Icons.emoji_events_outlined, color: K.amber, size: 15),
               SizedBox(width: 8),
               Expanded(
-                child: Text(title,
+                child: T(title,
                     maxLines: 1,
                     overflow: TextOverflow.ellipsis,
                     style: TextStyle(color: K.text, fontSize: 13, fontWeight: FontWeight.w700)),
               ),
-              Text('${list.length}', style: TextStyle(color: K.muted, fontSize: 12)),
+              T('${list.length}', style: TextStyle(color: K.muted, fontSize: 12)),
               Icon(collapsed ? Icons.expand_more_rounded : Icons.expand_less_rounded, color: K.muted, size: 22),
             ]),
           ),
@@ -142,7 +143,7 @@ class _PredictionsScreenState extends State<PredictionsScreen> {
       if (day != null && items.isNotEmpty)
         Padding(
           padding: EdgeInsets.fromLTRB(4, 0, 4, 8),
-          child: Text('Pronostics du ${two(day.day)}/${two(day.month)} · les nouveaux arrivent bientôt',
+          child: T('Pronostics du ${two(day.day)}/${two(day.month)} · les nouveaux arrivent bientôt',
               style: TextStyle(color: K.amber, fontSize: 12.5, fontWeight: FontWeight.w700)),
         ),
     ];
@@ -156,7 +157,7 @@ class _PredictionsScreenState extends State<PredictionsScreen> {
       }
       children.add(Padding(
         padding: EdgeInsets.fromLTRB(4, 2, 4, 10),
-        child: Text(
+        child: T(
           "${items.length} pronostic${items.length > 1 ? 's' : ''} · ${groups.length} compétition${groups.length > 1 ? 's' : ''}",
           style: TextStyle(color: K.muted, fontSize: 12.5, fontWeight: FontWeight.w600),
         ),

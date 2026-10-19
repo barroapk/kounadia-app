@@ -3,6 +3,7 @@ import '../../services/primatips_service.dart';
 import '../../widgets/forecast_card.dart' show K, kMessage, hm, two;
 import '../../widgets/k_ui.dart';
 import '../pt_match_screen.dart';
+import '../../l10n/tr.dart';
 
 class FactsScreen extends StatefulWidget {
   FactsScreen({super.key});
@@ -75,17 +76,17 @@ class _FactsScreenState extends State<FactsScreen> {
     final s = TextStyle(fontSize: 12.5, fontWeight: FontWeight.w800);
     switch (f.state) {
       case 'live':
-        return Text(f.status, style: s.copyWith(color: K.red));
+        return T(f.status, style: s.copyWith(color: K.red));
       case 'finished':
-        return Text('Terminé', style: s.copyWith(color: K.muted));
+        return T('Terminé', style: s.copyWith(color: K.muted));
       case 'postponed':
-        return Text('Reporté', style: s.copyWith(color: K.amber));
+        return T('Reporté', style: s.copyWith(color: K.amber));
     }
     final d = f.date;
-    return Text(d != null ? hm(d) : f.hour, style: s.copyWith(color: K.indigoText));
+    return T(d != null ? hm(d) : f.hour, style: s.copyWith(color: K.indigoText));
   }
 
-  Widget _team(String n, bool win, TextAlign a) => Text(n,
+  Widget _team(String n, bool win, TextAlign a) => T(n,
       textAlign: a,
       maxLines: 1,
       overflow: TextOverflow.ellipsis,
@@ -109,7 +110,7 @@ class _FactsScreenState extends State<FactsScreen> {
                 PtImage(f.flag, w: 20, h: 14),
                 SizedBox(width: 8),
                 Expanded(
-                  child: Text('${frName(f.country)} · ${f.league}',
+                  child: T('${tr(frName(f.country))} · ${f.league}',
                       maxLines: 1,
                       overflow: TextOverflow.ellipsis,
                       style: TextStyle(color: K.muted, fontSize: 12, fontWeight: FontWeight.w600)),
@@ -128,7 +129,7 @@ class _FactsScreenState extends State<FactsScreen> {
                     color: f.live ? K.red.withAlpha(40) : K.bg,
                     borderRadius: BorderRadius.circular(8),
                   ),
-                  child: Text(f.hasScore ? f.score : 'vs',
+                  child: T(f.hasScore ? f.score : 'vs',
                       style: TextStyle(
                           color: f.hasScore ? K.text : K.muted, fontSize: 14, fontWeight: FontWeight.w800)),
                 ),
@@ -146,7 +147,7 @@ class _FactsScreenState extends State<FactsScreen> {
                         ),
                         SizedBox(width: 8),
                         Expanded(
-                          child: Text(t, style: TextStyle(color: K.text, fontSize: 13, height: 1.35)),
+                          child: T(t, style: TextStyle(color: K.text, fontSize: 13, height: 1.35)),
                         ),
                       ]),
                     )),

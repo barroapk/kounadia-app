@@ -8,6 +8,7 @@ import '../services/currency.dart';
 import '../services/user_prefs.dart';
 import 'legal_screen.dart';
 import '../widgets/forecast_card.dart' show K, two;
+import '../l10n/tr.dart';
 
 String fcfa(int v) => '${v.toString().replaceAllMapped(RegExp(r'\B(?=(\d{3})+(?!\d))'), (_) => ' ')} F';
 String _date(DateTime d) => '${two(d.day)}/${two(d.month)}/${d.year} à ${two(d.hour)}h${two(d.minute)}';
@@ -97,7 +98,7 @@ class _AccountScreenState extends State<AccountScreen> {
           onSubmitted: onDone == null ? null : (_) => onDone(),
           style: TextStyle(color: K.text),
           decoration: _dec(label, icon).copyWith(
-            errorText: _tried ? error : null,
+            errorText: _tried && error != null ? tr(error) : null,
             suffixIcon: pw
                 ? IconButton(
                     icon: Icon(_showPw ? Icons.visibility_off_rounded : Icons.visibility_rounded, color: K.muted),
@@ -127,7 +128,7 @@ class _AccountScreenState extends State<AccountScreen> {
                     height: 40,
                     alignment: Alignment.center,
                     decoration: BoxDecoration(color: _signup == v ? K.indigo : Colors.transparent, borderRadius: BorderRadius.circular(10)),
-                    child: Text(l, style: TextStyle(color: _signup == v ? Colors.white : K.muted, fontWeight: FontWeight.w800)),
+                    child: T(l, style: TextStyle(color: _signup == v ? Colors.white : K.muted, fontWeight: FontWeight.w800)),
                   ),
                 ),
               ),
@@ -150,37 +151,37 @@ class _AccountScreenState extends State<AccountScreen> {
         if (_err != null)
           Padding(
             padding: EdgeInsets.only(bottom: 10),
-            child: Text(_err!, style: TextStyle(color: K.red, fontWeight: FontWeight.w700)),
+            child: T(_err!, style: TextStyle(color: K.red, fontWeight: FontWeight.w700)),
           ),
         FilledButton(
           style: FilledButton.styleFrom(backgroundColor: K.indigo, minimumSize: Size.fromHeight(50)),
           onPressed: _busy ? null : _submit,
           child: _busy
               ? SizedBox(width: 22, height: 22, child: CircularProgressIndicator(strokeWidth: 2.5, color: Colors.white))
-              : Text(_signup ? 'Créer mon compte' : 'Me connecter', style: TextStyle(fontSize: 16, fontWeight: FontWeight.w800)),
+              : T(_signup ? 'Créer mon compte' : 'Me connecter', style: TextStyle(fontSize: 16, fontWeight: FontWeight.w800)),
         ),
         if (_signup)
           Padding(
             padding: EdgeInsets.only(top: 12),
             child: Wrap(alignment: WrapAlignment.center, children: [
-              Text('En créant un compte, tu acceptes les ', style: TextStyle(color: K.muted, fontSize: 12)),
+              T('En créant un compte, tu acceptes les ', style: TextStyle(color: K.muted, fontSize: 12)),
               GestureDetector(
                 onTap: () => Navigator.push(context, MaterialPageRoute(builder: (_) => TermsScreen())),
-                child: Text("Conditions d'utilisation", style: TextStyle(color: K.indigoText, fontSize: 12, fontWeight: FontWeight.w700)),
+                child: T("Conditions d'utilisation", style: TextStyle(color: K.indigoText, fontSize: 12, fontWeight: FontWeight.w700)),
               ),
-              Text(' et la ', style: TextStyle(color: K.muted, fontSize: 12)),
+              T(' et la ', style: TextStyle(color: K.muted, fontSize: 12)),
               GestureDetector(
                 onTap: () => Navigator.push(context, MaterialPageRoute(builder: (_) => PrivacyScreen())),
-                child: Text('Politique de confidentialité', style: TextStyle(color: K.indigoText, fontSize: 12, fontWeight: FontWeight.w700)),
+                child: T('Politique de confidentialité', style: TextStyle(color: K.indigoText, fontSize: 12, fontWeight: FontWeight.w700)),
               ),
-              Text('.', style: TextStyle(color: K.muted, fontSize: 12)),
+              T('.', style: TextStyle(color: K.muted, fontSize: 12)),
             ]),
           ),
         if (!_signup)
           Center(
             child: TextButton(
               onPressed: _forgot,
-              child: Text('Mot de passe oublié ?', style: TextStyle(color: K.indigoText, fontWeight: FontWeight.w700)),
+              child: T('Mot de passe oublié ?', style: TextStyle(color: K.indigoText, fontWeight: FontWeight.w700)),
             ),
           ),
       ]),
@@ -221,15 +222,15 @@ class _AccountScreenState extends State<AccountScreen> {
           child: SingleChildScrollView(
             child: AutofillGroup(
               child: Column(mainAxisSize: MainAxisSize.min, crossAxisAlignment: CrossAxisAlignment.stretch, children: [
-                Text(title, style: TextStyle(color: K.text, fontSize: 19, fontWeight: FontWeight.w900)),
+                T(title, style: TextStyle(color: K.text, fontSize: 19, fontWeight: FontWeight.w900)),
                 if (intro != null) ...[
                   SizedBox(height: 6),
-                  Text(intro, style: TextStyle(color: K.muted, fontSize: 13, height: 1.4)),
+                  T(intro, style: TextStyle(color: K.muted, fontSize: 13, height: 1.4)),
                 ],
                 SizedBox(height: 14),
                 ...fields(set),
                 if (err != null)
-                  Padding(padding: EdgeInsets.only(bottom: 8), child: Text(err!, style: TextStyle(color: K.red, fontWeight: FontWeight.w700))),
+                  Padding(padding: EdgeInsets.only(bottom: 8), child: T(err!, style: TextStyle(color: K.red, fontWeight: FontWeight.w700))),
                 FilledButton(
                   style: FilledButton.styleFrom(backgroundColor: K.indigo, minimumSize: Size.fromHeight(50)),
                   onPressed: busy
@@ -248,7 +249,7 @@ class _AccountScreenState extends State<AccountScreen> {
                         },
                   child: busy
                       ? SizedBox(width: 22, height: 22, child: CircularProgressIndicator(strokeWidth: 2.5, color: Colors.white))
-                      : Text(action, style: TextStyle(fontSize: 16, fontWeight: FontWeight.w800)),
+                      : T(action, style: TextStyle(fontSize: 16, fontWeight: FontWeight.w800)),
                 ),
               ]),
             ),
@@ -271,7 +272,7 @@ class _AccountScreenState extends State<AccountScreen> {
         if (sent) ...[
           Padding(
             padding: EdgeInsets.only(bottom: 10),
-            child: Text('Code envoyé ✅ Regarde ta boîte de réception (et les spams).',
+            child: T('Code envoyé ✅ Regarde ta boîte de réception (et les spams).',
                 style: TextStyle(color: K.green, fontSize: 12.5, fontWeight: FontWeight.w700)),
           ),
           _sheetField(code, 'Code reçu (6 chiffres)', Icons.pin_rounded, type: TextInputType.number, hints: [AutofillHints.oneTimeCode]),
@@ -294,7 +295,7 @@ class _AccountScreenState extends State<AccountScreen> {
         TextInput.finishAutofillContext(shouldSave: true);
         if (mounted) {
           Navigator.pop(context);
-          ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Mot de passe changé, tu es connecté ✅')));
+          ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: T('Mot de passe changé, tu es connecté ✅')));
         }
       },
     );
@@ -318,7 +319,7 @@ class _AccountScreenState extends State<AccountScreen> {
         TextInput.finishAutofillContext(shouldSave: true);
         if (mounted) {
           Navigator.pop(context);
-          ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Mot de passe modifié ✅')));
+          ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: T('Mot de passe modifié ✅')));
         }
       },
     );
@@ -368,13 +369,13 @@ class _AccountScreenState extends State<AccountScreen> {
           );
     } catch (e) {
       close();
-      if (mounted) ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(e.toString())));
+      if (mounted) ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: T(e.toString())));
     }
     if (mounted) setState(() => _busy = false);
   }
 
   InputDecoration _dec(String label, IconData icon) => InputDecoration(
-        labelText: label,
+        labelText: tr(label),
         labelStyle: TextStyle(color: K.muted),
         prefixIcon: Icon(icon, color: K.muted),
         filled: true,
@@ -400,16 +401,16 @@ class _AccountScreenState extends State<AccountScreen> {
             CircleAvatar(
               radius: 26,
               backgroundColor: Color(0x33FFFFFF),
-              child: Text(u.username.isEmpty ? '?' : u.username[0].toUpperCase(),
+              child: T(u.username.isEmpty ? '?' : u.username[0].toUpperCase(),
                   style: TextStyle(color: Colors.white, fontSize: 22, fontWeight: FontWeight.w900)),
             ),
             SizedBox(width: 14),
             Expanded(
               child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-                Text(u.username, style: TextStyle(color: Colors.white, fontSize: 19, fontWeight: FontWeight.w900)),
-                if (u.email != null) Text(u.email!, style: TextStyle(color: Color(0xDDFFFFFF), fontSize: 13)),
+                T(u.username, style: TextStyle(color: Colors.white, fontSize: 19, fontWeight: FontWeight.w900)),
+                if (u.email != null) T(u.email!, style: TextStyle(color: Color(0xDDFFFFFF), fontSize: 13)),
                 SizedBox(height: 6),
-                Text(on ? '👑 Premium actif jusqu\'au ${_date(u.premiumUntil!)}' : 'Aucun abonnement actif',
+                T(on ? '👑 Premium actif jusqu\'au ${_date(u.premiumUntil!)}' : 'Aucun abonnement actif',
                     style: TextStyle(color: Colors.white, fontSize: 13, fontWeight: FontWeight.w800)),
               ]),
             ),
@@ -423,8 +424,8 @@ class _AccountScreenState extends State<AccountScreen> {
             child: ListTile(
               shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14), side: BorderSide(color: K.amber)),
               leading: Icon(Icons.shield_rounded, color: K.amber),
-              title: Text('Ajoute ton adresse e-mail', style: TextStyle(color: K.text, fontWeight: FontWeight.w800)),
-              subtitle: Text('Pour te connecter et récupérer ton compte facilement.', style: TextStyle(color: K.muted, fontSize: 12)),
+              title: T('Ajoute ton adresse e-mail', style: TextStyle(color: K.text, fontWeight: FontWeight.w800)),
+              subtitle: T('Pour te connecter et récupérer ton compte facilement.', style: TextStyle(color: K.muted, fontSize: 12)),
               trailing: Icon(Icons.chevron_right_rounded, color: K.muted),
               onTap: _editEmail,
             ),
@@ -435,15 +436,15 @@ class _AccountScreenState extends State<AccountScreen> {
           Icon(Icons.cloud_done_rounded, color: K.green, size: 18),
           SizedBox(width: 8),
           Expanded(
-            child: Text('Favoris, coupons et réglages sauvegardés dans ton compte.',
+            child: T('Favoris, coupons et réglages sauvegardés dans ton compte.',
                 style: TextStyle(color: K.muted, fontSize: 12.5)),
           ),
         ]),
         SizedBox(height: 18),
-        Text(on ? 'Prolonger mon abonnement' : 'Choisir mon abonnement',
+        T(on ? 'Prolonger mon abonnement' : 'Choisir mon abonnement',
             style: TextStyle(color: K.text, fontSize: 16, fontWeight: FontWeight.w800)),
         SizedBox(height: 4),
-        Text('Paiement sécurisé par Mobile Money. Les jours s\'ajoutent à ton abonnement en cours.',
+        T('Paiement sécurisé par Mobile Money. Les jours s\'ajoutent à ton abonnement en cours.',
             style: TextStyle(color: K.muted, fontSize: 12.5)),
         SizedBox(height: 12),
         for (final p in kPlans) _planTile(p),
@@ -451,19 +452,19 @@ class _AccountScreenState extends State<AccountScreen> {
         OutlinedButton.icon(
           onPressed: _editEmail,
           icon: Icon(Icons.alternate_email_rounded, color: K.text),
-          label: Text('Modifier mon e-mail', style: TextStyle(color: K.text)),
+          label: T('Modifier mon e-mail', style: TextStyle(color: K.text)),
         ),
         SizedBox(height: 8),
         OutlinedButton.icon(
           onPressed: _changePw,
           icon: Icon(Icons.lock_reset_rounded, color: K.text),
-          label: Text('Changer mon mot de passe', style: TextStyle(color: K.text)),
+          label: T('Changer mon mot de passe', style: TextStyle(color: K.text)),
         ),
         SizedBox(height: 8),
         OutlinedButton.icon(
           onPressed: () => Account.logout(),
           icon: Icon(Icons.logout_rounded, color: K.muted),
-          label: Text('Se déconnecter', style: TextStyle(color: K.muted)),
+          label: T('Se déconnecter', style: TextStyle(color: K.muted)),
         ),
       ]),
     );
@@ -493,24 +494,24 @@ class _AccountScreenState extends State<AccountScreen> {
               Expanded(
                 child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
                   Row(children: [
-                    Text(p.label, style: TextStyle(color: K.text, fontSize: 15.5, fontWeight: FontWeight.w800)),
+                    T(p.label, style: TextStyle(color: K.text, fontSize: 15.5, fontWeight: FontWeight.w800)),
                     if (best) ...[
                       SizedBox(width: 8),
                       Container(
                         padding: EdgeInsets.symmetric(horizontal: 7, vertical: 2),
                         decoration: BoxDecoration(color: K.amber, borderRadius: BorderRadius.circular(8)),
-                        child: Text('POPULAIRE', style: TextStyle(color: Colors.black, fontSize: 10, fontWeight: FontWeight.w900)),
+                        child: T('POPULAIRE', style: TextStyle(color: Colors.black, fontSize: 10, fontWeight: FontWeight.w900)),
                       ),
                     ],
                   ]),
                   SizedBox(height: 2),
-                  Text(sub, style: TextStyle(color: K.muted, fontSize: 12.5)),
+                  T(sub, style: TextStyle(color: K.muted, fontSize: 12.5)),
                 ]),
               ),
               Column(crossAxisAlignment: CrossAxisAlignment.end, children: [
-                Text(fcfa(p.price), style: TextStyle(color: K.indigoText, fontSize: 18, fontWeight: FontWeight.w900)),
+                T(fcfa(p.price), style: TextStyle(color: K.indigoText, fontSize: 18, fontWeight: FontWeight.w900)),
                 if (Fx.approx(p.price) != null)
-                  Text(Fx.approx(p.price)!, style: TextStyle(color: K.muted, fontSize: 12, fontWeight: FontWeight.w700)),
+                  T(Fx.approx(p.price)!, style: TextStyle(color: K.muted, fontSize: 12, fontWeight: FontWeight.w700)),
               ]),
             ]),
           ),
@@ -526,7 +527,7 @@ class _AccountScreenState extends State<AccountScreen> {
       appBar: AppBar(
           backgroundColor: K.bg,
           foregroundColor: K.text,
-          title: Text('Mon compte', style: TextStyle(fontWeight: FontWeight.w800))),
+          title: T('Mon compte', style: TextStyle(fontWeight: FontWeight.w800))),
       body: ValueListenableBuilder<KUser?>(
         valueListenable: Account.user,
         builder: (_, u, __) => ValueListenableBuilder<int>(
@@ -603,28 +604,28 @@ class _PayWaitState extends State<_PayWait> with WidgetsBindingObserver {
           else
             SizedBox(width: 44, height: 44, child: CircularProgressIndicator(color: K.indigo)),
           SizedBox(height: 14),
-          Text(
+          T(
             paid ? 'Premium activé 🎉' : failed ? 'Paiement non abouti' : 'En attente du paiement…',
             style: TextStyle(color: K.text, fontSize: 19, fontWeight: FontWeight.w900),
           ),
           SizedBox(height: 6),
-          Text(
+          T(
             paid
                 ? 'Merci ! Tous les contenus KOUNADIA sont débloqués.'
                 : failed
                     ? 'Aucun montant validé. Tu peux réessayer.'
-                    : 'Valide le paiement ${widget.plan.label} (${fcfa(widget.plan.price)}) sur ton téléphone, puis reviens ici.',
+                    : 'Valide le paiement sur ton téléphone, puis reviens ici.',
             textAlign: TextAlign.center,
             style: TextStyle(color: K.muted, fontSize: 13.5, height: 1.4),
           ),
           SizedBox(height: 18),
           if (!paid && !failed)
-            OutlinedButton(onPressed: _check, child: Text("J'ai payé, vérifier maintenant")),
+            OutlinedButton(onPressed: _check, child: T("J'ai payé, vérifier maintenant")),
           SizedBox(height: 6),
           FilledButton(
             style: FilledButton.styleFrom(backgroundColor: K.indigo, minimumSize: Size.fromHeight(46)),
             onPressed: () => Navigator.pop(context),
-            child: Text(paid ? 'Continuer' : 'Fermer'),
+            child: T(paid ? 'Continuer' : 'Fermer'),
           ),
         ]),
       ),
@@ -670,15 +671,15 @@ class _ConnectingState extends State<_Connecting> {
         child: Column(mainAxisSize: MainAxisSize.min, children: [
           SizedBox(width: 46, height: 46, child: CircularProgressIndicator(color: K.indigo, strokeWidth: 3.5)),
           SizedBox(height: 18),
-          Text('Paiement en cours',
+          T('Paiement en cours',
               textAlign: TextAlign.center, style: TextStyle(color: K.text, fontSize: 18, fontWeight: FontWeight.w900)),
           SizedBox(height: 6),
-          Text('${widget.plan.label} · ${fcfa(widget.plan.price)}',
+          T('${tr(widget.plan.label)} · ${fcfa(widget.plan.price)}',
               textAlign: TextAlign.center, style: TextStyle(color: K.indigoText, fontSize: 14, fontWeight: FontWeight.w800)),
           SizedBox(height: 12),
           AnimatedSwitcher(
             duration: Duration(milliseconds: 300),
-            child: Text(msg,
+            child: T(msg,
                 key: ValueKey(msg),
                 textAlign: TextAlign.center,
                 style: TextStyle(color: K.muted, fontSize: 13.5, height: 1.4)),
@@ -687,7 +688,7 @@ class _ConnectingState extends State<_Connecting> {
           Row(mainAxisAlignment: MainAxisAlignment.center, children: [
             Icon(Icons.lock_rounded, color: K.green, size: 15),
             SizedBox(width: 6),
-            Text('Paiement sécurisé', style: TextStyle(color: K.muted, fontSize: 12)),
+            T('Paiement sécurisé', style: TextStyle(color: K.muted, fontSize: 12)),
           ]),
         ]),
       ),

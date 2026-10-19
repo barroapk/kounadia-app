@@ -5,6 +5,7 @@ import '../services/vip_service.dart';
 import 'sure_tab.dart' show sureForecast;
 import '../widgets/forecast_card.dart';
 import '../widgets/knd_banner.dart';
+import '../l10n/tr.dart';
 
 class TipHistoryScreen extends StatefulWidget {
   TipHistoryScreen({super.key});
@@ -43,12 +44,9 @@ class _TipHistoryScreenState extends State<TipHistoryScreen> {
     } catch (_) {}
   }
 
-  static const _wd = ['Lun', 'Mar', 'Mer', 'Jeu', 'Ven', 'Sam', 'Dim'];
-  static const _wdLong = ['lundi', 'mardi', 'mercredi', 'jeudi', 'vendredi', 'samedi', 'dimanche'];
 
   DateTime _d0(DateTime d) => DateTime(d.year, d.month, d.day);
   bool _same(DateTime a, DateTime b) => a.year == b.year && a.month == b.month && a.day == b.day;
-  String _dayName(DateTime d) => '${_wdLong[d.weekday - 1]} ${d.day}';
 
   @override
   Widget build(BuildContext context) {
@@ -141,11 +139,11 @@ class _TipHistoryScreenState extends State<TipHistoryScreen> {
     final p = lastWeek.length;
     Widget stat(String label, String value, String sub) => Expanded(
           child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-            Text(label.toUpperCase(),
+            T(tr(label).toUpperCase(),
                 style: TextStyle(color: Color(0xCCFFFFFF), fontSize: 10.5, fontWeight: FontWeight.w800, letterSpacing: .8)),
             SizedBox(height: 4),
-            Text(value, style: TextStyle(color: Colors.white, fontSize: 26, fontWeight: FontWeight.w900)),
-            Text(sub, style: TextStyle(color: Color(0xDDFFFFFF), fontSize: 12)),
+            T(value, style: TextStyle(color: Colors.white, fontSize: 26, fontWeight: FontWeight.w900)),
+            T(sub, style: TextStyle(color: Color(0xDDFFFFFF), fontSize: 12)),
           ]),
         );
     return Container(
@@ -158,7 +156,7 @@ class _TipHistoryScreenState extends State<TipHistoryScreen> {
         Row(children: [
           Icon(Icons.calendar_month_rounded, color: Colors.white, size: 20),
           SizedBox(width: 8),
-          Text('Bilan de la semaine', style: TextStyle(color: Colors.white, fontSize: 15, fontWeight: FontWeight.w900)),
+          T('Bilan de la semaine', style: TextStyle(color: Colors.white, fontSize: 15, fontWeight: FontWeight.w900)),
         ]),
         SizedBox(height: 12),
         Row(crossAxisAlignment: CrossAxisAlignment.start, children: [
@@ -193,10 +191,10 @@ class _TipHistoryScreenState extends State<TipHistoryScreen> {
                     border: Border.all(color: _same(d, sel) ? K.indigo : K.border),
                   ),
                   child: Column(mainAxisAlignment: MainAxisAlignment.center, children: [
-                    Text(_same(d, yesterday) ? 'Hier' : '${_wd[d.weekday - 1]} ${d.day}',
+                    T(_same(d, yesterday) ? 'Hier' : '${dayName(d.weekday)} ${d.day}',
                         style: TextStyle(color: _same(d, sel) ? Colors.white : K.text, fontSize: 13, fontWeight: FontWeight.w800)),
                     SizedBox(height: 2),
-                    Text('${counts[d] ?? 0} ✓',
+                    T('${counts[d] ?? 0} ✓',
                         style: TextStyle(color: _same(d, sel) ? Color(0xDDFFFFFF) : K.green, fontSize: 12, fontWeight: FontWeight.w700)),
                   ]),
                 ),
@@ -234,7 +232,7 @@ class _TipHistoryScreenState extends State<TipHistoryScreen> {
                   fit: BoxFit.scaleDown,
                   child: Padding(
                     padding: EdgeInsets.symmetric(horizontal: 6),
-                    child: Text('$label · $count',
+                    child: T('${tr(label)} · $count',
                         style: TextStyle(
                             color: _src == value ? K.text : K.muted,
                             fontSize: 12.5,
@@ -255,12 +253,12 @@ class _TipHistoryScreenState extends State<TipHistoryScreen> {
     final ex = list.where((f) => f.source == 'expert').length;
     final su = list.where((f) => f.source == 'sure').length;
     final isYesterday = _same(day, _d0(DateTime.now()).subtract(Duration(days: 1)));
-    final when = isYesterday ? "d'hier" : 'du ${_dayName(day)}';
+    final when = isYesterday ? "d'hier" : 'de ce jour';
     Widget mini(String label, int v) => Container(
           margin: EdgeInsets.only(right: 8),
           padding: EdgeInsets.symmetric(horizontal: 10, vertical: 5),
           decoration: BoxDecoration(color: Color(0x33FFFFFF), borderRadius: BorderRadius.circular(20)),
-          child: Text('$label : $v',
+          child: T('${tr(label)} : $v',
               style: TextStyle(color: Colors.white, fontSize: 12, fontWeight: FontWeight.w700)),
         );
     return Container(
@@ -283,10 +281,10 @@ class _TipHistoryScreenState extends State<TipHistoryScreen> {
         SizedBox(width: 14),
         Expanded(
           child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-            Text(n == 0 ? 'Journée calme' : '$n pronostic$s validé$s',
+            T(n == 0 ? 'Journée calme' : '$n pronostic$s validé$s',
                 style: TextStyle(color: Colors.white, fontSize: 20, fontWeight: FontWeight.w900)),
             SizedBox(height: 4),
-            Text(
+            T(
               n == 0
                   ? 'Peu de matchs au programme $when. Les prochains jours apportent de nouvelles chances !'
                   : n < 10
@@ -330,7 +328,7 @@ class _TipHistoryScreenState extends State<TipHistoryScreen> {
               Icon(Icons.emoji_events_outlined, color: K.amber, size: 15),
               SizedBox(width: 8),
               Expanded(
-                child: Text(title,
+                child: T(title,
                     maxLines: 1,
                     overflow: TextOverflow.ellipsis,
                     style: TextStyle(color: K.text, fontSize: 13, fontWeight: FontWeight.w700)),
@@ -338,7 +336,7 @@ class _TipHistoryScreenState extends State<TipHistoryScreen> {
               Container(
                 padding: EdgeInsets.symmetric(horizontal: 8, vertical: 2),
                 decoration: BoxDecoration(color: Color(0x3322C55E), borderRadius: BorderRadius.circular(10)),
-                child: Text('${list.length} ✓',
+                child: T('${list.length} ✓',
                     style: TextStyle(color: K.green, fontSize: 12, fontWeight: FontWeight.w800)),
               ),
               Icon(collapsed ? Icons.expand_more_rounded : Icons.expand_less_rounded, color: K.muted, size: 22),

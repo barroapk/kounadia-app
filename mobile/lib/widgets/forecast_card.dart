@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import '../models/forecast.dart';
 import 'jersey.dart';
+import '../l10n/tr.dart';
 
 class K {
   static bool dark = true;
@@ -19,13 +20,9 @@ class K {
   static Color get groupHead => dark ? Color(0xFF1F2440) : Color(0xFFEEF1F8);
 }
 
-final _jours = ['lun.', 'mar.', 'mer.', 'jeu.', 'ven.', 'sam.', 'dim.'];
-final _mois = ['janv.', 'févr.', 'mars', 'avr.', 'mai', 'juin', 'juil.',
-  'août', 'sept.', 'oct.', 'nov.', 'déc.'];
-
 String two(int n) => n.toString().padLeft(2, '0');
 String hm(DateTime d) => '${two(d.hour)}:${two(d.minute)}';
-String frDay(DateTime d) => '${_jours[d.weekday - 1]} ${d.day} ${_mois[d.month - 1]}';
+String frDay(DateTime d) => '${dayName(d.weekday)} ${d.day} ${monthName(d.month)}';
 String prettyScore(String? s) => (s ?? '').replaceAll('-', ' - ');
 
 /// Carte compacte (même format que les lignes de l'onglet Matchs).
@@ -58,13 +55,13 @@ class ForecastCard extends StatelessWidget {
               Icon(Icons.emoji_events_outlined, color: K.amber, size: 14),
               SizedBox(width: 6),
               Expanded(
-                child: Text(f.league.isEmpty ? 'Football' : f.league,
+                child: T(f.league.isEmpty ? 'Football' : f.league,
                     maxLines: 1,
                     overflow: TextOverflow.ellipsis,
                     style: TextStyle(color: K.text, fontSize: 12.5, fontWeight: FontWeight.w700)),
               ),
               SizedBox(width: 8),
-              Text(frDay(f.date), style: TextStyle(color: K.muted, fontSize: 11.5)),
+              T(frDay(f.date), style: TextStyle(color: K.muted, fontSize: 11.5)),
             ]),
           ),
           row,
@@ -78,7 +75,7 @@ class ForecastCard extends StatelessWidget {
       TeamCrest(name: name, logo: logo, colors: colors, size: 16),
       SizedBox(width: 7),
       Expanded(
-        child: Text(name,
+        child: T(name,
             maxLines: 1,
             overflow: TextOverflow.ellipsis,
             style: TextStyle(
@@ -86,7 +83,7 @@ class ForecastCard extends StatelessWidget {
       ),
       if (goals != null) ...[
         SizedBox(width: 6),
-        Text('$goals', style: TextStyle(color: K.text, fontSize: 13.5, fontWeight: FontWeight.w800)),
+        T('$goals', style: TextStyle(color: K.text, fontSize: 13.5, fontWeight: FontWeight.w800)),
       ],
     ]);
   }
@@ -102,18 +99,18 @@ class ForecastCard extends StatelessWidget {
     if (result) {
       time = Icon(f.won == true ? Icons.check_circle_rounded : Icons.cancel_rounded, color: pickColor, size: 20);
     } else if (f.minute != null) {
-      time = Text(f.minute!,
+      time = T(f.minute!,
           textAlign: TextAlign.center,
           style: TextStyle(color: f.minute == 'Fin' ? K.muted : K.red, fontSize: 13, fontWeight: FontWeight.w800));
     } else if (now.isBefore(f.date)) {
-      time = Text(f.hasTime ? hm(f.date) : '--:--',
+      time = T(f.hasTime ? hm(f.date) : '--:--',
           style: TextStyle(color: K.text, fontSize: 13, fontWeight: FontWeight.w700));
     } else if (now.isBefore(f.date.add(Duration(minutes: 115)))) {
-      time = Text('En\ncours',
+      time = T('En\ncours',
           textAlign: TextAlign.center,
           style: TextStyle(color: K.amber, fontSize: 11, fontWeight: FontWeight.w800, height: 1.1));
     } else {
-      time = Text('Fin', style: TextStyle(color: K.muted, fontSize: 12.5, fontWeight: FontWeight.w700));
+      time = T('Fin', style: TextStyle(color: K.muted, fontSize: 12.5, fontWeight: FontWeight.w700));
     }
 
     final parts = <String>[
@@ -141,7 +138,7 @@ class ForecastCard extends StatelessWidget {
             mainAxisSize: MainAxisSize.min,
             crossAxisAlignment: CrossAxisAlignment.end,
             children: [
-              Text(f.tipFr,
+              T(f.tipFr,
                   textAlign: TextAlign.right,
                   maxLines: 2,
                   overflow: TextOverflow.ellipsis,
@@ -151,13 +148,13 @@ class ForecastCard extends StatelessWidget {
                 Container(
                   padding: EdgeInsets.symmetric(horizontal: 8, vertical: 2),
                   decoration: BoxDecoration(color: K.indigoSoft, borderRadius: BorderRadius.circular(8)),
-                  child: Text(prettyScore(f.predicted),
+                  child: T(prettyScore(f.predicted),
                       style: TextStyle(color: K.indigoText, fontSize: 17, fontWeight: FontWeight.w900)),
                 ),
               ],
               if (parts.isNotEmpty) ...[
                 SizedBox(height: 3),
-                Text(parts.join(' · '),
+                T(parts.map(tr).join(' · '),
                     textAlign: TextAlign.right,
                     maxLines: 1,
                     overflow: TextOverflow.ellipsis,
@@ -180,7 +177,7 @@ Widget kMessage(String text, {VoidCallback? onRetry}) {
         children: [
           Icon(Icons.sports_soccer, color: K.muted, size: 44),
           SizedBox(height: 14),
-          Text(text,
+          T(text,
               textAlign: TextAlign.center,
               style: TextStyle(color: K.muted, fontSize: 15, height: 1.4)),
           if (onRetry != null) ...[
@@ -188,7 +185,7 @@ Widget kMessage(String text, {VoidCallback? onRetry}) {
             FilledButton(
               onPressed: onRetry,
               style: FilledButton.styleFrom(backgroundColor: K.indigo),
-              child: Text('Réessayer'),
+              child: T('Réessayer'),
             ),
           ],
         ],
@@ -210,7 +207,7 @@ Widget kOfflineBanner() {
         Icon(Icons.wifi_off, color: K.amber, size: 18),
         SizedBox(width: 10),
         Expanded(
-          child: Text('Hors connexion : dernières données enregistrées.',
+          child: T('Hors connexion : dernières données enregistrées.',
               style: TextStyle(color: K.amber, fontSize: 13, fontWeight: FontWeight.w600)),
         ),
       ],

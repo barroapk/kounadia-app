@@ -5,6 +5,7 @@ import '../services/currency.dart';
 import '../services/user_prefs.dart';
 import 'forecast_card.dart' show K;
 import 'region_pickers.dart';
+import '../l10n/tr.dart';
 
 /// Première ouverture : pays + langue. Renvoie true (s'inscrire), false (se connecter) ou null.
 Future<bool?> maybeShowSetup(BuildContext context) async {
@@ -23,7 +24,7 @@ class _SetupDialog extends StatefulWidget {
 
 class _SetupDialogState extends State<_SetupDialog> {
   late KCountry _c = UserPrefs.country ?? UserPrefs.guess();
-  late String _lang = UserPrefs.done ? UserPrefs.lang : _c.lang;
+  late String _lang = UserPrefs.done ? UserPrefs.lang : UserPrefs.supported(_c.lang);
   bool _langTouched = false;
   bool _countryTouched = false;
 
@@ -36,8 +37,9 @@ class _SetupDialogState extends State<_SetupDialog> {
         if (!mounted || _countryTouched) return;
         setState(() {
           _c = c;
-          if (!_langTouched) _lang = c.lang;
+          if (!_langTouched) _lang = UserPrefs.supported(c.lang);
         });
+        if (!_langTouched) UserPrefs.setLang(_lang);
       });
     }
   }
@@ -61,14 +63,14 @@ class _SetupDialogState extends State<_SetupDialog> {
               padding: EdgeInsets.symmetric(horizontal: 14, vertical: 12),
               decoration: BoxDecoration(borderRadius: BorderRadius.circular(14), border: Border.all(color: K.border)),
               child: Row(children: [
-                Text(flag, style: TextStyle(fontSize: 26)),
+                T(flag, style: TextStyle(fontSize: 26)),
                 SizedBox(width: 12),
                 Expanded(
                   child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-                    Text(label, style: TextStyle(color: K.muted, fontSize: 11.5, fontWeight: FontWeight.w800, letterSpacing: .6)),
+                    T(label, style: TextStyle(color: K.muted, fontSize: 11.5, fontWeight: FontWeight.w800, letterSpacing: .6)),
                     SizedBox(height: 2),
-                    Text(value, style: TextStyle(color: K.text, fontSize: 16, fontWeight: FontWeight.w800)),
-                    if (sub.isNotEmpty) Text(sub, style: TextStyle(color: K.muted, fontSize: 12)),
+                    T(value, style: TextStyle(color: K.text, fontSize: 16, fontWeight: FontWeight.w800)),
+                    if (sub.isNotEmpty) T(sub, style: TextStyle(color: K.muted, fontSize: 12)),
                   ]),
                 ),
                 Icon(Icons.expand_more_rounded, color: K.muted),
@@ -100,21 +102,22 @@ class _SetupDialogState extends State<_SetupDialog> {
             ),
           ),
           SizedBox(height: 14),
-          Text('Bienvenue sur KOUNADIA',
+          T('Bienvenue sur KOUNADIA',
               textAlign: TextAlign.center, style: TextStyle(color: K.text, fontSize: 21, fontWeight: FontWeight.w900)),
           SizedBox(height: 6),
-          Text('Choisis ton pays et ta langue pour une application faite pour toi.',
+          T('Choisis ton pays et ta langue pour une application faite pour toi.',
               textAlign: TextAlign.center, style: TextStyle(color: K.muted, fontSize: 13.5, height: 1.35)),
           SizedBox(height: 18),
-          _box('PAYS', _c.flag, _c.name, '${_c.currency} · ${Fx.symbol(_c.currency)} · ${UserPrefs.gmt()}',
+          _box('PAYS', _c.flag, _c.label, '${_c.currency} · ${Fx.symbol(_c.currency)} · ${UserPrefs.gmt()}',
               () async {
             final c = await pickCountry(context, selected: _c.iso);
             if (c != null) {
               setState(() {
                 _countryTouched = true;
                 _c = c;
-                if (!_langTouched) _lang = c.lang;
+                if (!_langTouched) _lang = UserPrefs.supported(c.lang);
               });
+              UserPrefs.setLang(_lang);
             }
           }),
           _box('LANGUE', '🌐', langName(_lang), '', () async {
@@ -124,6 +127,7 @@ class _SetupDialogState extends State<_SetupDialog> {
                 _lang = l;
                 _langTouched = true;
               });
+              UserPrefs.setLang(l);
             }
           }),
           SizedBox(height: 4),
@@ -134,13 +138,13 @@ class _SetupDialogState extends State<_SetupDialog> {
               shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
             ),
             onPressed: () => _finish(null),
-            child: Text('Terminé', style: TextStyle(fontSize: 16.5, fontWeight: FontWeight.w900)),
+            child: T('Terminé', style: TextStyle(fontSize: 16.5, fontWeight: FontWeight.w900)),
           ),
           SizedBox(height: 8),
           Row(mainAxisAlignment: MainAxisAlignment.center, children: [
-            TextButton(onPressed: () => _finish(false), child: Text('Se connecter', style: small)),
-            Text('ou', style: TextStyle(color: K.muted, fontSize: 13)),
-            TextButton(onPressed: () => _finish(true), child: Text("S'inscrire", style: small)),
+            TextButton(onPressed: () => _finish(false), child: T('Se connecter', style: small)),
+            T('ou', style: TextStyle(color: K.muted, fontSize: 13)),
+            TextButton(onPressed: () => _finish(true), child: T("S'inscrire", style: small)),
           ]),
         ]),
       ),

@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import '../services/theme_controller.dart';
 import 'forecast_card.dart' show K;
 import 'k_ui.dart';
+import '../l10n/tr.dart';
 
 class ThemeSelector extends StatelessWidget {
   ThemeSelector({super.key});
@@ -17,7 +18,7 @@ class ThemeSelector extends StatelessWidget {
           Row(children: [
             Icon(Icons.brightness_6_rounded, color: K.indigoText, size: 21),
             SizedBox(width: 10),
-            Text("Thème de l'affichage", style: TextStyle(color: K.text, fontSize: 15, fontWeight: FontWeight.w700)),
+            T("Thème de l'affichage", style: TextStyle(color: K.text, fontSize: 15, fontWeight: FontWeight.w700)),
           ]),
           SizedBox(height: 12),
           Row(children: [
@@ -42,7 +43,7 @@ class ThemeSelector extends StatelessWidget {
                       child: Row(mainAxisAlignment: MainAxisAlignment.center, children: [
                         Icon(icon, size: 18, color: m == v ? Colors.white : K.muted),
                         SizedBox(width: 6),
-                        Text(label,
+                        T(label,
                             style: TextStyle(
                                 color: m == v ? Colors.white : K.muted, fontSize: 13.5, fontWeight: FontWeight.w700)),
                       ]),

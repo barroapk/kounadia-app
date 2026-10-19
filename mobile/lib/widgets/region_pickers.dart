@@ -3,6 +3,7 @@ import '../config/countries.dart';
 import '../services/currency.dart';
 import '../services/user_prefs.dart';
 import 'forecast_card.dart' show K;
+import '../l10n/tr.dart';
 
 String _n(String s) => s
     .toLowerCase()
@@ -14,8 +15,8 @@ String _n(String s) => s
     .replaceAll('ç', 'c')
     .replaceAll('’', "'");
 
-Future<T?> _sheet<T>(BuildContext context, String title, Widget Function(String q) list) {
-  return showModalBottomSheet<T>(
+Future<R?> _sheet<R>(BuildContext context, String title, Widget Function(String q) list) {
+  return showModalBottomSheet<R>(
     context: context,
     isScrollControlled: true,
     backgroundColor: K.card,
@@ -32,7 +33,7 @@ Future<T?> _sheet<T>(BuildContext context, String title, Widget Function(String 
               Container(width: 40, height: 4, decoration: BoxDecoration(color: K.border, borderRadius: BorderRadius.circular(4))),
               Padding(
                 padding: EdgeInsets.fromLTRB(16, 14, 16, 8),
-                child: Text(title, style: TextStyle(color: K.text, fontSize: 17, fontWeight: FontWeight.w900)),
+                child: T(title, style: TextStyle(color: K.text, fontSize: 17, fontWeight: FontWeight.w900)),
               ),
               Padding(
                 padding: EdgeInsets.symmetric(horizontal: 16),
@@ -41,7 +42,7 @@ Future<T?> _sheet<T>(BuildContext context, String title, Widget Function(String 
                   style: TextStyle(color: K.text),
                   onChanged: (v) => set(() => q = v),
                   decoration: InputDecoration(
-                    hintText: 'Rechercher…',
+                    hintText: tr('Rechercher…'),
                     hintStyle: TextStyle(color: K.muted),
                     prefixIcon: Icon(Icons.search_rounded, color: K.muted),
                     filled: true,
@@ -69,16 +70,16 @@ Future<KCountry?> pickCountry(BuildContext context, {String? selected}) {
         _n(c.name).contains(q) ||
         c.aliases.any((a) => _n(a).contains(q)) ||
         c.iso.toLowerCase() == q;
-    final list = kCountries.where(hit).toList()..sort((a, b) => _n(a.name).compareTo(_n(b.name)));
+    final list = kCountries.where(hit).toList()..sort((a, b) => _n(a.label).compareTo(_n(b.label)));
     Widget row(KCountry c) => ListTile(
           onTap: () => Navigator.pop(context, c),
-          leading: Text(c.flag, style: TextStyle(fontSize: 24)),
-          title: Text(c.name, style: TextStyle(color: K.text, fontWeight: c.iso == selected ? FontWeight.w900 : FontWeight.w600)),
-          subtitle: Text('${c.currency} · ${Fx.symbol(c.currency)}', style: TextStyle(color: K.muted, fontSize: 12)),
+          leading: T(c.flag, style: TextStyle(fontSize: 24)),
+          title: T(c.label, style: TextStyle(color: K.text, fontWeight: c.iso == selected ? FontWeight.w900 : FontWeight.w600)),
+          subtitle: T('${c.currency} · ${Fx.symbol(c.currency)}', style: TextStyle(color: K.muted, fontSize: 12)),
           trailing: c.iso == selected ? Icon(Icons.check_circle_rounded, color: K.indigoText) : null,
         );
     if (list.isEmpty) {
-      return Center(child: Text('Aucun pays trouvé', style: TextStyle(color: K.muted)));
+      return Center(child: T('Aucun pays trouvé', style: TextStyle(color: K.muted)));
     }
     return ListView(children: list.map(row).toList());
   });
@@ -91,7 +92,7 @@ Future<String?> pickLang(BuildContext context, String selected) {
       for (final (code, name) in l)
         ListTile(
           onTap: () => Navigator.pop(context, code),
-          title: Text(name, style: TextStyle(color: K.text, fontWeight: FontWeight.w700)),
+          title: T(name, style: TextStyle(color: K.text, fontWeight: FontWeight.w700)),
           trailing: code == selected ? Icon(Icons.check_circle_rounded, color: K.indigoText) : null,
         ),
     ]);
@@ -115,8 +116,8 @@ Future<String?> pickCurrency(BuildContext context, String selected) {
       for (final c in l)
         ListTile(
           onTap: () => Navigator.pop(context, c),
-          title: Text('$c · ${Fx.symbol(c)}', style: TextStyle(color: K.text, fontWeight: FontWeight.w700)),
-          subtitle: Text(cur[c]!.take(3).join(', ') + (cur[c]!.length > 3 ? '…' : ''),
+          title: T('$c · ${Fx.symbol(c)}', style: TextStyle(color: K.text, fontWeight: FontWeight.w700)),
+          subtitle: T(cur[c]!.take(3).join(', ') + (cur[c]!.length > 3 ? '…' : ''),
               maxLines: 1, overflow: TextOverflow.ellipsis, style: TextStyle(color: K.muted, fontSize: 12)),
           trailing: c == selected ? Icon(Icons.check_circle_rounded, color: K.indigoText) : null,
         ),

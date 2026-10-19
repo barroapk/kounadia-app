@@ -4,6 +4,7 @@ import '../services/fav_leagues.dart';
 import '../services/primatips_service.dart' show frLeague;
 import '../services/scores_service.dart';
 import '../widgets/forecast_card.dart' show K, kMessage;
+import '../l10n/tr.dart';
 
 class _Lg {
   final String key;
@@ -68,7 +69,7 @@ class _FavLeaguesScreenState extends State<FavLeaguesScreen> {
       appBar: AppBar(
         backgroundColor: K.bg,
         foregroundColor: K.text,
-        title: Text('Mes championnats', style: TextStyle(fontWeight: FontWeight.w800)),
+        title: T('Mes championnats', style: TextStyle(fontWeight: FontWeight.w800)),
       ),
       body: ValueListenableBuilder<Set<String>>(
         valueListenable: FavLeagues.set,
@@ -98,7 +99,7 @@ class _FavLeaguesScreenState extends State<FavLeaguesScreen> {
                 onChanged: (v) => setState(() => _q = v),
                 style: TextStyle(color: K.text),
                 decoration: InputDecoration(
-                  hintText: 'Chercher un championnat ou une équipe…',
+                  hintText: tr('Chercher un championnat ou une équipe…'),
                   hintStyle: TextStyle(color: K.muted),
                   prefixIcon: Icon(Icons.search_rounded, color: K.muted),
                   filled: true,
@@ -115,7 +116,7 @@ class _FavLeaguesScreenState extends State<FavLeaguesScreen> {
                 Icon(Icons.star_rounded, color: K.amber, size: 16),
                 SizedBox(width: 6),
                 Expanded(
-                  child: Text('${fav.length} favori${fav.length > 1 ? 's' : ''} · affichés en premier dans Matchs',
+                  child: T('${fav.length} favori${fav.length > 1 ? 's' : ''} · affichés en premier dans Matchs',
                       style: TextStyle(color: K.muted, fontSize: 12.5)),
                 ),
               ]),
@@ -158,12 +159,12 @@ class _FavLeaguesScreenState extends State<FavLeaguesScreen> {
                                 ],
                                 Expanded(
                                   child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-                                    Text(lg.name,
+                                    T(lg.name,
                                         maxLines: 1,
                                         overflow: TextOverflow.ellipsis,
                                         style: TextStyle(color: K.text, fontSize: 14, fontWeight: FontWeight.w700)),
                                     if (team != null)
-                                      Text('Équipe : $team',
+                                      T('${tr('Équipe')} : $team',
                                           maxLines: 1,
                                           overflow: TextOverflow.ellipsis,
                                           style: TextStyle(color: K.muted, fontSize: 12)),

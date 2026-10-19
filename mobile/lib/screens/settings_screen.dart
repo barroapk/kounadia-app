@@ -18,6 +18,7 @@ import '../services/currency.dart';
 import '../widgets/region_pickers.dart';
 import 'guide_screen.dart';
 import 'legal_screen.dart';
+import '../l10n/tr.dart';
 
 final kAppVersion = '1.0.0';
 final _supportEmail = 'pierreclavers56@gmail.com';
@@ -31,7 +32,7 @@ class SettingsScreen extends StatelessWidget {
     Navigator.push(c, MaterialPageRoute(builder: (_) => w));
   }
 
-  void _snack(BuildContext c, String m) => ScaffoldMessenger.of(c).showSnackBar(SnackBar(content: Text(m)));
+  void _snack(BuildContext c, String m) => ScaffoldMessenger.of(c).showSnackBar(SnackBar(content: T(m)));
 
   Future<void> _launch(BuildContext c, Uri uri, String fail) async {
     try {
@@ -64,9 +65,9 @@ class SettingsScreen extends StatelessWidget {
               child: Container(width: 40, height: 4, decoration: BoxDecoration(color: K.border, borderRadius: BorderRadius.circular(4))),
             ),
             SizedBox(height: 16),
-            Text(title, style: TextStyle(color: K.text, fontSize: 19, fontWeight: FontWeight.w900)),
+            T(title, style: TextStyle(color: K.text, fontSize: 19, fontWeight: FontWeight.w900)),
             SizedBox(height: 6),
-            Text(pitch, style: TextStyle(color: K.muted, fontSize: 13.5, height: 1.4)),
+            T(pitch, style: TextStyle(color: K.muted, fontSize: 13.5, height: 1.4)),
             SizedBox(height: 18),
             FilledButton.icon(
               style: FilledButton.styleFrom(backgroundColor: Color(0xFF25D366), minimumSize: Size.fromHeight(50)),
@@ -75,7 +76,7 @@ class SettingsScreen extends StatelessWidget {
                 _launch(c, _wa(message), 'WhatsApp introuvable');
               },
               icon: Icon(Icons.chat_rounded),
-              label: Text('Écrire sur WhatsApp', style: TextStyle(fontWeight: FontWeight.w800)),
+              label: T('Écrire sur WhatsApp', style: TextStyle(fontWeight: FontWeight.w800)),
             ),
             SizedBox(height: 10),
             OutlinedButton.icon(
@@ -85,7 +86,7 @@ class SettingsScreen extends StatelessWidget {
                 _launch(c, _mail(subject), 'Aucune application e-mail trouvée');
               },
               icon: Icon(Icons.mail_rounded, color: K.text),
-              label: Text('Envoyer un e-mail', style: TextStyle(color: K.text, fontWeight: FontWeight.w800)),
+              label: T('Envoyer un e-mail', style: TextStyle(color: K.text, fontWeight: FontWeight.w800)),
             ),
           ]),
         ),
@@ -99,13 +100,13 @@ class SettingsScreen extends StatelessWidget {
       builder: (ctx) => AlertDialog(
         backgroundColor: K.card,
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(18)),
-        title: Text(title, style: TextStyle(color: K.text, fontWeight: FontWeight.w800)),
-        content: SingleChildScrollView(child: Text(body, style: TextStyle(color: K.text, height: 1.45, fontSize: 14))),
+        title: T(title, style: TextStyle(color: K.text, fontWeight: FontWeight.w800)),
+        content: SingleChildScrollView(child: T(body, style: TextStyle(color: K.text, height: 1.45, fontSize: 14))),
         actions: [
           FilledButton(
             style: FilledButton.styleFrom(backgroundColor: K.indigo),
             onPressed: () => Navigator.pop(ctx),
-            child: Text('Compris'),
+            child: T('Compris'),
           ),
         ],
       ),
@@ -126,10 +127,10 @@ class SettingsScreen extends StatelessWidget {
             SizedBox(width: 14),
             Expanded(
               child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-                Text(title, style: TextStyle(color: K.text, fontSize: 15, fontWeight: FontWeight.w700)),
+                T(title, style: TextStyle(color: K.text, fontSize: 15, fontWeight: FontWeight.w700)),
                 if (sub.isNotEmpty) ...[
                   SizedBox(height: 2),
-                  Text(sub, style: TextStyle(color: K.muted, fontSize: 12.5)),
+                  T(sub, style: TextStyle(color: K.muted, fontSize: 12.5)),
                 ],
               ]),
             ),
@@ -172,18 +173,18 @@ class SettingsScreen extends StatelessWidget {
                       backgroundColor: Color(0x33FFFFFF),
                       child: u == null
                           ? Icon(Icons.sports_soccer_rounded, color: Colors.white, size: 28)
-                          : Text(u.username.isEmpty ? '?' : u.username[0].toUpperCase(),
+                          : T(u.username.isEmpty ? '?' : u.username[0].toUpperCase(),
                               style: TextStyle(color: Colors.white, fontSize: 22, fontWeight: FontWeight.w900)),
                     ),
                     SizedBox(width: 14),
                     Expanded(
                       child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-                        Text(title,
+                        T(title,
                             maxLines: 1,
                             overflow: TextOverflow.ellipsis,
                             style: TextStyle(color: Colors.white, fontSize: 19, fontWeight: FontWeight.w900)),
                         SizedBox(height: 3),
-                        Text(sub, style: TextStyle(color: Color(0xDDFFFFFF), fontSize: 13)),
+                        T(sub, style: TextStyle(color: Color(0xDDFFFFFF), fontSize: 13)),
                       ]),
                     ),
                     Icon(Icons.chevron_right_rounded, color: Colors.white70),
@@ -197,7 +198,7 @@ class SettingsScreen extends StatelessWidget {
                         Icon(Icons.workspace_premium_rounded, color: Color(0xFFD4A017), size: 20),
                         SizedBox(width: 8),
                         Expanded(
-                          child: Text('Passe à Premium · dès 250 F' + (Fx.approx(250) == null ? '' : ' (${Fx.approx(250)})'),
+                          child: T(tr('Passe à Premium · dès 250 F') + (Fx.approx(250) == null ? '' : ' (${Fx.approx(250)})'),
                               style: TextStyle(color: Color(0xFF1F2937), fontSize: 13.5, fontWeight: FontWeight.w800)),
                         ),
                         Icon(Icons.arrow_forward_rounded, color: Color(0xFF4F46E5), size: 18),
@@ -251,7 +252,7 @@ class SettingsScreen extends StatelessWidget {
             builder: (_, __, ___) {
               final c = UserPrefs.country;
               return kDividers([
-                _tile(Icons.public_rounded, K.green, 'Pays', c == null ? 'Choisir mon pays' : '${c.flag} ${c.name}',
+                _tile(Icons.public_rounded, K.green, 'Pays', c == null ? 'Choisir mon pays' : '${c.flag} ${c.label}',
                     () async {
                   final n = await pickCountry(context, selected: c?.iso);
                   if (n != null) await UserPrefs.setCountry(n);
@@ -265,7 +266,7 @@ class SettingsScreen extends StatelessWidget {
                   final v = await pickLang(context, UserPrefs.lang);
                   if (v != null) await UserPrefs.setLang(v);
                 }),
-                _tile(Icons.schedule_rounded, Color(0xFF06B6D4), 'Fuseau horaire', '${UserPrefs.gmt()} · heure du téléphone', () {},
+                _tile(Icons.schedule_rounded, Color(0xFF06B6D4), 'Fuseau horaire', '${UserPrefs.gmt()} · ${tr('heure du téléphone')}', () {},
                     trailing: SizedBox.shrink()),
               ]);
             },
@@ -286,7 +287,7 @@ class SettingsScreen extends StatelessWidget {
                       event: 'contact_partner',
                     )),
             _tile(Icons.share_rounded, Color(0xFF06B6D4), 'Partager KOUNADIA', 'Invite tes amis',
-                () => Share.share('⚽ KOUNADIA : scores en direct, prédictions IA et Coup sûr du jour, en français. Essaie-la !')),
+                () => Share.share(tr('⚽ KOUNADIA : scores en direct, prédictions IA et Coup sûr du jour. Essaie-la !'))),
             _tile(Icons.auto_awesome_rounded, K.amber, 'Découvrir KOUNADIA', 'Tout ce que l\'application t\'offre',
                 () => showWelcome(context)),
           ]),
@@ -325,7 +326,7 @@ class SettingsScreen extends StatelessWidget {
           ]),
           SizedBox(height: 24),
           Center(
-            child: Text('KOUNADIA SERVICE · v$kAppVersion\nFait au Burkina Faso 🇧🇫',
+            child: T('KOUNADIA SERVICE · v$kAppVersion\nFait au Burkina Faso 🇧🇫',
                 textAlign: TextAlign.center, style: TextStyle(color: K.muted, fontSize: 12)),
           ),
         ],

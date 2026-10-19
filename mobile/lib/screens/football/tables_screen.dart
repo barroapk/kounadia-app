@@ -3,6 +3,7 @@ import '../../services/primatips_service.dart';
 import '../../widgets/forecast_card.dart' show K, kMessage;
 import '../../widgets/k_ui.dart';
 import '../../widgets/standing_table.dart';
+import '../../l10n/tr.dart';
 
 class TablesScreen extends StatefulWidget {
   TablesScreen({super.key});
@@ -28,7 +29,7 @@ class _TablesScreenState extends State<TablesScreen> {
             style: TextStyle(color: K.text),
             cursorColor: K.indigo,
             decoration: InputDecoration(
-              hintText: 'Rechercher un pays ou une compétition',
+              hintText: tr('Rechercher un pays ou une compétition'),
               hintStyle: TextStyle(color: K.muted, fontSize: 14),
               prefixIcon: Icon(Icons.search_rounded, color: K.muted),
               filled: true,
@@ -80,7 +81,7 @@ class _TablesScreenState extends State<TablesScreen> {
             PtImage(l.img, w: 26, h: 18),
             SizedBox(width: 12),
             Expanded(
-              child: Text(frName(l.name),
+              child: T(frName(l.name),
                   style: TextStyle(color: K.text, fontSize: 14.5, fontWeight: FontWeight.w600)),
             ),
             Icon(Icons.chevron_right_rounded, color: K.muted),
@@ -133,7 +134,7 @@ class _CountryTablesScreenState extends State<CountryTablesScreen> {
                 unselectedLabelColor: K.muted,
                 dividerColor: K.border,
                 labelStyle: TextStyle(fontSize: 14, fontWeight: FontWeight.w800),
-                tabs: t.map((x) => Tab(text: x.title.isEmpty ? 'Classement' : x.title)).toList(),
+                tabs: t.map((x) => Tab(text: tr(x.title.isEmpty ? 'Classement' : x.title))).toList(),
               ),
               Expanded(child: TabBarView(children: t.map(_view).toList())),
             ]),

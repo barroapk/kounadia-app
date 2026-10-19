@@ -4,6 +4,7 @@ import 'package:url_launcher/url_launcher.dart';
 import '../../services/analytics.dart';
 import '../../services/knd/player_cache_service.dart';
 import '../../widgets/forecast_card.dart' show K;
+import '../../l10n/tr.dart';
 
 final kWhatsAppNumber = '22655337782';
 final kMinDeposit = 500;
@@ -74,7 +75,7 @@ class _DepositScreenState extends State<DepositScreen> {
 
   void _snack(String msg) {
     if (!mounted) return;
-    ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(msg)));
+    ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: T(msg)));
   }
 
   Future<void> _send() async {
@@ -115,9 +116,9 @@ class _DepositScreenState extends State<DepositScreen> {
 
   InputDecoration _deco(String hint, String? error, IconData icon) {
     return InputDecoration(
-      hintText: hint,
+      hintText: tr(hint),
       hintStyle: TextStyle(color: K.muted),
-      errorText: error,
+      errorText: error == null ? null : tr(error),
       counterText: '',
       prefixIcon: Icon(icon, color: K.muted),
       filled: true,
@@ -140,7 +141,7 @@ class _DepositScreenState extends State<DepositScreen> {
 
   Widget _label(String t) => Padding(
         padding: EdgeInsets.fromLTRB(4, 22, 4, 8),
-        child: Text(t,
+        child: T(t,
             style: TextStyle(color: K.text, fontSize: 14, fontWeight: FontWeight.w700)),
       );
 
@@ -154,7 +155,7 @@ class _DepositScreenState extends State<DepositScreen> {
           borderRadius: BorderRadius.circular(20),
           border: Border.all(color: K.border),
         ),
-        child: Text(text,
+        child: T(text,
             style: TextStyle(color: K.text, fontSize: 13, fontWeight: FontWeight.w600)),
       ),
     );
@@ -169,7 +170,7 @@ class _DepositScreenState extends State<DepositScreen> {
         foregroundColor: K.text,
         elevation: 0,
         scrolledUnderElevation: 0,
-        title: Text('Dépôt 1xBet', style: TextStyle(fontWeight: FontWeight.w800)),
+        title: T('Dépôt 1xBet', style: TextStyle(fontWeight: FontWeight.w800)),
       ),
       body: ListView(
         padding: EdgeInsets.fromLTRB(20, 8, 20, 32),
@@ -186,7 +187,7 @@ class _DepositScreenState extends State<DepositScreen> {
                 Icon(Icons.chat_rounded, color: Color(0xFF25D366), size: 28),
                 SizedBox(width: 12),
                 Expanded(
-                  child: Text(
+                  child: T(
                     'Ton dépôt est traité par notre agent sur WhatsApp. '
                     'Remplis le formulaire puis envoie le message pré-rempli.',
                     style: TextStyle(color: K.text, fontSize: 14, height: 1.4),
@@ -210,7 +211,7 @@ class _DepositScreenState extends State<DepositScreen> {
             SizedBox(height: 10),
             Padding(
               padding: EdgeInsets.only(left: 4, bottom: 8),
-              child: Text('Derniers ID utilisés',
+              child: T('Derniers ID utilisés',
                   style: TextStyle(color: K.muted, fontSize: 12)),
             ),
             Wrap(
@@ -265,12 +266,12 @@ class _DepositScreenState extends State<DepositScreen> {
                       height: 18,
                       child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white))
                   : Icon(Icons.send_rounded),
-              label: Text('Envoyer sur WhatsApp',
+              label: T('Envoyer sur WhatsApp',
                   style: TextStyle(fontSize: 16, fontWeight: FontWeight.w800)),
             ),
           ),
           SizedBox(height: 18),
-          Text(
+          T(
             'Réservé aux personnes majeures. Jouez de manière responsable.',
             textAlign: TextAlign.center,
             style: TextStyle(color: K.muted, fontSize: 12),

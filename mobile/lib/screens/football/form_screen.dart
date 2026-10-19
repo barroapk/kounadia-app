@@ -4,6 +4,7 @@ import '../../services/primatips_service.dart';
 import '../../widgets/forecast_card.dart' show K, kMessage;
 import '../../widgets/jersey.dart';
 import '../../widgets/k_ui.dart';
+import '../../l10n/tr.dart';
 
 final _cats = [
   ('wins', 'Victoires'),
@@ -46,7 +47,7 @@ class _FormScreenState extends State<FormScreen> {
                 padding: EdgeInsets.symmetric(horizontal: 11, vertical: 7),
                 decoration: BoxDecoration(
                     color: i == sel ? K.indigo : Colors.transparent, borderRadius: BorderRadius.circular(9)),
-                child: Text(labels[i],
+                child: T(labels[i],
                     style: TextStyle(
                         color: i == sel ? Colors.white : K.muted, fontSize: 12.5, fontWeight: FontWeight.w700)),
               ),
@@ -98,7 +99,7 @@ class _FormScreenState extends State<FormScreen> {
               return ListView(
                 padding: EdgeInsets.fromLTRB(16, 0, 16, 32),
                 children: [
-                  kTitle('${_most ? 'Le plus de' : 'Le moins de'} ${_cats[_cat].$2.toLowerCase()} · ${where[_view]}'),
+                  kTitle('${tr(_most ? 'Le plus de' : 'Le moins de')} ${tr(_cats[_cat].$2).toLowerCase()} · ${tr(where[_view])}'),
                   kDividers(table.rows.map((r) => _row(r, goals)).toList()),
                 ],
               );
@@ -117,7 +118,7 @@ class _FormScreenState extends State<FormScreen> {
       child: Row(children: [
         SizedBox(
           width: 28,
-          child: Text('${r.pos}',
+          child: T('${r.pos}',
               textAlign: TextAlign.center,
               style: TextStyle(color: K.muted, fontSize: 13, fontWeight: FontWeight.w800)),
         ),
@@ -126,12 +127,12 @@ class _FormScreenState extends State<FormScreen> {
         SizedBox(width: 10),
         Expanded(
           child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-            Text(r.team,
+            T(r.team,
                 maxLines: 1,
                 overflow: TextOverflow.ellipsis,
                 style: TextStyle(color: K.text, fontSize: 14, fontWeight: FontWeight.w700)),
             SizedBox(height: 2),
-            Text(r.league,
+            T(r.league,
                 maxLines: 1,
                 overflow: TextOverflow.ellipsis,
                 style: TextStyle(color: K.muted, fontSize: 11.5)),
@@ -139,7 +140,7 @@ class _FormScreenState extends State<FormScreen> {
         ),
         SizedBox(width: 8),
         Column(crossAxisAlignment: CrossAxisAlignment.end, children: [
-          Text(goals ? '${r.value} buts · ${r.played} m.' : '${r.value} / ${r.played}',
+          T(goals ? '${r.value} buts · ${r.played} m.' : '${r.value} / ${r.played}',
               style: TextStyle(color: K.text, fontSize: 13.5, fontWeight: FontWeight.w800)),
           SizedBox(height: 4),
           if (isPct && pct != null)
@@ -160,7 +161,7 @@ class _FormScreenState extends State<FormScreen> {
               ]),
             )
           else
-            Text('${r.pct} / match', style: TextStyle(color: K.muted, fontSize: 11.5)),
+            T('${r.pct} / match', style: TextStyle(color: K.muted, fontSize: 11.5)),
         ]),
       ]),
     );
