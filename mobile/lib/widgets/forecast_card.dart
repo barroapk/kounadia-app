@@ -118,10 +118,7 @@ class ForecastCard extends StatelessWidget {
 
     final parts = <String>[
       if (result && f.predicted != null) 'Prédit ${f.predicted}',
-      if (result)
-        f.source == 'sure'
-            ? (f.won == true ? 'Terminé · Gagné' : 'Terminé · Perdu')
-            : (f.won == true ? 'Validé' : 'Perdu'),
+      if (result) f.won == true ? 'Gagné' : 'Perdu',
       if (!result && f.agree != null && f.models != null) '${f.agree}/${f.models} IA',
       if (!result && f.confidence != null) 'Conf. ${f.confidence!.toStringAsFixed(1)}/10',
     ];

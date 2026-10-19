@@ -90,8 +90,8 @@ class _PredictionsScreenState extends State<PredictionsScreen> {
           if (snap.hasError && !snap.hasData) return kMessage(snap.error.toString(), onRetry: _refresh);
           final d = snap.data!;
           return ia
-              ? _list('ia', d.ia, d.offline, "Aucun pronostic Kounadia IA pour aujourd'hui.")
-              : _list('ex', d.expert, d.offline, "Aucun pronostic Expert pour aujourd'hui.");
+              ? _list('ia', d.ia, d.offline, "Aucun pronostic Kounadia IA pour aujourd'hui.", d.iaDay)
+              : _list('ex', d.expert, d.offline, "Aucun pronostic Expert pour aujourd'hui.", d.exDay);
         },
       );
 
@@ -136,8 +136,16 @@ class _PredictionsScreenState extends State<PredictionsScreen> {
     );
   }
 
-  Widget _list(String tab, List<Forecast> items, bool offline, String empty) {
-    final children = <Widget>[if (offline) kOfflineBanner()];
+  Widget _list(String tab, List<Forecast> items, bool offline, String empty, DateTime? day) {
+    final children = <Widget>[
+      if (offline) kOfflineBanner(),
+      if (day != null && items.isNotEmpty)
+        Padding(
+          padding: EdgeInsets.fromLTRB(4, 0, 4, 8),
+          child: Text('Pronostics du ${two(day.day)}/${two(day.month)} · les nouveaux arrivent bientôt',
+              style: TextStyle(color: K.amber, fontSize: 12.5, fontWeight: FontWeight.w700)),
+        ),
+    ];
     if (items.isEmpty) {
       children.addAll([KndBanner(), SizedBox(height: 50), kMessage(empty)]);
     } else {

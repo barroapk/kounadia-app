@@ -55,6 +55,15 @@ class Forecast {
     this.minute,
   });
 
+  /// Copie avec score, statut ou minute mis à jour.
+  Forecast copyWith({String? score, bool? won, String? minute}) => Forecast(
+        id: id, source: source, date: date, hasTime: hasTime, league: league,
+        home: home, away: away, homeLogo: homeLogo, awayLogo: awayLogo,
+        homeColors: homeColors, awayColors: awayColors, tipFr: tipFr, predicted: predicted,
+        confidence: confidence, agree: agree, models: models,
+        score: score ?? this.score, won: won ?? this.won, minute: minute ?? this.minute,
+      );
+
   factory Forecast.fromJson(Map<String, dynamic> j, String source) {
     String? s(String k) {
       final v = j[k];

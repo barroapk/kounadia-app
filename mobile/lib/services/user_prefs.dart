@@ -1,4 +1,5 @@
 import 'package:flutter/widgets.dart';
+import 'package:http/http.dart' as http;
 import 'package:shared_preferences/shared_preferences.dart';
 import '../config/countries.dart';
 
@@ -25,7 +26,6 @@ class UserPrefs {
   static bool done = false;
 
   static KCountry? get country => countryByIso(iso);
-  static String get dial => country?.dial ?? '226';
 
   /// Pays deviné d'après le téléphone (sinon Burkina Faso).
   static KCountry guess() {
@@ -35,6 +35,17 @@ class UserPrefs {
       if (c != null) return c;
     } catch (_) {}
     return countryByIso('BF')!;
+  }
+
+  /// Pays réel de l'utilisateur (d'après sa connexion internet), sinon d'après le téléphone.
+  static Future<KCountry> detect() async {
+    try {
+      final r = await http.get(Uri.parse('https://www.cloudflare.com/cdn-cgi/trace')).timeout(Duration(seconds: 5));
+      final m = RegExp(r'^loc=([A-Z]{2})\s*$', multiLine: true).firstMatch(r.body);
+      final c = countryByIso(m?.group(1));
+      if (c != null) return c;
+    } catch (_) {}
+    return guess();
   }
 
   static Future<void> init() async {

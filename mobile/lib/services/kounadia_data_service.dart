@@ -6,6 +6,7 @@ import 'kfeed.dart';
 import 'scores_service.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import '../models/forecast.dart';
+import 'tip_eval.dart';
 
 class FriendlyError implements Exception {
   final String message;
@@ -18,7 +19,9 @@ class TodayData {
   final List<Forecast> ia;
   final List<Forecast> expert;
   final bool offline;
-  TodayData(this.ia, this.expert, this.offline);
+  /// Jour affiché quand ce n'est pas aujourd'hui (pronostics de la veille gardés jusqu'aux nouveaux).
+  final DateTime? iaDay, exDay;
+  TodayData(this.ia, this.expert, this.offline, {this.iaDay, this.exDay});
 }
 
 class HistoryData {
@@ -67,13 +70,26 @@ class KounadiaData {
   static Future<TodayData> today() async {
     final (data, offline) = await _get('today.json');
     final m = (data is Map<String, dynamic>) ? data : <String, dynamic>{};
-    List<Forecast> parse(String k, String src) => ((m[k] as List?) ?? [])
-        .map((e) => Forecast.fromJson(e as Map<String, dynamic>, src))
-        .where((f) => _isToday(f.date))
-        .toList()
-      ..sort((a, b) => a.date.compareTo(b.date));
-    var ia = parse('ia', 'ia');
-    var ex = parse('expert', 'expert');
+    final prefs = await SharedPreferences.getInstance();
+    // Pronostics du jour ; s'il n'y en a pas encore, on garde ceux de la veille.
+    (List<Forecast>, DateTime?) parse(String k, String src) {
+      final raw = ((m[k] as List?) ?? []).whereType<Map>().map((e) => Map<String, dynamic>.from(e)).toList();
+      final keep = raw.where((e) => _isToday(Forecast.fromJson(e, src).date)).toList();
+      if (keep.isNotEmpty) {
+        prefs.setString('klast_$k', jsonEncode(keep));
+      } else {
+        try {
+          final c = prefs.getString('klast_$k');
+          if (c != null) keep.addAll((jsonDecode(c) as List).whereType<Map>().map((e) => Map<String, dynamic>.from(e)));
+        } catch (_) {}
+      }
+      final list = keep.map((e) => Forecast.fromJson(e, src)).toList()..sort((a, b) => a.date.compareTo(b.date));
+      final old = list.isNotEmpty && !_isToday(list.first.date);
+      if (old && DateTime.now().difference(list.first.date).inHours > 36) return (<Forecast>[], null);
+      return (list, old ? list.first.date : null);
+    }
+    var (ia, iaDay) = parse('ia', 'ia');
+    var (ex, exDay) = parse('expert', 'expert');
     try {
       final (h, _) = await _get('history.json');
       final res = <String, Map<String, dynamic>>{};
@@ -108,21 +124,17 @@ class KounadiaData {
           if (x == null && m.status != 'live' && m.status != 'finished') continue;
           if (m.date != null && m.date!.difference(f.date).inHours.abs() > tol) continue;
           if (!_same(m.home, f.home) || !_same(m.away, f.away)) continue;
-          return Forecast(
-            id: f.id, source: f.source, date: f.date, hasTime: f.hasTime, league: f.league,
-            home: f.home, away: f.away, homeLogo: f.homeLogo, awayLogo: f.awayLogo,
-            homeColors: f.homeColors, awayColors: f.awayColors, tipFr: f.tipFr, predicted: f.predicted,
-            confidence: f.confidence, agree: f.agree, models: f.models,
-            score: '$hs-$aw', won: null,
+          return settle(f.copyWith(
+            score: '$hs-$aw',
             minute: x?.$3 ?? (m.status == 'finished' ? 'Fin' : m.minute),
-          );
+          ));
         }
         return f;
       }
       ia = ia.map(live).toList();
       ex = ex.map(live).toList();
     } catch (_) {}
-    return TodayData(ia, ex, offline);
+    return TodayData(ia, ex, offline, iaDay: iaDay, exDay: exDay);
   }
 
   static Future<HistoryData> history() async {

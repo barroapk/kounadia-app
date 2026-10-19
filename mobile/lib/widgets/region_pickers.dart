@@ -66,14 +66,13 @@ Widget _head(String t) => Padding(
       child: Text(t, style: TextStyle(color: K.muted, fontSize: 12, fontWeight: FontWeight.w800, letterSpacing: 1)),
     );
 
-/// Choix du pays avec recherche (nom, indicatif ou code).
-Future<KCountry?> pickCountry(BuildContext context, {bool dial = false, String? selected}) {
-  return _sheet<KCountry>(context, dial ? 'Indicatif du pays' : 'Choisis ton pays', (q) {
+/// Choix du pays avec recherche (nom ou code).
+Future<KCountry?> pickCountry(BuildContext context, {String? selected}) {
+  return _sheet<KCountry>(context, 'Choisis ton pays', (q) {
     bool hit(KCountry c) =>
         q.isEmpty ||
         _n(c.name).contains(q) ||
         c.aliases.any((a) => _n(a).contains(q)) ||
-        c.dial.startsWith(q.replaceAll('+', '')) ||
         c.iso.toLowerCase() == q;
     final momo = kCountries.where((c) => c.momo && hit(c)).toList();
     final other = kCountries.where((c) => !c.momo && hit(c)).toList();
@@ -81,10 +80,8 @@ Future<KCountry?> pickCountry(BuildContext context, {bool dial = false, String? 
           onTap: () => Navigator.pop(context, c),
           leading: Text(c.flag, style: TextStyle(fontSize: 24)),
           title: Text(c.name, style: TextStyle(color: K.text, fontWeight: c.iso == selected ? FontWeight.w900 : FontWeight.w600)),
-          subtitle: dial ? null : Text(c.momo ? 'Mobile Money' : 'Paiement crypto', style: TextStyle(color: K.muted, fontSize: 12)),
-          trailing: c.iso == selected
-              ? Icon(Icons.check_circle_rounded, color: K.indigoText)
-              : Text('+${c.dial}', style: TextStyle(color: K.muted, fontWeight: FontWeight.w700)),
+          subtitle: Text(c.momo ? 'Mobile Money' : 'Paiement crypto', style: TextStyle(color: K.muted, fontSize: 12)),
+          trailing: c.iso == selected ? Icon(Icons.check_circle_rounded, color: K.indigoText) : null,
         );
     if (momo.isEmpty && other.isEmpty) {
       return Center(child: Text('Aucun pays trouvé', style: TextStyle(color: K.muted)));

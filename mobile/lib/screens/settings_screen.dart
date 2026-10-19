@@ -249,7 +249,7 @@ class SettingsScreen extends StatelessWidget {
             builder: (_, __, ___) {
               final c = UserPrefs.country;
               return kDividers([
-                _tile(Icons.public_rounded, K.green, 'Pays', c == null ? 'Choisir mon pays' : '${c.flag} ${c.name} · +${c.dial}',
+                _tile(Icons.public_rounded, K.green, 'Pays', c == null ? 'Choisir mon pays' : '${c.flag} ${c.name}',
                     () async {
                   final n = await pickCountry(context, selected: c?.iso);
                   if (n != null) await UserPrefs.setCountry(n);

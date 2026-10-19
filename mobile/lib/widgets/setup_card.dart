@@ -25,6 +25,22 @@ class _SetupDialogState extends State<_SetupDialog> {
   late KCountry _c = UserPrefs.country ?? UserPrefs.guess();
   late String _lang = UserPrefs.done ? UserPrefs.lang : _c.lang;
   bool _langTouched = false;
+  bool _countryTouched = false;
+
+  @override
+  void initState() {
+    super.initState();
+    // Pays détecté automatiquement : langue, monnaie et heure suivent.
+    if (UserPrefs.country == null) {
+      UserPrefs.detect().then((c) {
+        if (!mounted || _countryTouched) return;
+        setState(() {
+          _c = c;
+          if (!_langTouched) _lang = c.lang;
+        });
+      });
+    }
+  }
 
   Future<void> _finish(bool? auth) async {
     await UserPrefs.finishSetup(_c, _lang);
@@ -95,6 +111,7 @@ class _SetupDialogState extends State<_SetupDialog> {
             final c = await pickCountry(context, selected: _c.iso);
             if (c != null) {
               setState(() {
+                _countryTouched = true;
                 _c = c;
                 if (!_langTouched) _lang = c.lang;
               });

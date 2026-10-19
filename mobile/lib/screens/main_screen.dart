@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import '../widgets/forecast_card.dart' show K;
 import '../services/analytics.dart';
+import '../services/user_prefs.dart';
 import 'knd/deposit_screen.dart';
 import 'knd/withdrawal_screen.dart';
 import 'predictions_screen.dart';
@@ -25,9 +26,20 @@ class MainScreen extends StatefulWidget {
 class _MainScreenState extends State<MainScreen> {
   int _i = 0;
 
+  void _prefsChanged() {
+    if (mounted) setState(() {});
+  }
+
+  @override
+  void dispose() {
+    UserPrefs.changed.removeListener(_prefsChanged);
+    super.dispose();
+  }
+
   @override
   void initState() {
     super.initState();
+    UserPrefs.changed.addListener(_prefsChanged);
     WidgetsBinding.instance.addPostFrameCallback((_) {
       if (mounted) _start();
     });
@@ -168,7 +180,8 @@ class _MainScreenState extends State<MainScreen> {
         ),
       ),
       body: IndexedStack(index: _i, children: _screens),
-      floatingActionButton: Material(
+      // Dépôt / Retrait : service disponible uniquement au Burkina Faso.
+      floatingActionButton: UserPrefs.iso != 'BF' ? null : Material(
         color: k1xBet,
         shape: StadiumBorder(),
         elevation: 6,

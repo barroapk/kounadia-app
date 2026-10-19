@@ -5,6 +5,7 @@ import '../models/live_match.dart';
 import '../models/vip.dart';
 import '../services/scores_service.dart';
 import '../services/vip_service.dart';
+import '../services/tip_eval.dart';
 import '../widgets/forecast_card.dart';
 import '../widgets/knd_banner.dart';
 
@@ -20,7 +21,7 @@ Forecast sureForecast(VipLeg l, [LiveMatch? m, (int?, int?, String)? x]) {
     score = '${x.$1}-${x.$2}';
     minute = x.$3;
   }
-  return Forecast(
+  return settle(Forecast(
     id: 'sure_${l.id}',
     source: 'sure',
     date: m?.date ?? l.date ?? DateTime.now(),
@@ -35,7 +36,7 @@ Forecast sureForecast(VipLeg l, [LiveMatch? m, (int?, int?, String)? x]) {
     score: score,
     won: l.result == 'won' ? true : l.result == 'lost' ? false : null,
     minute: minute,
-  );
+  ), code: l.pick);
 }
 
 class SureTab extends StatefulWidget {
