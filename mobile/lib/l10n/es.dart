@@ -613,4 +613,13 @@ const Map<String, String> kEs = {
   'Égypte': 'Egipto',
   'MT': 'DES',
   'Nombre de matchs analysés': 'Partidos analizados',
+  'Recherche de mise à jour…': 'Buscando actualización…',
+  'Vérification impossible. Vérifie internet puis réessaie.': 'No se pudo comprobar. Revisa internet e inténtalo de nuevo.',
+  'Tu as déjà la dernière version.': 'Ya tienes la última versión.',
+  'Mise à jour disponible': 'Actualización disponible',
+  'Installe la nouvelle version pour profiter des dernières améliorations. Tes données et ton compte sont conservés.': 'Instala la nueva versión para disfrutar de las últimas mejoras. Tus datos y tu cuenta se conservan.',
+  'Plus tard': 'Más tarde',
+  'Mettre à jour': 'Actualizar',
+  'Mises à jour': 'Actualizaciones',
+  'Dépôt / retrait 1xBet : KOUNADIA SERVICE sur WhatsApp': 'Depósito / retiro 1xBet: KOUNADIA SERVICE en WhatsApp',
 };

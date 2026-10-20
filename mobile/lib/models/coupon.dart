@@ -151,7 +151,7 @@ class Coupon {
     b.writeln('\n${tr('Probabilité estimée')} ≈ ${pctText()}');
     b.writeln(tr('📲 Pronostics gratuits sur KOUNADIA'));
     b.writeln('🎁 ${tr('Code promo 1xBet')} : 99KND');
-    if (UserPrefs.iso == 'BF') b.writeln('💬 Dépôt / retrait 1xBet : KOUNADIA SERVICE sur WhatsApp +226 55 33 77 82');
+    if (UserPrefs.iso == 'BF') b.writeln('💬 ${tr('Dépôt / retrait 1xBet : KOUNADIA SERVICE sur WhatsApp')} +226 55 33 77 82');
     b.write(tr('18+ · Jouez de manière responsable.'));
     return b.toString();
   }

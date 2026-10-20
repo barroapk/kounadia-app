@@ -19,8 +19,8 @@ import '../widgets/region_pickers.dart';
 import 'guide_screen.dart';
 import 'legal_screen.dart';
 import '../l10n/tr.dart';
+import '../services/app_update.dart';
 
-final kAppVersion = '1.0.0';
 final _supportEmail = 'pierreclavers56@gmail.com';
 final _businessWhatsApp = '22655337782';
 
@@ -315,6 +315,8 @@ class SettingsScreen extends StatelessWidget {
                 () => _open(context, TermsScreen())),
             _tile(Icons.privacy_tip_rounded, K.green, 'Confidentialité', 'Tes données et tes droits',
                 () => _open(context, PrivacyScreen())),
+            _tile(Icons.system_update_rounded, K.indigoText, 'Mises à jour', 'Version $kAppVersion',
+                () => AppUpdate.checkNow(context)),
             _tile(Icons.info_rounded, K.muted, 'À propos', 'Version $kAppVersion', () => _info(
                   context,
                   'KOUNADIA',

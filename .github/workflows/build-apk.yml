@@ -2,6 +2,18 @@ name: Build KOUNADIA APK
 
 on:
   workflow_dispatch:
+    inputs:
+      publier:
+        description: "Publier pour le public (site + avis de mise à jour)"
+        type: boolean
+        default: false
+      notes:
+        description: "Nouveautés (facultatif)"
+        type: string
+        default: ""
+
+permissions:
+  contents: write
 
 jobs:
   build:
@@ -30,7 +42,14 @@ jobs:
         env:
           KOUNADIA_KEYSTORE: ${{ runner.temp }}/kounadia.p12
           KOUNADIA_KEY_PASS: ${{ secrets.KEYSTORE_PASS }}
-        run: flutter build apk --release --target-platform android-arm,android-arm64 --build-number=${{ github.run_number }} --obfuscate --split-debug-info=build/symbols --dart-define=KD_KEY=${{ secrets.KD_KEY }}
+        run: >
+          flutter build apk --release
+          --target-platform android-arm,android-arm64
+          --build-name=1.0.${{ github.run_number }} --build-number=${{ github.run_number }}
+          --obfuscate --split-debug-info=build/symbols
+          --dart-define=KD_KEY=${{ secrets.KD_KEY }}
+          --dart-define=APP_VERSION=1.0.${{ github.run_number }}
+          --dart-define=APP_BUILD=${{ github.run_number }}
 
       - name: Vérifier la signature
         run: |
@@ -45,3 +64,23 @@ jobs:
           name: kounadia-apk
           retention-days: 2
           path: mobile/build/app/outputs/flutter-apk/app-release.apk
+
+      - name: Publier la version (site + avis de mise à jour)
+        if: ${{ inputs.publier }}
+        env:
+          GH_TOKEN: ${{ github.token }}
+          NOTES: ${{ inputs.notes }}
+        run: |
+          V=1.0.${{ github.run_number }}
+          B=${{ github.run_number }}
+          cp mobile/build/app/outputs/flutter-apk/app-release.apk kounadia.apk
+          SIZE=$(stat -c %s kounadia.apk)
+          gh release create "v$V" kounadia.apk --title "KOUNADIA $V" --notes "${NOTES:-Améliorations et corrections.}" --latest
+          mkdir -p site
+          printf '{"version":"%s","build":%s,"size":%s,"date":"%s","url":"https://github.com/barroapk/kounadia-app/releases/latest/download/kounadia.apk"}\n' "$V" "$B" "$SIZE" "$(date -u +%Y-%m-%d)" > site/version.json
+          git config user.name "barroapk"
+          git config user.email "barroapk@users.noreply.github.com"
+          git add site/version.json
+          git commit -m "Version $V publiée"
+          git pull --rebase -q && git push
+          echo "Publié : KOUNADIA $V ($SIZE octets)"

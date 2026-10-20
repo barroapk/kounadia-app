@@ -7,7 +7,7 @@ import '../config/supabase_config.dart';
 
 /// Statistiques anonymes : identifiant aléatoire, aucune donnée personnelle.
 class Analytics {
-  static const _version = '1.0.0';
+  static const _version = String.fromEnvironment('APP_VERSION', defaultValue: '1.0.0');
   static String? _device;
   static final List<Map<String, dynamic>> _queue = [];
   static final Set<String> _once = {};
@@ -72,6 +72,9 @@ class Analytics {
           .timeout(const Duration(seconds: 15));
       if (r.statusCode >= 200 && r.statusCode < 500) {
         _queue.removeRange(0, batch.length);
+        // Les événements gardés hors ligne sont maintenant envoyés : on évite les doublons.
+        final p = await SharedPreferences.getInstance();
+        await p.remove('k_events');
       }
     } catch (_) {
       try {

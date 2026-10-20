@@ -111,7 +111,7 @@ class _SetupDialogState extends State<_SetupDialog> {
           _box('PAYS', _c.flag, _c.label, '${_c.currency} · ${Fx.symbol(_c.currency)} · ${UserPrefs.gmt()}',
               () async {
             final c = await pickCountry(context, selected: _c.iso);
-            if (c != null) {
+            if (c != null && mounted) {
               setState(() {
                 _countryTouched = true;
                 _c = c;
@@ -122,7 +122,7 @@ class _SetupDialogState extends State<_SetupDialog> {
           }),
           _box('LANGUE', '🌐', langName(_lang), '', () async {
             final l = await pickLang(context, _lang);
-            if (l != null) {
+            if (l != null && mounted) {
               setState(() {
                 _lang = l;
                 _langTouched = true;

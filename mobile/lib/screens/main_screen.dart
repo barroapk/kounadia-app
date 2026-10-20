@@ -14,6 +14,7 @@ import '../widgets/welcome_card.dart';
 import '../widgets/setup_card.dart';
 import 'account_screen.dart';
 import '../l10n/tr.dart';
+import '../services/app_update.dart';
 
 final k1xBet = Color(0xFF1A5BA6);
 
@@ -52,7 +53,10 @@ class _MainScreenState extends State<MainScreen> {
     await maybeShowWelcome(context);
     if (auth != null && mounted) {
       Navigator.push(context, MaterialPageRoute(builder: (_) => AccountScreen(signup: auth)));
+      return;
     }
+    await Future<void>.delayed(Duration(seconds: 3));
+    if (mounted) await AppUpdate.checkOnStart(context);
   }
   static List<Widget> _screens = [
     ScoresScreen(),

@@ -613,4 +613,13 @@ const Map<String, String> kAr = {
   'Égypte': 'مصر',
   'MT': 'الاستراحة',
   'Nombre de matchs analysés': 'المباريات المحللة',
+  'Recherche de mise à jour…': 'جارٍ البحث عن تحديث…',
+  'Vérification impossible. Vérifie internet puis réessaie.': 'تعذر التحقق. تأكد من الإنترنت ثم أعد المحاولة.',
+  'Tu as déjà la dernière version.': 'لديك أحدث إصدار بالفعل.',
+  'Mise à jour disponible': 'تحديث متاح',
+  'Installe la nouvelle version pour profiter des dernières améliorations. Tes données et ton compte sont conservés.': 'ثبّت الإصدار الجديد للاستفادة من آخر التحسينات. تبقى بياناتك وحسابك محفوظة.',
+  'Plus tard': 'لاحقًا',
+  'Mettre à jour': 'تحديث',
+  'Mises à jour': 'التحديثات',
+  'Dépôt / retrait 1xBet : KOUNADIA SERVICE sur WhatsApp': 'إيداع / سحب 1xBet: KOUNADIA SERVICE عبر واتساب',
 };

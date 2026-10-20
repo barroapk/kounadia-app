@@ -12,7 +12,7 @@ class KFeed {
   static Uint8List? _key;
 
   static Future<http.Response> get(String path) async {
-    final r = await http.get(Uri.parse('$_base/$path'));
+    final r = await http.get(Uri.parse('$_base/$path')).timeout(Duration(seconds: 25));
     if (r.statusCode != 200) return r;
     final plain = open(utf8.decode(r.bodyBytes));
     return http.Response.bytes(utf8.encode(plain), 200, headers: r.headers);
