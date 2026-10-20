@@ -13,6 +13,7 @@ import 'pt_match_screen.dart';
 import '../widgets/premium_gate.dart';
 import 'fav_leagues_screen.dart';
 import '../services/fav_leagues.dart';
+import '../services/notif.dart';
 import '../services/primatips_service.dart' show frLeague;
 import '../l10n/tr.dart';
 
@@ -115,6 +116,7 @@ class _ScoresScreenState extends State<ScoresScreen> with WidgetsBindingObserver
       final p = await SharedPreferences.getInstance();
       await p.setStringList('score_favs', _fav.map((e) => '$e').toList());
     } catch (_) {}
+    Notif.sync();
   }
 
   Future<void> _load({bool silent = false}) async {

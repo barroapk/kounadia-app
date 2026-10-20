@@ -1,0 +1,28 @@
+name: Robot notifications (Cloudflare)
+
+on:
+  push:
+    branches: [main]
+    paths: ["notif/**"]
+  workflow_dispatch:
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Déployer le robot sur Cloudflare
+        working-directory: notif
+        env:
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+          FCM_SA: ${{ secrets.FCM_SA }}
+          KD_KEY: ${{ secrets.KD_KEY }}
+        run: |
+          test -n "$FCM_SA" || { echo "Secret FCM_SA manquant"; exit 1; }
+          test -n "$KD_KEY" || { echo "Secret KD_KEY manquant"; exit 1; }
+          npx -y wrangler@4 deploy
+          printf '%s' "$FCM_SA" | npx -y wrangler@4 secret put FCM_SA
+          printf '%s' "$KD_KEY" | npx -y wrangler@4 secret put KD_KEY
+          echo "Robot en ligne : il démarre tout seul dans la minute."

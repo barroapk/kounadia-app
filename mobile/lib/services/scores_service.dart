@@ -5,6 +5,7 @@ import 'package:shared_preferences/shared_preferences.dart';
 import '../models/live_match.dart';
 import 'kounadia_data_service.dart' show FriendlyError;
 import 'fav_leagues.dart';
+import 'notif.dart';
 
 class ScoresService {
   static final _live = 'https://primatips.com/liveresults?day=0';
@@ -19,6 +20,7 @@ class ScoresService {
       final body = utf8.decode(r.bodyBytes);
       final days = _parse(body);
       FavLeagues.autoSeed(days.values.expand((l) => l).map((m) => m.leagueLabel));
+      Notif.leagues(days.values.expand((l) => l).map((m) => m.leagueLabel));
       await prefs.setString('kscores', body);
       return (days, false);
     } catch (e) {

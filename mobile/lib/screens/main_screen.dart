@@ -15,6 +15,7 @@ import '../widgets/setup_card.dart';
 import 'account_screen.dart';
 import '../l10n/tr.dart';
 import '../services/app_update.dart';
+import '../services/notif.dart';
 
 final k1xBet = Color(0xFF1A5BA6);
 
@@ -60,6 +61,7 @@ class _MainScreenState extends State<MainScreen> with WidgetsBindingObserver {
     final auth = await maybeShowSetup(context);
     if (!mounted) return;
     await maybeShowWelcome(context);
+    Notif.start();
     if (auth != null && mounted) {
       _ready = true;
       Navigator.push(context, MaterialPageRoute(builder: (_) => AccountScreen(signup: auth)));

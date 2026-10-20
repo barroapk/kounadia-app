@@ -20,6 +20,7 @@ import 'guide_screen.dart';
 import 'legal_screen.dart';
 import '../l10n/tr.dart';
 import '../services/app_update.dart';
+import '../services/notif.dart';
 
 final _supportEmail = 'pierreclavers56@gmail.com';
 final _businessWhatsApp = '22655337782';
@@ -226,6 +227,12 @@ class SettingsScreen extends StatelessWidget {
           kDividers([
             _tile(Icons.star_rounded, K.amber, 'Mes championnats', 'Tes favoris en premier dans Matchs',
                 () => _open(context, FavLeaguesScreen())),
+            ValueListenableBuilder<bool>(
+              valueListenable: Notif.enabled,
+              builder: (_, on, __) => _tile(Icons.notifications_active_rounded, K.red, 'Notifications en direct',
+                  'Buts et résultats de tes favoris et coupons', () => Notif.setEnabled(!on),
+                  trailing: Switch(value: on, activeThumbColor: K.indigo, onChanged: Notif.setEnabled)),
+            ),
             _tile(Icons.leaderboard_rounded, K.indigoText, 'Classements', 'Tous les championnats du monde',
                 () => _open(context, TablesScreen())),
             _tile(Icons.lightbulb_rounded, K.amber, 'Faits du jour', 'Séries et chiffres clés des matchs',

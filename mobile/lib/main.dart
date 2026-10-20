@@ -8,6 +8,7 @@ import 'services/account.dart';
 import 'services/user_prefs.dart';
 import 'services/currency.dart';
 import 'services/sync.dart';
+import 'services/notif.dart';
 import 'widgets/forecast_card.dart' show K;
 import 'l10n/tr.dart';
 
@@ -19,6 +20,7 @@ Future<void> main() async {
   Analytics.init();
   Account.init();
   Sync.start();
+  await Notif.init();
   K.dark = ThemeCtl.isDark;
   runApp(KounadiaApp());
 }
@@ -89,6 +91,7 @@ class _KounadiaAppState extends State<KounadiaApp> with WidgetsBindingObserver {
     final dark = K.dark;
     return MaterialApp(
       title: 'KOUNADIA',
+      scaffoldMessengerKey: kMessengerKey,
       debugShowCheckedModeBanner: false,
       theme: ThemeData(
         useMaterial3: true,

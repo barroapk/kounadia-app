@@ -46,6 +46,17 @@ jobs:
           echo "V=1.0.$R" >> "$GITHUB_ENV"
           echo "Version : 1.0.$R"
 
+      - name: Identifiants Firebase (notifications)
+        env:
+          GS: ${{ secrets.GOOGLE_SERVICES_JSON }}
+        run: |
+          test -n "$GS" || { echo "Secret GOOGLE_SERVICES_JSON manquant"; exit 1; }
+          C='.client[] | select(.client_info.android_client_info.package_name=="com.kounadia.kounadia")'
+          echo "FB_API_KEY=$(echo "$GS" | jq -r "$C | .api_key[0].current_key")" >> "$GITHUB_ENV"
+          echo "FB_APP_ID=$(echo "$GS" | jq -r "$C | .client_info.mobilesdk_app_id")" >> "$GITHUB_ENV"
+          echo "FB_SENDER=$(echo "$GS" | jq -r '.project_info.project_number')" >> "$GITHUB_ENV"
+          echo "FB_PROJECT=$(echo "$GS" | jq -r '.project_info.project_id')" >> "$GITHUB_ENV"
+
       - name: Compiler l'APK (mode release)
         working-directory: mobile
         env:
@@ -59,6 +70,10 @@ jobs:
           --dart-define=KD_KEY=${{ secrets.KD_KEY }}
           --dart-define=APP_VERSION=$V
           --dart-define=APP_BUILD=${{ github.run_number }}
+          --dart-define=FB_API_KEY=$FB_API_KEY
+          --dart-define=FB_APP_ID=$FB_APP_ID
+          --dart-define=FB_SENDER=$FB_SENDER
+          --dart-define=FB_PROJECT=$FB_PROJECT
 
       - name: Vérifier la signature
         run: |

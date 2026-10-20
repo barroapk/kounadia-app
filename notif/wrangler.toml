@@ -1,0 +1,16 @@
+name = "kounadia-notif"
+main = "src/index.js"
+compatibility_date = "2025-09-01"
+workers_dev = false
+
+# Relance de sécurité chaque minute (le robot tourne déjà toutes les 3 s).
+[triggers]
+crons = ["* * * * *"]
+
+[[durable_objects.bindings]]
+name = "POLLER"
+class_name = "Poller"
+
+[[migrations]]
+tag = "v1"
+new_sqlite_classes = ["Poller"]

@@ -1,6 +1,7 @@
 import 'dart:convert';
 import 'package:shared_preferences/shared_preferences.dart';
 import '../models/coupon.dart';
+import 'notif.dart';
 
 class CouponStore {
   static final _k = 'kounadia_coupons';
@@ -21,6 +22,7 @@ class CouponStore {
       final p = await SharedPreferences.getInstance();
       await p.setString(_k, jsonEncode(l.take(max).map((c) => c.toJson()).toList()));
     } catch (_) {}
+    Notif.sync();
   }
 
   static final max = 5;
