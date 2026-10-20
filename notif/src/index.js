@@ -3,12 +3,43 @@
 // mi-temps / fin, et envoie la notification Firebase aux abonnés du championnat ou du match.
 
 const LIVE_URL = 'https://primatips.com/liveresults?day=0';
-const FEED_URL = 'https://raw.githubusercontent.com/barroapk/kfeed/scores/scores.json';
 const UA = { 'User-Agent': 'KOUNADIA-App/1.0' };
 const FAST = 3000; // matchs en cours
 const SLOW = 20000; // aucun match en cours
 const LANGS = ['fr', 'en', 'pt', 'es', 'ar'];
 const MAX_EVENTS_PER_TICK = 8; // 5 envois par événement : reste sous la limite d'appels
+
+const KFEED = 'https://raw.githubusercontent.com/barroapk/kfeed';
+
+// Pronostics et coupons
+const TIP = {
+  fr: { sure: '🎯 Coup sûr du jour', sureB: '{n} sélections bien analysées vous attendent', pro: '🔮 Pronostics du jour', proB: 'Kounadia IA et Expert : {n} matchs analysés', win: '✅ Coup sûr gagné', cw: '🎉 Coupon gagné !', cwB: '{n}/{n} matchs gagnés · cote {odd}', cl: '❌ Coupon perdu', clB: '{m} a fait échouer votre coupon' },
+  en: { sure: '🎯 Sure bet of the day', sureB: '{n} carefully analysed picks are waiting for you', pro: '🔮 Today\'s predictions', proB: 'Kounadia AI and Expert: {n} matches analysed', win: '✅ Sure bet won', cw: '🎉 Bet slip won!', cwB: '{n}/{n} matches won · odds {odd}', cl: '❌ Bet slip lost', clB: '{m} broke your bet slip' },
+  pt: { sure: '🎯 Aposta segura do dia', sureB: '{n} seleções bem analisadas esperam por si', pro: '🔮 Previsões do dia', proB: 'Kounadia IA e Expert: {n} jogos analisados', win: '✅ Aposta segura ganha', cw: '🎉 Cupom ganho!', cwB: '{n}/{n} jogos ganhos · odd {odd}', cl: '❌ Cupom perdido', clB: '{m} fez falhar o seu cupom' },
+  es: { sure: '🎯 Apuesta segura del día', sureB: '{n} selecciones bien analizadas te esperan', pro: '🔮 Pronósticos del día', proB: 'Kounadia IA y Experto: {n} partidos analizados', win: '✅ Apuesta segura ganada', cw: '🎉 ¡Cupón ganado!', cwB: '{n}/{n} partidos ganados · cuota {odd}', cl: '❌ Cupón perdido', clB: '{m} hizo fallar tu cupón' },
+  ar: { sure: '🎯 الرهان الآمن لليوم', sureB: '{n} اختيارات مدروسة بعناية بانتظارك', pro: '🔮 توقعات اليوم', proB: 'KOUNADIA AI والخبير: {n} مباراة محللة', win: '✅ ربح الرهان الآمن', cw: '🎉 ربحت القسيمة!', cwB: '{n}/{n} مباريات رابحة · الاحتمال {odd}', cl: '❌ خسرت القسيمة', clB: '{m} أفشلت قسيمتك' },
+};
+const fill = (t, v) => t.replace(/\{(\w+)\}/g, (_, k) => (v[k] ?? ''));
+
+// Même règle que l'app (CouponEngine.evalPick).
+function evalPick(pick, h, a) {
+  switch (pick) {
+    case '1': return h > a;
+    case 'X': return h === a;
+    case '2': return a > h;
+    case '1X': return h >= a;
+    case 'X2': return a >= h;
+    case '12': return h !== a;
+    case 'BTS': return h > 0 && a > 0;
+    case 'OTS': return h === 0 || a === 0;
+  }
+  const g = /^([OU])(\d)(\d)$/.exec(pick);
+  if (g) {
+    const line = Number(g[2]) + Number(g[3]) / 10;
+    return g[1] === 'O' ? h + a > line : h + a < line;
+  }
+  return false;
+}
 
 const TXT = {
   fr: { goal: '⚽ BUT ! {team}', ko: "▶️ Coup d'envoi", ht: '⏸️ Mi-temps', ft: '🏁 Fin du match' },
@@ -60,6 +91,7 @@ export class Poller {
       return new Response(null, { status: 101, webSocket: client });
     }
     if (url.pathname === '/tr' && req.method === 'POST') return this.translate(req);
+    if (url.pathname === '/coupons' && req.method === 'POST') return this.saveCoupons(req);
     if (url.pathname === '/log') {
       const ids = new Set((url.searchParams.get('ids') || '').split(',').filter(Boolean).slice(0, 300).map(Number));
       const log = ((await this.state.storage.get('log')) || []).filter((e) => ids.has(e.id));
@@ -143,17 +175,8 @@ export class Poller {
     if (!force && this.names && Date.now() - this.namesAt < 10 * 60000) return;
     if (force && Date.now() - this.namesAt < 60000) return; // pas plus d'une fois par minute
     this.namesAt = Date.now();
-    const r = await fetch(`${FEED_URL}?v=${Math.floor(Date.now() / 60000)}`);
-    if (!r.ok) return;
-    let text = (await r.text()).trim();
-    if (text.startsWith('KD1.')) {
-      const raw = b64(text.slice(4));
-      const key = await crypto.subtle.importKey('raw', b64(this.env.KD_KEY), 'AES-GCM', false, ['decrypt']);
-      const z = await crypto.subtle.decrypt({ name: 'AES-GCM', iv: raw.slice(0, 12), tagLength: 128 }, key, raw.slice(12));
-      const ds = new Blob([z]).stream().pipeThrough(new DecompressionStream('gzip'));
-      text = await new Response(ds).text();
-    }
-    const d = JSON.parse(text);
+    const d = await this.feed('scores/scores.json');
+    if (!d) return;
     const lists = d.days && typeof d.days === 'object' ? Object.values(d.days) : [d.matches || []];
     const names = {};
     for (const l of lists) {
@@ -164,6 +187,159 @@ export class Poller {
       }
     }
     this.names = names;
+  }
+
+  // Fichier du flux KOUNADIA (chiffré), ou null.
+  async feed(path) {
+    const r = await fetch(`${KFEED}/${path}?v=${Math.floor(Date.now() / 60000)}`);
+    if (!r.ok) return null;
+    let text = (await r.text()).trim();
+    if (text.startsWith('KD1.')) {
+      const raw = b64(text.slice(4));
+      const key = await crypto.subtle.importKey('raw', b64(this.env.KD_KEY), 'AES-GCM', false, ['decrypt']);
+      const z = await crypto.subtle.decrypt({ name: 'AES-GCM', iv: raw.slice(0, 12), tagLength: 128 }, key, raw.slice(12));
+      const ds = new Blob([z]).stream().pipeThrough(new DecompressionStream('gzip'));
+      text = await new Response(ds).text();
+    }
+    return JSON.parse(text);
+  }
+
+  // ---------- Pronostics : nouveaux Coup sûr / pronostics, Coup sûr gagnés ----------
+  async checkTips() {
+    if (Date.now() - (this.tipsAt || 0) < 5 * 60000) return;
+    this.tipsAt = Date.now();
+    const st = (await this.state.storage.get('tips')) || {};
+    const first = !st.init;
+    const today = new Date().toISOString().slice(0, 10);
+    const jobs = [];
+    try {
+      const vip = await this.feed('vip/vip.json');
+      const singles = Array.isArray(vip?.singles) ? vip.singles : [];
+      if (vip?.date && singles.length && st.vipDate !== vip.date) {
+        st.vipDate = vip.date;
+        st.singles = singles.map((l) => ({ id: Number(l.id), pick: String(l.pick), home: String(l.home), away: String(l.away) }));
+        st.won = [];
+        if (!first) for (const lang of LANGS) jobs.push(['tips', lang, TIP[lang].sure, fill(TIP[lang].sureB, { n: singles.length }), { t: 'sure' }, 'sure']);
+      }
+    } catch (_) {}
+    try {
+      const pr = await this.feed('pronos/today.json');
+      const isToday = (e) => {
+        const d = new Date(e?.date || '');
+        return !isNaN(d) && d.toISOString().slice(0, 10) === today;
+      };
+      const n = [...(pr?.ia || []), ...(pr?.expert || [])].filter(isToday).length;
+      if (n > 0 && st.proDate !== today) {
+        st.proDate = today;
+        if (!first) for (const lang of LANGS) jobs.push(['tips', lang, TIP[lang].pro, fill(TIP[lang].proB, { n }), { t: 'pro' }, 'pro']);
+      }
+    } catch (_) {}
+    st.init = true;
+    await this.state.storage.put('tips', st);
+    await this.sendJobs(jobs);
+  }
+
+  // ---------- Coupons des utilisateurs : gagné / perdu ----------
+  async saveCoupons(req) {
+    let b = {};
+    try {
+      b = await req.json();
+    } catch (_) {}
+    const token = String(b.token || '');
+    if (token.length < 20) return Response.json({ ok: false }, { status: 400 });
+    const key = `cp:${leagueHash(token)}${leagueHash(token.split('').reverse().join(''))}`;
+    const old = (await this.state.storage.get(key))?.coupons || [];
+    const done = new Set(old.filter((c) => c.done).map((c) => c.sig));
+    const coupons = (Array.isArray(b.coupons) ? b.coupons : []).slice(0, 5).map((c) => ({
+      sig: String(c.sig || ''),
+      odd: String(c.odd || ''),
+      legs: (Array.isArray(c.legs) ? c.legs : []).slice(0, 30).map((l) => ({ id: Number(l.id), pick: String(l.pick), home: String(l.home || ''), away: String(l.away || '') })),
+      done: done.has(String(c.sig || '')),
+    }));
+    if (!coupons.length) await this.state.storage.delete(key);
+    else await this.state.storage.put(key, { token, lang: LANGS.includes(b.lang) ? b.lang : 'en', coupons, at: Date.now() });
+    return Response.json({ ok: true });
+  }
+
+  async checkCoupons(fin) {
+    // fin : matchs terminés à ce passage -> score final
+    const ids = Object.keys(fin);
+    if (!ids.length) return;
+    const finals = (await this.state.storage.get('finals')) || {};
+    const now = Date.now();
+    for (const id of ids) finals[id] = [...fin[id], now];
+    for (const k of Object.keys(finals)) if (now - finals[k][2] > 48 * 3600000) delete finals[k];
+    await this.state.storage.put('finals', finals);
+
+    const jobs = [];
+    // Coup sûr gagnés
+    const st = (await this.state.storage.get('tips')) || {};
+    if (st.singles?.length) {
+      st.won = st.won || [];
+      for (const l of st.singles) {
+        const f = fin[l.id];
+        if (f && f[0] != null && evalPick(l.pick, f[0], f[1]) && !st.won.includes(l.id)) {
+          st.won.push(l.id);
+          for (const lang of LANGS) jobs.push(['tips', lang, TIP[lang].win, `${l.home} ${f[0]}-${f[1]} ${l.away}`, { t: 'sure', id: String(l.id) }, `s${l.id}`]);
+        }
+      }
+      await this.state.storage.put('tips', st);
+    }
+    // Coupons des utilisateurs
+    const all = await this.state.storage.list({ prefix: 'cp:' });
+    for (const [key, u] of all) {
+      let changed = false;
+      for (const c of u.coupons) {
+        if (c.done || !c.legs.some((l) => fin[l.id])) continue;
+        const res = c.legs.map((l) => {
+          const f = finals[l.id];
+          return f && f[0] != null ? evalPick(l.pick, f[0], f[1]) : null;
+        });
+        const t = TIP[u.lang] || TIP.en;
+        const lost = c.legs.findIndex((l, i) => res[i] === false);
+        if (lost >= 0) {
+          const l = c.legs[lost];
+          jobs.push(['token', u.token, t.cl, fill(t.clB, { m: `${l.home} - ${l.away}` }), { t: 'coupon' }, `c${c.sig.slice(0, 20)}`]);
+          c.done = changed = true;
+        } else if (res.every((x) => x === true)) {
+          jobs.push(['token', u.token, t.cw, fill(t.cwB, { n: c.legs.length, odd: c.odd }), { t: 'coupon' }, `c${c.sig.slice(0, 20)}`]);
+          c.done = changed = true;
+        }
+      }
+      if (changed) await this.state.storage.put(key, u);
+    }
+    await this.sendJobs(jobs);
+  }
+
+  // Envoi groupé : [type ('tips' | 'token'), cible (langue ou jeton), titre, texte, data, tag]
+  async sendJobs(jobs) {
+    if (!jobs.length) return;
+    const token = await this.oauth();
+    await Promise.allSettled(
+      jobs.slice(0, 40).map(([kind, target, title, body, data, tag]) => {
+        const where = kind === 'tips' ? { topic: `${target}_tips` } : { token: target };
+        return this.fcm(token, { ...where, notification: { title, body }, data, android: { priority: 'HIGH', ttl: '3600s', notification: { channel_id: 'live', tag, sound: 'default' } } });
+      }),
+    );
+  }
+
+  async fcm(token, message) {
+    const r = await fetch(`https://fcm.googleapis.com/v1/projects/${this.sa().project_id}/messages:send`, {
+      method: 'POST',
+      headers: { authorization: `Bearer ${token}`, 'content-type': 'application/json' },
+      body: JSON.stringify({ message }),
+    });
+    if (!r.ok) {
+      const t = await r.text();
+      await this.state.storage.put('fcmErr', `${r.status} ${t.slice(0, 300)}`);
+      if (r.status === 401) this.tokenExp = 0;
+      // Téléphone désinstallé : on oublie ses coupons.
+      if (message.token && (r.status === 404 || t.includes('UNREGISTERED'))) {
+        const key = `cp:${leagueHash(message.token)}${leagueHash(message.token.split('').reverse().join(''))}`;
+        await this.state.storage.delete(key);
+      }
+    }
+    return r.ok;
   }
 
   // ---------- Boucle principale ----------
@@ -225,6 +401,16 @@ export class Poller {
       await this.state.storage.put('log', log);
     }
     events.push(...fresh);
+
+    // Pronostics (toutes les 5 min) et coupons (à chaque fin de match)
+    const fin = {};
+    for (const e of fresh) if (e.t === 'ft') fin[e.id] = [e.hs, e.as];
+    try {
+      await this.checkCoupons(fin);
+      await this.checkTips();
+    } catch (e) {
+      await this.state.storage.put('err', `${new Date().toISOString()} tips ${e}`);
+    }
 
     // Les buts d'abord ; le reste attend le passage suivant (3 s) si trop d'événements.
     events.sort((a, b) => (a.t === 'goal' ? 0 : 1) - (b.t === 'goal' ? 0 : 1));

@@ -1,4 +1,7 @@
+import 'dart:convert';
 import 'package:firebase_core/firebase_core.dart';
+import 'package:http/http.dart' as http;
+import 'live_socket.dart' show kLiveBase;
 import 'package:firebase_messaging/firebase_messaging.dart';
 import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
@@ -112,6 +115,34 @@ class Notif {
       ));
   }
 
+  /// Coupons en cours confiés au robot : il prévient dès qu'un coupon est gagné ou perdu.
+  static Future<void> _coupons() async {
+    try {
+      final p = await SharedPreferences.getInstance();
+      final list = enabled.value
+          ? [
+              for (final c in await CouponStore.all())
+                if (c.status == 'pending' || c.status == 'live')
+                  {
+                    'sig': c.signature,
+                    'odd': c.total.toStringAsFixed(2).replaceAll('.', ','),
+                    'legs': [
+                      for (final g in c.legs) {'id': g.matchId, 'pick': g.pick, 'home': g.home, 'away': g.away}
+                    ],
+                  }
+            ]
+          : <Map<String, dynamic>>[];
+      final token = await FirebaseMessaging.instance.getToken();
+      if (token == null || kLiveBase.isEmpty) return;
+      final body = jsonEncode({'token': token, 'lang': appLang, 'coupons': list});
+      if (p.getString('notif_cp') == body) return; // rien de nouveau
+      final r = await http
+          .post(Uri.parse('$kLiveBase/coupons'), headers: {'content-type': 'application/json'}, body: body)
+          .timeout(const Duration(seconds: 15));
+      if (r.statusCode == 200) await p.setString('notif_cp', body);
+    } catch (_) {}
+  }
+
   static Future<void> sync() async {
     if (!_ok) return;
     if (_busy) {
@@ -143,8 +174,11 @@ class Notif {
               if (g.result == 'pending' || g.result == 'live') want.add('${l}_m_${g.matchId}');
             }
           }
+          want.add('${l}_tips'); // Coup sûr et pronostics du jour
         }
-        if (want.length == had.length && want.containsAll(had)) continue;
+        if (want.length == had.length && want.containsAll(had)) {
+          continue;
+        }
         final m = FirebaseMessaging.instance;
         for (final t in want.difference(had)) {
           await m.subscribeToTopic(t);
@@ -154,6 +188,7 @@ class Notif {
         }
         await p.setStringList('notif_topics', want.toList());
       } while (_again);
+      await _coupons();
     } catch (_) {
       // Hors connexion : nouvel essai au prochain chargement.
     } finally {
