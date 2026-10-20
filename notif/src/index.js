@@ -59,6 +59,7 @@ export class Poller {
       server.send(JSON.stringify({ k: 'snap', live }));
       return new Response(null, { status: 101, webSocket: client });
     }
+    if (url.pathname === '/tr' && req.method === 'POST') return this.translate(req);
     if (url.pathname === '/log') {
       const ids = new Set((url.searchParams.get('ids') || '').split(',').filter(Boolean).slice(0, 300).map(Number));
       const log = ((await this.state.storage.get('log')) || []).filter((e) => ids.has(e.id));
@@ -72,6 +73,38 @@ export class Poller {
     const al = await this.state.storage.getAlarm();
     stat.nextTick = al ? new Date(al).toISOString() : null;
     return Response.json(stat);
+  }
+
+  // Traduction des publicités (texte écrit en français dans KND Tigui), gardée en mémoire.
+  async translate(req) {
+    const NAMES = { en: 'english', pt: 'portuguese', es: 'spanish', ar: 'arabic' };
+    let body = {};
+    try {
+      body = await req.json();
+    } catch (_) {}
+    const to = NAMES[body.to];
+    const texts = Array.isArray(body.texts) ? body.texts.slice(0, 40).map((t) => String(t).slice(0, 600)) : [];
+    if (!to || !this.env.AI) return Response.json({ out: texts });
+    const out = [];
+    for (const t of texts) {
+      if (!t.trim()) {
+        out.push(t);
+        continue;
+      }
+      const key = `tr:${body.to}:${leagueHash(t)}:${t.length}`;
+      let v = await this.state.storage.get(key);
+      if (v == null) {
+        try {
+          const r = await this.env.AI.run('@cf/meta/m2m100-1.2b', { text: t, source_lang: 'french', target_lang: to });
+          v = (r && r.translated_text) || '';
+          if (v) await this.state.storage.put(key, v);
+        } catch (e) {
+          await this.state.storage.put('trErr', `${new Date().toISOString()} ${e}`);
+        }
+      }
+      out.push(v || t);
+    }
+    return Response.json({ out });
   }
 
   webSocketMessage(ws, msg) {

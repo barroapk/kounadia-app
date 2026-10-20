@@ -14,3 +14,7 @@ class_name = "Poller"
 [[migrations]]
 tag = "v1"
 new_sqlite_classes = ["Poller"]
+
+# Traduction des publicités (Workers AI, offre gratuite).
+[ai]
+binding = "AI"

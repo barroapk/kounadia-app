@@ -9,6 +9,7 @@ import 'package:url_launcher/url_launcher.dart';
 import '../config/supabase_config.dart';
 import '../services/analytics.dart';
 import '../services/user_prefs.dart';
+import '../services/live_socket.dart' show kLiveBase;
 import '../l10n/tr.dart';
 
 Color _hex(String s, Color fallback) {
@@ -107,6 +108,73 @@ class BannerService {
   /// Change quand de nouvelles publicités arrivent : les bannières se redessinent.
   static final version = ValueNotifier<int>(0);
   static BannerConfig? get cached => _mem;
+  static String? _lang;
+
+  /// Textes des publicités traduits par le robot KOUNADIA (gardés sur le téléphone).
+  static Future<void> _translate(List<Map<String, dynamic>> ads, SharedPreferences prefs) async {
+    final lang = UserPrefs.lang;
+    if (lang == 'fr' || kLiveBase.isEmpty) return;
+    final key = 'ktr_$lang';
+    final known = <String, String>{};
+    try {
+      final c = prefs.getString(key);
+      if (c != null) known.addAll(Map<String, String>.from(jsonDecode(c) as Map));
+    } catch (_) {}
+    // Textes à traduire : ceux sans traduction fournie par KND Tigui.
+    final need = <String>{};
+    void want(String? t) {
+      if (t != null && t.trim().isNotEmpty && !known.containsKey(t)) need.add(t);
+    }
+    for (final j in ads) {
+      final t = j['i18n'] is Map ? (j['i18n'] as Map)[lang] : null;
+      if (t is Map && (t['text']?.toString() ?? '').isNotEmpty) continue;
+      want(j['text']?.toString());
+      want(j['cta']?.toString());
+      final pg = j['pages'];
+      if (pg is List) {
+        for (final e in pg) {
+          if (e is Map) {
+            want(e['title']?.toString());
+            want(e['text']?.toString());
+          }
+        }
+      }
+    }
+    if (need.isNotEmpty) {
+      try {
+        final list = need.take(40).toList();
+        final r = await http
+            .post(Uri.parse('$kLiveBase/tr'),
+                headers: {'content-type': 'application/json'}, body: jsonEncode({'to': lang, 'texts': list}))
+            .timeout(const Duration(seconds: 40));
+        if (r.statusCode == 200) {
+          final out = (jsonDecode(utf8.decode(r.bodyBytes))['out'] as List).map((e) => '$e').toList();
+          for (var i = 0; i < list.length && i < out.length; i++) {
+            if (out[i] != list[i]) known[list[i]] = out[i];
+          }
+          await prefs.setString(key, jsonEncode(known));
+        }
+      } catch (_) {}
+    }
+    // Injecte les traductions là où KND Tigui n'en a pas fourni.
+    for (final j in ads) {
+      final i18n = j['i18n'] is Map ? Map<String, dynamic>.from(j['i18n'] as Map) : <String, dynamic>{};
+      final cur = i18n[lang] is Map ? Map<String, dynamic>.from(i18n[lang] as Map) : <String, dynamic>{};
+      if ((cur['text']?.toString() ?? '').isNotEmpty) continue;
+      String? tr(dynamic v) => v == null ? null : known[v.toString()];
+      if (tr(j['text']) != null) cur['text'] = tr(j['text']);
+      if (tr(j['cta']) != null) cur['cta'] = tr(j['cta']);
+      final pg = j['pages'];
+      if (pg is List) {
+        cur['pages'] = [
+          for (final e in pg)
+            e is Map ? {if (tr(e['title']) != null) 'title': tr(e['title']), if (tr(e['text']) != null) 'text': tr(e['text'])} : <String, dynamic>{}
+        ];
+      }
+      i18n[lang] = cur;
+      j['i18n'] = i18n;
+    }
+  }
 
   /// Recharge tout de suite (retour dans l'app, actualisation, toutes les 3 min).
   static Future<void> reload() async {
@@ -117,7 +185,7 @@ class BannerService {
 
   static Future<BannerConfig?> load() {
     final m = _mem;
-    if (m != null && _at != null && DateTime.now().difference(_at!) < const Duration(minutes: 3)) {
+    if (m != null && _at != null && _lang == UserPrefs.lang && DateTime.now().difference(_at!) < const Duration(minutes: 3)) {
       return Future.value(m);
     }
     return _pending ??= _fetch();
@@ -143,8 +211,10 @@ class BannerService {
     try {
       final now = DateTime.now();
       final slides = <BannerSlide>[];
-      for (final e in jsonDecode(body) as List) {
-        final j = Map<String, dynamic>.from(e as Map);
+      final ads = [for (final e in jsonDecode(body) as List) Map<String, dynamic>.from(e as Map)];
+      await _translate(ads, prefs);
+      _lang = UserPrefs.lang;
+      for (final j in ads) {
         final end = DateTime.tryParse(j['ends_at']?.toString() ?? '');
         if (end != null && end.isBefore(now)) continue;
         // Pays de diffusion choisis dans KND Tigui (liste vide = tous les pays).
@@ -266,7 +336,7 @@ class _CarouselState extends State<_Carousel> {
   @override
   Widget build(BuildContext context) {
     return AspectRatio(
-      aspectRatio: 2,
+      aspectRatio: 1.75,
       child: PageView.builder(
         controller: _h,
         onPageChanged: (i) {
@@ -350,24 +420,29 @@ class _AdViewState extends State<_AdView> {
           ),
         ),
         Padding(
-          padding: const EdgeInsets.fromLTRB(18, 34, 18, 56),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              if (p.title.isNotEmpty)
-                T(p.title,
-                    maxLines: 2,
-                    overflow: TextOverflow.ellipsis,
-                    style: const TextStyle(color: Colors.white, fontSize: 19, fontWeight: FontWeight.w900, height: 1.15)),
-              if (p.text.isNotEmpty) ...[
-                const SizedBox(height: 6),
-                T(p.text,
-                    maxLines: 3,
-                    overflow: TextOverflow.ellipsis,
-                    style: const TextStyle(color: Color(0xE6FFFFFF), fontSize: 13, height: 1.3)),
-              ],
-            ],
+          padding: const EdgeInsets.fromLTRB(18, 34, 18, 54),
+          // Texte entier : la taille se réduit d'elle-même si le texte est long.
+          child: LayoutBuilder(
+            builder: (_, bc) => FittedBox(
+              fit: BoxFit.scaleDown,
+              alignment: AlignmentDirectional.centerStart,
+              child: SizedBox(
+                width: bc.maxWidth,
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    if (p.title.isNotEmpty)
+                      Text(p.title,
+                          style: const TextStyle(color: Colors.white, fontSize: 19, fontWeight: FontWeight.w900, height: 1.15)),
+                    if (p.text.isNotEmpty) ...[
+                      const SizedBox(height: 6),
+                      Text(p.text, style: const TextStyle(color: Color(0xE6FFFFFF), fontSize: 13.5, height: 1.3)),
+                    ],
+                  ],
+                ),
+              ),
+            ),
           ),
         ),
       ]);
