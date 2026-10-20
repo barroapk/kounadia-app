@@ -5,6 +5,7 @@ import 'package:http/http.dart' as http;
 import '../models/live_match.dart';
 import 'kounadia_data_service.dart' show FriendlyError;
 import 'match_detail_service.dart' show StandRow, MatchDetailService;
+import '../l10n/tr.dart' show appLang;
 
 class PtLink {
   final String name;
@@ -128,6 +129,7 @@ final _namesFr = {
 
 String frName(String s) {
   final t = s.trim();
+  if (appLang != 'fr') return t == 'Bosnia&Herz.' ? 'Bosnia-Herzegovina' : t; // noms d'origine (anglais)
   if (t == "Cote d'Ivoire") return "Côte d'Ivoire";
   if (t == 'Bosnia&Herz.') return 'Bosnie-Herzégovine';
   return _namesFr[t] ?? t;

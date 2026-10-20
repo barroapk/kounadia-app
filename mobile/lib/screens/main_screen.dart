@@ -33,7 +33,13 @@ class MainScreen extends StatefulWidget {
 class _MainScreenState extends State<MainScreen> with WidgetsBindingObserver {
   int _i = 0;
 
+  String _adLang = UserPrefs.lang;
+
   void _prefsChanged() {
+    if (_adLang != UserPrefs.lang) {
+      _adLang = UserPrefs.lang;
+      BannerService.reload(); // pubs dans la nouvelle langue tout de suite
+    }
     if (mounted) setState(() {});
   }
 

@@ -333,10 +333,39 @@ class _CarouselState extends State<_Carousel> {
     } catch (_) {}
   }
 
+  static const _titleStyle = TextStyle(color: Colors.white, fontSize: 19, fontWeight: FontWeight.w900, height: 1.15);
+  static const _textStyle = TextStyle(color: Color(0xE6FFFFFF), fontSize: 13.5, height: 1.3);
+
+  /// Hauteur juste suffisante pour la page la plus remplie (texte entier, taille normale).
+  double _height(BuildContext context, double w) {
+    final scaler = MediaQuery.textScalerOf(context);
+    final dir = Directionality.of(context);
+    final tw = w - 4 - 36; // marges de la carte et du texte
+    double h = w / 2.2;
+    double measure(String t, TextStyle st) {
+      if (t.isEmpty) return 0;
+      final tp = TextPainter(text: TextSpan(text: t, style: st), textDirection: dir, textScaler: scaler)
+        ..layout(maxWidth: tw);
+      return tp.height;
+    }
+    for (final s in widget.slides) {
+      for (final p in s.pages) {
+        if (p.photo) {
+          h = max(h, w / 2);
+          continue;
+        }
+        final body = measure(p.title, _titleStyle) + (p.text.isEmpty ? 0 : 6 + measure(p.text, _textStyle));
+        h = max(h, 34 + body + (s.hasButton ? 58 : 18));
+      }
+    }
+    return min(h, w * 1.25);
+  }
+
   @override
   Widget build(BuildContext context) {
-    return AspectRatio(
-      aspectRatio: 1.75,
+    return LayoutBuilder(
+      builder: (context, bc) => SizedBox(
+      height: _height(context, bc.maxWidth),
       child: PageView.builder(
         controller: _h,
         onPageChanged: (i) {
@@ -355,7 +384,7 @@ class _CarouselState extends State<_Carousel> {
           );
         },
       ),
-    );
+    ));
   }
 }
 
@@ -420,7 +449,7 @@ class _AdViewState extends State<_AdView> {
           ),
         ),
         Padding(
-          padding: const EdgeInsets.fromLTRB(18, 34, 18, 54),
+          padding: EdgeInsets.fromLTRB(18, 34, 18, widget.slide.hasButton ? 58 : 18),
           // Texte entier : la taille se réduit d'elle-même si le texte est long.
           child: LayoutBuilder(
             builder: (_, bc) => FittedBox(
@@ -433,11 +462,10 @@ class _AdViewState extends State<_AdView> {
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     if (p.title.isNotEmpty)
-                      Text(p.title,
-                          style: const TextStyle(color: Colors.white, fontSize: 19, fontWeight: FontWeight.w900, height: 1.15)),
+                      Text(p.title, style: _CarouselState._titleStyle),
                     if (p.text.isNotEmpty) ...[
                       const SizedBox(height: 6),
-                      Text(p.text, style: const TextStyle(color: Color(0xE6FFFFFF), fontSize: 13.5, height: 1.3)),
+                      Text(p.text, style: _CarouselState._textStyle),
                     ],
                   ],
                 ),
