@@ -14,6 +14,7 @@ on:
 
 permissions:
   contents: write
+  actions: write
 
 jobs:
   build:
@@ -83,4 +84,5 @@ jobs:
           git add site/version.json
           git commit -m "Version $V publiée"
           git pull --rebase -q && git push
+          gh workflow run deploy-site.yml
           echo "Publié : KOUNADIA $V ($SIZE octets)"

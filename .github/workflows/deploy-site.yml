@@ -1,0 +1,22 @@
+name: Mettre le site en ligne
+
+on:
+  push:
+    branches: [main]
+    paths: ["site/**"]
+  workflow_dispatch:
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Publier sur Cloudflare Pages
+        env:
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+        run: |
+          test -n "$CLOUDFLARE_API_TOKEN" || { echo "Secret CLOUDFLARE_API_TOKEN manquant"; exit 1; }
+          npx -y wrangler@4 pages project create kounadia --production-branch main 2>/dev/null || true
+          npx -y wrangler@4 pages deploy site --project-name kounadia --branch main --commit-dirty=true
