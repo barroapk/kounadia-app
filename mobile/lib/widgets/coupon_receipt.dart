@@ -169,7 +169,7 @@ Future<void> _shareImage(GlobalKey key, Coupon c) async {
     final f = File('${dir.path}/coupon_kounadia_${DateTime.now().millisecondsSinceEpoch}.png');
     await f.writeAsBytes(data.buffer.asUint8List());
     await Share.shareXFiles([XFile(f.path)],
-        text: 'Coupon KOUNADIA · ${tr('cote')} ×${fx(c.total)} · ${tr('Code promo 1xBet')} : 99KND');
+        text: 'Coupon KOUNADIA · ${tr('cote')} ×${fx(c.total)} · ${tr('Code promo 1xBet')} : 99KND\n👉 https://kounadia.pages.dev');
   } catch (_) {
     await Share.share(c.shareText());
   }

@@ -287,7 +287,7 @@ class SettingsScreen extends StatelessWidget {
                       event: 'contact_partner',
                     )),
             _tile(Icons.share_rounded, Color(0xFF06B6D4), 'Partager KOUNADIA', 'Invite tes amis',
-                () => Share.share(tr('⚽ KOUNADIA : scores en direct, prédictions IA et Coup sûr du jour. Essaie-la !'))),
+                () => Share.share('${tr('⚽ KOUNADIA : scores en direct, prédictions IA et Coup sûr du jour. Essaie-la !')}\n👉 https://kounadia.pages.dev')),
             _tile(Icons.auto_awesome_rounded, K.amber, 'Découvrir KOUNADIA', 'Tout ce que l\'application t\'offre',
                 () => showWelcome(context)),
           ]),
