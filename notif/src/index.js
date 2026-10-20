@@ -66,6 +66,11 @@ export class Poller {
     }
     const stat = (await this.state.storage.get('stat')) || {};
     stat.clients = this.state.getWebSockets().length;
+    stat.err = (await this.state.storage.get('err')) || null;
+    stat.fcmErr = (await this.state.storage.get('fcmErr')) || null;
+    stat.src = (await this.state.storage.get('src')) || null;
+    const al = await this.state.storage.getAlarm();
+    stat.nextTick = al ? new Date(al).toISOString() : null;
     return Response.json(stat);
   }
 
@@ -131,9 +136,16 @@ export class Poller {
   // ---------- Boucle principale ----------
   async tick() {
     const r = await fetch(`${LIVE_URL}&_=${Date.now()}`, { headers: UA, cf: { cacheTtl: 0 } });
-    if (!r.ok) return SLOW;
-    const list = await r.json();
-    if (!Array.isArray(list)) return SLOW;
+    const body = await r.text();
+    let list = null;
+    try {
+      list = JSON.parse(body);
+    } catch (_) {}
+    if (!r.ok || !Array.isArray(list)) {
+      await this.state.storage.put('src', `${new Date().toISOString()} HTTP ${r.status} ${body.slice(0, 160)}`);
+      return SLOW;
+    }
+    await this.state.storage.put('src', `ok ${list.length}`);
 
     // État précédent ; trop ancien (robot relancé après une pause) = on repart sans notifier.
     const liveAt = (await this.state.storage.get('liveAt')) || 0;
