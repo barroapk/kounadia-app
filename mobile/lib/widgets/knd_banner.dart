@@ -253,7 +253,10 @@ class KndBanner extends StatelessWidget {
         }
         return Padding(
           padding: const EdgeInsets.only(bottom: 14),
-          child: _Carousel(key: ValueKey(c.slides.map((s) => s.id).join(',')), slides: c.slides),
+          // Clé = langue + contenu : une pub traduite ou modifiée est redessinée tout de suite.
+          child: _Carousel(
+              key: ValueKey('${UserPrefs.lang}|${c.slides.map((s) => '${s.id}:${Object.hashAll(s.pages.map((p) => '${p.url}${p.title}${p.text}'))}:${s.cta}').join(',')}'),
+              slides: c.slides),
         );
       },
     ));
