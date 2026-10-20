@@ -104,9 +104,20 @@ class BannerService {
   static DateTime? _at;
   static Future<BannerConfig?>? _pending;
 
+  /// Change quand de nouvelles publicités arrivent : les bannières se redessinent.
+  static final version = ValueNotifier<int>(0);
+  static BannerConfig? get cached => _mem;
+
+  /// Recharge tout de suite (retour dans l'app, actualisation, toutes les 3 min).
+  static Future<void> reload() async {
+    _at = null;
+    await load();
+    version.value++;
+  }
+
   static Future<BannerConfig?> load() {
     final m = _mem;
-    if (m != null && _at != null && DateTime.now().difference(_at!) < const Duration(minutes: 15)) {
+    if (m != null && _at != null && DateTime.now().difference(_at!) < const Duration(minutes: 3)) {
       return Future.value(m);
     }
     return _pending ??= _fetch();
@@ -159,8 +170,11 @@ class KndBanner extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return FutureBuilder<BannerConfig?>(
+    return ValueListenableBuilder<int>(
+      valueListenable: BannerService.version,
+      builder: (_, __, ___) => FutureBuilder<BannerConfig?>(
       future: BannerService.load(),
+      initialData: BannerService.cached,
       builder: (context, snap) {
         final c = snap.data;
         if (c == null || !c.active || c.slides.isEmpty) return const SizedBox.shrink();
@@ -169,10 +183,10 @@ class KndBanner extends StatelessWidget {
         }
         return Padding(
           padding: const EdgeInsets.only(bottom: 14),
-          child: _Carousel(slides: c.slides),
+          child: _Carousel(key: ValueKey(c.slides.map((s) => s.id).join(',')), slides: c.slides),
         );
       },
-    );
+    ));
   }
 }
 
@@ -180,7 +194,7 @@ class KndBanner extends StatelessWidget {
 /// Ordre aléatoire à chaque bannière.
 class _Carousel extends StatefulWidget {
   final List<BannerSlide> slides;
-  const _Carousel({required this.slides});
+  const _Carousel({super.key, required this.slides});
   @override
   State<_Carousel> createState() => _CarouselState();
 }

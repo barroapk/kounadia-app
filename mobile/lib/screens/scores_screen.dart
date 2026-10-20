@@ -139,6 +139,7 @@ class _ScoresScreenState extends State<ScoresScreen> with WidgetsBindingObserver
         _loading = false;
         _error = null;
       });
+      if (LiveSocket.last.isNotEmpty) _onSocket(Map.of(LiveSocket.last));
       _pollLive();
       _applyLogos();
     } catch (e) {
@@ -430,7 +431,10 @@ class _ScoresScreenState extends State<ScoresScreen> with WidgetsBindingObserver
     return RefreshIndicator(
       color: K.indigo,
       backgroundColor: K.card,
-      onRefresh: () => _load(),
+      onRefresh: () {
+        BannerService.reload();
+        return _load();
+      },
       child: ListView(
         physics: AlwaysScrollableScrollPhysics(),
         padding: EdgeInsets.fromLTRB(12, 0, 12, 96),

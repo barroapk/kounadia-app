@@ -33,6 +33,9 @@ class LiveSocket {
   static final updates = StreamController<Map<int, (int?, int?, String)>>.broadcast();
   static final events = StreamController<List<MatchEvent>>.broadcast();
   static bool get available => kLiveBase.isNotEmpty;
+
+  /// Dernier état connu de chaque match en direct (réappliqué après chaque rechargement).
+  static final Map<int, (int?, int?, String)> last = {};
   static bool connected = false;
 
   static WebSocket? _ws;
@@ -96,6 +99,8 @@ class LiveSocket {
         if (id == null || v is! List || v.length < 3) return;
         out[id] = ((v[0] as num?)?.toInt(), (v[1] as num?)?.toInt(), '${v[2]}'.trim());
       });
+      if (j['k'] == 'snap') last.clear();
+      last.addAll(out);
       if (out.isNotEmpty) updates.add(out);
       final ev = ((j['ev'] as List?) ?? const [])
           .whereType<Map>()

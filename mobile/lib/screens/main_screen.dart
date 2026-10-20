@@ -1,4 +1,6 @@
+import 'dart:async';
 import 'package:flutter/material.dart';
+import '../widgets/knd_banner.dart' show BannerService;
 import '../widgets/forecast_card.dart' show K;
 import '../services/analytics.dart';
 import '../services/user_prefs.dart';
@@ -39,14 +41,20 @@ class _MainScreenState extends State<MainScreen> with WidgetsBindingObserver {
   void dispose() {
     UserPrefs.changed.removeListener(_prefsChanged);
     WidgetsBinding.instance.removeObserver(this);
+    _adTimer?.cancel();
     super.dispose();
   }
 
   bool _ready = false;
+  Timer? _adTimer;
 
   @override
   void didChangeAppLifecycleState(AppLifecycleState s) {
-    if (s == AppLifecycleState.resumed) LiveSocket.start();
+    if (s == AppLifecycleState.resumed) {
+      LiveSocket.start();
+    _adTimer = Timer.periodic(Duration(minutes: 3), (_) => BannerService.reload());
+      BannerService.reload();
+    }
     if (s == AppLifecycleState.paused) LiveSocket.stop();
     if (s == AppLifecycleState.resumed && _ready && mounted) AppUpdate.checkOnStart(context);
   }
