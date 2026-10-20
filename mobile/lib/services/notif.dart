@@ -6,6 +6,7 @@ import '../l10n/tr.dart';
 import 'coupon_store.dart';
 import 'fav_leagues.dart';
 import 'user_prefs.dart';
+import '../screens/match_open.dart';
 
 // Identifiants Firebase injectés à la compilation (secret GOOGLE_SERVICES_JSON).
 const _apiKey = String.fromEnvironment('FB_API_KEY');
@@ -15,6 +16,9 @@ const _project = String.fromEnvironment('FB_PROJECT');
 
 /// Clé du "ScaffoldMessenger" global : affiche les alertes reçues quand l'app est ouverte.
 final kMessengerKey = GlobalKey<ScaffoldMessengerState>();
+
+/// Navigateur global : ouvre le match quand on touche une notification.
+final kNavKey = GlobalKey<NavigatorState>();
 
 /// Même calcul que le robot Cloudflare (FNV-1a 32 bits) : nom de sujet d'un championnat.
 String leagueHash(String s) {
@@ -46,6 +50,7 @@ class Notif {
       final p = await SharedPreferences.getInstance();
       enabled.value = p.getBool('notif_on') ?? true;
       FirebaseMessaging.onMessage.listen(_foreground);
+      FirebaseMessaging.onMessageOpenedApp.listen(_open);
       FavLeagues.set.addListener(sync);
       UserPrefs.changed.addListener(sync);
     } catch (_) {}
@@ -60,6 +65,17 @@ class Notif {
       } catch (_) {}
     }
     await sync();
+    try {
+      final m = await FirebaseMessaging.instance.getInitialMessage();
+      if (m != null) _open(m);
+    } catch (_) {}
+  }
+
+  /// Notification touchée : ouvre directement le match concerné.
+  static void _open(RemoteMessage m) {
+    final id = int.tryParse(m.data['id']?.toString() ?? '');
+    final ctx = kNavKey.currentContext;
+    if (id != null && ctx != null) openMatchId(ctx, id);
   }
 
   static Future<void> setEnabled(bool on) async {
@@ -87,7 +103,8 @@ class Notif {
     kMessengerKey.currentState
       ?..hideCurrentSnackBar()
       ..showSnackBar(SnackBar(
-        duration: const Duration(seconds: 4),
+        duration: const Duration(seconds: 5),
+        action: m.data['id'] == null ? null : SnackBarAction(label: tr('Voir'), onPressed: () => _open(m)),
         content: Column(mainAxisSize: MainAxisSize.min, crossAxisAlignment: CrossAxisAlignment.start, children: [
           Text(n.title ?? '', style: const TextStyle(fontWeight: FontWeight.w800)),
           if ((n.body ?? '').isNotEmpty) Text(n.body!),

@@ -46,12 +46,48 @@ export class Poller {
     this.tokenExp = 0;
   }
 
-  // Appelé par la relance de chaque minute : s'assure que la boucle tourne.
-  async fetch() {
+  // /live : direct en temps réel (WebSocket) · /log?ids=1,2 : événements des matchs
+  // Tout appel (dont la relance de chaque minute) s'assure que la boucle tourne.
+  async fetch(req) {
     const a = await this.state.storage.getAlarm();
     if (a == null || a < Date.now() - 30000) await this.state.storage.setAlarm(Date.now() + 1000);
+    const url = new URL(req.url);
+    if (url.pathname === '/live' && req.headers.get('Upgrade') === 'websocket') {
+      const [client, server] = Object.values(new WebSocketPair());
+      this.state.acceptWebSocket(server);
+      const live = (await this.state.storage.get('live')) || {};
+      server.send(JSON.stringify({ k: 'snap', live }));
+      return new Response(null, { status: 101, webSocket: client });
+    }
+    if (url.pathname === '/log') {
+      const ids = new Set((url.searchParams.get('ids') || '').split(',').filter(Boolean).slice(0, 300).map(Number));
+      const log = ((await this.state.storage.get('log')) || []).filter((e) => ids.has(e.id));
+      return Response.json(log, { headers: { 'access-control-allow-origin': '*', 'cache-control': 'no-store' } });
+    }
     const stat = (await this.state.storage.get('stat')) || {};
-    return new Response(JSON.stringify(stat), { headers: { 'content-type': 'application/json' } });
+    stat.clients = this.state.getWebSockets().length;
+    return Response.json(stat);
+  }
+
+  webSocketMessage(ws, msg) {
+    if (msg === 'ping') ws.send('pong');
+  }
+
+  webSocketClose(ws, code) {
+    try {
+      ws.close(code, 'bye');
+    } catch (_) {}
+  }
+
+  broadcast(obj) {
+    const socks = this.state.getWebSockets();
+    if (!socks.length) return;
+    const msg = JSON.stringify(obj);
+    for (const ws of socks) {
+      try {
+        ws.send(msg);
+      } catch (_) {}
+    }
   }
 
   async alarm() {
@@ -104,6 +140,8 @@ export class Poller {
     const prev = Date.now() - liveAt < 120000 ? await this.state.storage.get('live') : null; // id -> [hs, as, st]
     const cur = {};
     const events = (await this.state.storage.get('queue')) || [];
+    const fresh = []; // événements détectés à ce passage (historique + direct)
+    const changed = {};
     let live = 0;
     await this.loadNames(false);
 
@@ -115,20 +153,33 @@ export class Poller {
       const as = Number.isFinite(l.as) ? l.as : l.as == null ? null : Number(l.as);
       cur[id] = [hs, as, st];
       if (inPlay(st)) live++;
+      const q = prev?.[id];
+      if (!q || q[0] !== hs || q[1] !== as || q[2] !== st) changed[id] = cur[id];
       if (!prev) continue; // premier passage : on mémorise sans notifier
       const p = prev[id];
       const pst = p ? p[2] : '';
       const base = { id, hs, as, st };
       const started = /^\d/.test(st) && (p ? !inPlay(pst) && !isFin(pst) : parseInt(st, 10) <= 3);
-      if (started) events.push({ ...base, t: 'ko' });
+      if (started) fresh.push({ ...base, t: 'ko' });
       if (p && hs != null && as != null && p[0] != null && p[1] != null && (hs > p[0] || as > p[1])) {
-        events.push({ ...base, t: 'goal', side: hs > p[0] ? 'h' : 'a' });
+        fresh.push({ ...base, t: 'goal', side: hs > p[0] ? 'h' : 'a' });
       }
-      if (isHT(st) && !isHT(pst)) events.push({ ...base, t: 'ht' });
-      if (isFin(st) && p && !isFin(pst)) events.push({ ...base, t: 'ft' });
+      if (isHT(st) && !isHT(pst)) fresh.push({ ...base, t: 'ht' });
+      if (isFin(st) && p && !isFin(pst)) fresh.push({ ...base, t: 'ft' });
     }
     await this.state.storage.put('live', cur);
     await this.state.storage.put('liveAt', Date.now());
+
+    // Direct dans l'app : seulement ce qui a changé, dès maintenant.
+    const at = Date.now();
+    for (const e of fresh) e.at = at;
+    if (Object.keys(changed).length || fresh.length) this.broadcast({ k: 'diff', live: changed, ev: fresh });
+    if (fresh.length) {
+      const old = (await this.state.storage.get('log')) || [];
+      const log = old.filter((e) => at - e.at < 36 * 3600000).concat(fresh).slice(-5000);
+      await this.state.storage.put('log', log);
+    }
+    events.push(...fresh);
 
     // Les buts d'abord ; le reste attend le passage suivant (3 s) si trop d'événements.
     events.sort((a, b) => (a.t === 'goal' ? 0 : 1) - (b.t === 'goal' ? 0 : 1));
@@ -235,7 +286,7 @@ export default {
   async scheduled(_ev, env, ctx) {
     ctx.waitUntil(poller(env).fetch('https://poller/kick'));
   },
-  async fetch(_req, env) {
-    return poller(env).fetch('https://poller/status');
+  async fetch(req, env) {
+    return poller(env).fetch(req);
   },
 };

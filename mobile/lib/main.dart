@@ -92,6 +92,7 @@ class _KounadiaAppState extends State<KounadiaApp> with WidgetsBindingObserver {
     return MaterialApp(
       title: 'KOUNADIA',
       scaffoldMessengerKey: kMessengerKey,
+      navigatorKey: kNavKey,
       debugShowCheckedModeBanner: false,
       theme: ThemeData(
         useMaterial3: true,

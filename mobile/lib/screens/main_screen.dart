@@ -16,6 +16,8 @@ import 'account_screen.dart';
 import '../l10n/tr.dart';
 import '../services/app_update.dart';
 import '../services/notif.dart';
+import '../services/live_socket.dart';
+import 'alerts_screen.dart';
 
 final k1xBet = Color(0xFF1A5BA6);
 
@@ -44,6 +46,8 @@ class _MainScreenState extends State<MainScreen> with WidgetsBindingObserver {
 
   @override
   void didChangeAppLifecycleState(AppLifecycleState s) {
+    if (s == AppLifecycleState.resumed) LiveSocket.start();
+    if (s == AppLifecycleState.paused) LiveSocket.stop();
     if (s == AppLifecycleState.resumed && _ready && mounted) AppUpdate.checkOnStart(context);
   }
 
@@ -52,6 +56,7 @@ class _MainScreenState extends State<MainScreen> with WidgetsBindingObserver {
     super.initState();
     UserPrefs.changed.addListener(_prefsChanged);
     WidgetsBinding.instance.addObserver(this);
+    LiveSocket.start();
     WidgetsBinding.instance.addPostFrameCallback((_) {
       if (mounted) _start();
     });
@@ -185,6 +190,11 @@ class _MainScreenState extends State<MainScreen> with WidgetsBindingObserver {
           ),
         ]),
         actions: [
+          IconButton(
+            tooltip: tr('Alertes'),
+            icon: Icon(Icons.notifications_rounded, color: K.muted),
+            onPressed: () => _push(AlertsScreen()),
+          ),
           IconButton(
             tooltip: tr('Paramètres'),
             icon: Icon(Icons.settings_rounded, color: K.muted),

@@ -1,7 +1,7 @@
 name = "kounadia-notif"
 main = "src/index.js"
 compatibility_date = "2025-09-01"
-workers_dev = false
+workers_dev = true
 
 # Relance de sécurité chaque minute (le robot tourne déjà toutes les 3 s).
 [triggers]

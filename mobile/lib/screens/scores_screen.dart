@@ -14,6 +14,7 @@ import '../widgets/premium_gate.dart';
 import 'fav_leagues_screen.dart';
 import '../services/fav_leagues.dart';
 import '../services/notif.dart';
+import '../services/live_socket.dart';
 import '../services/primatips_service.dart' show frLeague;
 import '../l10n/tr.dart';
 
@@ -37,6 +38,7 @@ class _ScoresScreenState extends State<ScoresScreen> with WidgetsBindingObserver
   Timer? _liveTimer;
   Timer? _fullTimer;
   bool _active = true;
+  StreamSubscription<Map<int, (int?, int?, String)>>? _sock;
   bool _onlyFav = false;
   int _tick = 0;
   String _q = '';
@@ -68,6 +70,7 @@ class _ScoresScreenState extends State<ScoresScreen> with WidgetsBindingObserver
       if (_active && (_offline || _tick % 5 == 0)) _load(silent: true);
     });
     _liveTimer = Timer.periodic(Duration(seconds: 30), (_) => _pollLive());
+    _sock = LiveSocket.updates.stream.listen(_onSocket);
   }
 
   @override
@@ -76,6 +79,7 @@ class _ScoresScreenState extends State<ScoresScreen> with WidgetsBindingObserver
     FavLeagues.set.removeListener(_onFav);
     _liveTimer?.cancel();
     _fullTimer?.cancel();
+    _sock?.cancel();
     super.dispose();
   }
 
@@ -175,26 +179,40 @@ class _ScoresScreenState extends State<ScoresScreen> with WidgetsBindingObserver
             now.difference(m.date!).inMinutes < 150));
   }
 
+  /// Applique un score du direct (robot en temps réel, ou site en secours).
+  void _applyLive(Map<int, LiveMatch> byId, int? id, int? hs, int? as_, String st, DateTime now) {
+    final m = byId[id];
+    if (m == null || m.status == 'postponed') return;
+    if (m.date != null && m.date!.isAfter(now)) return;
+    m.hs = hs ?? m.hs;
+    m.as_ = as_ ?? m.as_;
+    if (RegExp(r'^(FT|AET|PEN)', caseSensitive: false).hasMatch(st)) {
+      m.status = 'finished';
+      m.minute = null;
+    } else {
+      m.status = 'live';
+      m.minute = RegExp(r'^\d').hasMatch(st) ? "$st'" : (st.toUpperCase() == 'HT' ? 'MT' : st);
+    }
+  }
+
+  void _onSocket(Map<int, (int?, int?, String)> u) {
+    if (!mounted) return;
+    final byId = {for (final m in _listFor(0)) m.id: m};
+    final now = DateTime.now();
+    u.forEach((id, v) => _applyLive(byId, id, v.$1, v.$2, v.$3, now));
+    setState(() {});
+  }
+
   Future<void> _pollLive() async {
-    if (!_active || !_hasLive) return;
+    // Le robot pousse déjà le direct en temps réel : interrogation du site seulement en secours.
+    if (!_active || !_hasLive || LiveSocket.connected) return;
     try {
       final live = await ScoresService.live();
       final byId = {for (final m in _listFor(0)) m.id: m};
       final now = DateTime.now();
       for (final l in live) {
-        final m = byId[(l['id'] as num?)?.toInt()];
-        if (m == null || m.status == 'postponed') continue;
-        if (m.date != null && m.date!.isAfter(now)) continue;
-        m.hs = (l['hs'] as num?)?.toInt() ?? m.hs;
-        m.as_ = (l['as'] as num?)?.toInt() ?? m.as_;
-        final st = (l['st'] ?? '').toString().trim();
-        if (RegExp(r'^(FT|AET|PEN)', caseSensitive: false).hasMatch(st)) {
-          m.status = 'finished';
-          m.minute = null;
-        } else {
-          m.status = 'live';
-          m.minute = RegExp(r'^\d').hasMatch(st) ? "$st'" : (st.toUpperCase() == 'HT' ? 'MT' : st);
-        }
+        _applyLive(byId, (l['id'] as num?)?.toInt(), (l['hs'] as num?)?.toInt(), (l['as'] as num?)?.toInt(),
+            (l['st'] ?? '').toString().trim(), now);
       }
       if (mounted) setState(() {});
     } catch (_) {}

@@ -57,6 +57,14 @@ jobs:
           echo "FB_SENDER=$(echo "$GS" | jq -r '.project_info.project_number')" >> "$GITHUB_ENV"
           echo "FB_PROJECT=$(echo "$GS" | jq -r '.project_info.project_id')" >> "$GITHUB_ENV"
 
+      - name: Adresse du robot (direct en temps réel)
+        env:
+          CF_T: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          CF_A: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+        run: |
+          SUB=$(curl -s -H "Authorization: Bearer $CF_T" "https://api.cloudflare.com/client/v4/accounts/$CF_A/workers/subdomain" | jq -r '.result.subdomain // empty')
+          if [ -n "$SUB" ]; then echo "LIVE_URL=https://kounadia-notif.$SUB.workers.dev" >> "$GITHUB_ENV"; echo "Robot : kounadia-notif.$SUB.workers.dev"; else echo "::warning::Sous-domaine workers.dev introuvable : direct par le site (30 s)"; fi
+
       - name: Compiler l'APK (mode release)
         working-directory: mobile
         env:
@@ -74,6 +82,7 @@ jobs:
           --dart-define=FB_APP_ID=$FB_APP_ID
           --dart-define=FB_SENDER=$FB_SENDER
           --dart-define=FB_PROJECT=$FB_PROJECT
+          --dart-define=LIVE_URL=$LIVE_URL
 
       - name: Vérifier la signature
         run: |
