@@ -12,6 +12,7 @@ class MainActivity : FlutterActivity() {
         // Canal « Matchs en direct » : notifications prioritaires (bannière + son).
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
             val ch = NotificationChannel("live", "Matchs en direct", NotificationManager.IMPORTANCE_HIGH)
+            ch.enableVibration(true)
             ch.description = "Buts, coups d'envoi, mi-temps et fins de match"
             getSystemService(NotificationManager::class.java)?.createNotificationChannel(ch)
         }
