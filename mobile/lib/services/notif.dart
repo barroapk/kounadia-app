@@ -55,6 +55,14 @@ class Notif {
       FirebaseMessaging.onMessage.listen(_foreground);
       FirebaseMessaging.onMessageOpenedApp.listen(_open);
       FavLeagues.set.addListener(sync);
+      // Nouveau jeton Firebase : on le redonne au robot.
+      FirebaseMessaging.instance.onTokenRefresh.listen((_) async {
+        try {
+          final p = await SharedPreferences.getInstance();
+          await p.remove('notif_cp');
+        } catch (_) {}
+        sync();
+      });
       UserPrefs.changed.addListener(sync);
     } catch (_) {}
   }
@@ -115,8 +123,9 @@ class Notif {
       ));
   }
 
-  /// Coupons en cours confiés au robot : il prévient dès qu'un coupon est gagné ou perdu.
-  static Future<void> _coupons() async {
+  /// Coupons en cours et matchs suivis confiés au robot : il envoie les buts directement
+  /// à ce téléphone (plus rapide) et prévient dès qu'un coupon est gagné ou perdu.
+  static Future<void> _coupons(Set<String> topics) async {
     try {
       final p = await SharedPreferences.getInstance();
       final list = enabled.value
@@ -134,7 +143,8 @@ class Notif {
           : <Map<String, dynamic>>[];
       final token = await FirebaseMessaging.instance.getToken();
       if (token == null || kLiveBase.isEmpty) return;
-      final body = jsonEncode({'token': token, 'lang': appLang, 'coupons': list});
+      final live = (topics.where((t) => t.contains('_l2_') || t.contains('_m2_')).toList()..sort());
+      final body = jsonEncode({'token': token, 'lang': appLang, 'coupons': list, 'topics': live});
       if (p.getString('notif_cp') == body) return; // rien de nouveau
       final r = await http
           .post(Uri.parse('$kLiveBase/coupons'), headers: {'content-type': 'application/json'}, body: body)
@@ -160,18 +170,18 @@ class Notif {
           final l = appLang;
           if (_labels.isEmpty) {
             // Matchs pas encore chargés : on garde les championnats déjà suivis.
-            want.addAll(had.where((t) => t.startsWith('${l}_l_')));
+            want.addAll(had.where((t) => t.startsWith('${l}_l2_')));
           } else {
             for (final x in _labels) {
-              if (FavLeagues.has(x)) want.add('${l}_l_${leagueHash(x)}');
+              if (FavLeagues.has(x)) want.add('${l}_l2_${leagueHash(x)}');
             }
           }
           for (final id in p.getStringList('score_favs') ?? const <String>[]) {
-            want.add('${l}_m_$id');
+            want.add('${l}_m2_$id');
           }
           for (final c in await CouponStore.all()) {
             for (final g in c.legs) {
-              if (g.result == 'pending' || g.result == 'live') want.add('${l}_m_${g.matchId}');
+              if (g.result == 'pending' || g.result == 'live') want.add('${l}_m2_${g.matchId}');
             }
           }
           want.add('${l}_tips'); // Coup sûr et pronostics du jour
@@ -188,7 +198,8 @@ class Notif {
         }
         await p.setStringList('notif_topics', want.toList());
       } while (_again);
-      await _coupons();
+      final prefs = await SharedPreferences.getInstance();
+      await _coupons((prefs.getStringList('notif_topics') ?? const <String>[]).toSet());
     } catch (_) {
       // Hors connexion : nouvel essai au prochain chargement.
     } finally {

@@ -7,7 +7,10 @@ const UA = { 'User-Agent': 'KOUNADIA-App/1.0' };
 const FAST = 3000; // matchs en cours
 const SLOW = 20000; // aucun match en cours
 const LANGS = ['fr', 'en', 'pt', 'es', 'ar'];
-const MAX_EVENTS_PER_TICK = 8; // 5 envois par événement : reste sous la limite d'appels
+const SEND_BUDGET = 38; // envois Firebase par passage (Cloudflare autorise 50 appels au total)
+const DIRECT_MAX = 120; // au-delà, on passe par les « sujets » Firebase (plus lents mais sans limite)
+const OUTQ_MAX = 1500;
+const TOPIC_RE = /^[a-z]{2}_(l2|m2)_[0-9a-z]{1,16}$/;
 
 const KFEED = 'https://raw.githubusercontent.com/barroapk/kfeed';
 
@@ -239,7 +242,11 @@ export class Poller {
     await this.sendJobs(jobs);
   }
 
-  // ---------- Coupons des utilisateurs : gagné / perdu ----------
+  // ---------- Téléphones : coupons en cours + matchs/championnats suivis ----------
+  devKey(token) {
+    return `cp:${leagueHash(token)}${leagueHash(token.split('').reverse().join(''))}`;
+  }
+
   async saveCoupons(req) {
     let b = {};
     try {
@@ -247,18 +254,49 @@ export class Poller {
     } catch (_) {}
     const token = String(b.token || '');
     if (token.length < 20) return Response.json({ ok: false }, { status: 400 });
-    const key = `cp:${leagueHash(token)}${leagueHash(token.split('').reverse().join(''))}`;
-    const old = (await this.state.storage.get(key))?.coupons || [];
-    const done = new Set(old.filter((c) => c.done).map((c) => c.sig));
+    const key = this.devKey(token);
+    const prev = (await this.state.storage.get(key)) || null;
+    const done = new Set((prev?.coupons || []).filter((c) => c.done).map((c) => c.sig));
     const coupons = (Array.isArray(b.coupons) ? b.coupons : []).slice(0, 5).map((c) => ({
       sig: String(c.sig || ''),
       odd: String(c.odd || ''),
       legs: (Array.isArray(c.legs) ? c.legs : []).slice(0, 30).map((l) => ({ id: Number(l.id), pick: String(l.pick), home: String(l.home || ''), away: String(l.away || '') })),
       done: done.has(String(c.sig || '')),
     }));
-    if (!coupons.length) await this.state.storage.delete(key);
-    else await this.state.storage.put(key, { token, lang: LANGS.includes(b.lang) ? b.lang : 'en', coupons, at: Date.now() });
+    // Sujets suivis (nouvelle version de l'app) : notifications envoyées directement au téléphone.
+    const topics = [...new Set((Array.isArray(b.topics) ? b.topics : []).map(String).filter((t) => TOPIC_RE.test(t)))].slice(0, 300);
+    await this.reindex(key, prev?.topics || [], topics);
+    if (!coupons.length && !topics.length) await this.state.storage.delete(key);
+    else await this.state.storage.put(key, { token, lang: LANGS.includes(b.lang) ? b.lang : 'en', coupons, topics, at: Date.now() });
     return Response.json({ ok: true });
+  }
+
+  /** Index « sujet -> téléphones », pour retrouver vite qui prévenir. */
+  async reindex(key, oldTopics, newTopics) {
+    const oldSet = new Set(oldTopics);
+    const newSet = new Set(newTopics);
+    for (const t of oldSet) {
+      if (newSet.has(t)) continue;
+      const list = ((await this.state.storage.get(`ix:${t}`)) || []).filter((k) => k !== key);
+      if (list.length) await this.state.storage.put(`ix:${t}`, list);
+      else await this.state.storage.delete(`ix:${t}`);
+    }
+    for (const t of newSet) {
+      if (oldSet.has(t)) continue;
+      const list = (await this.state.storage.get(`ix:${t}`)) || [];
+      if (!list.includes(key)) list.push(key);
+      await this.state.storage.put(`ix:${t}`, list);
+    }
+  }
+
+  /** Lecture groupée (le stockage accepte 128 clés par appel). */
+  async getMany(keys) {
+    const out = new Map();
+    for (let i = 0; i < keys.length; i += 128) {
+      const m = await this.state.storage.get(keys.slice(i, i + 128));
+      for (const [k, v] of m) out.set(k, v);
+    }
+    return out;
   }
 
   async checkCoupons(fin) {
@@ -289,7 +327,7 @@ export class Poller {
     const all = await this.state.storage.list({ prefix: 'cp:' });
     for (const [key, u] of all) {
       let changed = false;
-      for (const c of u.coupons) {
+      for (const c of u.coupons || []) {
         if (c.done || !c.legs.some((l) => fin[l.id])) continue;
         const res = c.legs.map((l) => {
           const f = finals[l.id];
@@ -314,13 +352,82 @@ export class Poller {
   // Envoi groupé : [type ('tips' | 'token'), cible (langue ou jeton), titre, texte, data, tag]
   async sendJobs(jobs) {
     if (!jobs.length) return;
-    const token = await this.oauth();
-    await Promise.allSettled(
-      jobs.slice(0, 40).map(([kind, target, title, body, data, tag]) => {
-        const where = kind === 'tips' ? { topic: `${target}_tips` } : { token: target };
-        return this.fcm(token, { ...where, notification: { title, body }, data, android: { priority: 'HIGH', ttl: '3600s', notification: { channel_id: 'live', tag, sound: 'default' } } });
-      }),
-    );
+    const msgs = jobs.map(([kind, target, title, body, data, tag]) => ({
+      ...(kind === 'tips' ? { topic: `${target}_tips` } : { token: target }),
+      notification: { title, body },
+      data,
+      android: { priority: 'HIGH', ttl: '3600s', notification: this.androidNote(tag) },
+    }));
+    await this.enqueue(msgs, 2);
+  }
+
+  androidNote(tag) {
+    return { channel_id: 'live', tag, sound: 'default', notification_priority: 'PRIORITY_MAX', default_vibrate_timings: true, visibility: 'PUBLIC' };
+  }
+
+  /** File d'attente unique des notifications : 0 = buts, 1 = autres événements du direct, 2 = pronostics/coupons. */
+  async enqueue(msgs, prio) {
+    if (!msgs.length) return;
+    const q = (await this.state.storage.get('outq')) || [];
+    for (const m of msgs) q.push({ p: prio, m });
+    q.sort((a, b) => a.p - b.p); // tri stable : l'ordre d'arrivée est conservé
+    await this.state.storage.put('outq', q.slice(0, OUTQ_MAX));
+  }
+
+  /** Envoie ce que la file permet à ce passage ; le reste part au passage suivant (3 s). */
+  async drain() {
+    const q = (await this.state.storage.get('outq')) || [];
+    if (!q.length) return { sent: 0, left: 0 };
+    const token = await this.oauth(); // en cas d'échec, la file reste intacte
+    const batch = q.slice(0, SEND_BUDGET);
+    await this.state.storage.put('outq', q.slice(SEND_BUDGET));
+    const res = await Promise.allSettled(batch.map((x) => this.fcm(token, x.m)));
+    return { sent: res.filter((x) => x.status === 'fulfilled' && x.value).length, left: q.length - batch.length };
+  }
+
+  // ---------- Notifications du direct ----------
+  liveText(lang, e, [home, away, league]) {
+    const t = TXT[lang] || TXT.en;
+    const score = e.hs != null && e.as != null ? `${home} ${e.hs}-${e.as} ${away}` : `${home} - ${away}`;
+    const min = /^\d/.test(e.st) ? ` (${e.st}')` : '';
+    let title = t[e.t];
+    if (e.t === 'goal') title = title.replace('{team}', e.side === 'h' ? home : away);
+    return { title, body: `${score}${e.t === 'goal' ? min : ''}\n${league}` };
+  }
+
+  liveMsg(target, lang, e, n) {
+    return {
+      ...target,
+      notification: this.liveText(lang, e, n),
+      data: { id: String(e.id), t: e.t },
+      android: { priority: 'HIGH', ttl: '600s', notification: this.androidNote(`m${e.id}`) },
+    };
+  }
+
+  /** Prépare les notifications d'un événement (but, coup d'envoi, mi-temps, fin). */
+  async buildLive(e, n) {
+    const h = leagueHash(n[2]);
+    const msgs = [];
+    // Anciennes versions de l'app (abonnées aux sujets Firebase « _l_ / _m_ »).
+    for (const lang of LANGS) {
+      msgs.push(this.liveMsg({ condition: `'${lang}_l_${h}' in topics || '${lang}_m_${e.id}' in topics` }, lang, e, n));
+    }
+    // Nouvelle version : envoi direct à chaque téléphone (le plus rapide).
+    const topics = LANGS.flatMap((L) => [`${L}_l2_${h}`, `${L}_m2_${e.id}`]);
+    const ix = await this.state.storage.get(topics.map((t) => `ix:${t}`));
+    const keys = new Set();
+    for (const list of ix.values()) for (const k of list || []) keys.add(k);
+    if (keys.size > DIRECT_MAX) {
+      for (const lang of LANGS) {
+        msgs.push(this.liveMsg({ condition: `'${lang}_l2_${h}' in topics || '${lang}_m2_${e.id}' in topics` }, lang, e, n));
+      }
+    } else if (keys.size) {
+      const devs = await this.getMany([...keys]);
+      for (const d of devs.values()) {
+        if (d?.token) msgs.push(this.liveMsg({ token: d.token }, d.lang || 'en', e, n));
+      }
+    }
+    return msgs;
   }
 
   async fcm(token, message) {
@@ -333,10 +440,14 @@ export class Poller {
       const t = await r.text();
       await this.state.storage.put('fcmErr', `${r.status} ${t.slice(0, 300)}`);
       if (r.status === 401) this.tokenExp = 0;
-      // Téléphone désinstallé : on oublie ses coupons.
+      // Téléphone désinstallé : on l'oublie (coupons et sujets suivis).
       if (message.token && (r.status === 404 || t.includes('UNREGISTERED'))) {
-        const key = `cp:${leagueHash(message.token)}${leagueHash(message.token.split('').reverse().join(''))}`;
-        await this.state.storage.delete(key);
+        const key = this.devKey(message.token);
+        const d = await this.state.storage.get(key);
+        if (d) {
+          await this.reindex(key, d.topics || [], []);
+          await this.state.storage.delete(key);
+        }
       }
     }
     return r.ok;
@@ -402,7 +513,21 @@ export class Poller {
     }
     events.push(...fresh);
 
-    // Pronostics (toutes les 5 min) et coupons (à chaque fin de match)
+    // Notifications : tous les nouveaux événements entrent dans la file (buts en premier).
+    if (events.length) {
+      if (events.some((e) => !this.names?.[e.id])) await this.loadNames(true);
+      events.sort((a, b) => (a.t === 'goal' ? 0 : 1) - (b.t === 'goal' ? 0 : 1));
+      for (const e of events) {
+        const n = this.names?.[e.id];
+        if (!n) continue; // match inconnu du flux : pas de nom à afficher
+        await this.enqueue(await this.buildLive(e, n), e.t === 'goal' ? 0 : 1);
+      }
+    }
+    await this.state.storage.put('queue', []);
+    const { sent, left } = await this.drain();
+
+    // Pronostics (toutes les 5 min) et coupons (à chaque fin de match) : envoyés au passage suivant,
+    // pour ne jamais retarder les notifications du direct.
     const fin = {};
     for (const e of fresh) if (e.t === 'ft') fin[e.id] = [e.hs, e.as];
     try {
@@ -411,68 +536,17 @@ export class Poller {
     } catch (e) {
       await this.state.storage.put('err', `${new Date().toISOString()} tips ${e}`);
     }
-
-    // Les buts d'abord ; le reste attend le passage suivant (3 s) si trop d'événements.
-    events.sort((a, b) => (a.t === 'goal' ? 0 : 1) - (b.t === 'goal' ? 0 : 1));
-    const now = events.slice(0, MAX_EVENTS_PER_TICK);
-    const later = events.slice(MAX_EVENTS_PER_TICK).slice(0, 200);
-    let sent = 0;
-    if (now.length) {
-      if (now.some((e) => !this.names?.[e.id])) await this.loadNames(true);
-      const token = await this.oauth();
-      const jobs = [];
-      for (const e of now) {
-        const n = this.names?.[e.id];
-        if (!n) continue; // match inconnu du flux : pas de nom à afficher
-        for (const lang of LANGS) jobs.push(this.send(token, lang, e, n));
-      }
-      const res = await Promise.allSettled(jobs);
-      sent = res.filter((x) => x.status === 'fulfilled' && x.value).length;
-    }
-    await this.state.storage.put('queue', later);
     const stat = (await this.state.storage.get('stat')) || { sent: 0 };
     stat.at = new Date().toISOString();
     stat.live = live;
     stat.sent = (stat.sent || 0) + sent;
-    stat.queue = later.length;
+    stat.queue = left;
     await this.state.storage.put('stat', stat);
-    return live > 0 || later.length ? FAST : SLOW;
+    const more = ((await this.state.storage.get('outq')) || []).length;
+    return live > 0 || more ? FAST : SLOW;
   }
 
   // ---------- Firebase ----------
-  async send(token, lang, e, [home, away, league]) {
-    const t = TXT[lang];
-    const score = e.hs != null && e.as != null ? `${home} ${e.hs}-${e.as} ${away}` : `${home} - ${away}`;
-    const min = /^\d/.test(e.st) ? ` (${e.st}')` : '';
-    let title = t[e.t];
-    let body = `${score}${e.t === 'goal' ? min : ''}`;
-    if (e.t === 'goal') title = title.replace('{team}', e.side === 'h' ? home : away);
-    body += `\n${league}`;
-    const cond = `'${lang}_l_${leagueHash(league)}' in topics || '${lang}_m_${e.id}' in topics`;
-    const msg = {
-      message: {
-        condition: cond,
-        notification: { title, body },
-        data: { id: String(e.id), t: e.t },
-        android: {
-          priority: 'HIGH',
-          ttl: '600s',
-          notification: { channel_id: 'live', tag: `m${e.id}`, sound: 'default' },
-        },
-      },
-    };
-    const r = await fetch(`https://fcm.googleapis.com/v1/projects/${this.sa().project_id}/messages:send`, {
-      method: 'POST',
-      headers: { authorization: `Bearer ${token}`, 'content-type': 'application/json' },
-      body: JSON.stringify(msg),
-    });
-    if (!r.ok) {
-      await this.state.storage.put('fcmErr', `${r.status} ${(await r.text()).slice(0, 300)}`);
-      if (r.status === 401) this.tokenExp = 0;
-    }
-    return r.ok;
-  }
-
   sa() {
     return (this._sa ??= JSON.parse(this.env.FCM_SA));
   }
