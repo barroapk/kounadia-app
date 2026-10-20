@@ -3,6 +3,7 @@ import 'dart:io';
 import 'dart:typed_data';
 import 'package:http/http.dart' as http;
 import 'package:pointycastle/export.dart';
+import 'live_socket.dart' show kLiveBase;
 
 /// Données KOUNADIA publiées chiffrées (gzip + AES-256-GCM).
 /// La clé est injectée à la compilation (secret GitHub), jamais écrite dans le code.
@@ -11,8 +12,18 @@ class KFeed {
   static const _k = String.fromEnvironment('KD_KEY');
   static Uint8List? _key;
 
+  /// Connexion gardée ouverte entre deux chargements : plus rapide.
+  static final _client = http.Client();
+
   static Future<http.Response> get(String path) async {
-    final r = await http.get(Uri.parse('$_base/$path')).timeout(Duration(seconds: 25));
+    var r = await _client.get(Uri.parse('$_base/$path')).timeout(Duration(seconds: 25));
+    if (r.statusCode != 200 && kLiveBase.isNotEmpty) {
+      // GitHub refuse (trop d'utilisateurs sur le même réseau) : relais KOUNADIA.
+      try {
+        final f = await _client.get(Uri.parse('$kLiveBase/feed/$path')).timeout(Duration(seconds: 15));
+        if (f.statusCode == 200) r = f;
+      } catch (_) {}
+    }
     if (r.statusCode != 200) return r;
     final plain = open(utf8.decode(r.bodyBytes));
     return http.Response.bytes(utf8.encode(plain), 200, headers: r.headers);

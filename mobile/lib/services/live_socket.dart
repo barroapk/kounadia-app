@@ -1,6 +1,7 @@
 import 'dart:async';
 import 'dart:convert';
 import 'dart:io';
+import 'dart:math';
 import 'package:http/http.dart' as http;
 
 /// Adresse du robot KOUNADIA (injectée à la compilation par GitHub Actions).
@@ -83,7 +84,8 @@ class LiveSocket {
     connected = false;
     if (!_want) return;
     _fails++;
-    final wait = Duration(seconds: (_fails * 3).clamp(3, 30));
+    // Petit délai au hasard : si le robot redémarre, tous les téléphones ne reviennent pas à la même seconde.
+    final wait = Duration(milliseconds: (_fails * 3000).clamp(3000, 30000) + Random().nextInt(2000));
     _retry?.cancel();
     _retry = Timer(wait, _connect);
   }

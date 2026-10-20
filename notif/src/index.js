@@ -78,6 +78,11 @@ export class Poller {
     this.namesAt = 0;
     this.token = null;
     this.tokenExp = 0;
+    // « ping » du téléphone : réponse automatique de Cloudflare, sans réveiller le robot
+    // (gratuit et sans limite, même avec beaucoup d'utilisateurs connectés).
+    try {
+      state.setWebSocketAutoResponse(new WebSocketRequestResponsePair('ping', 'pong'));
+    } catch (_) {}
   }
 
   // /live : direct en temps réel (WebSocket) · /log?ids=1,2 : événements des matchs
@@ -587,11 +592,34 @@ export class Poller {
 
 const poller = (env) => env.POLLER.get(env.POLLER.idFromName('main'));
 
+// Relais des données KOUNADIA (chiffrées) quand GitHub refuse ou bloque la demande du téléphone.
+// Gardé 30 s en mémoire : beaucoup d'utilisateurs = une seule lecture GitHub.
+const FEED_RE = /^\/feed\/([a-z]+\/[a-z0-9_.-]+\.json)$/;
+const feedMem = new Map(); // chemin -> [heure, texte]
+
+async function feedRelay(path) {
+  const now = Date.now();
+  const c = feedMem.get(path);
+  if (c && now - c[0] < 30000) return c[1];
+  const r = await fetch(`${KFEED}/${path}?v=${Math.floor(now / 30000)}`);
+  if (!r.ok) return null;
+  const text = await r.text();
+  if (feedMem.size > 50) feedMem.clear();
+  feedMem.set(path, [now, text]);
+  return text;
+}
+
 export default {
   async scheduled(_ev, env, ctx) {
     ctx.waitUntil(poller(env).fetch('https://poller/kick'));
   },
   async fetch(req, env) {
+    const m = FEED_RE.exec(new URL(req.url).pathname);
+    if (m) {
+      const text = await feedRelay(m[1]).catch(() => null);
+      if (text == null) return new Response('indisponible', { status: 502 });
+      return new Response(text, { headers: { 'content-type': 'text/plain; charset=utf-8', 'cache-control': 'no-store' } });
+    }
     return poller(env).fetch(req);
   },
 };
