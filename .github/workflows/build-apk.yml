@@ -78,11 +78,12 @@ jobs:
           SIZE=$(stat -c %s kounadia.apk)
           gh release create "v$V" kounadia.apk --title "KOUNADIA $V" --notes "${NOTES:-Améliorations et corrections.}" --latest
           mkdir -p site
-          printf '{"version":"%s","build":%s,"size":%s,"date":"%s","url":"https://github.com/barroapk/kounadia-app/releases/latest/download/kounadia.apk"}\n' "$V" "$B" "$SIZE" "$(date -u +%Y-%m-%d)" > site/version.json
+          printf '{"version":"%s","build":%s,"size":%s,"date":"%s","url":"https://kounadia.pages.dev/telecharger"}\n' "$V" "$B" "$SIZE" "$(date -u +%Y-%m-%d)" > site/version.json
           git config user.name "barroapk"
           git config user.email "barroapk@users.noreply.github.com"
           git add site/version.json
           git commit -m "Version $V publiée"
-          git pull --rebase -q && git push
+          git -c rebase.autoStash=true pull --rebase -q
+          git push
           gh workflow run deploy-site.yml
           echo "Publié : KOUNADIA $V ($SIZE octets)"
