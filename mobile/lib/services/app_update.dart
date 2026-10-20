@@ -1,7 +1,6 @@
 import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
-import 'package:shared_preferences/shared_preferences.dart';
 import 'package:url_launcher/url_launcher.dart';
 import '../l10n/tr.dart';
 import '../widgets/forecast_card.dart' show K;
@@ -26,6 +25,10 @@ class AppRelease {
 
 /// Avertit l'utilisateur quand une nouvelle version de KOUNADIA est disponible.
 class AppUpdate {
+  /// Nouvelle version connue et pas encore installée (bandeau permanent).
+  static final pending = ValueNotifier<AppRelease?>(null);
+  static DateTime? _shown;
+
   static Future<AppRelease?> latest() async {
     try {
       final r = await http
@@ -46,19 +49,19 @@ class AppUpdate {
     }
   }
 
-  /// Au démarrage : au plus une fois par jour pour une même version.
+  /// À chaque ouverture (et retour dans l'app après 1 h) : la carte revient tant que
+  /// la nouvelle version n'est pas installée.
   static Future<void> checkOnStart(BuildContext context) async {
     if (kAppBuild <= 0) return; // compilation de test
     final rel = await latest();
-    if (rel == null || rel.build <= kAppBuild || !context.mounted) return;
-    try {
-      final p = await SharedPreferences.getInstance();
-      final key = 'upd_${rel.build}';
-      final last = p.getInt(key) ?? 0;
-      final now = DateTime.now().millisecondsSinceEpoch;
-      if (now - last < 20 * 3600 * 1000) return;
-      await p.setInt(key, now);
-    } catch (_) {}
+    if (rel == null || rel.build <= kAppBuild || !context.mounted) {
+      pending.value = null;
+      return;
+    }
+    pending.value = rel;
+    final s = _shown;
+    if (s != null && DateTime.now().difference(s) < const Duration(hours: 1)) return;
+    _shown = DateTime.now();
     if (context.mounted) await show(context, rel);
   }
 
@@ -81,7 +84,8 @@ class AppUpdate {
   static Future<void> show(BuildContext context, AppRelease rel) {
     return showDialog<void>(
       context: context,
-      builder: (ctx) => AlertDialog(
+      barrierDismissible: false,
+      builder: (ctx) => PopScope(canPop: false, child: AlertDialog(
         backgroundColor: K.card,
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
         icon: Icon(Icons.system_update_rounded, color: K.indigoText, size: 36),
@@ -115,7 +119,45 @@ class AppUpdate {
             label: Text(tr('Mettre à jour')),
           ),
         ],
-      ),
+      )),
+    );
+  }
+}
+
+/// Bandeau en haut de l'app tant qu'une mise à jour attend.
+class UpdateBanner extends StatelessWidget {
+  const UpdateBanner({super.key});
+
+  @override
+  Widget build(BuildContext context) {
+    return ValueListenableBuilder<AppRelease?>(
+      valueListenable: AppUpdate.pending,
+      builder: (_, rel, __) {
+        if (rel == null) return const SizedBox.shrink();
+        return Material(
+          color: K.indigo,
+          child: InkWell(
+            onTap: () => AppUpdate.show(context, rel),
+            child: Padding(
+              padding: const EdgeInsets.fromLTRB(14, 9, 10, 9),
+              child: Row(children: [
+                const Icon(Icons.system_update_rounded, color: Colors.white, size: 20),
+                const SizedBox(width: 10),
+                Expanded(
+                  child: Text('${tr('Mise à jour disponible')} · ${rel.version}',
+                      style: const TextStyle(color: Colors.white, fontWeight: FontWeight.w800, fontSize: 13.5)),
+                ),
+                Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
+                  decoration: BoxDecoration(color: Colors.white, borderRadius: BorderRadius.circular(8)),
+                  child: Text(tr('Mettre à jour'),
+                      style: TextStyle(color: K.indigo, fontWeight: FontWeight.w900, fontSize: 12.5)),
+                ),
+              ]),
+            ),
+          ),
+        );
+      },
     );
   }
 }

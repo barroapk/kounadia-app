@@ -25,7 +25,7 @@ class MainScreen extends StatefulWidget {
   State<MainScreen> createState() => _MainScreenState();
 }
 
-class _MainScreenState extends State<MainScreen> {
+class _MainScreenState extends State<MainScreen> with WidgetsBindingObserver {
   int _i = 0;
 
   void _prefsChanged() {
@@ -35,13 +35,22 @@ class _MainScreenState extends State<MainScreen> {
   @override
   void dispose() {
     UserPrefs.changed.removeListener(_prefsChanged);
+    WidgetsBinding.instance.removeObserver(this);
     super.dispose();
+  }
+
+  bool _ready = false;
+
+  @override
+  void didChangeAppLifecycleState(AppLifecycleState s) {
+    if (s == AppLifecycleState.resumed && _ready && mounted) AppUpdate.checkOnStart(context);
   }
 
   @override
   void initState() {
     super.initState();
     UserPrefs.changed.addListener(_prefsChanged);
+    WidgetsBinding.instance.addObserver(this);
     WidgetsBinding.instance.addPostFrameCallback((_) {
       if (mounted) _start();
     });
@@ -52,10 +61,12 @@ class _MainScreenState extends State<MainScreen> {
     if (!mounted) return;
     await maybeShowWelcome(context);
     if (auth != null && mounted) {
+      _ready = true;
       Navigator.push(context, MaterialPageRoute(builder: (_) => AccountScreen(signup: auth)));
       return;
     }
     await Future<void>.delayed(Duration(seconds: 3));
+    _ready = true;
     if (mounted) await AppUpdate.checkOnStart(context);
   }
   static List<Widget> _screens = [
@@ -184,7 +195,7 @@ class _MainScreenState extends State<MainScreen> {
           child: Container(height: 1, color: K.border),
         ),
       ),
-      body: IndexedStack(index: _i, children: _screens),
+      body: Column(children: [UpdateBanner(), Expanded(child: IndexedStack(index: _i, children: _screens))]),
       // Dépôt / Retrait : service disponible uniquement au Burkina Faso.
       floatingActionButton: UserPrefs.iso != 'BF' ? null : Material(
         color: k1xBet,

@@ -1,18 +1,9 @@
-import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
 import '../services/fav_leagues.dart';
-import '../services/primatips_service.dart' show frLeague;
-import '../services/scores_service.dart';
+import '../services/primatips_service.dart';
 import '../widgets/forecast_card.dart' show K, kMessage;
+import '../widgets/k_ui.dart';
 import '../l10n/tr.dart';
-
-class _Lg {
-  final String key;
-  final String name;
-  final String flag;
-  final Set<String> teams = {};
-  _Lg(this.key, this.name, this.flag);
-}
 
 String _n(String s) => s
     .toLowerCase()
@@ -23,7 +14,11 @@ String _n(String s) => s
     .replaceAll(RegExp('[ùûü]'), 'u')
     .replaceAll('ç', 'c');
 
-/// Paramètres › Mes championnats : recherche instantanée (championnat ou équipe) + étoiles.
+Widget _star(bool on, {bool dim = false}) => Icon(on ? Icons.star_rounded : Icons.star_border_rounded,
+    color: on ? (dim ? K.amber.withAlpha(120) : K.amber) : K.muted, size: 26);
+
+/// Paramètres › Mes championnats : même disposition que Classements
+/// (sections › pays › compétitions), avec une étoile sur chaque ligne.
 class FavLeaguesScreen extends StatefulWidget {
   FavLeaguesScreen({super.key});
 
@@ -32,155 +27,191 @@ class FavLeaguesScreen extends StatefulWidget {
 }
 
 class _FavLeaguesScreenState extends State<FavLeaguesScreen> {
-  List<_Lg> _all = [];
-  bool _loading = true;
+  late Future<List<PtSection>> _f = PrimaTipsService.countries();
   String _q = '';
 
   @override
   void initState() {
     super.initState();
     FavLeagues.load();
-    _load();
-  }
-
-  Future<void> _load() async {
-    try {
-      final (days, _) = await ScoresService.load();
-      final map = <String, _Lg>{};
-      for (final l in days.values) {
-        for (final m in l) {
-          final lg = map.putIfAbsent(m.leagueLabel, () => _Lg(m.leagueLabel, frLeague(m.leagueLabel), m.flag));
-          lg.teams..add(m.home)..add(m.away);
-        }
-      }
-      // Favoris absents des 3 jours affichés : on les garde dans la liste.
-      for (final k in FavLeagues.set.value) {
-        map.putIfAbsent(k, () => _Lg(k, frLeague(k), ''));
-      }
-      _all = map.values.toList()..sort((a, b) => a.name.compareTo(b.name));
-    } catch (_) {}
-    if (mounted) setState(() => _loading = false);
   }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: K.bg,
-      appBar: AppBar(
-        backgroundColor: K.bg,
-        foregroundColor: K.text,
-        title: T('Mes championnats', style: TextStyle(fontWeight: FontWeight.w800)),
+      appBar: kAppBar(tr('Mes championnats')),
+      body: Column(children: [
+        Padding(
+          padding: EdgeInsets.fromLTRB(16, 4, 16, 4),
+          child: TextField(
+            onChanged: (v) => setState(() => _q = _n(v.trim())),
+            style: TextStyle(color: K.text),
+            cursorColor: K.indigo,
+            decoration: InputDecoration(
+              hintText: tr('Rechercher un pays ou une compétition'),
+              hintStyle: TextStyle(color: K.muted, fontSize: 14),
+              prefixIcon: Icon(Icons.search_rounded, color: K.muted),
+              filled: true,
+              fillColor: K.card,
+              contentPadding: EdgeInsets.symmetric(vertical: 12),
+              enabledBorder: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(14), borderSide: BorderSide(color: K.border)),
+              focusedBorder: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(14), borderSide: BorderSide(color: K.indigo)),
+            ),
+          ),
+        ),
+        Expanded(
+          child: ValueListenableBuilder<Set<String>>(
+            valueListenable: FavLeagues.set,
+            builder: (_, fav, __) => FutureBuilder<List<PtSection>>(
+              future: _f,
+              builder: (context, snap) {
+                if (snap.connectionState != ConnectionState.done) return kLoader();
+                final children = <Widget>[];
+                // Mes favoris, toujours en tête.
+                final favs = fav
+                    .where((k) => _q.isEmpty || _n(frLeague(k)).contains(_q) || _n(k).contains(_q))
+                    .toList()
+                  ..sort((a, b) => frLeague(a).compareTo(frLeague(b)));
+                if (favs.isNotEmpty) {
+                  children.add(kTitle('${tr('Mes favoris')} · ${fav.length}'));
+                  children.add(kDividers(favs.map(_favTile).toList()));
+                }
+                if (snap.hasError) {
+                  children.add(SizedBox(height: 24));
+                  children.add(kMessage(snap.error.toString(),
+                      onRetry: () => setState(() => _f = PrimaTipsService.countries())));
+                } else {
+                  for (final s in snap.data!) {
+                    final items = s.items
+                        .where((i) => _q.isEmpty || _n(i.name).contains(_q) || _n(frName(i.name)).contains(_q))
+                        .toList();
+                    if (items.isEmpty) continue;
+                    children.add(kTitle(s.title));
+                    children.add(kDividers(items.map((l) => _countryTile(l, fav)).toList()));
+                  }
+                }
+                if (children.isEmpty) return kMessage('Aucun résultat pour cette recherche.');
+                return ListView(padding: EdgeInsets.fromLTRB(16, 0, 16, 32), children: children);
+              },
+            ),
+          ),
+        ),
+      ]),
+    );
+  }
+
+  Widget _favTile(String k) => InkWell(
+        onTap: () => FavLeagues.toggleExact(k),
+        child: Padding(
+          padding: EdgeInsets.fromLTRB(14, 11, 10, 11),
+          child: Row(children: [
+            Expanded(
+              child: T(frLeague(k),
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  style: TextStyle(color: K.text, fontSize: 14.5, fontWeight: FontWeight.w700)),
+            ),
+            _star(true),
+          ]),
+        ),
+      );
+
+  Widget _countryTile(PtLink l, Set<String> fav) {
+    final pre = '${l.name} - ';
+    final n = fav.where((k) => k == l.name || k.startsWith(pre)).length;
+    return InkWell(
+      onTap: () => Navigator.push(context, MaterialPageRoute(builder: (_) => FavCountryScreen(link: l))),
+      child: Padding(
+        padding: EdgeInsets.symmetric(horizontal: 14, vertical: 13),
+        child: Row(children: [
+          PtImage(l.img, w: 26, h: 18),
+          SizedBox(width: 12),
+          Expanded(
+            child: T(frName(l.name), style: TextStyle(color: K.text, fontSize: 14.5, fontWeight: FontWeight.w600)),
+          ),
+          if (n > 0) ...[
+            Icon(Icons.star_rounded, color: K.amber, size: 18),
+            SizedBox(width: 2),
+            Text('$n', style: TextStyle(color: K.amber, fontWeight: FontWeight.w800, fontSize: 13)),
+            SizedBox(width: 6),
+          ],
+          Icon(Icons.chevron_right_rounded, color: K.muted),
+        ]),
       ),
+    );
+  }
+}
+
+/// Compétitions d'un pays (mêmes listes que Classements) avec étoiles.
+class FavCountryScreen extends StatefulWidget {
+  final PtLink link;
+  FavCountryScreen({super.key, required this.link});
+
+  @override
+  State<FavCountryScreen> createState() => _FavCountryScreenState();
+}
+
+class _FavCountryScreenState extends State<FavCountryScreen> {
+  late Future<List<PtTable>> _f = PrimaTipsService.tables(widget.link.path);
+
+  Widget _row(String label, String key, bool on, {bool dim = false, bool bold = false}) => InkWell(
+        onTap: () => FavLeagues.toggleExact(key),
+        child: Padding(
+          padding: EdgeInsets.fromLTRB(14, 12, 10, 12),
+          child: Row(children: [
+            Expanded(
+              child: T(label,
+                  style: TextStyle(
+                      color: K.text, fontSize: 14.5, fontWeight: bold ? FontWeight.w800 : FontWeight.w600)),
+            ),
+            _star(on, dim: dim),
+          ]),
+        ),
+      );
+
+  @override
+  Widget build(BuildContext context) {
+    final name = widget.link.name;
+    return Scaffold(
+      backgroundColor: K.bg,
+      appBar: kAppBar(frName(name)),
       body: ValueListenableBuilder<Set<String>>(
         valueListenable: FavLeagues.set,
-        builder: (_, fav, __) {
-          if (_loading) return Center(child: CircularProgressIndicator(color: K.indigo));
-          final q = _n(_q.trim());
-          final rows = <(_Lg, String?)>[];
-          for (final lg in _all) {
-            if (q.isEmpty) {
-              rows.add((lg, null));
-            } else if (_n(lg.name).contains(q) || _n(lg.key).contains(q)) {
-              rows.add((lg, null));
-            } else {
-              final t = lg.teams.where((x) => _n(x).contains(q)).toList();
-              if (t.isNotEmpty) rows.add((lg, t.take(2).join(', ')));
+        builder: (_, fav, __) => FutureBuilder<List<PtTable>>(
+          future: _f,
+          builder: (context, snap) {
+            if (snap.connectionState != ConnectionState.done) return kLoader();
+            final all = fav.contains(name);
+            final rows = <Widget>[
+              _row('${tr('Tout')} · ${frName(name)}', name, all, bold: true),
+            ];
+            final seen = <String>{};
+            for (final t in snap.data ?? const <PtTable>[]) {
+              final title = t.title.trim();
+              if (title.isEmpty || !seen.add(title)) continue;
+              final key = '$name - $title';
+              final own = fav.contains(key);
+              rows.add(_row(tr(title), key, own || all, dim: all && !own));
             }
-          }
-          int fv(_Lg x) => fav.contains(x.key) ? 0 : 1;
-          rows.sort((a, b) {
-            final c = fv(a.$1) - fv(b.$1);
-            return c != 0 ? c : a.$1.name.compareTo(b.$1.name);
-          });
-          return Column(children: [
-            Padding(
-              padding: EdgeInsets.fromLTRB(12, 8, 12, 6),
-              child: TextField(
-                onChanged: (v) => setState(() => _q = v),
-                style: TextStyle(color: K.text),
-                decoration: InputDecoration(
-                  hintText: tr('Chercher un championnat ou une équipe…'),
-                  hintStyle: TextStyle(color: K.muted),
-                  prefixIcon: Icon(Icons.search_rounded, color: K.muted),
-                  filled: true,
-                  fillColor: K.card,
-                  contentPadding: EdgeInsets.symmetric(vertical: 10),
-                  border: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: BorderSide(color: K.border)),
-                  enabledBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: BorderSide(color: K.border)),
-                ),
+            return ListView(padding: EdgeInsets.fromLTRB(16, 4, 16, 32), children: [
+              kTitle('Compétitions'),
+              kDividers(rows),
+              if (snap.hasError) ...[
+                SizedBox(height: 16),
+                kMessage(snap.error.toString(),
+                    onRetry: () => setState(() => _f = PrimaTipsService.tables(widget.link.path))),
+              ],
+              Padding(
+                padding: EdgeInsets.fromLTRB(4, 12, 4, 0),
+                child: T('Tes favoris sont affichés en premier dans Matchs.',
+                    style: TextStyle(color: K.muted, fontSize: 12.5)),
               ),
-            ),
-            Padding(
-              padding: EdgeInsets.fromLTRB(16, 2, 16, 6),
-              child: Row(children: [
-                Icon(Icons.star_rounded, color: K.amber, size: 16),
-                SizedBox(width: 6),
-                Expanded(
-                  child: T('${fav.length} favori${fav.length > 1 ? 's' : ''} · affichés en premier dans Matchs',
-                      style: TextStyle(color: K.muted, fontSize: 12.5)),
-                ),
-              ]),
-            ),
-            Expanded(
-              child: rows.isEmpty
-                  ? kMessage(_all.isEmpty ? 'Liste indisponible hors connexion.' : 'Aucun résultat.')
-                  : ListView.separated(
-                      padding: EdgeInsets.fromLTRB(12, 0, 12, 24),
-                      itemCount: rows.length,
-                      separatorBuilder: (_, __) => SizedBox(height: 6),
-                      itemBuilder: (_, i) {
-                        final (lg, team) = rows[i];
-                        final on = fav.contains(lg.key);
-                        return Material(
-                          color: K.card,
-                          borderRadius: BorderRadius.circular(12),
-                          child: InkWell(
-                            borderRadius: BorderRadius.circular(12),
-                            onTap: () => FavLeagues.toggle(lg.key),
-                            child: Container(
-                              padding: EdgeInsets.fromLTRB(12, 10, 8, 10),
-                              decoration: BoxDecoration(
-                                borderRadius: BorderRadius.circular(12),
-                                border: Border.all(color: on ? K.amber : K.border),
-                              ),
-                              child: Row(children: [
-                                if (lg.flag.isNotEmpty) ...[
-                                  ClipRRect(
-                                    borderRadius: BorderRadius.circular(2),
-                                    child: CachedNetworkImage(
-                                      imageUrl: lg.flag,
-                                      width: 20,
-                                      height: 14,
-                                      fit: BoxFit.cover,
-                                      errorWidget: (_, __, ___) => SizedBox(width: 20),
-                                    ),
-                                  ),
-                                  SizedBox(width: 10),
-                                ],
-                                Expanded(
-                                  child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-                                    T(lg.name,
-                                        maxLines: 1,
-                                        overflow: TextOverflow.ellipsis,
-                                        style: TextStyle(color: K.text, fontSize: 14, fontWeight: FontWeight.w700)),
-                                    if (team != null)
-                                      T('${tr('Équipe')} : $team',
-                                          maxLines: 1,
-                                          overflow: TextOverflow.ellipsis,
-                                          style: TextStyle(color: K.muted, fontSize: 12)),
-                                  ]),
-                                ),
-                                Icon(on ? Icons.star_rounded : Icons.star_border_rounded,
-                                    color: on ? K.amber : K.muted, size: 26),
-                              ]),
-                            ),
-                          ),
-                        );
-                      },
-                    ),
-            ),
-          ]);
-        },
+            ]);
+          },
+        ),
       ),
     );
   }
