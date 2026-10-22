@@ -162,6 +162,7 @@ class _PredictionsScreenState extends State<PredictionsScreen> {
           style: TextStyle(color: K.muted, fontSize: 12.5, fontWeight: FontWeight.w600),
         ),
       ));
+      if (tab == 'ia') children.add(_scoreNote());
       children.add(KndBanner());
       var rows = 0;
       var block = 0;
@@ -176,6 +177,10 @@ class _PredictionsScreenState extends State<PredictionsScreen> {
         }
       }
     }
+    children.add(Padding(
+      padding: EdgeInsets.only(top: 8),
+      child: T(kHonest, textAlign: TextAlign.center, style: TextStyle(color: K.muted, fontSize: 11.5, height: 1.4)),
+    ));
     return RefreshIndicator(
       color: K.indigo,
       backgroundColor: K.card,
@@ -187,4 +192,25 @@ class _PredictionsScreenState extends State<PredictionsScreen> {
       ),
     );
   }
+
+  /// Le pronostic = la ligne en couleur ; le score de l'IA n'est qu'une indication.
+  Widget _scoreNote() => Container(
+        margin: EdgeInsets.only(bottom: 10),
+        padding: EdgeInsets.fromLTRB(12, 10, 12, 10),
+        decoration: BoxDecoration(
+          color: K.card,
+          borderRadius: BorderRadius.circular(12),
+          border: Border.all(color: K.border),
+        ),
+        child: Row(crossAxisAlignment: CrossAxisAlignment.start, children: [
+          Icon(Icons.info_outline_rounded, color: K.indigoText, size: 18),
+          SizedBox(width: 10),
+          Expanded(
+            child: T(
+              "Le pronostic, c'est la ligne en couleur (ex. « Victoire Arsenal »). Le score indicatif n'est pas un pari sur le score exact : c'est une information pour t'aider à analyser le match.",
+              style: TextStyle(color: K.text, fontSize: 12.5, height: 1.4),
+            ),
+          ),
+        ]),
+      );
 }

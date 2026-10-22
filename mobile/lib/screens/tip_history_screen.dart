@@ -26,7 +26,7 @@ class _TipHistoryScreenState extends State<TipHistoryScreen> {
       final seen = <int>{};
       final extra = <Forecast>[];
       for (final l in legs) {
-        if (l.result == 'won' && seen.add(l.id)) extra.add(sureForecast(l));
+        if ((l.result == 'won' || l.result == 'lost') && seen.add(l.id)) extra.add(sureForecast(l));
       }
       return HistoryData([...h.items, ...extra], h.offline);
     } catch (_) {
@@ -35,6 +35,7 @@ class _TipHistoryScreenState extends State<TipHistoryScreen> {
   }
   DateTime? _day; // jour choisi (par défaut : hier)
   String _src = 'all';
+  bool _showLost = false; // onglet « Perdus »
   final Set<String> _collapsed = {};
 
   Future<void> _refresh() async {
@@ -69,15 +70,23 @@ class _TipHistoryScreenState extends State<TipHistoryScreen> {
             for (var d = monday; d.isBefore(today); d = d.add(Duration(days: 1))) d,
           ];
           if (days.isEmpty) days.add(today.subtract(Duration(days: 1)));
+          // Tous les pronostics terminés (gagnés ET perdus) : le pourcentage est honnête.
           final played = data.items.where((f) => f.won != null && _d0(f.date).isBefore(today)).toList();
-          final wins = played.where((f) => f.won == true).toList();
           final sel = (_day != null && days.any((d) => _same(d, _day!))) ? _day! : days.last;
-          final ofDay = wins.where((f) => _same(_d0(f.date), sel)).toList();
-          final week = wins.where((f) => !_d0(f.date).isBefore(monday)).toList();
-          final lastWeek = wins.where((f) => !_d0(f.date).isBefore(prevMonday) && _d0(f.date).isBefore(monday)).toList();
-          final items = ofDay.where((f) => _src == 'all' || f.source == _src).toList()
-            ..sort((a, b) => a.date.compareTo(b.date));
-          final countOf = {for (final d in days) d: wins.where((f) => _same(_d0(f.date), d)).length};
+          final ofDay = played.where((f) => _same(_d0(f.date), sel)).toList();
+          final week = played.where((f) => !_d0(f.date).isBefore(monday)).toList();
+          final lastWeek = played.where((f) => !_d0(f.date).isBefore(prevMonday) && _d0(f.date).isBefore(monday)).toList();
+          final ofSrc = ofDay.where((f) => _src == 'all' || f.source == _src).toList();
+          final won = ofSrc.where((f) => f.won == true).toList();
+          final lost = ofSrc.where((f) => f.won == false).toList();
+          final items = [...(_showLost ? lost : won)]..sort((a, b) => a.date.compareTo(b.date));
+          final countOf = {
+            for (final d in days)
+              d: (
+                played.where((f) => f.won == true && _same(_d0(f.date), d)).length,
+                played.where((f) => _same(_d0(f.date), d)).length,
+              ),
+          };
 
           final children = <Widget>[
             if (data.offline) kOfflineBanner(),
@@ -87,17 +96,21 @@ class _TipHistoryScreenState extends State<TipHistoryScreen> {
             SizedBox(height: 10),
             _srcChips(ofDay),
             SizedBox(height: 14),
-            _hero(ofDay, sel),
-            SizedBox(height: 14),
+            _gauge(won.length, ofSrc.length, sel),
+            SizedBox(height: 12),
+            _wonLostSwitch(won.length, lost.length),
+            SizedBox(height: 12),
             KndBanner(),
           ];
 
           if (items.isEmpty) {
             children.addAll([
               SizedBox(height: 30),
-              kMessage(ofDay.isEmpty
-                  ? "Peu de matchs ce jour-là : rendez-vous sur les prochains jours pour de nouveaux pronostics gagnants."
-                  : 'Aucun pronostic validé pour cette source.'),
+              kMessage(ofSrc.isEmpty
+                  ? 'Aucun pronostic terminé ce jour-là pour cette source.'
+                  : _showLost
+                      ? 'Aucun pronostic perdu ce jour-là.'
+                      : 'Aucun pronostic gagné ce jour-là.'),
             ]);
           } else {
             final groups = <String, List<Forecast>>{};
@@ -108,7 +121,7 @@ class _TipHistoryScreenState extends State<TipHistoryScreen> {
             var block = 0;
             for (final e in groups.entries) {
               children
-                ..add(_group('${sel.toIso8601String()}|$_src|${e.key}', e.key, e.value))
+                ..add(_group('${sel.toIso8601String()}|$_src|$_showLost|${e.key}', e.key, e.value))
                 ..add(SizedBox(height: 10));
               rows += e.value.length;
               if (rows ~/ 10 > block) {
@@ -117,6 +130,11 @@ class _TipHistoryScreenState extends State<TipHistoryScreen> {
               }
             }
           }
+
+          children.add(Padding(
+            padding: EdgeInsets.only(top: 10),
+            child: T(kHonest, textAlign: TextAlign.center, style: TextStyle(color: K.muted, fontSize: 11.5, height: 1.4)),
+          ));
 
           return RefreshIndicator(
             color: K.indigo,
@@ -133,10 +151,12 @@ class _TipHistoryScreenState extends State<TipHistoryScreen> {
     );
   }
 
-  /// Bilan de la semaine en cours (remis à zéro chaque lundi) + semaine précédente.
+  String _pct(int w, int n) => n == 0 ? '–' : '${(w * 100 / n).round()} %';
+
+  /// Bilan de la semaine en cours (remis à zéro chaque lundi) + semaine précédente : gagnés sur terminés.
   Widget _weekCard(List<Forecast> week, List<Forecast> lastWeek, bool isMonday) {
-    final n = week.length;
-    final p = lastWeek.length;
+    final w = week.where((f) => f.won == true).length, n = week.length;
+    final pw = lastWeek.where((f) => f.won == true).length, pn = lastWeek.length;
     Widget stat(String label, String value, String sub) => Expanded(
           child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
             T(tr(label).toUpperCase(),
@@ -146,6 +166,7 @@ class _TipHistoryScreenState extends State<TipHistoryScreen> {
             T(sub, style: TextStyle(color: Color(0xDDFFFFFF), fontSize: 12)),
           ]),
         );
+    String sub(int w, int n) => '$w ${tr('gagnés sur')} $n';
     return Container(
       padding: EdgeInsets.all(16),
       decoration: BoxDecoration(
@@ -160,15 +181,15 @@ class _TipHistoryScreenState extends State<TipHistoryScreen> {
         ]),
         SizedBox(height: 12),
         Row(crossAxisAlignment: CrossAxisAlignment.start, children: [
-          stat('Cette semaine', isMonday ? '0' : '$n', isMonday ? 'nouveau départ ce lundi 🚀' : 'pronostic${n > 1 ? 's' : ''} validé${n > 1 ? 's' : ''}'),
+          stat('Cette semaine', isMonday ? '–' : _pct(w, n), isMonday ? tr('nouveau départ ce lundi') : sub(w, n)),
           Container(width: 1, height: 52, color: Color(0x44FFFFFF), margin: EdgeInsets.symmetric(horizontal: 12)),
-          stat('Semaine dernière', '$p', 'pronostic${p > 1 ? 's' : ''} validé${p > 1 ? 's' : ''}'),
+          stat('Semaine dernière', _pct(pw, pn), sub(pw, pn)),
         ]),
       ]),
     );
   }
 
-  Widget _daySwitch(List<DateTime> days, DateTime sel, Map<DateTime, int> counts) {
+  Widget _daySwitch(List<DateTime> days, DateTime sel, Map<DateTime, (int, int)> counts) {
     final yesterday = _d0(DateTime.now()).subtract(Duration(days: 1));
     return SizedBox(
       height: 54,
@@ -194,7 +215,7 @@ class _TipHistoryScreenState extends State<TipHistoryScreen> {
                     T(_same(d, yesterday) ? 'Hier' : '${dayName(d.weekday)} ${d.day}',
                         style: TextStyle(color: _same(d, sel) ? Colors.white : K.text, fontSize: 13, fontWeight: FontWeight.w800)),
                     SizedBox(height: 2),
-                    T('${counts[d] ?? 0} ✓',
+                    T('${counts[d]?.$1 ?? 0}/${counts[d]?.$2 ?? 0} ✓',
                         style: TextStyle(color: _same(d, sel) ? Color(0xDDFFFFFF) : K.green, fontSize: 12, fontWeight: FontWeight.w700)),
                   ]),
                 ),
@@ -246,60 +267,84 @@ class _TipHistoryScreenState extends State<TipHistoryScreen> {
     ]);
   }
 
-  Widget _hero(List<Forecast> list, DateTime day) {
-    final n = list.length;
-    final s = n > 1 ? 's' : '';
-    final ia = list.where((f) => f.source == 'ia').length;
-    final ex = list.where((f) => f.source == 'expert').length;
-    final su = list.where((f) => f.source == 'sure').length;
+  /// Jauge honnête : gagnés sur l'ensemble des pronostics terminés du jour.
+  Widget _gauge(int w, int n, DateTime day) {
+    final l = n - w;
+    final p = n == 0 ? 0.0 : w / n;
     final isYesterday = _same(day, _d0(DateTime.now()).subtract(Duration(days: 1)));
-    final when = isYesterday ? "d'hier" : 'de ce jour';
-    Widget mini(String label, int v) => Container(
-          margin: EdgeInsets.only(right: 8),
-          padding: EdgeInsets.symmetric(horizontal: 10, vertical: 5),
-          decoration: BoxDecoration(color: Color(0x33FFFFFF), borderRadius: BorderRadius.circular(20)),
-          child: T('${tr(label)} : $v',
-              style: TextStyle(color: Colors.white, fontSize: 12, fontWeight: FontWeight.w700)),
-        );
+    final when = isYesterday ? tr('Hier') : '${dayName(day.weekday)} ${day.day}';
     return Container(
       padding: EdgeInsets.all(16),
       decoration: BoxDecoration(
-        gradient: LinearGradient(
-          colors: [Color(0xFF16A34A), Color(0xFF0D9488)],
-          begin: Alignment.topLeft,
-          end: Alignment.bottomRight,
-        ),
+        color: K.card,
         borderRadius: BorderRadius.circular(18),
+        border: Border.all(color: K.border),
       ),
-      child: Row(crossAxisAlignment: CrossAxisAlignment.start, children: [
-        Container(
-          width: 50,
-          height: 50,
-          decoration: BoxDecoration(color: Color(0x33FFFFFF), shape: BoxShape.circle),
-          child: Icon(Icons.emoji_events_rounded, color: Colors.white, size: 28),
-        ),
-        SizedBox(width: 14),
-        Expanded(
-          child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-            T(n == 0 ? 'Journée calme' : '$n pronostic$s validé$s',
-                style: TextStyle(color: Colors.white, fontSize: 20, fontWeight: FontWeight.w900)),
-            SizedBox(height: 4),
-            T(
-              n == 0
-                  ? 'Peu de matchs au programme $when. Les prochains jours apportent de nouvelles chances !'
-                  : n < 10
-                      ? 'Avec peu de matchs au programme $when, nos prédictions ont tout de même validé $n pronostic$s. 💪'
-                      : 'Kounadia IA, Expert et Coup sûr : $n pronostic$s validé$s $when. 🔥',
-              style: TextStyle(color: Color(0xEEFFFFFF), fontSize: 13, height: 1.35),
+      child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+        Row(crossAxisAlignment: CrossAxisAlignment.end, children: [
+          T(n == 0 ? '–' : '${(p * 100).round()} %',
+              style: TextStyle(color: K.text, fontSize: 30, fontWeight: FontWeight.w900, height: 1)),
+          SizedBox(width: 10),
+          Expanded(
+            child: Padding(
+              padding: EdgeInsets.only(bottom: 3),
+              child: T('${tr('de pronostics gagnés')} · $when',
+                  style: TextStyle(color: K.muted, fontSize: 13, fontWeight: FontWeight.w600)),
             ),
-            if (n > 0) ...[
-              SizedBox(height: 10),
-              Wrap(runSpacing: 6, children: [mini('Kounadia IA', ia), mini('Expert', ex), mini('Coup sûr', su)]),
-            ],
-          ]),
+          ),
+        ]),
+        SizedBox(height: 12),
+        ClipRRect(
+          borderRadius: BorderRadius.circular(8),
+          child: SizedBox(
+            height: 12,
+            child: n == 0
+                ? Container(color: K.border)
+                : Row(children: [
+                    if (w > 0) Expanded(flex: w, child: Container(color: K.green)),
+                    if (l > 0) Expanded(flex: l, child: Container(color: K.red)),
+                  ]),
+          ),
+        ),
+        SizedBox(height: 10),
+        T(
+          n == 0
+              ? tr('Aucun pronostic terminé ce jour-là.')
+              : '${tr('Sur')} $n ${tr('pronostics terminés')} : $w ${tr('gagnés')}, $l ${tr('perdus')}.',
+          style: TextStyle(color: K.text, fontSize: 13.5, fontWeight: FontWeight.w700),
         ),
       ]),
     );
+  }
+
+  /// Onglets « Gagnés » / « Perdus » : tout est visible, rien n'est caché.
+  Widget _wonLostSwitch(int w, int l) {
+    Widget half(String label, int count, bool lostTab, Color c) {
+      final sel = _showLost == lostTab;
+      return Expanded(
+        child: GestureDetector(
+          onTap: () => setState(() => _showLost = lostTab),
+          child: AnimatedContainer(
+            duration: Duration(milliseconds: 150),
+            height: 38,
+            alignment: Alignment.center,
+            decoration: BoxDecoration(
+              color: sel ? c.withValues(alpha: 0.18) : K.card,
+              borderRadius: BorderRadius.circular(10),
+              border: Border.all(color: sel ? c : K.border),
+            ),
+            child: T('${tr(label)} · $count',
+                style: TextStyle(color: sel ? c : K.muted, fontSize: 13.5, fontWeight: FontWeight.w800)),
+          ),
+        ),
+      );
+    }
+
+    return Row(children: [
+      half('Gagnés', w, false, K.green),
+      SizedBox(width: 8),
+      half('Perdus', l, true, K.red),
+    ]);
   }
 
   Widget _group(String key, String title, List<Forecast> list) {
@@ -325,7 +370,7 @@ class _TipHistoryScreenState extends State<TipHistoryScreen> {
             color: K.groupHead,
             padding: EdgeInsets.fromLTRB(12, 10, 8, 10),
             child: Row(children: [
-              Icon(Icons.emoji_events_outlined, color: K.amber, size: 15),
+              Icon(_showLost ? Icons.cancel_outlined : Icons.emoji_events_outlined, color: _showLost ? K.red : K.amber, size: 15),
               SizedBox(width: 8),
               Expanded(
                 child: T(title,
@@ -335,9 +380,10 @@ class _TipHistoryScreenState extends State<TipHistoryScreen> {
               ),
               Container(
                 padding: EdgeInsets.symmetric(horizontal: 8, vertical: 2),
-                decoration: BoxDecoration(color: Color(0x3322C55E), borderRadius: BorderRadius.circular(10)),
-                child: T('${list.length} ✓',
-                    style: TextStyle(color: K.green, fontSize: 12, fontWeight: FontWeight.w800)),
+                decoration: BoxDecoration(
+                    color: _showLost ? Color(0x33EF4444) : Color(0x3322C55E), borderRadius: BorderRadius.circular(10)),
+                child: T('${list.length} ${_showLost ? '✗' : '✓'}',
+                    style: TextStyle(color: _showLost ? K.red : K.green, fontSize: 12, fontWeight: FontWeight.w800)),
               ),
               Icon(collapsed ? Icons.expand_more_rounded : Icons.expand_less_rounded, color: K.muted, size: 22),
             ]),

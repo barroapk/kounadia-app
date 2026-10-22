@@ -25,6 +25,16 @@ String hm(DateTime d) => '${two(d.hour)}:${two(d.minute)}';
 String frDay(DateTime d) => '${dayName(d.weekday)} ${d.day} ${monthName(d.month)}';
 String prettyScore(String? s) => (s ?? '').replaceAll('-', ' - ');
 
+/// Message d'honnêteté affiché sous les pronostics et dans l'historique.
+const kHonest = "KOUNADIA te donne des outils d'analyse. Nos pronostics sont des prédictions, pas des certitudes : "
+    "aucun gain n'est garanti et le choix de parier t'appartient. 18+ · Joue de manière responsable.";
+
+/// « Score indicatif 2-1 » : traduit le libellé, garde le score.
+String _trPart(String p) {
+  const k = 'Score indicatif ';
+  return p.startsWith(k) ? '${tr('Score indicatif')} ${p.substring(k.length)}' : tr(p);
+}
+
 /// Carte compacte (même format que les lignes de l'onglet Matchs).
 /// [grouped] = true : ligne sans cadre, à placer dans un groupe de compétition.
 class ForecastCard extends StatelessWidget {
@@ -114,8 +124,9 @@ class ForecastCard extends StatelessWidget {
     }
 
     final parts = <String>[
-      if (result && f.predicted != null) 'Prédit ${f.predicted}',
-      if (result) f.won == true ? 'Gagné' : 'Perdu',
+      // Le pronostic, c'est la ligne en couleur. Le score de Kounadia IA n'est qu'une indication.
+      if (result) f.won == true ? 'Pronostic gagné' : 'Pronostic perdu',
+      if (result && f.predicted != null) 'Score indicatif ${f.predicted}',
       if (!result && f.agree != null && f.models != null) '${f.agree}/${f.models} IA',
       if (!result && f.confidence != null) 'Conf. ${f.confidence!.toStringAsFixed(1)}/10',
     ];
@@ -145,20 +156,26 @@ class ForecastCard extends StatelessWidget {
                   style: TextStyle(color: pickColor, fontSize: 12.5, fontWeight: FontWeight.w800, height: 1.2)),
               if (!result && f.source == 'ia' && f.predicted != null) ...[
                 SizedBox(height: 4),
+                // Score indicatif : une information, pas un pari sur le score exact.
                 Container(
-                  padding: EdgeInsets.symmetric(horizontal: 8, vertical: 2),
-                  decoration: BoxDecoration(color: K.indigoSoft, borderRadius: BorderRadius.circular(8)),
-                  child: T(prettyScore(f.predicted),
-                      style: TextStyle(color: K.indigoText, fontSize: 17, fontWeight: FontWeight.w900)),
+                  padding: EdgeInsets.symmetric(horizontal: 7, vertical: 2),
+                  decoration: BoxDecoration(
+                    border: Border.all(color: K.border),
+                    borderRadius: BorderRadius.circular(8),
+                  ),
+                  child: T('${tr('Score indicatif')} ${prettyScore(f.predicted)}',
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                      style: TextStyle(color: K.muted, fontSize: 11, fontWeight: FontWeight.w700)),
                 ),
               ],
               if (parts.isNotEmpty) ...[
                 SizedBox(height: 3),
-                T(parts.map(tr).join(' · '),
+                T(parts.map(_trPart).join(result ? '\n' : ' · '),
                     textAlign: TextAlign.right,
-                    maxLines: 1,
+                    maxLines: 2,
                     overflow: TextOverflow.ellipsis,
-                    style: TextStyle(color: K.muted, fontSize: 10.5)),
+                    style: TextStyle(color: K.muted, fontSize: 10.5, height: 1.25)),
               ],
             ],
           ),
