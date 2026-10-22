@@ -79,6 +79,8 @@ html[lang="ar"] .eyebrow{letter-spacing:0}
 .cta-note b{color:var(--chalk);font-weight:600}
 .cta-note{display:grid;gap:2px}
 .meta{font-variant-numeric:tabular-nums}
+.cta-row+.cta-row{margin-top:14px}
+.btn.alt{background:transparent;border:1.5px solid var(--violet);box-shadow:none;padding:14.5px 24.5px}
 
 /* phone mock */
 .phone{justify-self:center;width:min(300px,100%);border-radius:38px;padding:12px;background:#0B0920;border:1px solid var(--line);box-shadow:0 40px 80px -30px #000,inset 0 0 0 1px #ffffff10;transform:rotate(-3deg)}
@@ -175,6 +177,10 @@ html[dir="rtl"] .back svg{transform:scaleX(-1)}
           <a class="btn dl" href="/telecharger"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3v12m0 0-5-5m5 5 5-5M4 19h16"/></svg><span data-t="cta"></span></a>
           <span class="cta-note"><span data-t="note" data-html></span><span class="meta" id="meta" hidden></span></span>
         </div>
+        <div class="cta-row">
+          <a class="btn dl alt" href="/app/"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><rect x="6" y="2.5" width="12" height="19" rx="3"/><path d="M11 18.5h2"/></svg><span data-t="ctaIos"></span></a>
+          <span class="cta-note"><span data-t="noteIos" data-html></span></span>
+        </div>
       </div>
       <div class="phone" aria-hidden="true">
         <div class="screen">
@@ -234,6 +240,7 @@ html[dir="rtl"] .back svg{transform:scaleX(-1)}
   <div class="wrap final">
     <h2 class="display" data-t="endH"></h2>
     <a class="btn dl" href="/telecharger"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3v12m0 0-5-5m5 5 5-5M4 19h16"/></svg><span data-t="cta"></span></a>
+    <a class="btn dl alt" href="/app/"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><rect x="6" y="2.5" width="12" height="19" rx="3"/><path d="M11 18.5h2"/></svg><span data-t="ctaIos"></span></a>
     <div class="resp"><span class="age">18+</span><span data-t="resp"></span> <a href="#jeu-responsable" data-t="lR"></a></div>
   </div>
 </main>
@@ -307,12 +314,6 @@ fetch('https://api.github.com/repos/barroapk/kounadia-app/releases?per_page=100'
 sel.addEventListener('change',()=>{L=sel.value;try{localStorage.setItem('klang',L)}catch(e){}apply()});
 document.querySelectorAll('[data-home]').forEach(a=>a.addEventListener('click',e=>{e.preventDefault();history.pushState(null,'',location.pathname);route();window.scrollTo(0,0)}));
 addEventListener('hashchange',route);
-// iPhone / iPad : les boutons ouvrent la version iPhone (pas d'APK).
-const IOS=/iPad|iPhone|iPod/.test(navigator.userAgent)||(navigator.platform==='MacIntel'&&navigator.maxTouchPoints>1);
-if(IOS){
-  document.querySelectorAll('a.btn.dl[href="/telecharger"]').forEach(a=>{a.href='/app/';const t=a.querySelector('span[data-t]');if(t)t.dataset.t='ctaIos';const i=a.querySelector('svg');if(i)i.outerHTML='<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><rect x="6" y="2.5" width="12" height="19" rx="3"/><path d="M11 18.5h2"/></svg>'});
-  const n=document.querySelector('[data-t="note"]');if(n)n.dataset.t='noteIos';
-}
 apply();
 </script>
 </body>

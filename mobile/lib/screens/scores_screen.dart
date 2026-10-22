@@ -35,6 +35,9 @@ class _ScoresScreenState extends State<ScoresScreen> with WidgetsBindingObserver
   final Set<String> _collapsed = {};
   final Map<String, String> _logos = {};
   String _filter = 'all';
+  // Mes matchs choisi automatiquement : si aucun favori ce jour-là, on montre Tous.
+  bool _auto = false;
+  String _view = 'all';
   Timer? _liveTimer;
   Timer? _fullTimer;
   bool _active = true;
@@ -56,7 +59,10 @@ class _ScoresScreenState extends State<ScoresScreen> with WidgetsBindingObserver
     WidgetsBinding.instance.addObserver(this);
     _loadFav();
     FavLeagues.load().then((_) {
-      if (FavLeagues.set.value.isNotEmpty && _filter == 'all') _filter = 'mine';
+      if (FavLeagues.set.value.isNotEmpty && _filter == 'all') {
+        _filter = 'mine';
+        _auto = true;
+      }
       _onFav();
     });
     FavLeagues.set.addListener(_onFav);
@@ -225,7 +231,7 @@ class _ScoresScreenState extends State<ScoresScreen> with WidgetsBindingObserver
       return all.where((m) => _sn(m.home).contains(q) || _sn(m.away).contains(q) ||
           _sn(frLeague(m.leagueLabel)).contains(q) || _sn(m.leagueLabel).contains(q)).toList();
     }
-    switch (_filter) {
+    switch (_view) {
       case 'live':
         return all.where((m) => m.status == 'live' && (!_onlyFav || _mine(m))).toList();
       case 'mine':
@@ -238,6 +244,7 @@ class _ScoresScreenState extends State<ScoresScreen> with WidgetsBindingObserver
   @override
   Widget build(BuildContext context) {
     final all = _listFor(_offset);
+    _view = _auto && _filter == 'mine' && !_loading && !all.any(_mine) ? 'all' : _filter;
     final day = DateTime.now().add(Duration(days: _offset));
     final label = ['Hier', "Aujourd'hui", 'Demain'][_offset + 1];
 
@@ -329,9 +336,12 @@ class _ScoresScreenState extends State<ScoresScreen> with WidgetsBindingObserver
   }
 
   Widget _seg(String value, String label, int count, {bool dot = false}) {
-    final sel = _filter == value;
+    final sel = _view == value;
     return GestureDetector(
-      onTap: () => setState(() => _filter = value),
+      onTap: () => setState(() {
+        _filter = value;
+        _auto = false;
+      }),
       child: AnimatedContainer(
         duration: Duration(milliseconds: 150),
         height: 36,
@@ -377,7 +387,7 @@ class _ScoresScreenState extends State<ScoresScreen> with WidgetsBindingObserver
 
     final children = <Widget>[
       if (_offline) kOfflineBanner(),
-      if (_filter == 'live' && FavLeagues.set.value.isNotEmpty)
+      if (_view == 'live' && FavLeagues.set.value.isNotEmpty)
         Padding(
           padding: EdgeInsets.only(bottom: 8),
           child: Row(children: [
@@ -393,12 +403,12 @@ class _ScoresScreenState extends State<ScoresScreen> with WidgetsBindingObserver
         SizedBox(height: 60),
         kMessage(_q.trim().isNotEmpty
             ? 'Aucun match trouvé pour « ${_q.trim()} ».'
-            : _filter == 'live'
+            : _view == 'live'
             ? 'Aucun match en direct pour le moment.'
-            : _filter == 'mine'
+            : _view == 'mine'
                 ? 'Aucun match de tes championnats ce jour.\nChoisis-les avec ⭐ (ou appui long sur un match).'
                 : 'Aucun match pour ce jour.'),
-        if (_filter == 'mine')
+        if (_view == 'mine')
           Center(
             child: FilledButton.icon(
               style: FilledButton.styleFrom(backgroundColor: K.indigo),
