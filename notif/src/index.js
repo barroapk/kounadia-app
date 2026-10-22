@@ -609,17 +609,54 @@ async function feedRelay(path) {
   return text;
 }
 
+// Relais PrimaTips pour la version navigateur (iPhone) : le site refuse les appels directs des navigateurs.
+// Gardé 30 s en mémoire : beaucoup d'utilisateurs = une seule lecture.
+const ptMem = new Map(); // chemin+requête -> [heure, statut, type, texte]
+async function ptRelay(url) {
+  const key = url.pathname.slice(3) + url.search;
+  const now = Date.now();
+  const c = ptMem.get(key);
+  if (c && now - c[0] < 30000) return c;
+  const r = await fetch(`https://primatips.com${key}`, { headers: UA });
+  const v = [now, r.status, r.headers.get('content-type') || 'text/html; charset=utf-8', await r.text()];
+  if (ptMem.size > 300) ptMem.clear();
+  if (r.ok) ptMem.set(key, v);
+  return v;
+}
+
+// Autorise l'app navigateur (kounadia.pages.dev) à appeler le robot.
+const CORS = { 'access-control-allow-origin': '*', 'access-control-allow-methods': 'GET, POST, OPTIONS', 'access-control-allow-headers': 'content-type', 'access-control-max-age': '86400' };
+function withCors(res) {
+  if (res.status === 101 || res.webSocket) return res; // connexion en direct : inchangée
+  const h = new Headers(res.headers);
+  for (const [k, v] of Object.entries(CORS)) h.set(k, v);
+  return new Response(res.body, { status: res.status, statusText: res.statusText, headers: h });
+}
+
 export default {
   async scheduled(_ev, env, ctx) {
     ctx.waitUntil(poller(env).fetch('https://poller/kick'));
   },
   async fetch(req, env) {
-    const m = FEED_RE.exec(new URL(req.url).pathname);
+    if (req.method === 'OPTIONS') return new Response(null, { status: 204, headers: CORS });
+    const url = new URL(req.url);
+    const m = FEED_RE.exec(url.pathname);
     if (m) {
       const text = await feedRelay(m[1]).catch(() => null);
-      if (text == null) return new Response('indisponible', { status: 502 });
-      return new Response(text, { headers: { 'content-type': 'text/plain; charset=utf-8', 'cache-control': 'no-store' } });
+      if (text == null) return withCors(new Response('indisponible', { status: 502 }));
+      return withCors(new Response(text, { headers: { 'content-type': 'text/plain; charset=utf-8', 'cache-control': 'no-store' } }));
     }
-    return poller(env).fetch(req);
+    if (url.pathname === '/geo') {
+      return withCors(new Response(`loc=${req.cf?.country || ''}\n`, { headers: { 'content-type': 'text/plain', 'cache-control': 'no-store' } }));
+    }
+    if (url.pathname.startsWith('/pt/') && req.method === 'GET') {
+      try {
+        const [, status, type, text] = await ptRelay(url);
+        return withCors(new Response(text, { status, headers: { 'content-type': type, 'cache-control': 'no-store' } }));
+      } catch (e) {
+        return withCors(new Response('indisponible', { status: 502 }));
+      }
+    }
+    return withCors(await poller(env).fetch(req));
   },
 };

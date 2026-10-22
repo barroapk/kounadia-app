@@ -1,3 +1,7 @@
 /version.json
   Cache-Control: no-cache
   Access-Control-Allow-Origin: *
+
+# Version iPhone : toujours la dernière version à chaque ouverture (mise à jour automatique).
+/app/*
+  Cache-Control: no-cache
