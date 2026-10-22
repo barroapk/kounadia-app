@@ -1,0 +1,22 @@
+name: Laboratoire coupons
+
+on:
+  workflow_dispatch:
+    inputs:
+      mode:
+        description: "probe = forme des données · backtest = test des formules"
+        default: probe
+
+jobs:
+  lab:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+      - name: Laboratoire
+        env:
+          KD_KEY: ${{ secrets.KD_KEY }}
+        run: node tools/coupon-lab/${{ inputs.mode == 'backtest' && 'backtest' || 'probe' }}.mjs
