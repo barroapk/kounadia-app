@@ -44,6 +44,14 @@ class LiveSocket {
   /// Dernier état connu de chaque match en direct (réappliqué après chaque rechargement).
   static final Map<int, (int?, int?, String)> last = {};
   static bool connected = false;
+  static DateTime? _dataAt;
+
+  /// Le robot envoie vraiment du direct (changement reçu il y a moins de 90 s).
+  /// Sinon l'app lit elle-même le direct du site : jamais de minutes figées.
+  static bool get fresh {
+    final t = _dataAt;
+    return connected && t != null && DateTime.now().difference(t) < const Duration(seconds: 90);
+  }
 
   static Sock? _ws;
   static Timer? _ping, _retry;
@@ -76,7 +84,16 @@ class LiveSocket {
       _ws = ws;
       connected = true;
       _fails = 0;
-      _ping = Timer.periodic(const Duration(seconds: 25), (_) => _ws?.send('ping'));
+      _ping = Timer.periodic(const Duration(seconds: 25), (_) {
+        // Connexion ouverte mais plus aucun direct depuis 3 min : on se reconnecte.
+        final t = _dataAt;
+        if (t != null && last.isNotEmpty && DateTime.now().difference(t) > const Duration(minutes: 3)) {
+          _dataAt = null;
+          _ws?.close();
+          return;
+        }
+        _ws?.send('ping');
+      });
       ws.listen(_onData, onDone: _lost);
     } catch (_) {
       _lost();
@@ -106,7 +123,11 @@ class LiveSocket {
         if (id == null || v is! List || v.length < 3) return;
         out[id] = ((v[0] as num?)?.toInt(), (v[1] as num?)?.toInt(), '${v[2]}'.trim());
       });
-      if (j['k'] == 'snap') last.clear();
+      if (j['k'] == 'snap') {
+        last.clear();
+      } else {
+        _dataAt = DateTime.now();
+      }
       last.addAll(out);
       if (out.isNotEmpty) updates.add(out);
       final ev = ((j['ev'] as List?) ?? const [])

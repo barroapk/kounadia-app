@@ -67,7 +67,7 @@ String _minute(String st) {
 /// sinon interroge le site (secours).
 Future<Map<int, (int?, int?, String)>> liveById() async {
   final out = <int, (int?, int?, String)>{};
-  if (LiveSocket.connected && LiveSocket.last.isNotEmpty) {
+  if (LiveSocket.fresh && LiveSocket.last.isNotEmpty) {
     LiveSocket.last.forEach((id, v) => out[id] = (v.$1, v.$2, _minute(v.$3.trim())));
     return out;
   }

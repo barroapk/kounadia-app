@@ -145,7 +145,7 @@ class _ScoresScreenState extends State<ScoresScreen> with WidgetsBindingObserver
         _loading = false;
         _error = null;
       });
-      if (LiveSocket.last.isNotEmpty) _onSocket(Map.of(LiveSocket.last));
+      if (LiveSocket.fresh && LiveSocket.last.isNotEmpty) _onSocket(Map.of(LiveSocket.last));
       _pollLive();
       _applyLogos();
     } catch (e) {
@@ -212,7 +212,7 @@ class _ScoresScreenState extends State<ScoresScreen> with WidgetsBindingObserver
 
   Future<void> _pollLive() async {
     // Le robot pousse déjà le direct en temps réel : interrogation du site seulement en secours.
-    if (!_active || !_hasLive || LiveSocket.connected) return;
+    if (!_active || !_hasLive || LiveSocket.fresh) return;
     try {
       final live = await ScoresService.live();
       final byId = {for (final m in _listFor(0)) m.id: m};
