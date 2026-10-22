@@ -6,6 +6,7 @@ import '../models/live_match.dart';
 import 'kounadia_data_service.dart' show FriendlyError;
 import 'match_detail_service.dart' show StandRow, MatchDetailService;
 import '../l10n/tr.dart' show appLang;
+import 'live_socket.dart' show ptUrl;
 
 class PtLink {
   final String name;
@@ -212,7 +213,7 @@ class PrimaTipsService {
     final c = _cache[path];
     if (c != null && DateTime.now().difference(c.$1) < Duration(minutes: 10)) return c.$2;
     try {
-      final r = await http.get(Uri.parse('$base$path'), headers: _ua).timeout(Duration(seconds: 20));
+      final r = await http.get(Uri.parse(ptUrl('$base$path')), headers: _ua).timeout(Duration(seconds: 20));
       if (r.statusCode != 200) {
         throw FriendlyError('Cette rubrique est momentanément indisponible. Réessayez dans un instant.');
       }

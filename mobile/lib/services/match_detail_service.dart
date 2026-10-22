@@ -5,6 +5,7 @@ import 'package:http/http.dart' as http;
 import '../models/live_match.dart';
 import 'kounadia_data_service.dart' show FriendlyError;
 import 'logo_cache.dart';
+import 'live_socket.dart' show ptUrl;
 
 class Market {
   final String name;
@@ -168,7 +169,7 @@ class MatchDetailService {
 
   static Future<MatchDetail> load(LiveMatch m) async {
     try {
-      final r = await http.get(Uri.parse(m.url), headers: _ua).timeout(Duration(seconds: 20));
+      final r = await http.get(Uri.parse(ptUrl(m.url)), headers: _ua).timeout(Duration(seconds: 20));
       if (r.statusCode != 200) {
         throw FriendlyError('Les détails de ce match sont momentanément indisponibles.');
       }

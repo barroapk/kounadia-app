@@ -1,0 +1,5 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Dossier où l'app enregistre la nouvelle version avant de l'installer. -->
+<paths>
+    <cache-path name="update" path="update/" />
+</paths>

@@ -1,11 +1,17 @@
 import 'dart:async';
 import 'dart:convert';
-import 'dart:io';
+import 'package:flutter/foundation.dart' show kIsWeb;
+import 'platform/sock.dart';
 import 'dart:math';
 import 'package:http/http.dart' as http;
 
 /// Adresse du robot KOUNADIA (injectée à la compilation par GitHub Actions).
 const kLiveBase = String.fromEnvironment('LIVE_URL');
+
+/// Dans le navigateur (iPhone), PrimaTips refuse les appels directs : on passe par le robot.
+String ptUrl(String u) => kIsWeb && kLiveBase.isNotEmpty
+    ? u.replaceFirst(RegExp(r'^https://(www\.)?primatips\.com'), '$kLiveBase/pt')
+    : u;
 
 /// Événement de match (but, coup d'envoi, mi-temps, fin) détecté par le robot.
 class MatchEvent {
@@ -39,7 +45,7 @@ class LiveSocket {
   static final Map<int, (int?, int?, String)> last = {};
   static bool connected = false;
 
-  static WebSocket? _ws;
+  static Sock? _ws;
   static Timer? _ping, _retry;
   static bool _want = false;
   static int _fails = 0;
@@ -62,8 +68,7 @@ class LiveSocket {
   static Future<void> _connect() async {
     if (!_want || _ws != null) return;
     try {
-      final ws = await WebSocket.connect('${kLiveBase.replaceFirst('https://', 'wss://')}/live')
-          .timeout(const Duration(seconds: 10));
+      final ws = await Sock.connect('${kLiveBase.replaceFirst('https://', 'wss://')}/live');
       if (!_want) {
         ws.close();
         return;
@@ -71,8 +76,8 @@ class LiveSocket {
       _ws = ws;
       connected = true;
       _fails = 0;
-      _ping = Timer.periodic(const Duration(seconds: 25), (_) => _ws?.add('ping'));
-      ws.listen(_onData, onDone: _lost, onError: (_) => _lost(), cancelOnError: true);
+      _ping = Timer.periodic(const Duration(seconds: 25), (_) => _ws?.send('ping'));
+      ws.listen(_onData, onDone: _lost);
     } catch (_) {
       _lost();
     }

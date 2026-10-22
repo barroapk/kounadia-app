@@ -33,7 +33,7 @@ jobs:
 
       - name: Tests du moteur de coupons
         working-directory: mobile
-        run: flutter test test/coupon_engine_test.dart
+        run: flutter test test/coupon_engine_test.dart test/tip_eval_test.dart
 
       - name: Clé de signature
         env:

@@ -21,6 +21,9 @@ dependencies:
   pointycastle: ^3.9.1
   firebase_core: any
   firebase_messaging: any
+  # Version navigateur (iPhone) : direct en temps réel et données compressées.
+  web_socket_channel: ^3.0.1
+  archive: ^3.6.1
 
 dev_dependencies:
   flutter_test:

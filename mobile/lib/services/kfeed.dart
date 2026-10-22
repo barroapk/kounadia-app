@@ -1,5 +1,5 @@
 import 'dart:convert';
-import 'dart:io';
+import 'platform/gz.dart';
 import 'dart:typed_data';
 import 'package:http/http.dart' as http;
 import 'package:pointycastle/export.dart';
@@ -37,6 +37,6 @@ class KFeed {
     final c = GCMBlockCipher(AESEngine())
       ..init(false, AEADParameters(KeyParameter(key), 128, b.sublist(0, 12), Uint8List(0)));
     final z = c.process(Uint8List.fromList(b.sublist(12)));
-    return utf8.decode(gzip.decode(z));
+    return utf8.decode(gunzip(z));
   }
 }

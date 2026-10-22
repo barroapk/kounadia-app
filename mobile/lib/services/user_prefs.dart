@@ -2,6 +2,8 @@ import 'package:flutter/widgets.dart';
 import 'package:http/http.dart' as http;
 import 'package:shared_preferences/shared_preferences.dart';
 import '../config/countries.dart';
+import 'package:flutter/foundation.dart' show kIsWeb;
+import 'live_socket.dart' show kLiveBase;
 
 /// Langues proposées (code, nom affiché).
 const kLangs = <(String, String)>[
@@ -41,7 +43,9 @@ class UserPrefs {
   /// Pays réel de l'utilisateur (d'après sa connexion internet), sinon d'après le téléphone.
   static Future<KCountry> detect() async {
     try {
-      final r = await http.get(Uri.parse('https://www.cloudflare.com/cdn-cgi/trace')).timeout(Duration(seconds: 5));
+      // Dans le navigateur, Cloudflare refuse l'appel direct : le robot renvoie le pays.
+      final u = kIsWeb && kLiveBase.isNotEmpty ? '$kLiveBase/geo' : 'https://www.cloudflare.com/cdn-cgi/trace';
+      final r = await http.get(Uri.parse(u)).timeout(Duration(seconds: 5));
       final m = RegExp(r'^loc=([A-Z]{2})\s*$', multiLine: true).firstMatch(r.body);
       final c = countryByIso(m?.group(1));
       if (c != null) return c;

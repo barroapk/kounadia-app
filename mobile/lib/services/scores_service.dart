@@ -6,6 +6,7 @@ import '../models/live_match.dart';
 import 'kounadia_data_service.dart' show FriendlyError;
 import 'fav_leagues.dart';
 import 'notif.dart';
+import 'live_socket.dart' show LiveSocket, ptUrl;
 
 class ScoresService {
   static final _live = 'https://primatips.com/liveresults?day=0';
@@ -49,7 +50,7 @@ class ScoresService {
   }
 
   static Future<List<Map<String, dynamic>>> live() async {
-    final r = await http.get(Uri.parse(_live), headers: _ua).timeout(Duration(seconds: 10));
+    final r = await http.get(Uri.parse(ptUrl(_live)), headers: _ua).timeout(Duration(seconds: 10));
     if (r.statusCode != 200) return [];
     final d = jsonDecode(utf8.decode(r.bodyBytes));
     return (d is List) ? d.whereType<Map<String, dynamic>>().toList() : [];
@@ -57,16 +58,24 @@ class ScoresService {
 }
 
 /// Direct PrimaTips : id -> (buts dom., buts ext., minute ou 'Fin').
+String _minute(String st) {
+  final fin = RegExp(r'^(FT|AET|PEN)', caseSensitive: false).hasMatch(st);
+  return fin ? 'Fin' : RegExp(r'^\d').hasMatch(st) ? "$st'" : (st.toUpperCase() == 'HT' ? 'MT' : st);
+}
+
+/// Direct de chaque match : score + minute. Utilise d'abord le direct du robot (à la seconde),
+/// sinon interroge le site (secours).
 Future<Map<int, (int?, int?, String)>> liveById() async {
   final out = <int, (int?, int?, String)>{};
+  if (LiveSocket.connected && LiveSocket.last.isNotEmpty) {
+    LiveSocket.last.forEach((id, v) => out[id] = (v.$1, v.$2, _minute(v.$3.trim())));
+    return out;
+  }
   try {
     for (final l in await ScoresService.live()) {
       final id = (l['id'] as num?)?.toInt();
       if (id == null) continue;
-      final st = (l['st'] ?? '').toString().trim();
-      final fin = RegExp(r'^(FT|AET|PEN)', caseSensitive: false).hasMatch(st);
-      final min = fin ? 'Fin' : RegExp(r'^\d').hasMatch(st) ? "$st'" : (st.toUpperCase() == 'HT' ? 'MT' : st);
-      out[id] = ((l['hs'] as num?)?.toInt(), (l['as'] as num?)?.toInt(), min);
+      out[id] = ((l['hs'] as num?)?.toInt(), (l['as'] as num?)?.toInt(), _minute((l['st'] ?? '').toString().trim()));
     }
   } catch (_) {}
   return out;

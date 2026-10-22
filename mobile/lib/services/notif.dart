@@ -3,6 +3,7 @@ import 'package:firebase_core/firebase_core.dart';
 import 'package:http/http.dart' as http;
 import 'live_socket.dart' show kLiveBase;
 import 'package:firebase_messaging/firebase_messaging.dart';
+import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import '../l10n/tr.dart';
@@ -43,7 +44,8 @@ class Notif {
   static bool _busy = false, _again = false;
 
   static Future<void> init() async {
-    if (_apiKey.isEmpty || _appId.isEmpty) return; // compilation sans Firebase
+    // Compilation sans Firebase, ou navigateur (iPhone) : pas de notifications Firebase.
+    if (kIsWeb || _apiKey.isEmpty || _appId.isEmpty) return;
     try {
       await Firebase.initializeApp(
         options: const FirebaseOptions(

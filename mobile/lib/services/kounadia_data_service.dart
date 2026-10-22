@@ -7,6 +7,7 @@ import 'scores_service.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import '../models/forecast.dart';
 import 'tip_eval.dart';
+import '../models/live_match.dart';
 
 class FriendlyError implements Exception {
   final String message;
@@ -39,7 +40,18 @@ class KounadiaData {
     return 'Les pronostics sont momentanément indisponibles. Réessayez dans quelques instants.';
   }
 
+  static final Map<String, (DateTime, dynamic, bool)> _mem = {};
+
+  /// Lecture d'un fichier ; gardé 3 minutes en mémoire (la page se rafraîchit chaque minute).
   static Future<(dynamic, bool)> _get(String file) async {
+    final c = _mem[file];
+    if (c != null && DateTime.now().difference(c.$1) < const Duration(minutes: 3) && !c.$3) return (c.$2, c.$3);
+    final r = await _fetch(file);
+    _mem[file] = (DateTime.now(), r.$1, r.$2);
+    return r;
+  }
+
+  static Future<(dynamic, bool)> _fetch(String file) async {
     final prefs = await SharedPreferences.getInstance();
     final key = 'kdata_$file';
     try {
@@ -114,43 +126,85 @@ class KounadiaData {
       final (days, _) = await ScoresService.load();
       final all = [for (final l in days.values) ...l];
       final lv = await liveById();
+      // Score et minute en direct : on cherche le match le plus ressemblant (noms écrits différemment selon les sites).
       Forecast live(Forecast f) {
         if (f.won != null) return f;
         final tol = f.hasTime ? 3 : 14;
+        LiveMatch? best;
+        var bs = 0.0;
         for (final m in all) {
-          final x = lv[m.id];
-          final hs = x?.$1 ?? m.hs, aw = x?.$2 ?? m.as_;
-          if (hs == null || aw == null) continue;
-          if (x == null && m.status != 'live' && m.status != 'finished') continue;
           if (m.date != null && m.date!.difference(f.date).inHours.abs() > tol) continue;
-          if (!_same(m.home, f.home) || !_same(m.away, f.away)) continue;
-          return settle(f.copyWith(
-            score: '$hs-$aw',
-            minute: x?.$3 ?? (m.status == 'finished' ? 'Fin' : m.minute),
-          ));
+          final s = matchSim(f.home, f.away, m.home, m.away);
+          if (s > bs) {
+            bs = s;
+            best = m;
+          }
         }
-        return f;
+        final m = best;
+        if (m == null) return f;
+        final x = lv[m.id];
+        final hs = x?.$1 ?? m.hs, aw = x?.$2 ?? m.as_;
+        if (hs == null || aw == null) return f;
+        if (x == null && m.status != 'live' && m.status != 'finished') return f;
+        return settle(f.copyWith(
+          score: '$hs-$aw',
+          minute: x?.$3 ?? (m.status == 'finished' ? 'Fin' : m.minute),
+        ));
       }
       ia = ia.map(live).toList();
       ex = ex.map(live).toList();
     } catch (_) {}
+    await _keep([...ia, ...ex]);
     return TodayData(ia, ex, offline, iaDay: iaDay, exDay: exDay);
+  }
+
+  // ---------- Historique gardé sur le téléphone ----------
+  // Les résultats vus dans « Prédictions » sont gardés 14 jours, même si la source ne les publie pas.
+  static const _localKey = 'khist_local';
+
+  static Map<String, dynamic> _toJson(Forecast f) => {
+        'id': f.id, 'source': f.source, 'date': f.date.toUtc().toIso8601String(), 'hasTime': f.hasTime,
+        'league': f.league, 'home': f.home, 'away': f.away, 'homeLogo': f.homeLogo, 'awayLogo': f.awayLogo,
+        'tipFr': f.tipFr, 'predicted': f.predicted, 'confidence': f.confidence, 'score': f.score, 'won': f.won,
+      };
+
+  static Future<void> _keep(List<Forecast> list) async {
+    final done = list.where((f) => f.won != null && f.id.isNotEmpty).toList();
+    if (done.isEmpty) return;
+    try {
+      final p = await SharedPreferences.getInstance();
+      final m = <String, Map<String, dynamic>>{};
+      for (final e in (jsonDecode(p.getString(_localKey) ?? '[]') as List).whereType<Map>()) {
+        m[e['id'].toString()] = Map<String, dynamic>.from(e);
+      }
+      var changed = false;
+      for (final f in done) {
+        if (m[f.id]?['won'] == f.won) continue;
+        m[f.id] = _toJson(f);
+        changed = true;
+      }
+      if (!changed) return;
+      final min = DateTime.now().subtract(const Duration(days: 14));
+      final keep = m.values.where((e) => (DateTime.tryParse('${e['date']}') ?? min).isAfter(min)).toList();
+      await p.setString(_localKey, jsonEncode(keep.length > 3000 ? keep.sublist(keep.length - 3000) : keep));
+    } catch (_) {}
   }
 
   static Future<HistoryData> history() async {
     final (data, offline) = await _get('history.json');
-    final items = ((data is List) ? data : [])
-        .map((e) => Forecast.fromJson(
-            e as Map<String, dynamic>, (e['source'] ?? 'ia').toString()))
-        .toList()
-      ..sort((a, b) => b.date.compareTo(a.date));
+    final byId = <String, Forecast>{};
+    try {
+      final p = await SharedPreferences.getInstance();
+      for (final e in (jsonDecode(p.getString(_localKey) ?? '[]') as List).whereType<Map>()) {
+        final f = Forecast.fromJson(Map<String, dynamic>.from(e), (e['source'] ?? 'ia').toString());
+        byId[f.id] = f;
+      }
+    } catch (_) {}
+    for (final e in ((data is List) ? data : const []).whereType<Map>()) {
+      final f = Forecast.fromJson(Map<String, dynamic>.from(e), (e['source'] ?? 'ia').toString());
+      byId[f.id] = f; // le résultat publié par le serveur passe avant
+    }
+    final items = byId.values.toList()..sort((a, b) => b.date.compareTo(a.date));
     return HistoryData(items, offline);
   }
-}
-
-String _nm(String s) => s.toLowerCase().replaceAll(RegExp(r'[^a-z0-9]'), '');
-bool _same(String a, String b) {
-  final x = _nm(a), y = _nm(b);
-  if (x.isEmpty || y.isEmpty) return false;
-  return x == y || (x.length >= 5 && y.length >= 5 && (x.contains(y) || y.contains(x)));
 }

@@ -3,7 +3,7 @@ name: Mettre le site en ligne
 on:
   push:
     branches: [main]
-    paths: ["site/**", "functions/**"]
+    paths: ["site/**", "functions/**", "mobile/web/**"]
   workflow_dispatch:
 
 jobs:
@@ -12,11 +12,44 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
+      # ---------- Version iPhone (app dans le navigateur, installable sur l'écran d'accueil) ----------
+      # Si cette partie échoue, le site et les mises à jour Android sont quand même publiés.
+      - uses: subosito/flutter-action@v2
+        continue-on-error: true
+        with:
+          flutter-version: '3.44.8'
+          channel: 'stable'
+
+      - name: Adresse du robot
+        continue-on-error: true
+        env:
+          CF_T: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          CF_A: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+        run: |
+          SUB=$(curl -s -H "Authorization: Bearer $CF_T" "https://api.cloudflare.com/client/v4/accounts/$CF_A/workers/subdomain" | jq -r '.result.subdomain // empty')
+          test -n "$SUB" && echo "LIVE_URL=https://kounadia-notif.$SUB.workers.dev" >> "$GITHUB_ENV"
+          echo "V=$(jq -r '.version // "1.0.0"' site/version.json)" >> "$GITHUB_ENV"
+
+      - name: Compiler la version iPhone
+        id: web
+        continue-on-error: true
+        working-directory: mobile
+        run: |
+          flutter pub get
+          flutter build web --release --base-href /app/ \
+            --dart-define=KD_KEY=${{ secrets.KD_KEY }} \
+            --dart-define=APP_VERSION=$V \
+            --dart-define=LIVE_URL=$LIVE_URL
+          rm -f build/web/flutter_service_worker.js
+          rm -rf ../site/app && cp -r build/web ../site/app
+          echo "Version iPhone : $(du -sh ../site/app | cut -f1)"
+
       - name: Publier sur Cloudflare Pages
         env:
           CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
           CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
         run: |
           test -n "$CLOUDFLARE_API_TOKEN" || { echo "Secret CLOUDFLARE_API_TOKEN manquant"; exit 1; }
+          test -d site/app || echo "::warning::Version iPhone non compilée : seul le site est publié"
           npx -y wrangler@4 pages project create kounadia --production-branch main 2>/dev/null || true
           npx -y wrangler@4 pages deploy site --project-name kounadia --branch main --commit-dirty=true
