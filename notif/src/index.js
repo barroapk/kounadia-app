@@ -13,6 +13,8 @@ const OUTQ_MAX = 1500;
 const TOPIC_RE = /^[a-z]{2}_(l2|m2)_[0-9a-z]{1,16}$/;
 
 const KFEED = 'https://raw.githubusercontent.com/barroapk/kfeed';
+// Tâches du dépôt kfeed relancées par le robot : [fichier, toutes les N minutes].
+const KICKS = [['scores.yml', 15], ['vip.yml', 30], ['pronos.yml', 60]];
 
 // Pronostics et coupons
 const TIP = {
@@ -110,6 +112,7 @@ export class Poller {
     stat.err = (await this.state.storage.get('err')) || null;
     stat.fcmErr = (await this.state.storage.get('fcmErr')) || null;
     stat.src = (await this.state.storage.get('src')) || null;
+    stat.kickErr = (await this.state.storage.get('kickErr')) || null;
     const al = await this.state.storage.getAlarm();
     stat.nextTick = al ? new Date(al).toISOString() : null;
     return Response.json(stat);
@@ -175,7 +178,40 @@ export class Poller {
     } catch (e) {
       await this.state.storage.put('err', `${new Date().toISOString()} ${e}`);
     }
+    try {
+      await this.kickJobs();
+    } catch (_) {}
     await this.state.storage.setAlarm(Date.now() + next);
+  }
+
+  // GitHub lance très mal ses tâches planifiées (parfois toutes les 5 h au lieu de 30 min) :
+  // le robot les relance lui-même à heure fixe (jeton limité aux « Actions » du dépôt kfeed).
+  async kickJobs() {
+    if (!this.env.GH_DISPATCH) return;
+    const st = (await this.state.storage.get('kick')) || {};
+    const now = Date.now();
+    let changed = false;
+    for (const [wf, min] of KICKS) {
+      if (now - (st[wf] || 0) < min * 60000) continue;
+      st[wf] = now;
+      changed = true;
+      try {
+        const r = await fetch(`https://api.github.com/repos/barroapk/kfeed/actions/workflows/${wf}/dispatches`, {
+          method: 'POST',
+          headers: {
+            authorization: `Bearer ${this.env.GH_DISPATCH}`,
+            accept: 'application/vnd.github+json',
+            'user-agent': 'KOUNADIA-robot',
+            'content-type': 'application/json',
+          },
+          body: JSON.stringify({ ref: 'main' }),
+        });
+        if (r.status !== 204) await this.state.storage.put('kickErr', `${new Date().toISOString()} ${wf} HTTP ${r.status}`);
+      } catch (e) {
+        await this.state.storage.put('kickErr', `${new Date().toISOString()} ${wf} ${e}`);
+      }
+    }
+    if (changed) await this.state.storage.put('kick', st);
   }
 
   // ---------- Noms des équipes (flux KOUNADIA chiffré) ----------
