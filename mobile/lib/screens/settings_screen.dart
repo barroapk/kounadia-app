@@ -335,7 +335,7 @@ class SettingsScreen extends StatelessWidget {
           ]),
           SizedBox(height: 24),
           Center(
-            child: T('KOUNADIA SERVICE · v$kAppVersion\nFait au Burkina Faso 🇧🇫',
+            child: T('KOUNADIA SERVICE · Version $kAppVersion${kAppBuild > 0 ? ' (build $kAppBuild)' : ''}\nFait au Burkina Faso 🇧🇫',
                 textAlign: TextAlign.center, style: TextStyle(color: K.muted, fontSize: 12)),
           ),
         ],
