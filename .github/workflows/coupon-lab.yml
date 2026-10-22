@@ -4,7 +4,7 @@ on:
   workflow_dispatch:
     inputs:
       mode:
-        description: "probe = forme des données · backtest = test des formules"
+        description: "probe · backtest · research"
         default: probe
 
 jobs:
@@ -19,4 +19,4 @@ jobs:
       - name: Laboratoire
         env:
           KD_KEY: ${{ secrets.KD_KEY }}
-        run: node tools/coupon-lab/${{ inputs.mode == 'backtest' && 'backtest' || 'probe' }}.mjs
+        run: node tools/coupon-lab/${{ inputs.mode }}.mjs
