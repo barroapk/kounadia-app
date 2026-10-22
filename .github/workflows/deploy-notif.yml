@@ -19,10 +19,15 @@ jobs:
           CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
           FCM_SA: ${{ secrets.FCM_SA }}
           KD_KEY: ${{ secrets.KD_KEY }}
+          PK_KEY: ${{ secrets.PK_KEY }}
+          TICKET_SECRET: ${{ secrets.TICKET_SECRET }}
         run: |
           test -n "$FCM_SA" || { echo "Secret FCM_SA manquant"; exit 1; }
           test -n "$KD_KEY" || { echo "Secret KD_KEY manquant"; exit 1; }
           npx -y wrangler@4 deploy
           printf '%s' "$FCM_SA" | npx -y wrangler@4 secret put FCM_SA
           printf '%s' "$KD_KEY" | npx -y wrangler@4 secret put KD_KEY
+          # Contenu Premium : clé Premium et secret des tickets (jamais dans l'app).
+          if [ -n "$PK_KEY" ]; then printf '%s' "$PK_KEY" | npx -y wrangler@4 secret put PK_KEY; fi
+          if [ -n "$TICKET_SECRET" ]; then printf '%s' "$TICKET_SECRET" | npx -y wrangler@4 secret put TICKET_SECRET; fi
           echo "Robot en ligne : il démarre tout seul dans la minute."

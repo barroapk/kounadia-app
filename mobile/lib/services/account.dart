@@ -14,7 +14,9 @@ class KUser {
   final String username;
   final String? email;
   final DateTime? premiumUntil;
-  KUser(this.username, this.email, this.premiumUntil);
+  /// Ticket Premium signé par le serveur (24 h max) : ouvre le contenu Premium chez le robot.
+  final String? ticket;
+  KUser(this.username, this.email, this.premiumUntil, [this.ticket]);
   bool get premium => premiumUntil != null && premiumUntil!.isAfter(DateTime.now());
 
   factory KUser.fromJson(Map<String, dynamic> j) {
@@ -23,10 +25,13 @@ class KUser {
       (j['username'] ?? '').toString(),
       e.isEmpty ? null : e,
       DateTime.tryParse((j['premiumUntil'] ?? '').toString())?.toLocal(),
+      j['ticket'] is String && (j['ticket'] as String).isNotEmpty ? j['ticket'] as String : null,
     );
   }
-  Map<String, dynamic> toJson() =>
-      {'username': username, 'email': email, 'premiumUntil': premiumUntil?.toUtc().toIso8601String()};
+  Map<String, dynamic> toJson() => {
+        'username': username, 'email': email, 'premiumUntil': premiumUntil?.toUtc().toIso8601String(),
+        if (ticket != null) 'ticket': ticket,
+      };
 }
 
 class KPlan {
@@ -61,7 +66,24 @@ class Account {
   }
 
   /// Certaines réponses ne contiennent pas l'e-mail : on garde celui déjà connu.
-  static KUser _keepEmail(KUser u) => u.email != null || user.value?.email == null ? u : KUser(u.username, user.value!.email, u.premiumUntil);
+  static KUser _keepEmail(KUser u) =>
+      u.email != null || user.value?.email == null ? u : KUser(u.username, user.value!.email, u.premiumUntil, u.ticket);
+
+  /// Ticket Premium encore valable (le serveur en donne un nouveau à chaque actualisation du compte).
+  static String? get ticket => premium ? user.value?.ticket : null;
+
+  static Future<void>? _renewing;
+  static DateTime? _renewedAt;
+
+  /// Ticket refusé ou absent : on redemande le statut au serveur (au plus une fois toutes les 10 min).
+  static Future<void> renewTicket() {
+    final last = _renewedAt;
+    if (_renewing == null && last != null && DateTime.now().difference(last) < const Duration(minutes: 10)) {
+      return Future.value();
+    }
+    _renewedAt = DateTime.now();
+    return _renewing ??= refresh().whenComplete(() => _renewing = null);
+  }
 
   static Future<void> _save(String? token, KUser? u) async {
     _token = token;

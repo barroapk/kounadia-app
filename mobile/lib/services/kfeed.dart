@@ -4,6 +4,7 @@ import 'dart:typed_data';
 import 'package:http/http.dart' as http;
 import 'package:pointycastle/export.dart';
 import 'live_socket.dart' show kLiveBase;
+import 'account.dart';
 
 /// Données KOUNADIA publiées chiffrées (gzip + AES-256-GCM).
 /// La clé est injectée à la compilation (secret GitHub), jamais écrite dans le code.
@@ -27,6 +28,31 @@ class KFeed {
     if (r.statusCode != 200) return r;
     final plain = open(utf8.decode(r.bodyBytes));
     return http.Response.bytes(utf8.encode(plain), 200, headers: r.headers);
+  }
+
+  /// Contenu Premium : demandé au robot KOUNADIA avec le ticket du compte (vérifié côté serveur).
+  /// Sans ticket valide, le robot refuse : rien de Premium n'est lisible depuis l'application seule.
+  static Future<http.Response> premium(String path, String? ticket) async {
+    if (kLiveBase.isEmpty || ticket == null) return http.Response('premium requis', 401);
+    return _client
+        .get(Uri.parse('$kLiveBase/p/$path'), headers: {'Authorization': 'Bearer $ticket'})
+        .timeout(Duration(seconds: 20));
+  }
+
+  /// Fichier Premium : robot + ticket. Ticket absent ou refusé : on en redemande un en arrière-plan
+  /// et, en attendant, on lit l'ancien fichier public (période de transition) ou la copie gardée.
+  static Future<http.Response> getPremium(String path, {String query = ''}) async {
+    final t = Account.ticket;
+    if (t != null) {
+      try {
+        final r = await premium(path, t);
+        if (r.statusCode == 200) return r;
+        if (r.statusCode == 401) Account.renewTicket().ignore();
+      } catch (_) {}
+    } else if (Account.premium) {
+      Account.renewTicket().ignore();
+    }
+    return get('$path$query');
   }
 
   static String open(String text) {

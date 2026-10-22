@@ -56,8 +56,10 @@ class KounadiaData {
     final key = 'kdata_$file';
     try {
       final bust = DateTime.now().millisecondsSinceEpoch ~/ 300000;
-      final r = await KFeed.get('pronos/$file?v=$bust')
-          .timeout(Duration(seconds: 20));
+      final r = await (file == 'today.json'
+              ? KFeed.getPremium('pronos/$file', query: '?v=$bust')
+              : KFeed.get('pronos/$file?v=$bust'))
+          .timeout(Duration(seconds: 30));
       if (r.statusCode != 200) throw HttpException('indisponible');
       final body = utf8.decode(r.bodyBytes);
       final data = jsonDecode(body);

@@ -1,6 +1,7 @@
 import 'dart:convert';
 import 'package:http/http.dart' as http;
 import 'kfeed.dart';
+import 'account.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import '../models/vip.dart';
 import 'coupon_engine.dart';
@@ -20,7 +21,10 @@ class VipService {
     final prefs = await SharedPreferences.getInstance();
     try {
       final bust = DateTime.now().millisecondsSinceEpoch ~/ 300000;
-      final r = await KFeed.get('vip/$file?v=$bust').timeout(Duration(seconds: 20));
+      final r = await (file == 'vip.json'
+              ? KFeed.getPremium('vip/$file', query: '?v=$bust')
+              : KFeed.get('vip/$file?v=$bust'))
+          .timeout(Duration(seconds: 30));
       if (r.statusCode == 200) {
         final body = utf8.decode(r.bodyBytes);
         await prefs.setString('kvip_$file', body);
@@ -31,7 +35,8 @@ class VipService {
   }
 
   static Future<VipData> load() async {
-    final (t, off1) = await _get('vip.json');
+    // Coup sûr du jour : seulement pour les abonnés (le robot refuse sans ticket Premium).
+    final (t, off1) = Account.premium ? await _get('vip.json') : (null, false);
     final (h, off2) = await _get('vip_history.json');
     if (t == null && h == null) {
       throw FriendlyError('Le coupon VIP est momentanément indisponible. Vérifiez votre connexion puis réessayez.');

@@ -201,15 +201,7 @@ export class Poller {
   async feed(path) {
     const r = await fetch(`${KFEED}/${path}?v=${Math.floor(Date.now() / 60000)}`);
     if (!r.ok) return null;
-    let text = (await r.text()).trim();
-    if (text.startsWith('KD1.')) {
-      const raw = b64(text.slice(4));
-      const key = await crypto.subtle.importKey('raw', b64(this.env.KD_KEY), 'AES-GCM', false, ['decrypt']);
-      const z = await crypto.subtle.decrypt({ name: 'AES-GCM', iv: raw.slice(0, 12), tagLength: 128 }, key, raw.slice(12));
-      const ds = new Blob([z]).stream().pipeThrough(new DecompressionStream('gzip'));
-      text = await new Response(ds).text();
-    }
-    return JSON.parse(text);
+    return JSON.parse(await openFeed(await r.text(), this.env));
   }
 
   // ---------- Pronostics : nouveaux Coup sûr / pronostics, Coup sûr gagnés ----------
@@ -595,6 +587,49 @@ const poller = (env) => env.POLLER.get(env.POLLER.idFromName('main'));
 // Relais des données KOUNADIA (chiffrées) quand GitHub refuse ou bloque la demande du téléphone.
 // Gardé 30 s en mémoire : beaucoup d'utilisateurs = une seule lecture GitHub.
 const FEED_RE = /^\/feed\/([a-z]+\/[a-z0-9_.-]+\.json)$/;
+
+// Déchiffre un fichier du flux : « KD1. » = clé publique de l'app, « KP1. » = clé Premium (jamais dans l'app).
+async function openFeed(text, env) {
+  const t = String(text || '').trim();
+  const pre = t.slice(0, 4);
+  if (pre !== 'KD1.' && pre !== 'KP1.') return t;
+  const k = pre === 'KP1.' ? env.PK_KEY : env.KD_KEY;
+  if (!k) throw new Error('clé absente');
+  const raw = b64(t.slice(4));
+  const key = await crypto.subtle.importKey('raw', b64(k), 'AES-GCM', false, ['decrypt']);
+  const z = await crypto.subtle.decrypt({ name: 'AES-GCM', iv: raw.slice(0, 12), tagLength: 128 }, key, raw.slice(12));
+  const ds = new Blob([z]).stream().pipeThrough(new DecompressionStream('gzip'));
+  return new Response(ds).text();
+}
+
+// ---------- Contenu Premium : servi seulement avec un ticket valide du serveur KOUNADIA ----------
+// Ticket = base64url({uid, exp}) + "." + HMAC-SHA256 (secret partagé avec knd-api). Il expire vite (24 h max).
+const PREMIUM = new Set(['pronos/today.json', 'vip/vip.json']);
+const unb64url = (s) => b64(s.replace(/-/g, '+').replace(/_/g, '/') + '==='.slice((s.length + 3) % 4));
+async function ticketOk(req, env) {
+  try {
+    const t = (req.headers.get('authorization') || '').replace(/^Bearer\s+/i, '').trim();
+    const [body, sig] = t.split('.');
+    if (!body || !sig || !env.TICKET_SECRET) return false;
+    const key = await crypto.subtle.importKey('raw', enc(env.TICKET_SECRET), { name: 'HMAC', hash: 'SHA-256' }, false, ['verify']);
+    if (!(await crypto.subtle.verify('HMAC', key, unb64url(sig), enc(body)))) return false;
+    const p = JSON.parse(new TextDecoder().decode(unb64url(body)));
+    return !!p?.uid && Number(p.exp) > Date.now();
+  } catch (_) {
+    return false;
+  }
+}
+const premMem = new Map(); // chemin -> [heure, texte déchiffré]
+async function premiumFile(path, env) {
+  const now = Date.now();
+  const c = premMem.get(path);
+  if (c && now - c[0] < 60000) return c[1];
+  const raw = await feedRelay(path);
+  if (raw == null) return null;
+  const text = await openFeed(raw, env);
+  premMem.set(path, [now, text]);
+  return text;
+}
 const feedMem = new Map(); // chemin -> [heure, texte]
 
 async function feedRelay(path) {
@@ -625,7 +660,7 @@ async function ptRelay(url) {
 }
 
 // Autorise l'app navigateur (kounadia.pages.dev) à appeler le robot.
-const CORS = { 'access-control-allow-origin': '*', 'access-control-allow-methods': 'GET, POST, OPTIONS', 'access-control-allow-headers': 'content-type', 'access-control-max-age': '86400' };
+const CORS = { 'access-control-allow-origin': '*', 'access-control-allow-methods': 'GET, POST, OPTIONS', 'access-control-allow-headers': 'content-type, authorization', 'access-control-max-age': '86400' };
 function withCors(res) {
   if (res.status === 101 || res.webSocket) return res; // connexion en direct : inchangée
   const h = new Headers(res.headers);
@@ -645,6 +680,14 @@ export default {
       const text = await feedRelay(m[1]).catch(() => null);
       if (text == null) return withCors(new Response('indisponible', { status: 502 }));
       return withCors(new Response(text, { headers: { 'content-type': 'text/plain; charset=utf-8', 'cache-control': 'no-store' } }));
+    }
+    if (url.pathname.startsWith('/p/') && req.method === 'GET') {
+      const path = url.pathname.slice(3);
+      if (!PREMIUM.has(path)) return withCors(new Response('introuvable', { status: 404 }));
+      if (!(await ticketOk(req, env))) return withCors(new Response('premium requis', { status: 401 }));
+      const text = await premiumFile(path, env).catch(() => null);
+      if (text == null) return withCors(new Response('indisponible', { status: 502 }));
+      return withCors(new Response(text, { headers: { 'content-type': 'application/json; charset=utf-8', 'cache-control': 'private, no-store' } }));
     }
     if (url.pathname === '/geo') {
       return withCors(new Response(`loc=${req.cf?.country || ''}\n`, { headers: { 'content-type': 'text/plain', 'cache-control': 'no-store' } }));
