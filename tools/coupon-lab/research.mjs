@@ -104,3 +104,33 @@ if (best) {
   console.log(`  1re moitié : réussite ${(100 * best.hit).toFixed(1)} %`);
   console.log(`  2e moitié  : ${stat(flat(test).filter(best.f), nTest)}`);
 }
+
+console.log('\nF) Coup sûr : les 10 paris les plus sûrs du jour avec une cote minimale (1 par match), 2e moitié');
+for (const cmin of [1.15, 1.2, 1.25, 1.3]) {
+  for (const kind of ['tous', 'victoires', 'doubles chances']) {
+    const l = test.flatMap(([, ps]) => {
+      const best = new Map();
+      for (const x of ps) {
+        if (x.odd < cmin) continue;
+        if (kind === 'victoires' && !x.single) continue;
+        if (kind === 'doubles chances' && x.single) continue;
+        if (!best.has(x.id) || best.get(x.id).q < x.q) best.set(x.id, x);
+      }
+      return [...best.values()].sort((a, b) => b.q - a.q).slice(0, 10);
+    });
+    console.log(`  cote ≥ ${cmin.toFixed(2)} · ${kind.padEnd(15)} : ${stat(l, nTest)}`);
+  }
+}
+// Répartition jour par jour pour la règle demandée (cote ≥ 1,20, tous types)
+const dist = new Map();
+for (const [, ps] of test) {
+  const best = new Map();
+  for (const x of ps) if (x.odd >= 1.2 && (!best.has(x.id) || best.get(x.id).q < x.q)) best.set(x.id, x);
+  const top = [...best.values()].sort((a, b) => b.q - a.q).slice(0, 10);
+  if (top.length < 10) continue;
+  const w = top.filter((x) => x.won).length;
+  dist.set(w, (dist.get(w) || 0) + 1);
+}
+const totalDays = [...dist.values()].reduce((a, b) => a + b, 0);
+console.log(`\n  Règle « 10 matchs, cote ≥ 1,20 » : nombre de jours selon les matchs gagnés sur 10 (${totalDays} jours)`);
+for (let w = 10; w >= 0; w--) if (dist.get(w)) console.log(`    ${String(w).padStart(2)}/10 : ${String(dist.get(w)).padStart(3)} jours (${((100 * dist.get(w)) / totalDays).toFixed(0)} %)`);
