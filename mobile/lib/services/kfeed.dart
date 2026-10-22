@@ -57,6 +57,8 @@ class KFeed {
 
   static String open(String text) {
     final t = text.trim();
+    // Contenu Premium (clé du robot) : illisible ici, il passe par [premium].
+    if (t.startsWith('KP1.')) throw const FormatException('premium');
     if (!t.startsWith('KD1.')) return t;
     final key = _key ??= base64.decode(_k);
     final b = base64.decode(t.substring(4));

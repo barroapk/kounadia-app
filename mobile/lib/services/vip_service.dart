@@ -25,8 +25,9 @@ class VipService {
               ? KFeed.getPremium('vip/$file', query: '?v=$bust')
               : KFeed.get('vip/$file?v=$bust'))
           .timeout(Duration(seconds: 30));
-      if (r.statusCode == 200) {
-        final body = utf8.decode(r.bodyBytes);
+      final body = r.statusCode == 200 ? utf8.decode(r.bodyBytes) : '';
+      // Invitation « mets à jour » destinée aux anciennes versions : on garde la dernière vraie copie.
+      if (r.statusCode == 200 && !body.contains('"upgrade":true')) {
         await prefs.setString('kvip_$file', body);
         return (body, false);
       }

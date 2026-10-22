@@ -204,6 +204,14 @@ export class Poller {
     return JSON.parse(await openFeed(await r.text(), this.env));
   }
 
+  // Fichier Premium (« _p », clé Premium) ; sinon l'ancien fichier, s'il n'est pas l'invitation à mettre à jour.
+  async premiumFeed(path) {
+    const p = await this.feed(path.replace(/\.json$/, '_p.json')).catch(() => null);
+    if (p) return p;
+    const old = await this.feed(path);
+    return old?.upgrade ? null : old;
+  }
+
   // ---------- Pronostics : nouveaux Coup sûr / pronostics, Coup sûr gagnés ----------
   async checkTips() {
     if (Date.now() - (this.tipsAt || 0) < 5 * 60000) return;
@@ -213,7 +221,7 @@ export class Poller {
     const today = new Date().toISOString().slice(0, 10);
     const jobs = [];
     try {
-      const vip = await this.feed('vip/vip.json');
+      const vip = await this.premiumFeed('vip/vip.json');
       const singles = Array.isArray(vip?.singles) ? vip.singles : [];
       if (vip?.date && singles.length && st.vipDate !== vip.date) {
         st.vipDate = vip.date;
@@ -223,7 +231,7 @@ export class Poller {
       }
     } catch (_) {}
     try {
-      const pr = await this.feed('pronos/today.json');
+      const pr = await this.premiumFeed('pronos/today.json');
       const isToday = (e) => {
         const d = new Date(e?.date || '');
         return !isNaN(d) && d.toISOString().slice(0, 10) === today;
@@ -624,7 +632,8 @@ async function premiumFile(path, env) {
   const now = Date.now();
   const c = premMem.get(path);
   if (c && now - c[0] < 60000) return c[1];
-  const raw = await feedRelay(path);
+  // Contenu réel dans « _p.json » (clé Premium) ; le fichier public sert aux anciennes versions de l'app.
+  const raw = (await feedRelay(path.replace(/\.json$/, '_p.json'))) ?? (await feedRelay(path));
   if (raw == null) return null;
   const text = await openFeed(raw, env);
   premMem.set(path, [now, text]);

@@ -63,6 +63,8 @@ class KounadiaData {
       if (r.statusCode != 200) throw HttpException('indisponible');
       final body = utf8.decode(r.bodyBytes);
       final data = jsonDecode(body);
+      // Invitation « mets à jour » destinée aux anciennes versions : jamais affichée ici.
+      if (data is Map && data['upgrade'] == true) throw HttpException('premium');
       await prefs.setString(key, body);
       return (data, false);
     } catch (e) {
