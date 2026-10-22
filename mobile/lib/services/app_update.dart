@@ -3,7 +3,9 @@ import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:http/http.dart' as http;
+import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:path_provider/path_provider.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 import 'package:url_launcher/url_launcher.dart';
 import '../l10n/tr.dart';
 import '../widgets/forecast_card.dart' show K;
@@ -31,6 +33,7 @@ class AppUpdate {
   /// Nouvelle version connue et pas encore installée (bandeau permanent).
   static final pending = ValueNotifier<AppRelease?>(null);
   static DateTime? _shown;
+  static const _laterKey = 'upd_later';
 
   static Future<AppRelease?> latest() async {
     try {
@@ -62,6 +65,13 @@ class AppUpdate {
       return;
     }
     pending.value = rel;
+    // « Plus tard » : la fenêtre ne revient pas avant 24 h (le bandeau en haut reste visible).
+    try {
+      final p = await SharedPreferences.getInstance();
+      final t = p.getInt(_laterKey) ?? 0;
+      if (DateTime.now().millisecondsSinceEpoch - t < const Duration(hours: 24).inMilliseconds) return;
+    } catch (_) {}
+    if (!context.mounted) return;
     final s = _shown;
     if (s != null && DateTime.now().difference(s) < const Duration(hours: 1)) return;
     _shown = DateTime.now();
@@ -77,19 +87,25 @@ class AppUpdate {
     m.hideCurrentSnackBar();
     if (rel == null) {
       m.showSnackBar(SnackBar(content: Text(tr('Vérification impossible. Vérifie internet puis réessaie.'))));
-    } else if (rel.build <= kAppBuild || kAppBuild <= 0) {
+    } else if (kIsWeb || rel.build <= kAppBuild || kAppBuild <= 0) {
       m.showSnackBar(SnackBar(content: Text(tr('Tu as déjà la dernière version.'))));
     } else {
       await show(context, rel);
     }
   }
 
-  static Future<void> show(BuildContext context, AppRelease rel) {
-    return showDialog<void>(
+  /// Rien ne démarre tout seul : l'utilisateur choisit « Mettre à jour » ou « Plus tard ».
+  static Future<void> show(BuildContext context, AppRelease rel) async {
+    await showDialog<void>(
       context: context,
       barrierDismissible: false,
-      builder: (ctx) => PopScope(canPop: false, child: _UpdateDialog(rel)),
+      builder: (ctx) => _UpdateDialog(rel),
     );
+    // Fenêtre fermée sans installer : on ne la remontre pas avant 24 h.
+    try {
+      final p = await SharedPreferences.getInstance();
+      await p.setInt(_laterKey, DateTime.now().millisecondsSinceEpoch);
+    } catch (_) {}
   }
 }
 
@@ -115,7 +131,6 @@ class _UpdateDialogState extends State<_UpdateDialog> with WidgetsBindingObserve
   void initState() {
     super.initState();
     WidgetsBinding.instance.addObserver(this);
-    if (Platform.isAndroid) WidgetsBinding.instance.addPostFrameCallback((_) => _download());
   }
 
   @override
@@ -230,8 +245,15 @@ class _UpdateDialogState extends State<_UpdateDialog> with WidgetsBindingObserve
     final rel = widget.rel;
     final ready = _file != null;
     final pct = ((_progress ?? 0) * 100).round();
+    final idle = _progress == null && _file == null && _error == null;
     Widget body;
-    if (_error != null) {
+    if (idle) {
+      body = Text(
+        tr('Installe la nouvelle version pour profiter des dernières améliorations. Tes données et ton compte sont conservés.'),
+        textAlign: TextAlign.center,
+        style: TextStyle(color: K.muted, height: 1.4, fontSize: 13.5),
+      );
+    } else if (_error != null) {
       body = Text(_error!, textAlign: TextAlign.center, style: TextStyle(color: K.red, height: 1.4, fontSize: 13.5));
     } else if (ready) {
       body = Text(
@@ -286,9 +308,18 @@ class _UpdateDialogState extends State<_UpdateDialog> with WidgetsBindingObserve
             _cancel = true;
             Navigator.pop(context);
           },
-          child: Text(tr('Plus tard'), style: TextStyle(color: K.muted)),
+          child: Text(tr(_progress != null && !ready ? 'Annuler' : 'Plus tard'), style: TextStyle(color: K.muted)),
         ),
-        if (_error != null || !Platform.isAndroid)
+        if (idle)
+          FilledButton.icon(
+            style: FilledButton.styleFrom(backgroundColor: K.indigo),
+            onPressed: Platform.isAndroid
+                ? _download
+                : () => launchUrl(Uri.parse(rel.url), mode: LaunchMode.externalApplication),
+            icon: const Icon(Icons.download_rounded),
+            label: Text(tr('Mettre à jour')),
+          )
+        else if (_error != null || !Platform.isAndroid)
           FilledButton.icon(
             style: FilledButton.styleFrom(backgroundColor: K.indigo),
             onPressed: Platform.isAndroid

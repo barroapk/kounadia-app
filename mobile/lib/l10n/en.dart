@@ -617,4 +617,5 @@ const Map<String, String> kEn = {
   'Tout': 'All',
   'Compétitions': 'Competitions',
   'Tes favoris sont affichés en premier dans Matchs.': 'Your favourites are shown first in Matches.',
+  'Annuler': 'Cancel',
 };

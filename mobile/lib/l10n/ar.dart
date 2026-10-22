@@ -635,4 +635,5 @@ const Map<String, String> kAr = {
   'Tout': 'الكل',
   'Compétitions': 'المسابقات',
   'Tes favoris sont affichés en premier dans Matchs.': 'تظهر مفضلاتك أولاً في المباريات.',
+  'Annuler': 'إلغاء',
 };

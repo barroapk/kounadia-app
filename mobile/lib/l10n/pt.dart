@@ -635,4 +635,5 @@ const Map<String, String> kPt = {
   'Tout': 'Tudo',
   'Compétitions': 'Competições',
   'Tes favoris sont affichés en premier dans Matchs.': 'Os teus favoritos aparecem primeiro em Jogos.',
+  'Annuler': 'Cancelar',
 };

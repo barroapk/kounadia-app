@@ -87,13 +87,22 @@ class KounadiaData {
     (List<Forecast>, DateTime?) parse(String k, String src) {
       final raw = ((m[k] as List?) ?? []).whereType<Map>().map((e) => Map<String, dynamic>.from(e)).toList();
       final keep = raw.where((e) => _isToday(Forecast.fromJson(e, src).date)).toList();
+      var saved = <Map<String, dynamic>>[];
+      try {
+        final c = prefs.getString('klast_$k');
+        if (c != null) saved = (jsonDecode(c) as List).whereType<Map>().map((e) => Map<String, dynamic>.from(e)).toList();
+      } catch (_) {}
       if (keep.isNotEmpty) {
+        // Les pronostics du jour déjà affichés restent, même si la source les retire (match commencé ou fini).
+        final ids = keep.map((e) => '${e['id']}').toSet();
+        for (final e in saved) {
+          try {
+            if (!ids.contains('${e['id']}') && _isToday(Forecast.fromJson(e, src).date)) keep.add(e);
+          } catch (_) {}
+        }
         prefs.setString('klast_$k', jsonEncode(keep));
       } else {
-        try {
-          final c = prefs.getString('klast_$k');
-          if (c != null) keep.addAll((jsonDecode(c) as List).whereType<Map>().map((e) => Map<String, dynamic>.from(e)));
-        } catch (_) {}
+        keep.addAll(saved);
       }
       final list = keep.map((e) => Forecast.fromJson(e, src)).toList()..sort((a, b) => a.date.compareTo(b.date));
       final old = list.isNotEmpty && !_isToday(list.first.date);
@@ -103,8 +112,17 @@ class KounadiaData {
     var (ia, iaDay) = parse('ia', 'ia');
     var (ex, exDay) = parse('expert', 'expert');
     try {
-      final (h, _) = await _get('history.json');
       final res = <String, Map<String, dynamic>>{};
+      // Résultats déjà vus sur ce téléphone (gardés même si la source ne les publie plus).
+      try {
+        for (final e in (jsonDecode(prefs.getString(_localKey) ?? '[]') as List).whereType<Map>()) {
+          if (e['id'] != null) res[e['id'].toString()] = Map<String, dynamic>.from(e);
+        }
+      } catch (_) {}
+      dynamic h = const [];
+      try {
+        h = (await _get('history.json')).$1;
+      } catch (_) {}
       for (final e in (h is List ? h : const [])) {
         if (e is Map && e['id'] != null) res[e['id'].toString()] = Map<String, dynamic>.from(e);
       }
