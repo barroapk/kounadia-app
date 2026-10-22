@@ -29,13 +29,14 @@ class CouponCriteria {
     this.btts = true,
   });
 
+  // Réglages validés par backtest (tools/coupon-lab) : cotes réalistes, peu de matchs par coupon.
   factory CouponCriteria.safe() => CouponCriteria(
-      totalMin: 1.8, totalMax: 3, countMin: 2, countMax: 3, oddMin: 1.15, oddMax: 1.8, probMin: 65, probMax: 95,
+      totalMin: 1.5, totalMax: 2.5, countMin: 2, countMax: 3, oddMin: 1.1, oddMax: 1.7, probMin: 70, probMax: 95,
       btts: false);
   factory CouponCriteria.balanced() => CouponCriteria(
-      totalMin: 4, totalMax: 8, countMin: 3, countMax: 5, oddMin: 1.3, oddMax: 2.2, probMin: 55, probMax: 90);
+      totalMin: 2.5, totalMax: 5, countMin: 2, countMax: 4, oddMin: 1.25, oddMax: 2.2, probMin: 58, probMax: 95);
   factory CouponCriteria.bold() => CouponCriteria(
-      totalMin: 15, totalMax: 30, countMin: 5, countMax: 8, oddMin: 1.5, oddMax: 3.0, probMin: 40, probMax: 85,
+      totalMin: 6, totalMax: 15, countMin: 3, countMax: 6, oddMin: 1.4, oddMax: 3.2, probMin: 40, probMax: 95,
       draw: true);
 }
 

@@ -9,9 +9,9 @@ export const PRESETS = {
   },
   // Réglages proposés : cotes plus réalistes, moins de matchs
   next: {
-    prudent: { totalMin: 1.5, totalMax: 2.5, countMin: 2, countMax: 3, oddMin: 1.1, oddMax: 1.7, probMin: 70, probMax: 99, win: true, draw: false, dc: true },
-    equilibre: { totalMin: 2.5, totalMax: 5, countMin: 2, countMax: 4, oddMin: 1.25, oddMax: 2.2, probMin: 58, probMax: 99, win: true, draw: false, dc: true },
-    audacieux: { totalMin: 6, totalMax: 15, countMin: 3, countMax: 6, oddMin: 1.4, oddMax: 3.2, probMin: 40, probMax: 99, win: true, draw: true, dc: true },
+    prudent: { totalMin: 1.5, totalMax: 2.5, countMin: 2, countMax: 3, oddMin: 1.1, oddMax: 1.7, probMin: 70, probMax: 95, win: true, draw: false, dc: true },
+    equilibre: { totalMin: 2.5, totalMax: 5, countMin: 2, countMax: 4, oddMin: 1.25, oddMax: 2.2, probMin: 58, probMax: 95, win: true, draw: false, dc: true },
+    audacieux: { totalMin: 6, totalMax: 15, countMin: 3, countMax: 6, oddMin: 1.4, oddMax: 3.2, probMin: 40, probMax: 95, win: true, draw: true, dc: true },
   },
 };
 
@@ -122,79 +122,91 @@ function diversify(sorted, max) {
   return picked;
 }
 
-// ---------- Nouveau moteur ----------
-// 1) Probabilité corrigée = mélange source (PrimaTips) + marché (cotes des bookmakers, marge retirée).
+// ---------- Nouveau moteur (même calcul, ligne par ligne, que coupon_engine.dart) ----------
+// 1) Probabilité = cotes des bookmakers, marge retirée (le backtest montre qu'elle est la mieux calibrée).
 // 2) Chaque pari est noté par son « coût » : -ln(P) / ln(cote). Plus il est bas, mieux le risque est payé.
-// 3) Recherche des meilleures combinaisons (probabilité totale la plus haute) dans la fourchette de cote.
-export const DEFAULT_TUNE = { w: 0.35, vmin: 0.95, dcCut: 0.98 };
+// 3) Recherche en faisceau des combinaisons à la plus forte probabilité dans la fourchette de cote.
+export const DEFAULT_TUNE = { w: 0, vmin: 0.9, dcCut: 0.98 };
+
+const cmpStr = (a, b) => (a < b ? -1 : a > b ? 1 : 0);
+const costOf = (l) => -Math.log(l.prob / 100) / Math.log(l.odd);
 
 export function newLegs(m, c, tune) {
   const p = m.p, o = m.o;
-  if (!okProbs(p) || !okOdds(o)) return [];
+  if (!okOdds(o)) return [];
   const inv = o.map((x) => 1 / x);
   const s = inv[0] + inv[1] + inv[2];
-  const mk = inv.map((x) => x / s);
-  const src = p.map((x) => x / 100);
-  const sumSrc = src[0] + src[1] + src[2];
-  const sp = sumSrc > 0.5 ? src.map((x) => x / sumSrc) : mk; // source renormalisée
-  const P = (i) => tune.w * sp[i] + (1 - tune.w) * mk[i];
+  let q = inv.map((x) => x / s);
+  if (tune.w > 0 && okProbs(p)) {
+    const sp = p[0] + p[1] + p[2];
+    if (sp > 50) q = q.map((x, i) => tune.w * (p[i] / sp) + (1 - tune.w) * x);
+  }
   const dcOdd = (i, j, code) => {
     if (String(m.t || '').toUpperCase() === code && Number.isFinite(m.to) && m.to > 1.01) return m.to;
     return Math.round((tune.dcCut / (inv[i] + inv[j])) * 100) / 100;
   };
-  const all = [];
+  const ev = [];
+  const add = (pick, odd, P) => {
+    if (odd > 1.01 && P > 0 && P < 1) ev.push({ id: m.id, pick, odd, prob: Math.round(P * 100), P });
+  };
   if (c.win) {
-    all.push({ id: m.id, pick: '1', odd: o[0], P: P(0) });
-    all.push({ id: m.id, pick: '2', odd: o[2], P: P(2) });
+    add('1', o[0], q[0]);
+    add('2', o[2], q[2]);
   }
-  if (c.draw) all.push({ id: m.id, pick: 'X', odd: o[1], P: P(1) });
+  if (c.draw) add('X', o[1], q[1]);
   if (c.dc) {
-    all.push({ id: m.id, pick: '1X', odd: dcOdd(0, 1, '1X'), P: P(0) + P(1) });
-    all.push({ id: m.id, pick: 'X2', odd: dcOdd(1, 2, 'X2'), P: P(1) + P(2) });
-    all.push({ id: m.id, pick: '12', odd: dcOdd(0, 2, '12'), P: P(0) + P(2) });
+    add('1X', dcOdd(0, 1, '1X'), q[0] + q[1]);
+    add('X2', dcOdd(1, 2, 'X2'), q[1] + q[2]);
+    add('12', dcOdd(0, 2, '12'), q[0] + q[2]);
   }
-  return all
-    .filter((l) => l.odd > 1.01 && l.odd >= c.oddMin && l.odd <= c.oddMax)
-    .filter((l) => l.P * 100 >= c.probMin && l.P * 100 <= c.probMax)
-    .filter((l) => l.P * l.odd >= tune.vmin)
-    .map((l) => ({ ...l, cost: -Math.log(l.P) / Math.log(l.odd), prob: Math.round(l.P * 100) }));
+  return ev
+    .filter((l) => l.odd >= c.oddMin && l.odd <= c.oddMax && l.prob >= c.probMin && l.prob <= c.probMax && l.P * l.odd >= tune.vmin)
+    .map(({ id, pick, odd, prob }) => ({ id, pick, odd, prob }))
+    .sort((a, b) => costOf(a) - costOf(b) || cmpStr(a.pick, b.pick));
 }
 
-export function newGenerate(matches, c, tune = DEFAULT_TUNE, max = 5) {
-  // Meilleur pari de chaque match d'abord, puis les autres options du même match.
-  const pool = [];
+export function newCandidates(matches, c, tune = DEFAULT_TUNE) {
+  const out = [];
   for (const m of matches) {
-    const legs = newLegs(m, c, tune).sort((a, b) => a.cost - b.cost);
-    legs.forEach((l, i) => pool.push({ ...l, rank: i }));
+    const legs = newLegs(m, c, tune);
+    if (legs.length) out.push(legs);
   }
-  pool.sort((a, b) => a.rank - b.rank || a.cost - b.cost);
-  const top = pool.slice(0, 40);
-  if (new Set(top.map((l) => l.id)).size < c.countMin) return [];
-  // Recherche en faisceau : garde les 300 meilleures combinaisons partielles à chaque étape.
-  let beam = [{ legs: [], total: 1, lp: 0, used: new Set(), last: -1 }];
+  return out;
+}
+
+const sigOf = (legs) => legs.map((l) => `${l.id}:${l.pick}`).sort().join('|');
+
+export function newSearch(cands, c, exclude = new Set(), max = 5) {
+  if (cands.length < c.countMin) return [];
+  const pool = [];
+  for (const e of cands) e.forEach((l, i) => pool.push({ l, rank: i, cost: costOf(l) }));
+  pool.sort((a, b) => a.rank - b.rank || a.cost - b.cost || a.l.id - b.l.id || cmpStr(a.l.pick, b.l.pick));
+  const top = pool.slice(0, 40).map((x) => x.l);
+  let beam = [{ legs: [], total: 1, lp: 0, last: -1 }];
   const done = new Map();
-  for (let depth = 0; depth < c.countMax; depth++) {
+  const key = (s) => s.lp / Math.max(Math.log(s.total), 0.01);
+  for (let depth = 0; depth < c.countMax && beam.length; depth++) {
     const next = [];
     for (const st of beam) {
       for (let i = st.last + 1; i < top.length; i++) {
         const l = top[i];
-        if (st.used.has(l.id)) continue;
+        if (st.legs.some((x) => x.id === l.id)) continue;
         const total = st.total * l.odd;
         if (total > c.totalMax) continue;
-        const legs = [...st.legs, l];
-        const ns = { legs, total, lp: st.lp + Math.log(l.P), used: new Set([...st.used, l.id]), last: i };
-        if (legs.length >= c.countMin && total >= c.totalMin) done.set(sig(legs), ns);
-        else next.push(ns);
+        const ns = { legs: [...st.legs, l], total, lp: st.lp + Math.log(l.prob / 100), last: i };
+        if (ns.legs.length >= c.countMin && total >= c.totalMin) {
+          const sg = sigOf(ns.legs);
+          if (!exclude.has(sg)) done.set(sg, ns);
+        } else next.push(ns);
       }
     }
-    // Priorité : probabilité gardée par unité de cote déjà atteinte
-    const key = (s) => s.lp / Math.max(Math.log(s.total), 0.01);
-    next.sort((a, b) => key(b) - key(a) || b.lp - a.lp);
+    next.sort((a, b) => key(b) - key(a) || b.lp - a.lp || cmpStr(sigOf(a.legs), sigOf(b.legs)));
     beam = next.slice(0, 300);
-    if (!beam.length) break;
   }
-  const sorted = [...done.values()]
-    .map((s) => ({ legs: s.legs, total: s.total, prob: Math.exp(s.lp) }))
-    .sort((a, b) => b.prob - a.prob);
+  const sorted = [...done.entries()]
+    .map(([sg, s]) => ({ sg, legs: s.legs, total: s.total, prob: s.legs.reduce((v, l) => v * l.prob / 100, 1) }))
+    .sort((a, b) => b.prob - a.prob || cmpStr(a.sg, b.sg));
   return diversify(sorted, max);
 }
+
+export const newGenerate = (matches, c, tune = DEFAULT_TUNE, max = 5) => newSearch(newCandidates(matches, c, tune), c, new Set(), max);

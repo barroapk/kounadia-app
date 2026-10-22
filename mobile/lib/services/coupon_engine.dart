@@ -17,116 +17,157 @@ class CouponEngine {
         date: m.date,
       );
 
-  /// Pour chaque match à venir : la liste des paris qui respectent les critères.
+  // Formule validée par backtest sur 240 jours de matchs (outil : tools/coupon-lab) :
+  // 1) probabilité = cotes des bookmakers sans leur marge (mieux calibrée que PrimaTips) ;
+  // 2) on refuse les paris trop mal payés (probabilité × cote < 0,9) ;
+  // 3) chaque pari a un « coût » = -ln(P) / ln(cote) : plus il est bas, mieux le risque est payé ;
+  // 4) recherche des combinaisons à la plus forte chance de gain dans la fourchette de cote.
+  static const _vmin = 0.9;
+  static const _dcCut = 0.98;
+
+  static int _cmpStr(String a, String b) => a.compareTo(b);
+  static double _cost(Leg l) => -log(l.prob / 100) / log(l.odd);
+
+  /// Pour chaque match à venir : la liste des paris qui respectent les critères (meilleur d'abord).
   static List<List<Leg>> candidates(Iterable<LiveMatch> matches, CouponCriteria c,
       [Map<int, MatchMarkets> markets = const {}]) {
     final limit = DateTime.now().add(Duration(minutes: 10));
     final out = <List<Leg>>[];
     for (final m in matches) {
       if (m.status != 'upcoming' || m.date == null || m.date!.isBefore(limit)) continue;
-      final ev = <Leg>[];
-      final p = m.probs;
+      final ev = <(Leg, double)>[];
+      void add(String pick, double odd, double p) {
+        if (odd > 1.01 && p > 0 && p < 1) ev.add((legOf(m, pick, odd, (p * 100).round()), p));
+      }
+
       final o = m.odds;
-      if (p != null && o != null && p.length == 3 && o.length == 3) {
-        if (c.win) {
-          ev.add(legOf(m, '1', o[0], p[0]));
-          ev.add(legOf(m, '2', o[2], p[2]));
-        }
-        if (c.draw) ev.add(legOf(m, 'X', o[1], p[1]));
-        if (c.dc && m.tipOdd != null) {
+      if (o != null && o.length == 3 && o.every((x) => x > 1.01)) {
+        final inv = [for (final x in o) 1 / x];
+        final s = inv[0] + inv[1] + inv[2];
+        final q = [for (final x in inv) x / s];
+        double dcOdd(int i, int j, String code) {
           final t = m.tip.toUpperCase();
-          final pr = t == '1X'
-              ? p[0] + p[1]
-              : t == 'X2'
-                  ? p[1] + p[2]
-                  : t == '12'
-                      ? p[0] + p[2]
-                      : null;
-          if (pr != null) ev.add(legOf(m, t, m.tipOdd!, pr));
+          final to = m.tipOdd;
+          if (t == code && to != null && to > 1.01) return to;
+          return (_dcCut / (inv[i] + inv[j]) * 100).round() / 100;
+        }
+
+        if (c.win) {
+          add('1', o[0], q[0]);
+          add('2', o[2], q[2]);
+        }
+        if (c.draw) add('X', o[1], q[1]);
+        if (c.dc) {
+          add('1X', dcOdd(0, 1, '1X'), q[0] + q[1]);
+          add('X2', dcOdd(1, 2, 'X2'), q[1] + q[2]);
+          add('12', dcOdd(0, 2, '12'), q[0] + q[2]);
         }
       }
+      // Buts et « les deux marquent » : même règle, probabilité tirée des deux cotes.
+      void pair(String yes, String no, (List<double>, List<int>)? x) {
+        if (x == null || x.$1.length < 2) return;
+        final a = x.$1[0], b = x.$1[1];
+        if (a <= 1.01 || b <= 1.01) return;
+        final qa = (1 / a) / (1 / a + 1 / b);
+        add(yes, a, qa);
+        add(no, b, 1 - qa);
+      }
+
       final mk = markets[m.id];
       if (mk != null) {
         if (c.goals) {
-          for (final (key, code) in [('ou15', '15'), ('ou25', '25'), ('ou35', '35')]) {
-            final x = mk.m[key];
-            if (x == null) continue;
-            ev.add(legOf(m, 'O$code', x.$1[0], x.$2[0]));
-            ev.add(legOf(m, 'U$code', x.$1[1], x.$2[1]));
-          }
+          pair('O15', 'U15', mk.m['ou15']);
+          pair('O25', 'U25', mk.m['ou25']);
+          pair('O35', 'U35', mk.m['ou35']);
         }
-        if (c.btts) {
-          final x = mk.m['btts'];
-          if (x != null) {
-            ev.add(legOf(m, 'BTS', x.$1[0], x.$2[0]));
-            ev.add(legOf(m, 'OTS', x.$1[1], x.$2[1]));
-          }
-        }
+        if (c.btts) pair('BTS', 'OTS', mk.m['btts']);
       }
-      final ok = ev
-          .where((l) =>
-              l.odd > 1.01 &&
-              l.odd >= c.oddMin &&
+      final ok = [
+        for (final (l, p) in ev)
+          if (l.odd >= c.oddMin &&
               l.odd <= c.oddMax &&
               l.prob >= c.probMin &&
-              l.prob <= c.probMax)
-          .toList();
+              l.prob <= c.probMax &&
+              p * l.odd >= _vmin)
+            l
+      ]..sort((a, b) {
+          final d = _cost(a).compareTo(_cost(b));
+          return d != 0 ? d : _cmpStr(a.pick, b.pick);
+        });
       if (ok.isNotEmpty) out.add(ok);
     }
     return out;
   }
 
-  static Leg _pick(List<Leg> evs, Random rnd) {
-    if (evs.length == 1) return evs.first;
-    final total = evs.fold<int>(0, (s, l) => s + l.prob);
-    var r = rnd.nextInt(total < 1 ? 1 : total);
-    for (final l in evs) {
-      r -= l.prob;
-      if (r < 0) return l;
-    }
-    return evs.last;
-  }
+  static String _sig(List<Leg> legs) => (legs.map((l) => '${l.matchId}:${l.pick}').toList()..sort()).join('|');
 
   static List<Coupon> generate(List<List<Leg>> cands, CouponCriteria c,
       {Set<String> exclude = const {}, int max = 5}) {
     if (cands.length < c.countMin) return [];
-    final rnd = Random(DateTime.now().microsecondsSinceEpoch);
-    final found = <String, Coupon>{};
-    for (var attempt = 0; attempt < 8000 && found.length < 300; attempt++) {
-      final keyed = [
-        for (final e in cands)
-          (e, e.map((l) => l.prob).reduce((a, b) => a > b ? a : b) * (0.35 + rnd.nextDouble()))
-      ]..sort((a, b) => b.$2.compareTo(a.$2));
-      final legs = <Leg>[];
-      var total = 1.0;
-      for (final (evs, _) in keyed) {
-        if (legs.length >= c.countMax) break;
-        final l = _pick(evs, rnd);
-        final nt = total * l.odd;
-        if (nt > c.totalMax) continue;
-        legs.add(l);
-        total = nt;
-        if (legs.length >= c.countMin && total >= c.totalMin) break;
+    // Meilleur pari de chaque match d'abord, puis les autres options des mêmes matchs.
+    final pool = <(Leg, int, double)>[];
+    for (final e in cands) {
+      for (var i = 0; i < e.length; i++) {
+        pool.add((e[i], i, _cost(e[i])));
       }
-      if (legs.length < c.countMin || legs.length > c.countMax) continue;
-      if (total < c.totalMin || total > c.totalMax) continue;
-      final cp = Coupon.of(legs);
-      if (exclude.contains(cp.signature)) continue;
-      found[cp.signature] = cp;
     }
-    final sorted = found.values.toList()..sort((a, b) => b.prob.compareTo(a.prob));
+    pool.sort((a, b) {
+      if (a.$2 != b.$2) return a.$2.compareTo(b.$2);
+      final d = a.$3.compareTo(b.$3);
+      if (d != 0) return d;
+      if (a.$1.matchId != b.$1.matchId) return a.$1.matchId.compareTo(b.$1.matchId);
+      return _cmpStr(a.$1.pick, b.$1.pick);
+    });
+    final top = [for (final x in pool.take(40)) x.$1];
+    double key(_State s) => s.lp / max2(log(s.total), 0.01);
+    var beam = [_State(const [], 1.0, 0.0, -1)];
+    final done = <String, _State>{};
+    for (var depth = 0; depth < c.countMax && beam.isNotEmpty; depth++) {
+      final next = <_State>[];
+      for (final st in beam) {
+        for (var i = st.last + 1; i < top.length; i++) {
+          final l = top[i];
+          if (st.legs.any((x) => x.matchId == l.matchId)) continue;
+          final total = st.total * l.odd;
+          if (total > c.totalMax) continue;
+          final ns = _State([...st.legs, l], total, st.lp + log(l.prob / 100), i);
+          if (ns.legs.length >= c.countMin && total >= c.totalMin) {
+            final sg = _sig(ns.legs);
+            if (!exclude.contains(sg)) done[sg] = ns;
+          } else {
+            next.add(ns);
+          }
+        }
+      }
+      next.sort((a, b) {
+        final d = key(b).compareTo(key(a));
+        if (d != 0) return d;
+        final e = b.lp.compareTo(a.lp);
+        return e != 0 ? e : _cmpStr(_sig(a.legs), _sig(b.legs));
+      });
+      beam = next.length > 300 ? next.sublist(0, 300) : next;
+    }
+    final sorted = [
+      for (final e in done.entries)
+        (e.key, e.value.legs, e.value.legs.fold<double>(1.0, (v, l) => v * l.prob / 100))
+    ]..sort((a, b) {
+        final d = b.$3.compareTo(a.$3);
+        return d != 0 ? d : _cmpStr(a.$1, b.$1);
+      });
     final picked = <Coupon>[];
     final used = <int, int>{};
-    for (final cp in sorted) {
+    for (final (_, legs, _) in sorted) {
       if (picked.length >= max) break;
-      if (cp.legs.any((l) => (used[l.matchId] ?? 0) >= 2)) continue;
-      picked.add(cp);
-      for (final l in cp.legs) {
+      if (legs.any((l) => (used[l.matchId] ?? 0) >= 2)) continue;
+      picked.add(Coupon.of(legs));
+      for (final l in legs) {
         used[l.matchId] = (used[l.matchId] ?? 0) + 1;
       }
     }
     return picked;
   }
+
+  static double max2(double a, double b) => a > b ? a : b;
 
   static bool evalPick(String pick, int h, int a) {
     switch (pick) {
@@ -172,4 +213,11 @@ class CouponEngine {
       }
     }
   }
+}
+
+class _State {
+  final List<Leg> legs;
+  final double total, lp;
+  final int last;
+  const _State(this.legs, this.total, this.lp, this.last);
 }

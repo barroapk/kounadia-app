@@ -31,6 +31,10 @@ jobs:
         working-directory: mobile
         run: flutter pub get
 
+      - name: Tests du moteur de coupons
+        working-directory: mobile
+        run: flutter test test/coupon_engine_test.dart
+
       - name: Clé de signature
         env:
           KS: ${{ secrets.KEYSTORE_B64 }}
