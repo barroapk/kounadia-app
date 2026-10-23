@@ -46,13 +46,39 @@ function evalPick(pick, h, a) {
   return false;
 }
 
+// Annonces courtes et vivantes, selon ce que change le but.
 const TXT = {
-  fr: { goal: '⚽ BUT ! {team}', ko: "▶️ Coup d'envoi", ht: '⏸️ Mi-temps', ft: '🏁 Fin du match' },
-  en: { goal: '⚽ GOAL! {team}', ko: '▶️ Kick-off', ht: '⏸️ Half-time', ft: '🏁 Full-time' },
-  pt: { goal: '⚽ GOLO! {team}', ko: '▶️ Início do jogo', ht: '⏸️ Intervalo', ft: '🏁 Fim do jogo' },
-  es: { goal: '⚽ ¡GOL! {team}', ko: '▶️ Comienza el partido', ht: '⏸️ Descanso', ft: '🏁 Final del partido' },
-  ar: { goal: '⚽ هدف! {team}', ko: '▶️ انطلاق المباراة', ht: '⏸️ نهاية الشوط الأول', ft: '🏁 نهاية المباراة' },
+  fr: { goal: '⚽ BUT ! {team}', open: '⚽ {team} ouvre le score !', equal: '⚖️ {team} égalise !', lead: "⚽ {team} reprend l'avantage !",
+    comeback: '🔥 Renversant ! {team} passe devant', brk: '⚽ {team} fait le break !', more: '💥 {team} enfonce le clou !',
+    reduce: "⚽ {team} réduit l'écart", late: "⏱️ But à la {min}' !", ko: "▶️ C'est parti !", ht: '⏸️ Mi-temps', ft: '🏁 Fin du match',
+    win: "{team} s'impose", draw: 'Match nul' },
+  en: { goal: '⚽ GOAL! {team}', open: '⚽ {team} open the scoring!', equal: '⚖️ {team} equalise!', lead: '⚽ {team} back in front!',
+    comeback: '🔥 What a turnaround! {team} lead', brk: '⚽ {team} double the lead!', more: '💥 {team} pile on!',
+    reduce: '⚽ {team} pull one back', late: "⏱️ Goal in the {min}'!", ko: '▶️ Kick-off!', ht: '⏸️ Half-time', ft: '🏁 Full-time',
+    win: '{team} win', draw: 'Draw' },
+  pt: { goal: '⚽ GOLO! {team}', open: '⚽ {team} abre o marcador!', equal: '⚖️ {team} empata!', lead: '⚽ {team} volta à frente!',
+    comeback: '🔥 Reviravolta! {team} passa à frente', brk: '⚽ {team} amplia!', more: '💥 {team} não para!',
+    reduce: '⚽ {team} reduz', late: "⏱️ Aos {min}'!", ko: '▶️ Começou!', ht: '⏸️ Intervalo', ft: '🏁 Fim do jogo',
+    win: '{team} vence', draw: 'Empate' },
+  es: { goal: '⚽ ¡GOL! {team}', open: '⚽ ¡{team} abre el marcador!', equal: '⚖️ ¡{team} empata!', lead: '⚽ ¡{team} vuelve a mandar!',
+    comeback: '🔥 ¡Remontada! {team} se pone por delante', brk: '⚽ ¡{team} amplía la ventaja!', more: '💥 ¡{team} no perdona!',
+    reduce: '⚽ {team} recorta distancias', late: "⏱️ ¡En el {min}'!", ko: '▶️ ¡Arranca el partido!', ht: '⏸️ Descanso', ft: '🏁 Final del partido',
+    win: '{team} gana', draw: 'Empate' },
+  ar: { goal: '⚽ هدف! {team}', open: '⚽ {team} يفتتح التسجيل!', equal: '⚖️ {team} يعادل!', lead: '⚽ {team} يتقدم من جديد!',
+    comeback: '🔥 انقلاب مثير! {team} يتقدم', brk: '⚽ {team} يعزز تقدمه!', more: '💥 {team} يواصل التسجيل!',
+    reduce: '⚽ {team} يقلص الفارق', late: "⏱️ في الدقيقة {min}!", ko: '▶️ انطلقت المباراة!', ht: '⏸️ نهاية الشوط الأول', ft: '🏁 نهاية المباراة',
+    win: 'فوز {team}', draw: 'تعادل' },
 };
+
+// Ce que change le but : ouverture, égalisation, retour devant, renversement, break, réduction du score.
+function goalKind(side, hs, as, trailed) {
+  const own = side === 'h' ? hs : as;
+  const opp = side === 'h' ? as : hs;
+  if (own === opp) return 'equal';
+  if (own < opp) return 'reduce';
+  if (own - 1 === opp) return own + opp === 1 ? 'open' : trailed ? 'comeback' : 'lead';
+  return own - opp === 2 ? 'brk' : 'more';
+}
 
 // Même calcul que l'app (FNV-1a 32 bits).
 function leagueHash(s) {
@@ -433,10 +459,19 @@ export class Poller {
   liveText(lang, e, [home, away, league]) {
     const t = TXT[lang] || TXT.en;
     const score = e.hs != null && e.as != null ? `${home} ${e.hs}-${e.as} ${away}` : `${home} - ${away}`;
-    const min = /^\d/.test(e.st) ? ` (${e.st}')` : '';
+    const late = e.t === 'goal' && parseInt(e.st, 10) >= 85;
+    const min = /^\d/.test(e.st) && !late ? ` (${e.st}')` : '';
     let title = t[e.t];
-    if (e.t === 'goal') title = title.replace('{team}', e.side === 'h' ? home : away);
-    return { title, body: `${score}${e.t === 'goal' ? min : ''}\n${league}` };
+    let extra = '';
+    if (e.t === 'goal') {
+      title = (t[e.k] || t.goal).replace('{team}', e.side === 'h' ? home : away);
+      // But dans les dernières minutes : on le souligne.
+      if (late) extra = ` · ${t.late.replace('{min}', parseInt(e.st, 10))}`;
+    }
+    if (e.t === 'ft' && e.hs != null && e.as != null) {
+      extra = ` · ${e.hs === e.as ? t.draw : t.win.replace('{team}', e.hs > e.as ? home : away)}`;
+    }
+    return { title, body: `${score}${e.t === 'goal' ? min : ''}${extra}\n${league}` };
   }
 
   liveMsg(target, lang, e, n) {
@@ -520,6 +555,8 @@ export class Poller {
     const changed = {};
     let live = 0;
     await this.loadNames(false);
+    // Équipe qui a été menée pendant le match (pour annoncer un renversement) : id -> [dom., ext.]
+    const trail = (await this.state.storage.get('trail')) || {};
 
     for (const l of list) {
       const id = Number(l.id);
@@ -538,13 +575,21 @@ export class Poller {
       const started = /^\d/.test(st) && (p ? !inPlay(pst) && !isFin(pst) : parseInt(st, 10) <= 3);
       if (started) fresh.push({ ...base, t: 'ko' });
       if (p && hs != null && as != null && p[0] != null && p[1] != null && (hs > p[0] || as > p[1])) {
-        fresh.push({ ...base, t: 'goal', side: hs > p[0] ? 'h' : 'a' });
+        const side = hs > p[0] ? 'h' : 'a';
+        const tr = trail[id] || [false, false];
+        fresh.push({ ...base, t: 'goal', side, k: goalKind(side, hs, as, side === 'h' ? tr[0] : tr[1]) });
+      }
+      if (hs != null && as != null && (hs !== as || trail[id])) {
+        const tr = trail[id] || [false, false];
+        trail[id] = [tr[0] || hs < as, tr[1] || as < hs];
       }
       if (isHT(st) && !isHT(pst)) fresh.push({ ...base, t: 'ht' });
       if (isFin(st) && p && !isFin(pst)) fresh.push({ ...base, t: 'ft' });
     }
     await this.state.storage.put('live', cur);
     await this.state.storage.put('liveAt', Date.now());
+    for (const id of Object.keys(trail)) if (!cur[id]) delete trail[id];
+    await this.state.storage.put('trail', trail);
 
     // Direct dans l'app : seulement ce qui a changé, dès maintenant.
     const at = Date.now();
