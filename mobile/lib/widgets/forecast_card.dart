@@ -29,10 +29,11 @@ String prettyScore(String? s) => (s ?? '').replaceAll('-', ' - ');
 const kHonest = "KOUNADIA te donne des outils d'analyse. Nos pronostics sont des prédictions, pas des certitudes : "
     "aucun gain n'est garanti et le choix de parier t'appartient. 18+ · Joue de manière responsable.";
 
-/// « Score indicatif 2-1 » : traduit le libellé, garde le score.
-String _trPart(String p) {
-  const k = 'Score indicatif ';
-  return p.startsWith(k) ? '${tr('Score indicatif')} ${p.substring(k.length)}' : tr(p);
+/// Le score indicatif était-il exactement le score final ?
+bool _exact(String? predicted, String? score) {
+  final re = RegExp(r'(\d+)\s*[-:]\s*(\d+)');
+  final p = re.firstMatch(predicted ?? ''), q = re.firstMatch(score ?? '');
+  return p != null && q != null && p[1] == q[1] && p[2] == q[2];
 }
 
 /// Carte compacte (même format que les lignes de l'onglet Matchs).
@@ -124,9 +125,6 @@ class ForecastCard extends StatelessWidget {
     }
 
     final parts = <String>[
-      // Le pronostic, c'est la ligne en couleur. Le score de Kounadia IA n'est qu'une indication.
-      if (result) f.won == true ? 'Pronostic gagné' : 'Pronostic perdu',
-      if (result && f.predicted != null) 'Score indicatif ${f.predicted}',
       if (!result && f.agree != null && f.models != null) '${f.agree}/${f.models} IA',
       if (!result && f.confidence != null) 'Conf. ${f.confidence!.toStringAsFixed(1)}/10',
     ];
@@ -169,13 +167,35 @@ class ForecastCard extends StatelessWidget {
                       style: TextStyle(color: K.muted, fontSize: 11, fontWeight: FontWeight.w700)),
                 ),
               ],
-              if (parts.isNotEmpty) ...[
+              // Après le match : le résultat du pronostic (en gros), puis le score indicatif
+              // avec sa propre petite icône (✓ s'il était exact, ✗ sinon).
+              if (result) ...[
                 SizedBox(height: 3),
-                T(parts.map(_trPart).join(result ? '\n' : ' · '),
+                T(f.won == true ? 'Pronostic gagné' : 'Pronostic perdu',
                     textAlign: TextAlign.right,
-                    maxLines: 2,
+                    style: TextStyle(color: pickColor, fontSize: 11.5, fontWeight: FontWeight.w800)),
+                if (f.predicted != null) ...[
+                  SizedBox(height: 2),
+                  Row(mainAxisSize: MainAxisSize.min, children: [
+                    Flexible(
+                      child: T('${tr('Score indicatif')} ${f.predicted}',
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                          style: TextStyle(color: K.muted, fontSize: 10.5)),
+                    ),
+                    SizedBox(width: 3),
+                    Icon(_exact(f.predicted, f.score) ? Icons.check_circle_rounded : Icons.cancel_rounded,
+                        size: 12, color: _exact(f.predicted, f.score) ? K.green : K.red),
+                  ]),
+                ],
+              ],
+              if (!result && parts.isNotEmpty) ...[
+                SizedBox(height: 3),
+                T(parts.map(tr).join(' · '),
+                    textAlign: TextAlign.right,
+                    maxLines: 1,
                     overflow: TextOverflow.ellipsis,
-                    style: TextStyle(color: K.muted, fontSize: 10.5, height: 1.25)),
+                    style: TextStyle(color: K.muted, fontSize: 10.5)),
               ],
             ],
           ),
