@@ -22,6 +22,7 @@ jobs:
           PK_KEY: ${{ secrets.PK_KEY }}
           TICKET_SECRET: ${{ secrets.TICKET_SECRET }}
           GH_DISPATCH: ${{ secrets.GH_DISPATCH }}
+          BACKUP_CRON_SECRET: ${{ secrets.BACKUP_CRON_SECRET }}
         run: |
           test -n "$FCM_SA" || { echo "Secret FCM_SA manquant"; exit 1; }
           test -n "$KD_KEY" || { echo "Secret KD_KEY manquant"; exit 1; }
@@ -33,4 +34,6 @@ jobs:
           if [ -n "$TICKET_SECRET" ]; then printf '%s' "$TICKET_SECRET" | npx -y wrangler@4 secret put TICKET_SECRET; fi
           # Jeton GitHub (Actions de kfeed seulement) : le robot relance scores, Coup sûr et pronostics.
           if [ -n "$GH_DISPATCH" ]; then printf '%s' "$GH_DISPATCH" | npx -y wrangler@4 secret put GH_DISPATCH; fi
+          # Secret de la sauvegarde nocturne de la base (le robot la lance chaque nuit).
+          if [ -n "$BACKUP_CRON_SECRET" ]; then printf '%s' "$BACKUP_CRON_SECRET" | npx -y wrangler@4 secret put BACKUP_CRON_SECRET; fi
           echo "Robot en ligne : il démarre tout seul dans la minute."

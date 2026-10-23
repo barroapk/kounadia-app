@@ -15,6 +15,7 @@ const TOPIC_RE = /^[a-z]{2}_(l2|m2)_[0-9a-z]{1,16}$/;
 const KFEED = 'https://raw.githubusercontent.com/barroapk/kfeed';
 // Tâches du dépôt kfeed relancées par le robot : [fichier, toutes les N minutes].
 const KICKS = [['scores.yml', 15], ['vip.yml', 30], ['pronos.yml', 60]];
+const API = 'https://knd-api-5bgz.onrender.com';
 
 // Pronostics et coupons
 const TIP = {
@@ -139,6 +140,7 @@ export class Poller {
     stat.fcmErr = (await this.state.storage.get('fcmErr')) || null;
     stat.src = (await this.state.storage.get('src')) || null;
     stat.kickErr = (await this.state.storage.get('kickErr')) || null;
+    stat.backup = ((await this.state.storage.get('api')) || {}).bakDay || null;
     const al = await this.state.storage.getAlarm();
     stat.nextTick = al ? new Date(al).toISOString() : null;
     return Response.json(stat);
@@ -207,6 +209,9 @@ export class Poller {
     try {
       await this.kickJobs();
     } catch (_) {}
+    try {
+      await this.apiJobs();
+    } catch (_) {}
     await this.state.storage.setAlarm(Date.now() + next);
   }
 
@@ -238,6 +243,36 @@ export class Poller {
       }
     }
     if (changed) await this.state.storage.put('kick', st);
+  }
+
+  // Serveur KOUNADIA (Render gratuit) : gardé éveillé de 6 h à minuit (≈ 560 h/mois sur 750),
+  // et sauvegarde de la base chaque nuit après 2 h (nouvel essai toutes les 10 min jusqu'à réussite).
+  async apiJobs() {
+    const now = Date.now();
+    const h = new Date(now).getUTCHours();
+    const st = (await this.state.storage.get('api')) || {};
+    let changed = false;
+    if (h >= 6 && now - (st.ping || 0) >= 10 * 60000) {
+      st.ping = now;
+      changed = true;
+      await fetch(`${API}/ping`).catch(() => null);
+    }
+    const day = new Date(now).toISOString().slice(0, 10);
+    if (this.env.BACKUP_CRON_SECRET && h >= 2 && st.bakDay !== day && now - (st.bakTry || 0) >= 10 * 60000) {
+      st.bakTry = now;
+      changed = true;
+      try {
+        const r = await fetch(`${API}/internal/backup/nightly`, {
+          method: 'POST',
+          headers: { 'x-cron-secret': this.env.BACKUP_CRON_SECRET },
+        });
+        if (r.ok) st.bakDay = day;
+        else await this.state.storage.put('kickErr', `${new Date().toISOString()} sauvegarde HTTP ${r.status}`);
+      } catch (e) {
+        await this.state.storage.put('kickErr', `${new Date().toISOString()} sauvegarde ${e}`);
+      }
+    }
+    if (changed) await this.state.storage.put('api', st);
   }
 
   // ---------- Noms des équipes (flux KOUNADIA chiffré) ----------
