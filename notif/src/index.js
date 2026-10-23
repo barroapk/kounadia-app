@@ -222,6 +222,9 @@ export class Poller {
     try {
       await this.apiJobs();
     } catch (_) {}
+    try {
+      await this.checkHealth();
+    } catch (_) {}
     await this.state.storage.setAlarm(Date.now() + next);
   }
 
@@ -253,6 +256,54 @@ export class Poller {
       }
     }
     if (changed) await this.state.storage.put('kick', st);
+  }
+
+  // Surveillance (toutes les 30 min) : données en retard, sauvegarde absente, relances en échec.
+  // Alerte par e-mail à l'administrateur via l'API, au plus une fois toutes les 6 h par problème.
+  async checkHealth() {
+    if (!this.env.BACKUP_CRON_SECRET) return;
+    const now = Date.now();
+    if (now - (this._healthAt || 0) < 30 * 60000) return;
+    this._healthAt = now;
+    const age = async (path) => {
+      try {
+        const d = await this.feed(path);
+        const t = Date.parse(d?.updatedAt || '');
+        return Number.isFinite(t) ? Math.round((now - t) / 60000) : null;
+      } catch (_) {
+        return null;
+      }
+    };
+    const problems = [];
+    const checks = [
+      ['scores', 'scores/scores.json', 60, 'Scores'],
+      ['pronos', 'pronos/today_p.json', 180, 'Pronostics'],
+      ['vip', 'vip/vip_stats.json', 90, 'Coup sûr'],
+    ];
+    for (const [key, path, max, label] of checks) {
+      const m = await age(path);
+      if (m == null) problems.push([key, `${label} : fichier illisible ou absent`]);
+      else if (m > max) problems.push([key, `${label} : pas mis à jour depuis ${m} min (maximum ${max} min)`]);
+    }
+    const api = (await this.state.storage.get('api')) || {};
+    const day = new Date(now).toISOString().slice(0, 10);
+    if (new Date(now).getUTCHours() >= 6 && api.bakDay !== day) problems.push(['backup', `Sauvegarde de la base absente aujourd'hui (${day})`]);
+    const ke = (await this.state.storage.get('kickErr')) || '';
+    if (ke && now - Date.parse(ke.slice(0, 24)) < 3600000) problems.push(['kick', `Relance en échec : ${ke}`]);
+    if (!problems.length) return;
+
+    const sentAt = (await this.state.storage.get('alerts')) || {};
+    const fresh = problems.filter(([k]) => now - (sentAt[k] || 0) >= 6 * 3600000);
+    if (!fresh.length) return;
+    const r = await fetch(`${API}/internal/alert`, {
+      method: 'POST',
+      headers: { 'x-cron-secret': this.env.BACKUP_CRON_SECRET, 'content-type': 'application/json' },
+      body: JSON.stringify({ subject: `${fresh.length} problème${fresh.length > 1 ? 's' : ''} détecté${fresh.length > 1 ? 's' : ''}`, lines: fresh.map((x) => x[1]) }),
+    }).catch(() => null);
+    if (r?.ok) {
+      for (const [k] of fresh) sentAt[k] = now;
+      await this.state.storage.put('alerts', sentAt);
+    }
   }
 
   // Serveur KOUNADIA (Render gratuit) : gardé éveillé de 6 h à minuit (≈ 560 h/mois sur 750),
