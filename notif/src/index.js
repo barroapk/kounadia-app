@@ -123,7 +123,7 @@ export class Poller {
     if (url.pathname === '/live' && req.headers.get('Upgrade') === 'websocket') {
       const [client, server] = Object.values(new WebSocketPair());
       this.state.acceptWebSocket(server);
-      const live = (await this.state.storage.get('live')) || {};
+      const live = this._live || (await this.state.storage.get('live')) || {};
       server.send(JSON.stringify({ k: 'snap', live }));
       return new Response(null, { status: 101, webSocket: client });
     }
@@ -567,6 +567,15 @@ export class Poller {
     return r.ok;
   }
 
+  /** Écrit seulement si la valeur a changé depuis la dernière écriture (économise le quota Cloudflare). */
+  async saveIf(key, val) {
+    const s = JSON.stringify(val);
+    this._saved ??= {};
+    if (this._saved[key] === s) return;
+    this._saved[key] = s;
+    await this.state.storage.put(key, val);
+  }
+
   // ---------- Boucle principale ----------
   async tick() {
     const r = await fetch(`${LIVE_URL}&_=${Date.now()}`, { headers: UA, cf: { cacheTtl: 0 } });
@@ -575,17 +584,22 @@ export class Poller {
     try {
       list = JSON.parse(body);
     } catch (_) {}
+    // Écritures limitées (Cloudflare gratuit : 100 000 écritures par jour) : seulement si quelque chose change.
     if (!r.ok || !Array.isArray(list)) {
-      await this.state.storage.put('src', `${new Date().toISOString()} HTTP ${r.status} ${body.slice(0, 160)}`);
+      await this.saveIf('src', `HTTP ${r.status} ${body.slice(0, 160)}`);
       return SLOW;
     }
-    await this.state.storage.put('src', `ok ${list.length}`);
+    await this.saveIf('src', 'ok');
 
-    // État précédent ; trop ancien (robot relancé après une pause) = on repart sans notifier.
-    const liveAt = (await this.state.storage.get('liveAt')) || 0;
-    const prev = Date.now() - liveAt < 120000 ? await this.state.storage.get('live') : null; // id -> [hs, as, st]
+    // État précédent (en mémoire, sinon stocké) ; trop ancien (robot relancé après une pause) = on repart sans notifier.
+    if (this._live === undefined) {
+      this._liveAt = (await this.state.storage.get('liveAt')) || 0;
+      this._live = (await this.state.storage.get('live')) || null;
+    }
+    const prev = Date.now() - this._liveAt < 120000 ? this._live : null; // id -> [hs, as, st]
     const cur = {};
     const events = (await this.state.storage.get('queue')) || [];
+    const hadQueue = events.length > 0;
     const fresh = []; // événements détectés à ce passage (historique + direct)
     const changed = {};
     let live = 0;
@@ -621,10 +635,16 @@ export class Poller {
       if (isHT(st) && !isHT(pst)) fresh.push({ ...base, t: 'ht' });
       if (isFin(st) && p && !isFin(pst)) fresh.push({ ...base, t: 'ft' });
     }
-    await this.state.storage.put('live', cur);
-    await this.state.storage.put('liveAt', Date.now());
+    this._live = cur;
+    this._liveAt = Date.now();
+    // Copie sur disque toutes les 30 s seulement (la mémoire du robot sert entre deux passages).
+    if (Date.now() - (this._liveSaved || 0) >= 30000) {
+      this._liveSaved = Date.now();
+      await this.state.storage.put('live', cur);
+      await this.state.storage.put('liveAt', this._liveAt);
+    }
     for (const id of Object.keys(trail)) if (!cur[id]) delete trail[id];
-    await this.state.storage.put('trail', trail);
+    await this.saveIf('trail', trail);
 
     // Direct dans l'app : seulement ce qui a changé, dès maintenant.
     const at = Date.now();
@@ -647,7 +667,7 @@ export class Poller {
         await this.enqueue(await this.buildLive(e, n), e.t === 'goal' ? 0 : 1);
       }
     }
-    await this.state.storage.put('queue', []);
+    if (hadQueue) await this.state.storage.put('queue', []);
     const { sent, left } = await this.drain();
 
     // Pronostics (toutes les 5 min) et coupons (à chaque fin de match) : envoyés au passage suivant,
@@ -660,12 +680,16 @@ export class Poller {
     } catch (e) {
       await this.state.storage.put('err', `${new Date().toISOString()} tips ${e}`);
     }
-    const stat = (await this.state.storage.get('stat')) || { sent: 0 };
-    stat.at = new Date().toISOString();
-    stat.live = live;
-    stat.sent = (stat.sent || 0) + sent;
-    stat.queue = left;
-    await this.state.storage.put('stat', stat);
+    // Statistiques : au plus une écriture par minute (ou dès qu'une notification part).
+    if (sent > 0 || Date.now() - (this._statAt || 0) >= 60000) {
+      this._statAt = Date.now();
+      const stat = (await this.state.storage.get('stat')) || { sent: 0 };
+      stat.at = new Date().toISOString();
+      stat.live = live;
+      stat.sent = (stat.sent || 0) + sent;
+      stat.queue = left;
+      await this.state.storage.put('stat', stat);
+    }
     const more = ((await this.state.storage.get('outq')) || []).length;
     return live > 0 || more ? FAST : SLOW;
   }
