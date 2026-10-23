@@ -150,7 +150,11 @@ class Account {
 
   /// Changer son mot de passe (connecté).
   static Future<void> changePassword(String old, String pw, String pw2) async {
-    await _call('POST', '/kounadia/me/password', {'old': old, 'password': pw, 'password2': pw2});
+    final j = await _call('POST', '/kounadia/me/password', {'old': old, 'password': pw, 'password2': pw2});
+    // Le serveur ferme les autres sessions et donne une nouvelle session à ce téléphone.
+    if (j['token'] is String && j['user'] is Map) {
+      await _save(j['token'] as String, _keepEmail(KUser.fromJson(Map<String, dynamic>.from(j['user'] as Map))));
+    }
   }
 
   /// Mot de passe oublié : envoie un code à l'e-mail du compte.

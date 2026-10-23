@@ -342,6 +342,9 @@ class _AccountScreenState extends State<AccountScreen> {
   }
 
   Future<void> _buy(KPlan p) async {
+    // D'abord le bon montant : un code Orange généré avec des « frais » en plus est refusé.
+    final go = await showDialog<bool>(context: context, builder: (_) => _PayGuide(plan: p));
+    if (go != true || !mounted) return;
     setState(() => _busy = true);
     var waiting = true;
     void close() {
@@ -634,6 +637,93 @@ class _PayWaitState extends State<_PayWait> with WidgetsBindingObserver {
 }
 
 /// Pendant la préparation du paiement.
+/// Avant MoneyFusion : le montant EXACT à composer (sans frais), avec le code Orange à copier.
+class _PayGuide extends StatelessWidget {
+  final KPlan plan;
+  _PayGuide({required this.plan});
+
+  @override
+  Widget build(BuildContext context) {
+    final ussd = '*144*4*6*${plan.price}#';
+    Widget step(String n, Widget child) => Padding(
+          padding: EdgeInsets.only(bottom: 10),
+          child: Row(crossAxisAlignment: CrossAxisAlignment.start, children: [
+            Container(
+              width: 22,
+              height: 22,
+              alignment: Alignment.center,
+              decoration: BoxDecoration(color: K.indigoSoft, shape: BoxShape.circle),
+              child: T(n, style: TextStyle(color: K.indigoText, fontSize: 12, fontWeight: FontWeight.w900)),
+            ),
+            SizedBox(width: 10),
+            Expanded(child: child),
+          ]),
+        );
+    final txt = TextStyle(color: K.text, fontSize: 13.5, height: 1.4);
+    return AlertDialog(
+      backgroundColor: K.card,
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+      title: T('Avant de payer', style: TextStyle(color: K.text, fontWeight: FontWeight.w900)),
+      content: SingleChildScrollView(
+        child: Column(mainAxisSize: MainAxisSize.min, crossAxisAlignment: CrossAxisAlignment.start, children: [
+          Container(
+            width: double.infinity,
+            padding: EdgeInsets.all(12),
+            decoration: BoxDecoration(color: Color(0x2222C55E), borderRadius: BorderRadius.circular(12)),
+            child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+              T('Montant exact à payer', style: TextStyle(color: K.muted, fontSize: 12.5, fontWeight: FontWeight.w700)),
+              T(fcfa(plan.price), style: TextStyle(color: K.green, fontSize: 24, fontWeight: FontWeight.w900)),
+              T("N'ajoute aucun frais : un autre montant est refusé.",
+                  style: TextStyle(color: K.text, fontSize: 12.5, fontWeight: FontWeight.w700)),
+            ]),
+          ),
+          SizedBox(height: 14),
+          T('Avec Orange Money :', style: TextStyle(color: K.text, fontSize: 14, fontWeight: FontWeight.w800)),
+          SizedBox(height: 8),
+          step('1', Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+            T('Compose exactement ce code :', style: txt),
+            SizedBox(height: 6),
+            Row(children: [
+              Expanded(
+                child: Container(
+                  padding: EdgeInsets.symmetric(horizontal: 10, vertical: 8),
+                  decoration: BoxDecoration(
+                      color: K.bg, borderRadius: BorderRadius.circular(10), border: Border.all(color: K.border)),
+                  child: Text(ussd, style: TextStyle(color: K.text, fontSize: 16, fontWeight: FontWeight.w900)),
+                ),
+              ),
+              IconButton(
+                tooltip: tr('Copier'),
+                icon: Icon(Icons.copy_rounded, color: K.indigoText),
+                onPressed: () {
+                  Clipboard.setData(ClipboardData(text: ussd));
+                  ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: T('Code copié')));
+                },
+              ),
+            ]),
+          ])),
+          step('2', T('Entre ton code secret Orange Money et valide.', style: txt)),
+          step('3', T('Copie le code reçu par SMS dans la page de paiement, puis touche « Payer ».', style: txt)),
+          SizedBox(height: 4),
+          T('Avec Moov Money : suis les étapes de la page, toujours avec le montant exact.',
+              style: TextStyle(color: K.muted, fontSize: 12.5, height: 1.4)),
+        ]),
+      ),
+      actions: [
+        TextButton(
+          onPressed: () => Navigator.pop(context, false),
+          child: T('Annuler', style: TextStyle(color: K.muted)),
+        ),
+        FilledButton(
+          style: FilledButton.styleFrom(backgroundColor: K.indigo),
+          onPressed: () => Navigator.pop(context, true),
+          child: T('Continuer vers le paiement'),
+        ),
+      ],
+    );
+  }
+}
+
 class _Connecting extends StatefulWidget {
   final KPlan plan;
   _Connecting({required this.plan});

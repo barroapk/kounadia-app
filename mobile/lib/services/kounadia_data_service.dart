@@ -89,12 +89,16 @@ class KounadiaData {
     final prefs = await SharedPreferences.getInstance();
     // Pronostics du jour ; s'il n'y en a pas encore, on garde ceux de la veille.
     (List<Forecast>, DateTime?) parse(String k, String src) {
-      final raw = ((m[k] as List?) ?? []).whereType<Map>().map((e) => Map<String, dynamic>.from(e)).toList();
+      // Jamais la carte « mets à jour » des anciennes versions (même gardée en mémoire).
+      bool real(Map<String, dynamic> e) => !'${e['id']}'.startsWith('kounadia-maj');
+      final raw = ((m[k] as List?) ?? []).whereType<Map>().map((e) => Map<String, dynamic>.from(e)).where(real).toList();
       final keep = raw.where((e) => _isToday(Forecast.fromJson(e, src).date)).toList();
       var saved = <Map<String, dynamic>>[];
       try {
         final c = prefs.getString('klast_$k');
-        if (c != null) saved = (jsonDecode(c) as List).whereType<Map>().map((e) => Map<String, dynamic>.from(e)).toList();
+        if (c != null) {
+          saved = (jsonDecode(c) as List).whereType<Map>().map((e) => Map<String, dynamic>.from(e)).where(real).toList();
+        }
       } catch (_) {}
       if (keep.isNotEmpty) {
         // Les pronostics du jour déjà affichés restent, même si la source les retire (match commencé ou fini).

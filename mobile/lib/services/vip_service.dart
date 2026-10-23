@@ -37,7 +37,8 @@ class VipService {
 
   static Future<VipData> load() async {
     // Coup sûr du jour : seulement pour les abonnés (le robot refuse sans ticket Premium).
-    final (t, off1) = Account.premium ? await _get('vip.json') : (null, false);
+    var (t, off1) = Account.premium ? await _get('vip.json') : (null, false);
+    if (t != null && t.contains('"upgrade":true')) t = null; // ancienne copie « mets à jour »
     final (h, off2) = await _get('vip_history.json');
     if (t == null && h == null) {
       throw FriendlyError('Le coupon VIP est momentanément indisponible. Vérifiez votre connexion puis réessayez.');

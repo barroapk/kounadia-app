@@ -294,7 +294,10 @@ export class Poller {
       b = await req.json();
     } catch (_) {}
     const token = String(b.token || '');
-    if (token.length < 20) return Response.json({ ok: false }, { status: 400 });
+    // Seuls de vrais jetons Firebase sont acceptés (évite de remplir le robot de faux appareils).
+    if (token.length < 100 || token.length > 4096 || !/^[A-Za-z0-9:_-]+$/.test(token)) {
+      return Response.json({ ok: false }, { status: 400 });
+    }
     const key = this.devKey(token);
     const prev = (await this.state.storage.get(key)) || null;
     const done = new Set((prev?.coupons || []).filter((c) => c.done).map((c) => c.sig));
