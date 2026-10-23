@@ -71,6 +71,16 @@ const TXT = {
     win: 'فوز {team}', draw: 'تعادل' },
 };
 
+// Titres courts (lisibles en entier dans la bannière) et leur icône.
+const ICON = { goal: '⚽', open: '⚽', equal: '⚖️', lead: '⚽', comeback: '🔥', brk: '⚽', more: '💥', reduce: '⚽' };
+const SHORT = {
+  fr: { goal: 'But !', open: 'Ouverture du score !', equal: 'Égalisation !', lead: 'De nouveau devant !', comeback: 'Renversement !', brk: 'Le break !', more: 'Encore un but !', reduce: "Réduction de l'écart" },
+  en: { goal: 'Goal!', open: 'First goal!', equal: 'Equaliser!', lead: 'Back in front!', comeback: 'Turnaround!', brk: 'Two clear!', more: 'Another goal!', reduce: 'One back' },
+  pt: { goal: 'Golo!', open: 'Primeiro golo!', equal: 'Empate!', lead: 'De novo à frente!', comeback: 'Reviravolta!', brk: 'Dois de vantagem!', more: 'Mais um golo!', reduce: 'Reduz a diferença' },
+  es: { goal: '¡Gol!', open: '¡Primer gol!', equal: '¡Empate!', lead: '¡Otra vez delante!', comeback: '¡Remontada!', brk: '¡Dos de ventaja!', more: '¡Otro gol!', reduce: 'Recorta distancias' },
+  ar: { goal: 'هدف!', open: 'الهدف الأول!', equal: 'تعادل!', lead: 'تقدم من جديد!', comeback: 'انقلاب!', brk: 'فارق هدفين!', more: 'هدف آخر!', reduce: 'تقليص الفارق' },
+};
+
 // Ce que change le but : ouverture, égalisation, retour devant, renversement, break, réduction du score.
 function goalKind(side, hs, as, trailed) {
   const own = side === 'h' ? hs : as;
@@ -491,22 +501,28 @@ export class Poller {
   }
 
   // ---------- Notifications du direct ----------
+  // Titre court et lisible d'un coup d'œil (bannière en haut de l'écran) ;
+  // en dessous : le score, l'équipe qui marque en MAJUSCULES, puis la phrase complète.
   liveText(lang, e, [home, away, league]) {
     const t = TXT[lang] || TXT.en;
-    const score = e.hs != null && e.as != null ? `${home} ${e.hs}-${e.as} ${away}` : `${home} - ${away}`;
-    const late = e.t === 'goal' && parseInt(e.st, 10) >= 85;
-    const min = /^\d/.test(e.st) && !late ? ` (${e.st}')` : '';
-    let title = t[e.t];
-    let extra = '';
+    const sh = SHORT[lang] || SHORT.en;
+    const m = parseInt(e.st, 10);
+    const minute = /^\d/.test(String(e.st)) ? ` · ${m}'` : '';
+    const has = e.hs != null && e.as != null;
+    const H = e.t === 'goal' && e.side === 'h' ? home.toUpperCase() : home;
+    const A = e.t === 'goal' && e.side === 'a' ? away.toUpperCase() : away;
+    const score = has ? `${H} ${e.hs}-${e.as} ${A}` : `${home} - ${away}`;
     if (e.t === 'goal') {
-      title = (t[e.k] || t.goal).replace('{team}', e.side === 'h' ? home : away);
-      // But dans les dernières minutes : on le souligne.
-      if (late) extra = ` · ${t.late.replace('{min}', parseInt(e.st, 10))}`;
+      const k = sh[e.k] ? e.k : 'goal';
+      const icon = m >= 85 ? '⏱️' : ICON[k];
+      const phrase = (t[e.k] || t.goal).replace(/^\S+\s/, '').replace('{team}', e.side === 'h' ? home : away);
+      return { title: `${icon} ${sh[k]}${minute}`, body: `${score}\n${phrase} · ${league}` };
     }
-    if (e.t === 'ft' && e.hs != null && e.as != null) {
-      extra = ` · ${e.hs === e.as ? t.draw : t.win.replace('{team}', e.hs > e.as ? home : away)}`;
+    if (e.t === 'ft') {
+      const res = has ? (e.hs === e.as ? t.draw : t.win.replace('{team}', e.hs > e.as ? home : away)) : '';
+      return { title: t.ft, body: `${score}\n${res ? `${res} · ` : ''}${league}` };
     }
-    return { title, body: `${score}${e.t === 'goal' ? min : ''}${extra}\n${league}` };
+    return { title: t[e.t], body: `${score}\n${league}` };
   }
 
   liveMsg(target, lang, e, n) {
