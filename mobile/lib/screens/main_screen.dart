@@ -19,6 +19,7 @@ import '../l10n/tr.dart';
 import '../services/app_update.dart';
 import '../services/notif.dart';
 import '../services/live_socket.dart';
+import '../config/store.dart';
 import 'alerts_screen.dart';
 
 final k1xBet = Color(0xFF1A5BA6);
@@ -223,7 +224,7 @@ class _MainScreenState extends State<MainScreen> with WidgetsBindingObserver {
       ),
       body: Column(children: [UpdateBanner(), Expanded(child: IndexedStack(index: _i, children: _screens))]),
       // Dépôt / Retrait : service disponible uniquement au Burkina Faso.
-      floatingActionButton: UserPrefs.iso != 'BF' ? null : Material(
+      floatingActionButton: kPlay || UserPrefs.iso != 'BF' ? null : Material(
         color: k1xBet,
         shape: StadiumBorder(),
         elevation: 6,

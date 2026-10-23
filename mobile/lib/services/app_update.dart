@@ -8,6 +8,7 @@ import 'package:path_provider/path_provider.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:url_launcher/url_launcher.dart';
 import '../l10n/tr.dart';
+import '../config/store.dart';
 import '../widgets/forecast_card.dart' show K;
 
 /// Version de cette application (injectée à la compilation par GitHub Actions).
@@ -58,7 +59,7 @@ class AppUpdate {
   /// À chaque ouverture (et retour dans l'app après 1 h) : la carte revient tant que
   /// la nouvelle version n'est pas installée.
   static Future<void> checkOnStart(BuildContext context) async {
-    if (kAppBuild <= 0) return; // compilation de test
+    if (kAppBuild <= 0 || kPlay) return; // compilation de test, ou Play Store (il gère les mises à jour)
     final rel = await latest();
     if (rel == null || rel.build <= kAppBuild || !context.mounted) {
       pending.value = null;
@@ -81,6 +82,10 @@ class AppUpdate {
   /// Depuis Paramètres : vérification à la demande.
   static Future<void> checkNow(BuildContext context) async {
     final m = ScaffoldMessenger.of(context);
+    if (kPlay) {
+      m.showSnackBar(SnackBar(content: Text(tr('Les mises à jour se font par le Play Store.'))));
+      return;
+    }
     m.showSnackBar(SnackBar(duration: const Duration(seconds: 2), content: Text(tr('Recherche de mise à jour…'))));
     final rel = await latest();
     if (!context.mounted) return;
@@ -349,7 +354,7 @@ class UpdateBanner extends StatelessWidget {
     return ValueListenableBuilder<AppRelease?>(
       valueListenable: AppUpdate.pending,
       builder: (_, rel, __) {
-        if (rel == null) return const SizedBox.shrink();
+        if (rel == null || kPlay) return const SizedBox.shrink();
         return Material(
           color: K.indigo,
           child: InkWell(

@@ -8,6 +8,7 @@ import '../models/coupon.dart';
 import '../services/analytics.dart';
 import '../services/user_prefs.dart';
 import 'forecast_card.dart' show K, hm, two;
+import '../config/store.dart';
 import '../l10n/tr.dart';
 
 /// Reçu visuel d'un coupon (partagé en image).
@@ -112,6 +113,7 @@ class CouponReceipt extends StatelessWidget {
                 style: TextStyle(color: K.muted, fontSize: 12)),
           ]),
         ),
+        if (!kPlay)
         Container(
           margin: EdgeInsets.fromLTRB(12, 0, 12, 8),
           padding: EdgeInsets.all(12),
@@ -128,7 +130,7 @@ class CouponReceipt extends StatelessWidget {
             ),
           ]),
         ),
-        if (UserPrefs.iso == 'BF')
+        if (!kPlay && UserPrefs.iso == 'BF')
         Container(
           margin: EdgeInsets.fromLTRB(12, 0, 12, 10),
           padding: EdgeInsets.all(12),
@@ -169,7 +171,9 @@ Future<void> _shareImage(GlobalKey key, Coupon c) async {
     final f = File('${dir.path}/coupon_kounadia_${DateTime.now().millisecondsSinceEpoch}.png');
     await f.writeAsBytes(data.buffer.asUint8List());
     await Share.shareXFiles([XFile(f.path)],
-        text: 'Coupon KOUNADIA · ${tr('cote')} ×${fx(c.total)} · ${tr('Code promo 1xBet')} : 99KND\n👉 https://kounadia.pages.dev');
+        text: kPlay
+            ? 'Coupon KOUNADIA · ${tr('cote')} ×${fx(c.total)}'
+            : 'Coupon KOUNADIA · ${tr('cote')} ×${fx(c.total)} · ${tr('Code promo 1xBet')} : 99KND\n👉 https://kounadia.pages.dev');
   } catch (_) {
     await Share.share(c.shareText());
   }

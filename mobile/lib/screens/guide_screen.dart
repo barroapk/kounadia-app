@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import '../services/user_prefs.dart';
+import '../config/store.dart';
 import '../widgets/doc_view.dart';
 
 /// Guide d'utilisation de KOUNADIA.
@@ -58,7 +59,7 @@ class GuideScreen extends StatelessWidget {
           '• Tu restes connecté tant que tu utilises l\'application.',
           '• Ne partage jamais ton mot de passe ni ton code.',
         ]),
-        if (bf)
+        if (bf && !kPlay)
           DocSection('Dépôt · Retrait 1xBet', Icons.swap_vert_rounded, [
             'Recharge ou retire ton compte 1xBet avec KOUNADIA SERVICE, rapidement et en toute confiance.',
             '• Touche le bouton « Dépôt · Retrait » en bas de l\'écran.',

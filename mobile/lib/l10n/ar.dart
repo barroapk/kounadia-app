@@ -665,4 +665,6 @@ const Map<String, String> kAr = {
   'Copie le code reçu par SMS dans la page de paiement, puis touche « Payer ».': 'انسخ الرمز الذي وصلك عبر SMS في صفحة الدفع ثم اضغط «ادفع».',
   'Avec Moov Money : suis les étapes de la page, toujours avec le montant exact.': 'عبر Moov Money: اتبع خطوات الصفحة، دائمًا بالمبلغ الدقيق.',
   'Continuer vers le paiement': 'المتابعة إلى الدفع',
+  'Les mises à jour se font par le Play Store.': 'تصل التحديثات عبر متجر Play.',
+  'Le paiement Mobile Money arrive bientôt dans cette version. Merci de ta patience !': 'سيتوفر الدفع عبر Mobile Money قريبًا في هذا الإصدار. شكرًا لصبرك!',
 };

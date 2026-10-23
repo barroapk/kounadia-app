@@ -647,4 +647,6 @@ const Map<String, String> kEn = {
   'Copie le code reçu par SMS dans la page de paiement, puis touche « Payer ».': 'Copy the code received by SMS into the payment page, then tap “Pay”.',
   'Avec Moov Money : suis les étapes de la page, toujours avec le montant exact.': 'With Moov Money: follow the steps on the page, always with the exact amount.',
   'Continuer vers le paiement': 'Continue to payment',
+  'Les mises à jour se font par le Play Store.': 'Updates come through the Play Store.',
+  'Le paiement Mobile Money arrive bientôt dans cette version. Merci de ta patience !': 'Mobile Money payment is coming soon to this version. Thanks for your patience!',
 };

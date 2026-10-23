@@ -665,4 +665,6 @@ const Map<String, String> kPt = {
   'Copie le code reçu par SMS dans la page de paiement, puis touche « Payer ».': 'Copia o código recebido por SMS para a página de pagamento e toca em «Pagar».',
   'Avec Moov Money : suis les étapes de la page, toujours avec le montant exact.': 'Com Moov Money: segue os passos da página, sempre com o valor exato.',
   'Continuer vers le paiement': 'Continuar para o pagamento',
+  'Les mises à jour se font par le Play Store.': 'As atualizações chegam pela Play Store.',
+  'Le paiement Mobile Money arrive bientôt dans cette version. Merci de ta patience !': 'O pagamento Mobile Money chega em breve a esta versão. Obrigado pela paciência!',
 };

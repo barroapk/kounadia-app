@@ -8,6 +8,7 @@ import '../services/currency.dart';
 import '../services/user_prefs.dart';
 import 'legal_screen.dart';
 import '../widgets/forecast_card.dart' show K, two;
+import '../config/store.dart';
 import '../l10n/tr.dart';
 
 String fcfa(int v) => '${v.toString().replaceAllMapped(RegExp(r'\B(?=(\d{3})+(?!\d))'), (_) => ' ')} F';
@@ -342,6 +343,25 @@ class _AccountScreenState extends State<AccountScreen> {
   }
 
   Future<void> _buy(KPlan p) async {
+    // Version Play Store : paiement en pause (Mobile Money bientôt autorisé par Google Play).
+    if (kPlay) {
+      await showDialog<void>(
+        context: context,
+        builder: (ctx) => AlertDialog(
+          backgroundColor: K.card,
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+          icon: Icon(Icons.schedule_rounded, color: K.amber, size: 36),
+          title: T('Paiement indisponible pour le moment',
+              textAlign: TextAlign.center, style: TextStyle(color: K.text, fontWeight: FontWeight.w900)),
+          content: T("Le paiement Mobile Money arrive bientôt dans cette version. Merci de ta patience !",
+              textAlign: TextAlign.center, style: TextStyle(color: K.muted, height: 1.4)),
+          actions: [
+            TextButton(onPressed: () => Navigator.pop(ctx), child: T('OK', style: TextStyle(color: K.indigoText))),
+          ],
+        ),
+      );
+      return;
+    }
     // D'abord le bon montant : un code Orange généré avec des « frais » en plus est refusé.
     final go = await showDialog<bool>(context: context, builder: (_) => _PayGuide(plan: p));
     if (go != true || !mounted) return;
