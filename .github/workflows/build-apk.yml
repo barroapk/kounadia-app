@@ -118,6 +118,14 @@ jobs:
           retention-days: 2
           path: mobile/build/app/outputs/flutter-apk/app-release.apk
 
+      # Clés pour relire les plantages (code obfusqué) : gardées 90 jours, par numéro de build.
+      - name: Symboles des plantages
+        uses: actions/upload-artifact@v4
+        with:
+          name: kounadia-symbols-${{ github.run_number }}
+          retention-days: 90
+          path: mobile/build/symbols
+
       - name: Publier la version (site + avis de mise à jour)
         if: ${{ inputs.publier }}
         env:

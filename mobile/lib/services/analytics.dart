@@ -46,6 +46,22 @@ class Analytics {
     if (_queue.length >= 30) flush();
   }
 
+  static int _crashes = 0;
+  static String _cut(String s, int n) => s.length <= n ? s : s.substring(0, n);
+
+  /// Plantage de l'app : type, message et début de la pile (5 au maximum par ouverture, rien de personnel).
+  static void crash(Object error, StackTrace? stack, {bool fatal = false}) {
+    if (_crashes >= 5) return;
+    _crashes++;
+    log('crash', {
+      'type': error.runtimeType.toString(),
+      'msg': _cut(error.toString().replaceAll(RegExp(r'\s+'), ' '), 300),
+      'stack': _cut(stack?.toString() ?? '', 1500),
+      'fatal': fatal,
+    });
+    flush();
+  }
+
   static void once(String key, String name, [Map<String, dynamic>? props]) {
     if (_once.add(key)) log(name, props);
   }

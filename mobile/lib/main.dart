@@ -1,4 +1,6 @@
 import 'dart:async';
+import 'dart:ui' show PlatformDispatcher;
+import 'package:flutter/foundation.dart' show FlutterError, FlutterErrorDetails;
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'screens/main_screen.dart';
@@ -14,6 +16,15 @@ import 'l10n/tr.dart';
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
+  // Suivi des plantages : chaque erreur est envoyée (anonyme) pour être corrigée.
+  FlutterError.onError = (FlutterErrorDetails d) {
+    FlutterError.presentError(d);
+    Analytics.crash(d.exception, d.stack, fatal: !d.silent);
+  };
+  PlatformDispatcher.instance.onError = (Object e, StackTrace s) {
+    Analytics.crash(e, s, fatal: true);
+    return true;
+  };
   await ThemeCtl.init();
   await UserPrefs.init();
   Fx.init();
