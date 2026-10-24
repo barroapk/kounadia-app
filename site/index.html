@@ -80,6 +80,7 @@ html[lang="ar"] .eyebrow{letter-spacing:0}
 .cta-note{display:grid;gap:2px}
 .meta{font-variant-numeric:tabular-nums}
 .cta-row+.cta-row{margin-top:14px}
+.cta-row[hidden]{display:none}
 .btn.alt{background:transparent;border:1.5px solid var(--violet);box-shadow:none;padding:14.5px 24.5px}
 
 /* phone mock */
@@ -180,6 +181,12 @@ html[dir="rtl"] .back svg{transform:scaleX(-1)}
         <div class="cta-row">
           <a class="btn dl alt" href="/app/"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><rect x="6" y="2.5" width="12" height="19" rx="3"/><path d="M11 18.5h2"/></svg><span data-t="ctaIos"></span></a>
           <span class="cta-note"><span data-t="noteIos" data-html></span></span>
+        </div>
+        <!-- KOUNADIA V2 (essai) : affiché seulement quand la V2 est publiée (version-v2.json). -->
+        <div class="cta-row" id="v2row" hidden>
+          <a class="btn dl alt" href="/telecharger-v2"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3v12m0 0-5-5m5 5 5-5M4 19h16"/></svg><span>Essayer KOUNADIA V2</span></a>
+          <a class="btn dl alt" href="/v2/"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><rect x="6" y="2.5" width="12" height="19" rx="3"/><path d="M11 18.5h2"/></svg><span>V2 sur iPhone</span></a>
+          <span class="cta-note"><span><b>Nouveau · essai</b> : Coupon du jour et Sélection du jour. S'installe à côté de KOUNADIA, avec le même compte.</span></span>
         </div>
       </div>
       <div class="phone" aria-hidden="true">
@@ -308,6 +315,7 @@ function meta(){
   m.textContent=t;m.hidden=false;
 }
 fetch('version.json',{cache:'no-store'}).then(r=>r.ok?r.json():null).then(j=>{REL=j;meta()}).catch(()=>{});
+fetch('version-v2.json',{cache:'no-store'}).then(r=>r.ok?r.json():null).then(j=>{if(j&&j.build){var e=document.getElementById('v2row');if(e)e.hidden=false}}).catch(()=>{});
 fetch('https://api.github.com/repos/barroapk/kounadia-app/releases?per_page=100').then(r=>r.ok?r.json():[]).then(a=>{
   DLS=a.reduce((n,r)=>n+(r.assets||[]).filter(x=>x.name==='kounadia.apk').reduce((k,x)=>k+x.download_count,0),0);meta();
 }).catch(()=>{});

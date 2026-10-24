@@ -5,3 +5,11 @@
 # Version iPhone : toujours la dernière version à chaque ouverture (mise à jour automatique).
 /app/*
   Cache-Control: no-cache
+
+# KOUNADIA V2 (essai) : même règle.
+/v2/*
+  Cache-Control: no-cache
+
+/version-v2.json
+  Cache-Control: no-cache
+  Access-Control-Allow-Origin: *

@@ -1,3 +1,4 @@
+import '../config/store.dart';
 import 'dart:async';
 import 'dart:convert';
 import 'dart:io';
@@ -28,6 +29,12 @@ class Market {
 
   String pickFr(String home, String away) {
     final p = pick.trim();
+    if (kV2) {
+      // V2 : le code d'abord (1, X, 2, 1X, X2, 12), puis l'explication.
+      final v2 = {'1': '1 · Victoire $home', 'X': 'X · Match nul', '2': '2 · Victoire $away', '1X': '1X · $home ou nul',
+        'X2': 'X2 · $away ou nul', '12': '12 · Pas de match nul'}[p.toUpperCase()];
+      if (v2 != null) return v2;
+    }
     switch (p.toUpperCase()) {
       case '1':
         return 'Victoire $home';

@@ -21,6 +21,8 @@ import '../services/notif.dart';
 import '../services/live_socket.dart';
 import '../config/store.dart';
 import 'alerts_screen.dart';
+import 'v2/coupon_day_screen.dart';
+import 'v2/selection_screen.dart';
 
 final k1xBet = Color(0xFF1A5BA6);
 
@@ -81,7 +83,7 @@ class _MainScreenState extends State<MainScreen> with WidgetsBindingObserver {
     final auth = await maybeShowSetup(context);
     if (!mounted) return;
     await maybeShowWelcome(context);
-    Notif.start();
+    if (!kV2) Notif.start(); // V2 (essai) : les notifications restent dans KOUNADIA
     if (auth != null && mounted) {
       _ready = true;
       Navigator.push(context, MaterialPageRoute(builder: (_) => AccountScreen(signup: auth)));
@@ -91,7 +93,7 @@ class _MainScreenState extends State<MainScreen> with WidgetsBindingObserver {
     _ready = true;
     if (mounted) await AppUpdate.checkOnStart(context);
   }
-  static List<Widget> _screens = [
+  static final List<Widget> _screensV1 = [
     ScoresScreen(),
     PremiumGate(
                     title: "Prédictions KOUNADIA",
@@ -107,7 +109,32 @@ class _MainScreenState extends State<MainScreen> with WidgetsBindingObserver {
                     child: CouponTab()),
     TipHistoryScreen(),
   ];
-  static final _titles = ['Matchs', 'Prédictions', 'Créer coupon', 'Historique'];
+  // KOUNADIA V2 : Matchs · Coupon du jour · Sélection du jour · Créer coupon (les historiques sont dans chaque rubrique).
+  static final List<Widget> _screensV2 = [
+    ScoresScreen(),
+    CouponDayScreen(),
+    PremiumGate(
+        title: "Sélection du jour",
+        pitch: "Les événements du jour choisis par la confiance KOUNADIA, triés par catégorie, avec les coupons cote 2+, 5+ et 10+.",
+        perks: [
+          "Double chance, buts, mi-temps, corners, fautes, tirs…",
+          "Confiance KOUNADIA et « pourquoi ce choix » pour chaque événement",
+          "Coupons cote 2+, 5+ et 10+ composés avec la sélection",
+          "Historique intégral sur 14 jours, gagnés et perdus",
+        ],
+        icon: Icons.checklist_rounded,
+        child: SelectionScreen()),
+    PremiumGate(
+        title: "Créer un coupon",
+        pitch: "Choisis ta cote et ton nombre de matchs : KOUNADIA compose ton coupon à partir de ses analyses.",
+        perks: ["Coupon composé selon ta cote cible","Sélection fondée sur nos analyses et les statistiques","Partage du coupon en image en un clic","Suivi automatique : gagné ou perdu"],
+        icon: Icons.confirmation_number_rounded,
+        child: CouponTab()),
+  ];
+  static List<Widget> get _screens => kV2 ? _screensV2 : _screensV1;
+  static final _titles = kV2
+      ? ['Matchs', 'Coupon du jour', 'Sélection du jour', 'Créer coupon']
+      : ['Matchs', 'Prédictions', 'Créer coupon', 'Historique'];
 
   void _push(Widget w) => Navigator.push(context, MaterialPageRoute(builder: (_) => w));
 
@@ -194,7 +221,7 @@ class _MainScreenState extends State<MainScreen> with WidgetsBindingObserver {
             child: Icon(Icons.sports_soccer_rounded, color: Colors.white, size: 19),
           ),
           SizedBox(width: 10),
-          T('KOUNADIA',
+          T(kV2 ? 'KOUNADIA V2' : 'KOUNADIA',
               style: TextStyle(color: K.text, fontSize: 19, fontWeight: FontWeight.w900, letterSpacing: 1)),
           SizedBox(width: 8),
           Flexible(
@@ -273,7 +300,18 @@ class _MainScreenState extends State<MainScreen> with WidgetsBindingObserver {
               setState(() => _i = i);
               Analytics.log('tab_view', {'tab': _titles[i]});
             },
-            destinations: [
+            destinations: kV2
+                ? [
+                    NavigationDestination(
+                        icon: Icon(Icons.sports_soccer_outlined), selectedIcon: Icon(Icons.sports_soccer), label: tr('Matchs')),
+                    NavigationDestination(
+                        icon: Icon(Icons.today_outlined), selectedIcon: Icon(Icons.today), label: tr('Coupon du jour')),
+                    NavigationDestination(
+                        icon: Icon(Icons.checklist_outlined), selectedIcon: Icon(Icons.checklist), label: tr('Sélection')),
+                    NavigationDestination(
+                        icon: Icon(Icons.confirmation_number_outlined), selectedIcon: Icon(Icons.confirmation_number), label: tr('Créer coupon')),
+                  ]
+                : [
               NavigationDestination(
                   icon: Icon(Icons.sports_soccer_outlined), selectedIcon: Icon(Icons.sports_soccer), label: tr('Matchs')),
               NavigationDestination(

@@ -6,7 +6,7 @@ import '../services/user_prefs.dart';
 import '../config/store.dart';
 import '../l10n/tr.dart';
 
-final _seenKey = 'welcome_seen_v2';
+final _seenKey = kV2 ? 'welcome_seen_k2' : 'welcome_seen_v2';
 
 Future<void> maybeShowWelcome(BuildContext context) async {
   try {
@@ -101,7 +101,7 @@ class _WelcomeDialog extends StatelessWidget {
                   child: Icon(Icons.sports_soccer_rounded, color: Colors.white, size: 34),
                 ),
                 SizedBox(height: 12),
-                T('Bienvenue sur KOUNADIA',
+                T(kV2 ? 'Bienvenue sur KOUNADIA V2' : 'Bienvenue sur KOUNADIA',
                     textAlign: TextAlign.center,
                     style: TextStyle(color: Colors.white, fontSize: 21, fontWeight: FontWeight.w900)),
                 SizedBox(height: 6),
@@ -117,10 +117,16 @@ class _WelcomeDialog extends StatelessWidget {
                   _point('Scores en direct', 'tous les championnats, minute par minute.'),
                   _point('Mes matchs', 'tes championnats favoris toujours en premier.'),
                   _point('Classements', 'le monde entier en un geste.'),
+                  if (kV2) _point('Coupon du jour', 'le Single du jour et un coupon gratuit, chaque matin.'),
                 ]),
                 _section('Premium, pour aller plus loin', Icons.workspace_premium_rounded, Color(0xFFD4A017), [
-                  _point('Prédictions', 'Kounadia IA et nos experts, chaque jour.'),
-                  _point('Coup sûr', 'les sélections du jour les mieux notées par nos analyses.'),
+                  if (kV2) ...[
+                    _point('Coupons VIP', 'trois coupons du jour à cote 2, 3 et 5.'),
+                    _point('Sélection du jour', 'les événements les plus sûrs, triés par catégorie.'),
+                  ] else ...[
+                    _point('Prédictions', 'Kounadia IA et nos experts, chaque jour.'),
+                    _point('Coup sûr', 'les sélections du jour les mieux notées par nos analyses.'),
+                  ],
                   _point('Coupons', 'un coupon prêt selon la cote que tu veux.'),
                   _point('Fiches match', 'forme, faits du jour et statistiques complètes.'),
                   _para('Dès 250 F pour 3 jours. Sans engagement.'),

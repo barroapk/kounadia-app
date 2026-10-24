@@ -44,6 +44,23 @@ jobs:
           rm -rf ../site/app && cp -r build/web ../site/app
           echo "Version iPhone : $(du -sh ../site/app | cut -f1)"
 
+      # ---------- KOUNADIA V2 (essai) pour iPhone : adresse séparée /v2/, la version /app/ ne change pas ----------
+      - name: Compiler la version iPhone V2
+        continue-on-error: true
+        working-directory: mobile
+        run: |
+          V2=$(jq -r '.version // "2.0.0"' ../site/version-v2.json 2>/dev/null || echo 2.0.0)
+          flutter build web --release --base-href /v2/ \
+            --dart-define=EDITION=v2 \
+            --dart-define=KD_KEY=${{ secrets.KD_KEY }} \
+            --dart-define=APP_VERSION=$V2 \
+            --dart-define=LIVE_URL=$LIVE_URL
+          rm -f build/web/flutter_service_worker.js
+          sed -i 's/"name": "KOUNADIA"/"name": "KOUNADIA V2"/; s/"short_name": "KOUNADIA"/"short_name": "KOUNADIA V2"/' build/web/manifest.json
+          sed -i 's/content="KOUNADIA"/content="KOUNADIA V2"/g; s/<title>KOUNADIA<\/title>/<title>KOUNADIA V2<\/title>/' build/web/index.html
+          rm -rf ../site/v2 && cp -r build/web ../site/v2
+          echo "Version iPhone V2 : $(du -sh ../site/v2 | cut -f1)"
+
       - name: Publier sur Cloudflare Pages
         env:
           CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}

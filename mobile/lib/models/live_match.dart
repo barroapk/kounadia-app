@@ -1,3 +1,5 @@
+import '../config/store.dart';
+
 class LiveMatch {
   final int id;
   final String url;
@@ -83,6 +85,8 @@ class LiveMatch {
   }
 
   String get tipShort {
+    // V2 : le pari s'affiche avec son code (1, X, 2, 1X, X2, 12).
+    if (kV2 && const ['1', 'X', '2', '1X', 'X2', '12'].contains(tip.toUpperCase())) return tip.toUpperCase();
     switch (tip.toUpperCase()) {
       case '1':
         return 'Victoire dom.';

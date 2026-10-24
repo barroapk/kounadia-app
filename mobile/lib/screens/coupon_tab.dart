@@ -1,3 +1,4 @@
+import '../config/store.dart';
 import 'dart:async';
 import 'dart:math' as math;
 import 'package:flutter/material.dart';
@@ -245,7 +246,7 @@ class _CouponTabState extends State<CouponTab> with AutomaticKeepAliveClientMixi
                   style: TextStyle(color: Colors.white, fontSize: 18, fontWeight: FontWeight.w900)),
               SizedBox(height: 4),
               T(
-                'Fixe tes critères : KOUNADIA IA analyse les matchs à venir et compose les meilleurs coupons.',
+                kV2 ? 'Fixe tes critères : KOUNADIA analyse les matchs à venir et compose les meilleurs coupons.' : 'Fixe tes critères : KOUNADIA IA analyse les matchs à venir et compose les meilleurs coupons.',
                 style: TextStyle(color: Color(0xEEFFFFFF), fontSize: 13, height: 1.35),
               ),
             ]),

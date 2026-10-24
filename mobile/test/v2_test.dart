@@ -1,0 +1,104 @@
+// KOUNADIA V2 : lecture des fichiers du moteur et règlement des paris (mêmes règles que kounadia-engine/scripts/v2/core.mjs).
+import 'dart:convert';
+import 'dart:io';
+import 'package:flutter_test/flutter_test.dart';
+import 'package:kounadia/models/v2.dart';
+import 'package:kounadia/services/v2_service.dart';
+
+Map<String, dynamic> _load(String f) =>
+    Map<String, dynamic>.from(jsonDecode(File('test/fixtures/$f').readAsStringSync()) as Map);
+
+void main() {
+  test('règlement immédiat des paris (score final)', () {
+    expect(V2Service.quick('1', 2, 1), true);
+    expect(V2Service.quick('1', 1, 1), false);
+    expect(V2Service.quick('2', 0, 3), true);
+    expect(V2Service.quick('1X', 1, 1), true);
+    expect(V2Service.quick('X2', 2, 1), false);
+    expect(V2Service.quick('12', 0, 0), false);
+    expect(V2Service.quick('+2.5', 2, 1), true);
+    expect(V2Service.quick('+2.5', 1, 1), false);
+    expect(V2Service.quick('-1.5', 1, 0), true);
+    expect(V2Service.quick('-3.5', 2, 2), false);
+    expect(V2Service.quick('BTTS oui', 1, 1), true);
+    expect(V2Service.quick('BTTS non', 2, 0), true);
+    expect(V2Service.quick('Dom. +1.5', 2, 0), true);
+    expect(V2Service.quick('Ext. marque', 3, 0), false);
+    // Mi-temps et statistiques : réglés par le robot, jamais deviné par l'app.
+    expect(V2Service.quick('+0.5 MT1', 2, 0), isNull);
+    expect(V2Service.quick('Corners +8.5', 2, 0), isNull);
+  });
+
+  test('fichier Premium du moteur : coupons, sélection, historique, bilans', () {
+    final j = _load('v2_sample.json');
+    final t = V2Day.fromJson(Map<String, dynamic>.from(j['today'] as Map));
+    expect(t.day, isNotEmpty);
+    for (final k in ['single', 'free', 'vip2', 'vip3', 'vip5']) {
+      expect(t.coupons.containsKey(k), true, reason: k);
+    }
+    final single = t.coupons['single']!;
+    expect(single.legs.length, 1);
+    expect(single.odd, greaterThanOrEqualTo(1.15));
+    final free = t.coupons['free']!;
+    expect(free.legs.length, inInclusiveRange(2, 3));
+    // Jamais deux fois le même match dans le Coupon du jour.
+    final ids = [for (final c in t.coupons.values) if (c != null) ...c.legs.map((l) => l.id)];
+    expect(ids.toSet().length, ids.length);
+    final s = t.selection!;
+    expect(s.locked, false);
+    expect(s.top, isNotEmpty);
+    // La Sélection n'utilise aucun match du Coupon du jour.
+    for (final l in [...s.top, ...s.byFam]) {
+      expect(ids.contains(l.id), false, reason: l.id);
+    }
+    // Coupons de la Sélection : seulement des événements affichés dans la Sélection.
+    final shown = {for (final l in [...s.byFam, ...s.fav]) '${l.id}|${l.mk}'};
+    for (final c in s.coupons.values) {
+      for (final l in c?.legs ?? const <V2Leg>[]) {
+        expect(shown.contains('${l.id}|${l.mk}'), true, reason: l.txt);
+      }
+    }
+    // Codes des paris
+    for (final l in t.allLegs) {
+      expect(l.p, inInclusiveRange(1, 95));
+      expect(l.odd, greaterThanOrEqualTo(1.15));
+      if (['1', '2', '1X', 'X2', '12'].contains(l.mk)) expect(l.code, l.mk);
+    }
+    final hist = (j['history'] as List).map((e) => V2Day.fromJson(Map<String, dynamic>.from(e as Map))).toList();
+    expect(hist, isNotEmpty);
+    final st = V2Stat.fromJson(Map<String, dynamic>.from((j['stats'] as Map)['single'] as Map));
+    expect(st.total, greaterThan(0));
+  });
+
+  test('fichier public : VIP et Sélection verrouillés', () {
+    final j = _load('v2_public.json');
+    final t = V2Day.fromJson(Map<String, dynamic>.from(j['today'] as Map));
+    expect(t.coupons['single']!.legs.length, 1);
+    expect(t.coupons['vip2']!.locked, true);
+    expect(t.coupons['vip2']!.legs, isEmpty);
+    expect(t.coupons['vip2']!.n, greaterThan(0));
+    expect(t.selection!.locked, true);
+  });
+
+  test('résultat d\'un coupon recalculé avec le direct', () {
+    final c = V2Coupon.fromJson({
+      'odd': 2.0,
+      'p': 50,
+      'legs': [
+        {'id': 'pt:1', 'mk': '1X', 'txt': '1X · A ou nul', 'p': 80, 'odd': 1.3, 'r': 'won'},
+        {'id': 'pt:2', 'mk': '+1.5', 'txt': 'Plus de 1,5 buts', 'p': 75, 'odd': 1.4, 'r': null},
+      ],
+    });
+    c.refresh();
+    expect(c.r, isNull);
+    c.legs[1].r = 'live';
+    c.refresh();
+    expect(c.r, 'live');
+    c.legs[1].r = 'lost';
+    c.refresh();
+    expect(c.r, 'lost');
+    expect(c.legs[0].code, '1X');
+    expect(c.legs[1].code, '');
+    expect(c.legs[0].ptId, 1);
+  });
+}

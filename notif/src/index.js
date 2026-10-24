@@ -14,7 +14,7 @@ const TOPIC_RE = /^[a-z]{2}_(l2|m2)_[0-9a-z]{1,16}$/;
 
 const KFEED = 'https://raw.githubusercontent.com/barroapk/kfeed';
 // Tâches du dépôt kfeed relancées par le robot : [fichier, toutes les N minutes].
-const KICKS = [['scores.yml', 15], ['vip.yml', 30], ['pronos.yml', 60]];
+const KICKS = [['scores.yml', 15], ['vip.yml', 30], ['pronos.yml', 60], ['v2.yml', 30]];
 const API = 'https://knd-api-5bgz.onrender.com';
 
 // Pronostics et coupons
@@ -279,6 +279,7 @@ export class Poller {
       ['scores', 'scores/scores.json', 60, 'Scores'],
       ['pronos', 'pronos/today_p.json', 180, 'Pronostics'],
       ['vip', 'vip/vip_stats.json', 90, 'Coup sûr'],
+      ['v2', 'v2/v2.json', 90, 'KOUNADIA V2'],
     ];
     for (const [key, path, max, label] of checks) {
       const m = await age(path);
@@ -804,7 +805,7 @@ const poller = (env) => env.POLLER.get(env.POLLER.idFromName('main'));
 
 // Relais des données KOUNADIA (chiffrées) quand GitHub refuse ou bloque la demande du téléphone.
 // Gardé 30 s en mémoire : beaucoup d'utilisateurs = une seule lecture GitHub.
-const FEED_RE = /^\/feed\/([a-z]+\/[a-z0-9_.-]+\.json)$/;
+const FEED_RE = /^\/feed\/([a-z0-9]+\/[a-z0-9_.-]+\.json)$/;
 
 // Déchiffre un fichier du flux : « KD1. » = clé publique de l'app, « KP1. » = clé Premium (jamais dans l'app).
 async function openFeed(text, env) {
@@ -822,7 +823,7 @@ async function openFeed(text, env) {
 
 // ---------- Contenu Premium : servi seulement avec un ticket valide du serveur KOUNADIA ----------
 // Ticket = base64url({uid, exp}) + "." + HMAC-SHA256 (secret partagé avec knd-api). Il expire vite (24 h max).
-const PREMIUM = new Set(['pronos/today.json', 'vip/vip.json']);
+const PREMIUM = new Set(['pronos/today.json', 'vip/vip.json', 'v2/v2.json']);
 const unb64url = (s) => b64(s.replace(/-/g, '+').replace(/_/g, '/') + '==='.slice((s.length + 3) % 4));
 async function ticketOk(req, env) {
   try {
