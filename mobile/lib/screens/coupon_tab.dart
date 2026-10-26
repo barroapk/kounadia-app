@@ -648,7 +648,7 @@ class _CouponCard extends StatelessWidget {
           ),
           SizedBox(width: 8),
           Column(crossAxisAlignment: CrossAxisAlignment.end, children: [
-            T('@${fx(l.odd)}', style: TextStyle(color: K.text, fontSize: 14.5, fontWeight: FontWeight.w800)),
+            T('${l.est ? '≈' : '@'}${fx(l.odd)}', style: TextStyle(color: K.text, fontSize: 14.5, fontWeight: FontWeight.w800)),
             T('${l.prob} %', style: TextStyle(color: K.muted, fontSize: 11.5)),
           ]),
         ]),
@@ -696,7 +696,7 @@ class _CouponCard extends StatelessWidget {
               ]),
             ),
             Column(crossAxisAlignment: CrossAxisAlignment.end, children: [
-              T('×${fx(coupon.total)}',
+              T('${coupon.x}${fx(coupon.total)}',
                   style: TextStyle(color: K.green, fontSize: 22, fontWeight: FontWeight.w900)),
               T('cote totale', style: TextStyle(color: K.muted, fontSize: 11)),
             ]),

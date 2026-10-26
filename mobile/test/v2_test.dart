@@ -178,5 +178,10 @@ void main() {
     final back = Leg.fromJson(leg.toJson());
     expect(back.mk, '1');
     expect(back.label, '1 · Victoire Arsenal');
+    final mt = cands.first.firstWhere((l) => l.mk == '+0.5 MT2');
+    expect(mt.est, true);
+    expect(Leg.fromJson(mt.toJson()).est, true);
+    expect(Coupon.of([leg, mt]).x, '≈');
+    expect(Coupon.of([leg]).x, '×');
   });
 }

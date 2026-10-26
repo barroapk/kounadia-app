@@ -53,7 +53,19 @@ function evalPick(pick, h, a) {
     const line = Number(g[2]) + Number(g[3]) / 10;
     return g[1] === 'O' ? h + a > line : h + a < line;
   }
-  return false;
+  // Paris du moteur KOUNADIA (coupons créés avec toutes les catégories) : seulement ceux que le score final règle.
+  switch (pick) {
+    case 'BTTS oui': return h > 0 && a > 0;
+    case 'BTTS non': return h === 0 || a === 0;
+    case 'Dom. marque': return h > 0;
+    case 'Ext. marque': return a > 0;
+    case 'Dom. +1.5': return h > 1;
+    case 'Ext. +1.5': return a > 1;
+  }
+  const v = /^([+-])(\d\.5)$/.exec(pick);
+  if (v) return v[1] === '+' ? h + a > Number(v[2]) : h + a < Number(v[2]);
+  // Mi-temps, corners, fautes, tirs : le score final ne suffit pas → inconnu (jamais « perdu » à tort).
+  return null;
 }
 
 // Annonces courtes et vivantes, selon ce que change le but.
@@ -400,7 +412,9 @@ export class Poller {
         }
         if (top.length && st.vipDate !== today) {
           st.vipDate = today;
+          // « Coup sûr gagné » : seulement les 10 premiers Coups sûrs (pas une avalanche de notifications).
           st.singles = top
+            .slice(0, 10)
             .map((l) => ({ id: Number(l.pt), pick: v2Pick(String(l.mk)), home: String(l.home), away: String(l.away) }))
             .filter((l) => Number.isFinite(l.id) && l.id > 0 && l.pick);
           st.won = [];

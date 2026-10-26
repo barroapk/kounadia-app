@@ -168,6 +168,7 @@ class CouponEngine {
           mk: mk,
           txt: v2Label(mk, m.home, m.away),
           pt: m.pt,
+          est: est,
         ));
       }
       ok.sort((a, b) {
@@ -199,6 +200,8 @@ class CouponEngine {
       return _cmpStr(a.$1.pick, b.$1.pick);
     });
     final top = [for (final x in pool.take(40)) x.$1];
+    // Une même famille (buts, double chance…) au plus la moitié du coupon, si au moins 3 familles sont proposées.
+    final famRule = top.map((l) => famOf(l.pick)).toSet().length >= 3;
     double key(_State s) => s.lp / max2(log(s.total), 0.01);
     var beam = [_State(const [], 1.0, 0.0, -1)];
     final done = <String, _State>{};
@@ -210,6 +213,7 @@ class CouponEngine {
           if (st.legs.any((x) => x.matchId == l.matchId)) continue;
           // Variété : coupon de 4 matchs ou moins = jamais deux fois le même pari.
           if (st.legs.where((x) => x.pick == l.pick).length >= (c.countMax <= 4 ? 1 : _sameMax)) continue;
+          if (famRule && st.legs.where((x) => famOf(x.pick) == famOf(l.pick)).length + 1 > (st.legs.length + 2) ~/ 2) continue;
           final total = st.total * l.odd;
           if (total > c.totalMax) continue;
           final ns = _State([...st.legs, l], total, st.lp + log(l.prob / 100), i);
@@ -251,6 +255,17 @@ class CouponEngine {
   }
 
   static double max2(double a, double b) => a > b ? a : b;
+
+  /// Famille d'un pari : victoire, double chance, buts, les deux marquent, buts d'une équipe, mi-temps, statistiques.
+  static String famOf(String p) {
+    if (p == '1' || p == '2' || p == 'X') return 'res';
+    if (p == '1X' || p == 'X2' || p == '12') return 'dc';
+    if (RegExp(r'^[OU]\d\d$').hasMatch(p) || RegExp(r'^[+-]\d\.5$').hasMatch(p)) return 'buts';
+    if (p == 'BTS' || p == 'OTS' || p.startsWith('BTTS')) return 'btts';
+    if (p.startsWith('Dom.') || p.startsWith('Ext.')) return 'equipe';
+    if (p.contains('MT')) return 'mt';
+    return p.split(' ').first;
+  }
 
   static bool evalPick(String pick, int h, int a) {
     switch (pick) {

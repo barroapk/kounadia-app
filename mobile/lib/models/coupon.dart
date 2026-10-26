@@ -56,6 +56,8 @@ class Leg {
   /// Pari du moteur KOUNADIA (toutes catégories) : identifiant du match, code du pari, libellé.
   final String? v2, mk, txt;
   final int? pt;
+  /// Cote estimée par KOUNADIA (mi-temps, corners, « une équipe marque »…) : affichée avec ≈.
+  final bool est;
   String? score; // score connu (direct ou final)
 
   Leg({
@@ -73,6 +75,7 @@ class Leg {
     this.mk,
     this.txt,
     this.pt,
+    this.est = false,
     this.score,
   });
 
@@ -116,6 +119,7 @@ class Leg {
         if (mk != null) 'mk': mk,
         if (txt != null) 'txt': txt,
         if (pt != null) 'pt': pt,
+        if (est) 'est': true,
         if (score != null) 'score': score,
       };
 
@@ -134,6 +138,7 @@ class Leg {
         mk: j['mk']?.toString(),
         txt: j['txt']?.toString(),
         pt: (j['pt'] as num?)?.toInt(),
+        est: j['est'] == true,
         score: j['score']?.toString(),
       );
 }
@@ -150,6 +155,8 @@ class Coupon {
   }
 
   double get total => legs.fold(1.0, (v, l) => v * l.odd);
+  /// « ≈ » devant la cote totale si une cote est estimée.
+  String get x => legs.any((l) => l.est) ? '≈' : '×';
   double get prob => legs.fold(1.0, (v, l) => v * l.prob / 100);
   String get signature => (legs.map((l) => '${l.matchId}:${l.pick}').toList()..sort()).join('|');
 
@@ -166,14 +173,14 @@ class Coupon {
   }
 
   String shareText() {
-    final b = StringBuffer('🎟️ Coupon KOUNADIA · ${tr('cote')} ×${fx(total)}\n\n');
+    final b = StringBuffer('🎟️ Coupon KOUNADIA · ${tr('cote')} $x${fx(total)}\n\n');
     for (var i = 0; i < legs.length; i++) {
       final l = legs[i];
       final d = l.date;
       final t = d == null ? '' : '${_two(d.day)}/${_two(d.month)} ${_two(d.hour)}:${_two(d.minute)} · ';
       b.writeln('${i + 1}. ${l.league}');
       b.writeln('   $t${l.home} – ${l.away}');
-      b.writeln('   ➜ ${tr(l.label)} @${fx(l.odd)}');
+      b.writeln('   ➜ ${tr(l.label)} ${l.est ? '≈' : '@'}${fx(l.odd)}');
     }
     b.writeln('\n${tr('Probabilité estimée')} ≈ ${pctText()}');
     if (!kPlay) {

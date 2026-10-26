@@ -51,7 +51,7 @@ class CouponReceipt extends StatelessWidget {
           Container(
             padding: EdgeInsets.symmetric(horizontal: 8, vertical: 3),
             decoration: BoxDecoration(color: Color(0x3322C55E), borderRadius: BorderRadius.circular(8)),
-            child: T('@${fx(l.odd)}',
+            child: T('${l.est ? '≈' : '@'}${fx(l.odd)}',
                 style: TextStyle(color: K.green, fontSize: 13, fontWeight: FontWeight.w900)),
           ),
         ]),
@@ -93,7 +93,7 @@ class CouponReceipt extends StatelessWidget {
               ]),
             ),
             Column(crossAxisAlignment: CrossAxisAlignment.end, children: [
-              T('×${fx(c.total)}',
+              T('${c.x}${fx(c.total)}',
                   style: TextStyle(color: Colors.white, fontSize: 24, fontWeight: FontWeight.w900)),
               T('cote totale', style: TextStyle(color: Color(0xCCFFFFFF), fontSize: 11)),
             ]),
@@ -172,8 +172,8 @@ Future<void> _shareImage(GlobalKey key, Coupon c) async {
     await f.writeAsBytes(data.buffer.asUint8List());
     await Share.shareXFiles([XFile(f.path)],
         text: kPlay
-            ? 'Coupon KOUNADIA · ${tr('cote')} ×${fx(c.total)}'
-            : 'Coupon KOUNADIA · ${tr('cote')} ×${fx(c.total)} · ${tr('Code promo 1xBet')} : 99KND\n👉 https://kounadia.pages.dev');
+            ? 'Coupon KOUNADIA · ${tr('cote')} ${c.x}${fx(c.total)}'
+            : 'Coupon KOUNADIA · ${tr('cote')} ${c.x}${fx(c.total)} · ${tr('Code promo 1xBet')} : 99KND\n👉 https://kounadia.pages.dev');
   } catch (_) {
     await Share.share(c.shareText());
   }

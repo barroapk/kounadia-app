@@ -181,12 +181,24 @@ export function newCandidates(matches, c, tune = DEFAULT_TUNE) {
 const sigOf = (legs) => legs.map((l) => `${l.id}:${l.pick}`).sort().join('|');
 
 const SAME_MAX = 2;
+// Famille d'un pari (même règle que coupon_engine.dart).
+export function famOf(p) {
+  if (p === '1' || p === '2' || p === 'X') return 'res';
+  if (p === '1X' || p === 'X2' || p === '12') return 'dc';
+  if (/^[OU]\d\d$/.test(p) || /^[+-]\d\.5$/.test(p)) return 'buts';
+  if (p === 'BTS' || p === 'OTS' || p.startsWith('BTTS')) return 'btts';
+  if (p.startsWith('Dom.') || p.startsWith('Ext.')) return 'equipe';
+  if (p.includes('MT')) return 'mt';
+  return p.split(' ')[0];
+}
 export function newSearch(cands, c, exclude = new Set(), max = 5) {
   if (cands.length < c.countMin) return [];
   const pool = [];
   for (const e of cands) e.forEach((l, i) => pool.push({ l, rank: i, cost: costOf(l) }));
   pool.sort((a, b) => a.rank - b.rank || a.cost - b.cost || a.l.id - b.l.id || cmpStr(a.l.pick, b.l.pick));
   const top = pool.slice(0, 40).map((x) => x.l);
+  // Une même famille (buts, double chance…) au plus la moitié du coupon, si au moins 3 familles sont proposées.
+  const famRule = new Set(top.map((l) => famOf(l.pick))).size >= 3;
   let beam = [{ legs: [], total: 1, lp: 0, last: -1 }];
   const done = new Map();
   const key = (s) => s.lp / Math.max(Math.log(s.total), 0.01);
@@ -197,6 +209,7 @@ export function newSearch(cands, c, exclude = new Set(), max = 5) {
         const l = top[i];
         if (st.legs.some((x) => x.id === l.id)) continue;
         if (st.legs.filter((x) => x.pick === l.pick).length >= (c.countMax <= 4 ? 1 : SAME_MAX)) continue; // variété
+        if (famRule && st.legs.filter((x) => famOf(x.pick) === famOf(l.pick)).length + 1 > Math.max(1, Math.ceil((st.legs.length + 1) / 2))) continue;
         const total = st.total * l.odd;
         if (total > c.totalMax) continue;
         const ns = { legs: [...st.legs, l], total, lp: st.lp + Math.log(l.prob / 100), last: i };
