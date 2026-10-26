@@ -1,3 +1,4 @@
+import '../../widgets/k_err.dart';
 import 'package:flutter/material.dart';
 import '../../services/logo_cache.dart';
 import '../../services/primatips_service.dart';
@@ -90,7 +91,7 @@ class _FormScreenState extends State<FormScreen> {
             builder: (context, snap) {
               if (snap.connectionState != ConnectionState.done) return kLoader();
               if (snap.hasError) {
-                return kMessage(snap.error.toString(), onRetry: () => setState(() => _f = _load()));
+                return kMessage(kErr(snap.error), onRetry: () => setState(() => _f = _load()));
               }
               final t = snap.data!;
               if (t.isEmpty) return kMessage('Données de forme indisponibles pour le moment.');

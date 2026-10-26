@@ -1,3 +1,4 @@
+import '../widgets/k_err.dart';
 import 'package:flutter/material.dart';
 import '../models/live_match.dart';
 import '../services/match_detail_service.dart';
@@ -6,6 +7,10 @@ import '../services/logo_cache.dart';
 import '../widgets/forecast_card.dart' show K, kMessage, hm;
 import '../widgets/jersey.dart';
 import '../l10n/tr.dart';
+import '../config/store.dart';
+import '../models/v2.dart';
+import '../services/v2_service.dart';
+import 'v2/v2_widgets.dart' show showV2Why, v2Color, v2Num, v2Pct;
 
 class PtMatchScreen extends StatefulWidget {
   final LiveMatch match;
@@ -49,7 +54,7 @@ class _PtMatchScreenState extends State<PtMatchScreen> {
               return Center(child: CircularProgressIndicator(color: K.indigo));
             }
             if (snap.hasError) {
-              return kMessage(snap.error.toString(),
+              return kMessage(kErr(snap.error),
                   onRetry: () => setState(() => _f = MatchDetailService.load(m)));
             }
             final d = snap.data!;
@@ -265,9 +270,51 @@ class _PtMatchScreenState extends State<PtMatchScreen> {
 
   // ---------- Onglet Pronostics ----------
 
+  /// V2 : les choix KOUNADIA du jour pour ce match (Coupon du jour et Sélection), avec « Pourquoi ce choix ».
+  List<V2Leg> _v2Legs() {
+    final t = V2Service.last?.today;
+    if (!kV2 || t == null) return const [];
+    final seen = <String>{};
+    return [for (final l in t.allLegs) if (l.ptId == m.id && seen.add(l.mk)) l];
+  }
+
+  Widget _v2Tile(V2Leg l) {
+    final c = v2Color(l.r);
+    return InkWell(
+      onTap: () => showV2Why(context, l),
+      child: Container(
+        margin: EdgeInsets.only(bottom: 10),
+        padding: EdgeInsets.fromLTRB(14, 12, 12, 12),
+        decoration: _box,
+        child: Row(children: [
+          if (l.code.isNotEmpty) ...[
+            Text(l.code, style: TextStyle(color: c, fontSize: 18, fontWeight: FontWeight.w900)),
+            SizedBox(width: 10),
+          ],
+          Expanded(child: T(l.label, style: TextStyle(color: K.text, fontSize: 14.5, fontWeight: FontWeight.w800))),
+          Column(crossAxisAlignment: CrossAxisAlignment.end, children: [
+            Text(v2Pct(l.p), style: TextStyle(color: c, fontSize: 16, fontWeight: FontWeight.w900)),
+            Text('${l.est ? '≈' : '@'} ${v2Num(l.odd)}', style: TextStyle(color: K.muted, fontSize: 12)),
+          ]),
+          SizedBox(width: 6),
+          Icon(Icons.info_outline_rounded, color: K.indigoText, size: 20),
+        ]),
+      ),
+    );
+  }
+
   Widget _tipsTab(MatchDetail d) {
-    if (d.markets.isEmpty) return kMessage('Aucun pronostic détaillé pour ce match.');
+    final v2 = _v2Legs();
+    if (d.markets.isEmpty && v2.isEmpty) return kMessage('Aucun pronostic détaillé pour ce match.');
     return _list([
+      if (v2.isNotEmpty) ...[
+        Padding(
+          padding: EdgeInsets.only(bottom: 8, left: 2),
+          child: T('Choix KOUNADIA', style: TextStyle(color: K.text, fontSize: 15, fontWeight: FontWeight.w900)),
+        ),
+        ...v2.map(_v2Tile),
+        SizedBox(height: 8),
+      ],
       ...d.markets.map(_market),
       if (d.updated != null)
         Padding(

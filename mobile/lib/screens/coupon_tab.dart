@@ -1,3 +1,4 @@
+import '../widgets/k_err.dart';
 import '../config/store.dart';
 import 'dart:async';
 import 'dart:math' as math;
@@ -122,7 +123,7 @@ class _CouponTabState extends State<CouponTab> with AutomaticKeepAliveClientMixi
       if (mounted) {
         setState(() {
           _busy = false;
-          _msg = e.toString();
+          _msg = kErr(e);
         });
       }
       return;

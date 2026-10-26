@@ -1,3 +1,4 @@
+import '../../widgets/k_err.dart';
 import 'package:flutter/material.dart';
 import '../../services/primatips_service.dart';
 import '../../widgets/forecast_card.dart' show K, kMessage, hm, two;
@@ -56,7 +57,7 @@ class _FactsScreenState extends State<FactsScreen> {
             builder: (context, snap) {
               if (snap.connectionState != ConnectionState.done) return kLoader();
               if (snap.hasError) {
-                return kMessage(snap.error.toString(), onRetry: () => setState(() => _f = _load()));
+                return kMessage(kErr(snap.error), onRetry: () => setState(() => _f = _load()));
               }
               final list = snap.data!;
               if (list.isEmpty) return kMessage('Aucun fait marquant pour cette journée.');

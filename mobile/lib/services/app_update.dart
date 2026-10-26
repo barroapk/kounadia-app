@@ -16,12 +16,8 @@ const kAppVersion = String.fromEnvironment('APP_VERSION', defaultValue: '1.0.0')
 const kAppBuild = int.fromEnvironment('APP_BUILD', defaultValue: 0);
 
 /// Dernière version publiée (fichier mis à jour automatiquement à chaque publication).
-const _versionUrl = kV2
-    ? 'https://raw.githubusercontent.com/barroapk/kounadia-app/main/site/version-v2.json'
-    : 'https://raw.githubusercontent.com/barroapk/kounadia-app/main/site/version.json';
-const kApkUrl = kV2
-    ? 'https://github.com/barroapk/kounadia-app/releases/download/v2-apk/kounadia-v2.apk'
-    : 'https://github.com/barroapk/kounadia-app/releases/latest/download/kounadia.apk';
+const _versionUrl = 'https://raw.githubusercontent.com/barroapk/kounadia-app/main/site/version.json';
+const kApkUrl = 'https://github.com/barroapk/kounadia-app/releases/latest/download/kounadia.apk';
 
 class AppRelease {
   final String version;

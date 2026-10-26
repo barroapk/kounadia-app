@@ -6,12 +6,21 @@ double _d(dynamic v) => (v as num?)?.toDouble() ?? 0;
 /// Un événement (pari) : match + marché + confiance KOUNADIA + cote.
 class V2Leg {
   final String id, home, away, country, league, mk, txt, fam;
+  final String? hl, al, flag, espnLg, espnId;
+  final int? pt; // identifiant PrimaTips (direct)
   final DateTime? date;
   final double p, odd;
   final bool est;
+  /// Probabilité PrimaTips (2e avis) et accord des analystes Expert.
+  final double? pp;
+  final bool ex;
   final List<String> why;
   String? r; // won, lost, void, live, null = à venir
   String? score;
+  String? minute; // direct
+  /// Statistiques du match [domicile, extérieur] : c corners, f fautes, s tirs, t tirs cadrés.
+  Map<String, List<int?>> st;
+  List<int>? h1; // score à la mi-temps
 
   V2Leg.fromJson(Map<String, dynamic> j)
       : id = (j['id'] ?? '').toString(),
@@ -26,12 +35,42 @@ class V2Leg {
         p = _d(j['p']),
         odd = _d(j['odd']),
         est = j['est'] == true,
+        pp = (j['pp'] as num?)?.toDouble(),
+        ex = j['ex'] == true,
         why = ((j['why'] as List?) ?? const []).map((e) => e.toString()).toList(),
+        pt = (j['pt'] as num?)?.toInt(),
+        hl = _s(j['hl']),
+        al = _s(j['al']),
+        flag = _s(j['flag']),
+        espnLg = _s((j['espn'] as Map?)?['lg']),
+        espnId = _s((j['espn'] as Map?)?['id']),
         r = j['r']?.toString(),
-        score = j['score']?.toString();
+        score = j['score']?.toString(),
+        st = {
+          for (final e in ((j['st'] as Map?) ?? const {}).entries)
+            if (e.value is List) e.key.toString(): (e.value as List).map((x) => (x as num?)?.toInt()).toList(),
+        },
+        h1 = (j['h1'] as List?)?.map((x) => (x as num).toInt()).toList();
+
+  static String? _s(dynamic v) => v == null || v.toString().isEmpty ? null : v.toString();
+
+  /// Pari sur une statistique (corners, fautes, tirs, tirs cadrés) : clé c, f, s ou t.
+  String? get statKey => const {'stc': 'c', 'stf': 'f', 'sts': 's', 'stt': 't'}[fam];
+
+  /// Nom de la statistique du pari.
+  String? get statName => const {'c': 'Corners', 'f': 'Fautes', 's': 'Tirs', 't': 'Tirs cadrés'}[statKey];
+
+  /// Valeurs [domicile, extérieur] de la statistique du pari, si connues.
+  List<int?>? get statPair => statKey == null ? null : st[statKey];
+
+  /// Clé unique (favoris).
+  String get key => '$id|$mk';
+
+  /// Championnat affiché : « Pays - Compétition ».
+  String get leagueLabel => country.isEmpty || league.toLowerCase().startsWith(country.toLowerCase()) ? league : '$country - $league';
 
   /// Identifiant PrimaTips (pour le direct), si le match vient de PrimaTips.
-  int? get ptId => id.startsWith('pt:') ? int.tryParse(id.substring(3)) : null;
+  int? get ptId => pt ?? (id.startsWith('pt:') ? int.tryParse(id.substring(3)) : null);
 
   /// Code court du pari : 1, X2, +2.5…
   String get code {

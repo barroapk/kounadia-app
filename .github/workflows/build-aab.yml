@@ -44,7 +44,7 @@ jobs:
           GH_TOKEN: ${{ github.token }}
         run: |
           # Même nom de version que la dernière publiée sur le site ; numéro de build propre au Play Store.
-          LAST=$(gh release list -R "${{ github.repository }}" --limit 1 --exclude-drafts --json tagName -q '.[0].tagName')
+          LAST=$(gh release list -R "${{ github.repository }}" --limit 1 --exclude-drafts --exclude-pre-releases --json tagName -q '.[0].tagName')
           V="${LAST#v}"; [ -n "$V" ] || V=1.0.0
           echo "V=$V" >> "$GITHUB_ENV"
           echo "CODE=$((10000 + ${{ github.run_number }}))" >> "$GITHUB_ENV"

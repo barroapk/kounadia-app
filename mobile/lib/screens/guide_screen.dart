@@ -30,25 +30,29 @@ class GuideScreen extends StatelessWidget {
         ]),
         if (kV2) ...[
           DocSection('Coupon du jour', Icons.today_rounded, [
-            "Chaque matin, KOUNADIA publie 5 coupons. Une fois publiés, ils ne changent plus.",
-            '• Single du jour (gratuit) : un seul match, le plus sûr du jour.',
-            '• Coupon gratuit : 2 à 3 événements, cote autour de 1,5.',
-            '• VIP (Premium) : trois coupons à cote 2 à 2,5, 3 à 3,5 et 5 à 5,5.',
-            "• Un même match n'est jamais utilisé dans deux coupons.",
-            '• Chaque coupon a son bilan sur 14 jours et son historique complet : gagnés et perdus.',
+            "Chaque matin, KOUNADIA publie ses coupons du jour. Une fois publiés, ils ne changent plus.",
+            '• Coupons gratuits : le Single du jour (un seul match, le plus sûr) et un coupon de 2 à 3 matchs, cote autour de 1,5.',
+            '• Coupons VIP (Premium) : trois coupons à cote 2, 3 et 5.',
+            "• Chaque pari a au moins une cote de 1,15. Un même match n'est jamais utilisé dans deux coupons.",
+            '• Touche « Historique » sous un coupon pour voir ses résultats de cette semaine et de la semaine dernière.',
           ]),
-          DocSection('Sélection du jour', Icons.checklist_rounded, [
-            "Les événements du jour choisis par la confiance KOUNADIA (65 % et plus), sur des matchs différents du Coupon du jour.",
-            '• Touche ☰ pour trier : double chance, victoire, favoris, buts, les deux marquent, mi-temps, corners, fautes, tirs…',
-            "• Coupons cote 2+, 5+ et 10+ : composés uniquement avec les événements de la Sélection.",
-            '• Touche un événement pour voir « Pourquoi ce choix » : forme, classement, moyennes récentes.',
-            "• ≈ devant une cote : cote estimée par KOUNADIA, vérifie-la chez ton bookmaker.",
-            '• Chaque rubrique a son historique sur 14 jours.',
+          DocSection('Coups sûrs', Icons.verified_rounded, [
+            "Les paris du jour les plus sûrs, sur d'autres matchs que ceux des coupons : un pari par match, de types variés.",
+            "• Un pari n'entre dans les Coups sûrs que si KOUNADIA et PrimaTips sont d'accord. Si nos analystes Expert l'ont aussi choisi, c'est indiqué.",
+            '• Touche ☰ pour choisir une catégorie : double chance, victoire, buts, les deux marquent, mi-temps, corners, fautes, tirs, tirs cadrés, coupons cote 2+, 5+ et 10+.',
+            '• Une catégorie affiche les paris à 70 % de chance ou plus. Leur nombre change chaque jour selon les matchs.',
+            '• Touche ☆ pour suivre un pari dans « Mes favoris ».',
+            '• Touche un match pour voir « Pourquoi ce choix », avec les chiffres du match.',
+            '• Pour les corners, fautes et tirs, la carte affiche le nombre de chaque équipe à la place du score.',
+            "• ≈ devant une cote : cote estimée par KOUNADIA. Vérifie la cote chez ton bookmaker.",
           ]),
           DocSection('Les codes des paris', Icons.tag_rounded, [
             '• 1 : victoire de l\'équipe à domicile · 2 : victoire de l\'équipe à l\'extérieur · X : match nul.',
             '• 1X : domicile ou nul · X2 : extérieur ou nul · 12 : pas de match nul.',
             '• +2,5 : plus de 2,5 buts (3 buts ou plus) · -2,5 : moins de 2,5 buts (2 buts ou moins).',
+          ]),
+          DocSection('Statistiques des championnats', Icons.query_stats_rounded, [
+            'Paramètres › Statistiques des championnats : moyennes de buts, corners, fautes et cartons des grands championnats européens, équipe par équipe.',
           ]),
           DocSection('Créer un coupon', Icons.confirmation_number_rounded, [
             "Choisis la cote que tu vises, le nombre de matchs et la période : KOUNADIA compose ton coupon à partir de ses analyses.",
@@ -74,7 +78,7 @@ class GuideScreen extends StatelessWidget {
         ]),
         ],
         DocSection('Premium', Icons.workspace_premium_rounded, [
-          kV2 ? 'Premium débloque les coupons VIP, la Sélection du jour, la création de coupons, les faits du jour et la forme des équipes.' : 'Premium débloque les Prédictions, Coup sûr, la création de coupons, les faits du jour et la forme des équipes.',
+          kV2 ? 'Premium débloque les coupons VIP, les Coups sûrs, la création de coupons, les faits du jour et la forme des équipes.' : 'Premium débloque les Prédictions, Coup sûr, la création de coupons, les faits du jour et la forme des équipes.',
           '• Offres : 3 jours, hebdomadaire, mensuel ou annuel (Paramètres › Mon compte).',
           '• Paiement sécurisé par Mobile Money.',
           "• L'activation est automatique dès que le paiement est validé.",

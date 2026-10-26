@@ -19,15 +19,24 @@ const API = 'https://knd-api-5bgz.onrender.com';
 
 // Pronostics et coupons
 const TIP = {
-  fr: { sure: '🎯 Coup sûr du jour', sureB: '{n} sélections bien analysées vous attendent', pro: '🔮 Pronostics du jour', proB: 'Kounadia IA et Expert : {n} matchs analysés', win: '✅ Coup sûr gagné', cw: '🎉 Coupon gagné !', cwB: '{n}/{n} matchs gagnés · cote {odd}', cl: '❌ Coupon perdu', clB: '{m} a fait échouer votre coupon' },
-  en: { sure: '🎯 Sure bet of the day', sureB: '{n} carefully analysed picks are waiting for you', pro: '🔮 Today\'s predictions', proB: 'Kounadia AI and Expert: {n} matches analysed', win: '✅ Sure bet won', cw: '🎉 Bet slip won!', cwB: '{n}/{n} matches won · odds {odd}', cl: '❌ Bet slip lost', clB: '{m} broke your bet slip' },
-  pt: { sure: '🎯 Aposta segura do dia', sureB: '{n} seleções bem analisadas esperam por si', pro: '🔮 Previsões do dia', proB: 'Kounadia IA e Expert: {n} jogos analisados', win: '✅ Aposta segura ganha', cw: '🎉 Cupom ganho!', cwB: '{n}/{n} jogos ganhos · odd {odd}', cl: '❌ Cupom perdido', clB: '{m} fez falhar o seu cupom' },
-  es: { sure: '🎯 Apuesta segura del día', sureB: '{n} selecciones bien analizadas te esperan', pro: '🔮 Pronósticos del día', proB: 'Kounadia IA y Experto: {n} partidos analizados', win: '✅ Apuesta segura ganada', cw: '🎉 ¡Cupón ganado!', cwB: '{n}/{n} partidos ganados · cuota {odd}', cl: '❌ Cupón perdido', clB: '{m} hizo fallar tu cupón' },
-  ar: { sure: '🎯 الرهان الآمن لليوم', sureB: '{n} اختيارات مدروسة بعناية بانتظارك', pro: '🔮 توقعات اليوم', proB: 'KOUNADIA AI والخبير: {n} مباراة محللة', win: '✅ ربح الرهان الآمن', cw: '🎉 ربحت القسيمة!', cwB: '{n}/{n} مباريات رابحة · الاحتمال {odd}', cl: '❌ خسرت القسيمة', clB: '{m} أفشلت قسيمتك' },
+  fr: { sure: '🎯 Coups sûrs du jour', sureB: '{n} paris bien analysés vous attendent', pro: '🎟️ Coupons du jour', proB: 'Le Single, le coupon gratuit et les coupons VIP sont prêts', win: '✅ Coup sûr gagné', cw: '🎉 Coupon gagné !', cwB: '{n}/{n} matchs gagnés · cote {odd}', cl: '❌ Coupon perdu', clB: '{m} a fait échouer votre coupon' },
+  en: { sure: '🎯 Today\'s sure bets', sureB: '{n} carefully analysed bets are waiting for you', pro: '🎟️ Today\'s slips', proB: 'The single, the free slip and the VIP slips are ready', win: '✅ Sure bet won', cw: '🎉 Bet slip won!', cwB: '{n}/{n} matches won · odds {odd}', cl: '❌ Bet slip lost', clB: '{m} broke your bet slip' },
+  pt: { sure: '🎯 Apostas seguras do dia', sureB: '{n} apostas bem analisadas esperam por si', pro: '🎟️ Cupons do dia', proB: 'O simples, o cupom grátis e os cupons VIP estão prontos', win: '✅ Aposta segura ganha', cw: '🎉 Cupom ganho!', cwB: '{n}/{n} jogos ganhos · odd {odd}', cl: '❌ Cupom perdido', clB: '{m} fez falhar o seu cupom' },
+  es: { sure: '🎯 Apuestas seguras del día', sureB: '{n} apuestas bien analizadas te esperan', pro: '🎟️ Cupones del día', proB: 'El simple, el cupón gratis y los cupones VIP están listos', win: '✅ Apuesta segura ganada', cw: '🎉 ¡Cupón ganado!', cwB: '{n}/{n} partidos ganados · cuota {odd}', cl: '❌ Cupón perdido', clB: '{m} hizo fallar tu cupón' },
+  ar: { sure: '🎯 رهانات اليوم الآمنة', sureB: '{n} رهانات مدروسة بعناية بانتظارك', pro: '🎟️ قسائم اليوم', proB: 'الرهان الفردي والقسيمة المجانية وقسائم VIP جاهزة', win: '✅ ربح الرهان الآمن', cw: '🎉 ربحت القسيمة!', cwB: '{n}/{n} مباريات رابحة · الاحتمال {odd}', cl: '❌ خسرت القسيمة', clB: '{m} أفشلت قسيمتك' },
 };
 const fill = (t, v) => t.replace(/\{(\w+)\}/g, (_, k) => (v[k] ?? ''));
 
 // Même règle que l'app (CouponEngine.evalPick).
+// Pari du moteur KOUNADIA (+1.5, BTTS oui…) → code court compris par evalPick (O15, BTS…).
+function v2Pick(mk) {
+  if (['1', 'X', '2', '1X', 'X2', '12'].includes(mk)) return mk;
+  if (mk === 'BTTS oui') return 'BTS';
+  if (mk === 'BTTS non') return 'OTS';
+  const g = /^([+-])(\d)\.(\d)$/.exec(mk);
+  return g ? (g[1] === '+' ? 'O' : 'U') + g[2] + g[3] : null;
+}
+
 function evalPick(pick, h, a) {
   switch (pick) {
     case '1': return h > a;
@@ -380,25 +389,23 @@ export class Poller {
     const today = new Date().toISOString().slice(0, 10);
     const jobs = [];
     try {
-      const vip = await this.premiumFeed('vip/vip.json');
-      const singles = Array.isArray(vip?.singles) ? vip.singles : [];
-      if (vip?.date && singles.length && st.vipDate !== vip.date) {
-        st.vipDate = vip.date;
-        st.singles = singles.map((l) => ({ id: Number(l.id), pick: String(l.pick), home: String(l.home), away: String(l.away) }));
-        st.won = [];
-        if (!first) for (const lang of LANGS) jobs.push(['tips', lang, TIP[lang].sure, fill(TIP[lang].sureB, { n: singles.length }), { t: 'sure' }, 'sure']);
-      }
-    } catch (_) {}
-    try {
-      const pr = await this.premiumFeed('pronos/today.json');
-      const isToday = (e) => {
-        const d = new Date(e?.date || '');
-        return !isNaN(d) && d.toISOString().slice(0, 10) === today;
-      };
-      const n = [...(pr?.ia || []), ...(pr?.expert || [])].filter(isToday).length;
-      if (n > 0 && st.proDate !== today) {
-        st.proDate = today;
-        if (!first) for (const lang of LANGS) jobs.push(['tips', lang, TIP[lang].pro, fill(TIP[lang].proB, { n }), { t: 'pro' }, 'pro']);
+      // Une seule source : le moteur KOUNADIA (Coupon du jour + Coups sûrs). KOUNADIA IA n'existe plus.
+      const v2 = await this.premiumFeed('v2/v2.json');
+      const t = v2?.today;
+      if (t?.day === today) {
+        const top = Array.isArray(t.selection?.top) ? t.selection.top : [];
+        if (st.dayDate !== today && t.coupons?.single) {
+          st.dayDate = today;
+          if (!first) for (const lang of LANGS) jobs.push(['tips', lang, TIP[lang].pro, TIP[lang].proB, { t: 'day' }, 'day']);
+        }
+        if (top.length && st.vipDate !== today) {
+          st.vipDate = today;
+          st.singles = top
+            .map((l) => ({ id: Number(l.pt), pick: v2Pick(String(l.mk)), home: String(l.home), away: String(l.away) }))
+            .filter((l) => Number.isFinite(l.id) && l.id > 0 && l.pick);
+          st.won = [];
+          if (!first) for (const lang of LANGS) jobs.push(['tips', lang, TIP[lang].sure, fill(TIP[lang].sureB, { n: top.length }), { t: 'sure' }, 'sure']);
+        }
       }
     } catch (_) {}
     st.init = true;

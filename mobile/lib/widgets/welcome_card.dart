@@ -101,7 +101,7 @@ class _WelcomeDialog extends StatelessWidget {
                   child: Icon(Icons.sports_soccer_rounded, color: Colors.white, size: 34),
                 ),
                 SizedBox(height: 12),
-                T(kV2 ? 'Bienvenue sur KOUNADIA V2' : 'Bienvenue sur KOUNADIA',
+                T('Bienvenue sur KOUNADIA',
                     textAlign: TextAlign.center,
                     style: TextStyle(color: Colors.white, fontSize: 21, fontWeight: FontWeight.w900)),
                 SizedBox(height: 6),
@@ -122,7 +122,7 @@ class _WelcomeDialog extends StatelessWidget {
                 _section('Premium, pour aller plus loin', Icons.workspace_premium_rounded, Color(0xFFD4A017), [
                   if (kV2) ...[
                     _point('Coupons VIP', 'trois coupons du jour à cote 2, 3 et 5.'),
-                    _point('Sélection du jour', 'les événements les plus sûrs, triés par catégorie.'),
+                    _point('Coups sûrs', 'les paris les plus sûrs du jour, de types variés.'),
                   ] else ...[
                     _point('Prédictions', 'Kounadia IA et nos experts, chaque jour.'),
                     _point('Coup sûr', 'les sélections du jour les mieux notées par nos analyses.'),

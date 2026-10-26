@@ -3,5 +3,5 @@
 /// La version du site (APK) n'est pas concernée : elle garde tout.
 const kPlay = String.fromEnvironment('STORE') == 'play';
 
-/// KOUNADIA V2 (Coupon du jour + Sélection du jour) : compilée avec --dart-define=EDITION=v2.
-const kV2 = String.fromEnvironment('EDITION') == 'v2';
+// Une seule application KOUNADIA : la présentation V2 (Coupon du jour, Coups sûrs) est la présentation normale.
+const kV2 = true;

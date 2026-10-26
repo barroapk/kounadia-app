@@ -21,7 +21,11 @@ class CouponEngine {
   // 1) probabilité = cotes des bookmakers sans leur marge (mieux calibrée que PrimaTips) ;
   // 2) on refuse les paris trop mal payés (probabilité × cote < 0,9) ;
   // 3) chaque pari a un « coût » = -ln(P) / ln(cote) : plus il est bas, mieux le risque est payé ;
-  // 4) recherche des combinaisons à la plus forte chance de gain dans la fourchette de cote.
+  // 4) recherche des combinaisons à la plus forte chance de gain dans la fourchette de cote ;
+  // 5) « accord » : la chance retenue est la plus prudente entre les cotes et PrimaTips
+  //    (week-end du 25/10 : 93 % de gagnés quand les deux dépassent 80 %, contre 89 % avec les cotes seules) ;
+  // 6) variété : au plus 2 fois le même pari dans un coupon.
+  static const _sameMax = 2;
   static const _vmin = 0.9;
   static const _dcCut = 0.98;
 
@@ -36,8 +40,11 @@ class CouponEngine {
     for (final m in matches) {
       if (m.status != 'upcoming' || m.date == null || m.date!.isBefore(limit)) continue;
       final ev = <(Leg, double)>[];
-      void add(String pick, double odd, double p) {
-        if (odd > 1.01 && p > 0 && p < 1) ev.add((legOf(m, pick, odd, (p * 100).round()), p));
+      // p : chance d'après les cotes (filtre de valeur) ; pt : avis PrimaTips en %, s'il existe.
+      void add(String pick, double odd, double p, [int? pt]) {
+        if (!(odd > 1.01 && p > 0 && p < 1)) return;
+        final shown = pt != null && pt > 0 && pt < 100 && pt / 100 < p ? pt / 100 : p;
+        ev.add((legOf(m, pick, odd, (shown * 100).round()), p));
       }
 
       final o = m.odds;
@@ -52,15 +59,17 @@ class CouponEngine {
           return (_dcCut / (inv[i] + inv[j]) * 100).round() / 100;
         }
 
+        final pp = m.probs != null && m.probs!.length == 3 ? m.probs! : null;
+        int? pt(int i, [int? j]) => pp == null ? null : pp[i] + (j == null ? 0 : pp[j]);
         if (c.win) {
-          add('1', o[0], q[0]);
-          add('2', o[2], q[2]);
+          add('1', o[0], q[0], pt(0));
+          add('2', o[2], q[2], pt(2));
         }
-        if (c.draw) add('X', o[1], q[1]);
+        if (c.draw) add('X', o[1], q[1], pt(1));
         if (c.dc) {
-          add('1X', dcOdd(0, 1, '1X'), q[0] + q[1]);
-          add('X2', dcOdd(1, 2, 'X2'), q[1] + q[2]);
-          add('12', dcOdd(0, 2, '12'), q[0] + q[2]);
+          add('1X', dcOdd(0, 1, '1X'), q[0] + q[1], pt(0, 1));
+          add('X2', dcOdd(1, 2, 'X2'), q[1] + q[2], pt(1, 2));
+          add('12', dcOdd(0, 2, '12'), q[0] + q[2], pt(0, 2));
         }
       }
       // Buts et « les deux marquent » : même règle, probabilité tirée des deux cotes.
@@ -69,8 +78,9 @@ class CouponEngine {
         final a = x.$1[0], b = x.$1[1];
         if (a <= 1.01 || b <= 1.01) return;
         final qa = (1 / a) / (1 / a + 1 / b);
-        add(yes, a, qa);
-        add(no, b, 1 - qa);
+        final py = x.$2.isNotEmpty ? x.$2[0] : null;
+        add(yes, a, qa, py);
+        add(no, b, 1 - qa, py == null ? null : 100 - py);
       }
 
       final mk = markets[m.id];
@@ -128,6 +138,7 @@ class CouponEngine {
         for (var i = st.last + 1; i < top.length; i++) {
           final l = top[i];
           if (st.legs.any((x) => x.matchId == l.matchId)) continue;
+          if (st.legs.where((x) => x.pick == l.pick).length >= _sameMax) continue;
           final total = st.total * l.odd;
           if (total > c.totalMax) continue;
           final ns = _State([...st.legs, l], total, st.lp + log(l.prob / 100), i);

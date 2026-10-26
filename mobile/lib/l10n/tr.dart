@@ -24,6 +24,18 @@ final _rules = <(RegExp, Map<String, String>)>[
   (RegExp(r'^Prédit (.+)$'), {'en': 'Predicted {1}', 'pt': 'Previsto {1}', 'es': 'Previsto {1}', 'ar': 'المتوقع {1}'}),
   (RegExp(r'^Bonjour (.+)$'), {'en': 'Hello {1}', 'pt': 'Olá {1}', 'es': 'Hola {1}', 'ar': 'مرحبًا {1}'}),
   (RegExp(r'^Aucun match trouvé pour « (.+) »\.$'), {'en': 'No match found for “{1}”.', 'pt': 'Nenhum jogo encontrado para “{1}”.', 'es': 'Ningún partido encontrado para “{1}”.', 'ar': 'لم يتم العثور على مباراة لـ «{1}».'}),
+  (RegExp(r'^Plus de ([\d,]+) buts$'), {'en': 'Over {1} goals', 'pt': 'Mais de {1} gols', 'es': 'Más de {1} goles', 'ar': 'أكثر من {1} هدف'}),
+  (RegExp(r'^Moins de ([\d,]+) buts$'), {'en': 'Under {1} goals', 'pt': 'Menos de {1} gols', 'es': 'Menos de {1} goles', 'ar': 'أقل من {1} هدف'}),
+  (RegExp(r'^Plus de ([\d,]+) corners$'), {'en': 'Over {1} corners', 'pt': 'Mais de {1} escanteios', 'es': 'Más de {1} córners', 'ar': 'أكثر من {1} ركنية'}),
+  (RegExp(r'^Moins de ([\d,]+) corners$'), {'en': 'Under {1} corners', 'pt': 'Menos de {1} escanteios', 'es': 'Menos de {1} córners', 'ar': 'أقل من {1} ركنية'}),
+  (RegExp(r'^Plus de ([\d,]+) fautes$'), {'en': 'Over {1} fouls', 'pt': 'Mais de {1} faltas', 'es': 'Más de {1} faltas', 'ar': 'أكثر من {1} خطأ'}),
+  (RegExp(r'^Moins de ([\d,]+) fautes$'), {'en': 'Under {1} fouls', 'pt': 'Menos de {1} faltas', 'es': 'Menos de {1} faltas', 'ar': 'أقل من {1} خطأ'}),
+  (RegExp(r'^Plus de ([\d,]+) tirs cadrés$'), {'en': 'Over {1} shots on target', 'pt': 'Mais de {1} chutes no gol', 'es': 'Más de {1} tiros a puerta', 'ar': 'أكثر من {1} تسديدة على المرمى'}),
+  (RegExp(r'^Moins de ([\d,]+) tirs cadrés$'), {'en': 'Under {1} shots on target', 'pt': 'Menos de {1} chutes no gol', 'es': 'Menos de {1} tiros a puerta', 'ar': 'أقل من {1} تسديدة على المرمى'}),
+  (RegExp(r'^Plus de ([\d,]+) tirs$'), {'en': 'Over {1} shots', 'pt': 'Mais de {1} finalizações', 'es': 'Más de {1} tiros', 'ar': 'أكثر من {1} تسديدة'}),
+  (RegExp(r'^Moins de ([\d,]+) tirs$'), {'en': 'Under {1} shots', 'pt': 'Menos de {1} finalizações', 'es': 'Menos de {1} tiros', 'ar': 'أقل من {1} تسديدة'}),
+  (RegExp(r'^(.+) marque 2 buts ou plus$'), {'en': '{1} scores 2+ goals', 'pt': '{1} marca 2 gols ou mais', 'es': '{1} marca 2 goles o más', 'ar': '{1} يسجل هدفين أو أكثر'}),
+  (RegExp(r'^(.+) marque$'), {'en': '{1} to score', 'pt': '{1} marca', 'es': '{1} marca', 'ar': '{1} يسجل'}),
   (RegExp(r'^Championnat · (.+)$'), {'en': 'League · {1}', 'pt': 'Campeonato · {1}', 'es': 'Liga · {1}', 'ar': 'البطولة · {1}'}),
 ];
 

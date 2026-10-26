@@ -1,4 +1,5 @@
 import '../config/store.dart';
+import 'v2/leagues_stats_screen.dart';
 import 'package:flutter/material.dart';
 import 'package:share_plus/share_plus.dart';
 import 'package:url_launcher/url_launcher.dart';
@@ -228,8 +229,7 @@ class SettingsScreen extends StatelessWidget {
           kDividers([
             _tile(Icons.star_rounded, K.amber, 'Mes championnats', 'Tes favoris en premier dans Matchs',
                 () => _open(context, FavLeaguesScreen())),
-            // V2 (essai) : les notifications restent dans l'application KOUNADIA.
-            if (!kV2) ValueListenableBuilder<bool>(
+            ValueListenableBuilder<bool>(
               valueListenable: Notif.enabled,
               builder: (_, on, __) => _tile(Icons.notifications_active_rounded, K.red, 'Notifications en direct',
                   'Buts et résultats de tes favoris et coupons', () => Notif.setEnabled(!on),
@@ -237,6 +237,9 @@ class SettingsScreen extends StatelessWidget {
             ),
             _tile(Icons.leaderboard_rounded, K.indigoText, 'Classements', 'Tous les championnats du monde',
                 () => _open(context, TablesScreen())),
+            if (kV2)
+              _tile(Icons.query_stats_rounded, K.green, 'Statistiques des championnats', 'Buts, corners, fautes et cartons par équipe',
+                  () => _open(context, LeaguesStatsScreen())),
             _tile(Icons.lightbulb_rounded, K.amber, 'Faits du jour', 'Séries et chiffres clés des matchs',
                 () => _open(context, PremiumGate(
                     standalone: true,

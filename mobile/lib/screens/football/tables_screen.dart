@@ -1,3 +1,4 @@
+import '../../widgets/k_err.dart';
 import 'package:flutter/material.dart';
 import '../../services/primatips_service.dart';
 import '../../widgets/forecast_card.dart' show K, kMessage;
@@ -48,7 +49,7 @@ class _TablesScreenState extends State<TablesScreen> {
             builder: (context, snap) {
               if (snap.connectionState != ConnectionState.done) return kLoader();
               if (snap.hasError) {
-                return kMessage(snap.error.toString(),
+                return kMessage(kErr(snap.error),
                     onRetry: () => setState(() => _f = PrimaTipsService.countries()));
               }
               final children = <Widget>[];
@@ -116,7 +117,7 @@ class _CountryTablesScreenState extends State<CountryTablesScreen> {
         builder: (context, snap) {
           if (snap.connectionState != ConnectionState.done) return kLoader();
           if (snap.hasError) {
-            return kMessage(snap.error.toString(),
+            return kMessage(kErr(snap.error),
                 onRetry: () => setState(() => _f = PrimaTipsService.tables(widget.link.path)));
           }
           final t = snap.data!;

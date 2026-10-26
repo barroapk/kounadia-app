@@ -4,6 +4,7 @@ import 'dart:io';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:kounadia/models/v2.dart';
 import 'package:kounadia/services/v2_service.dart';
+import 'package:kounadia/services/v2_live.dart';
 
 Map<String, dynamic> _load(String f) =>
     Map<String, dynamic>.from(jsonDecode(File('test/fixtures/$f').readAsStringSync()) as Map);
@@ -51,8 +52,8 @@ void main() {
     for (final l in [...s.top, ...s.byFam]) {
       expect(ids.contains(l.id), false, reason: l.id);
     }
-    // Coupons de la Sélection : seulement des événements affichés dans la Sélection.
-    final shown = {for (final l in [...s.byFam, ...s.fav]) '${l.id}|${l.mk}'};
+    // Coupons de la Sélection : seulement des événements affichés (Coups sûrs ou catégories).
+    final shown = {for (final l in [...s.top, ...s.byFam, ...s.fav]) '${l.id}|${l.mk}'};
     for (final c in s.coupons.values) {
       for (final l in c?.legs ?? const <V2Leg>[]) {
         expect(shown.contains('${l.id}|${l.mk}'), true, reason: l.txt);
@@ -100,5 +101,41 @@ void main() {
     expect(c.legs[0].code, '1X');
     expect(c.legs[1].code, '');
     expect(c.legs[0].ptId, 1);
+  });
+
+  test('statistiques ESPN : corners, fautes, tirs, mi-temps', () {
+    final s = V2Live.parseSummary({
+      'header': {
+        'competitions': [
+          {
+            'status': {'displayClock': "67'", 'type': {'state': 'in', 'completed': false}},
+            'competitors': [
+              {'homeAway': 'home', 'id': '1', 'team': {'id': '1'}, 'score': '2', 'linescores': [{'displayValue': '1'}]},
+              {'homeAway': 'away', 'id': '2', 'team': {'id': '2'}, 'score': '0', 'linescores': [{'displayValue': '0'}]},
+            ],
+          }
+        ]
+      },
+      'boxscore': {
+        'teams': [
+          {'team': {'id': '1'}, 'statistics': [{'name': 'wonCorners', 'displayValue': '6'}, {'name': 'foulsCommitted', 'displayValue': '9'}]},
+          {'team': {'id': '2'}, 'statistics': [{'name': 'wonCorners', 'displayValue': '2'}, {'name': 'shotsOnTarget', 'displayValue': '3'}]},
+        ]
+      },
+    })!;
+    expect(s.state, 'in');
+    expect(s.done, false);
+    expect(s.hg, 2);
+    expect(s.h1, [1, 0]);
+    expect(s.st['c'], [6, 2]);
+    expect(s.st['f'], [9, null]);
+    expect(s.st['t'], [null, 3]);
+    final l = V2Leg.fromJson({'id': 'fd:x', 'mk': 'Corners +8.5', 'txt': 'Plus de 8,5 corners', 'fam': 'stc', 'p': 80, 'odd': 1.2,
+      'st': {'c': [6, 2]}, 'pt': 7, 'espn': {'lg': 'fra.1', 'id': '9'}});
+    expect(l.statPair, [6, 2]);
+    expect(l.statName, 'Corners');
+    expect(l.ptId, 7);
+    expect(l.espnLg, 'fra.1');
+    expect(l.code, '');
   });
 }

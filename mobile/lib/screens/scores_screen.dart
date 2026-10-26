@@ -1,3 +1,4 @@
+import '../widgets/k_err.dart';
 import 'dart:async';
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
@@ -17,6 +18,7 @@ import '../services/notif.dart';
 import '../services/live_socket.dart';
 import '../services/primatips_service.dart' show frLeague;
 import '../l10n/tr.dart';
+import '../config/store.dart';
 
 class ScoresScreen extends StatefulWidget {
   ScoresScreen({super.key});
@@ -152,7 +154,7 @@ class _ScoresScreenState extends State<ScoresScreen> with WidgetsBindingObserver
       if (!mounted) return;
       setState(() {
         _loading = false;
-        if (_days.isEmpty) _error = e.toString();
+        if (_days.isEmpty) _error = kErr(e);
       });
     }
   }
@@ -621,20 +623,28 @@ class _ScoresScreenState extends State<ScoresScreen> with WidgetsBindingObserver
             ),
             SizedBox(width: 10),
             SizedBox(
-              width: 72,
+              width: kV2 ? 78 : 72,
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.end,
                 children: [
+                  if (kV2 && m.tipShort.isNotEmpty)
+                    // V2 : le code du pari bien visible (1, X2…), puis la confiance.
+                    Container(
+                      padding: EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+                      decoration: BoxDecoration(color: color.withAlpha(40), borderRadius: BorderRadius.circular(7)),
+                      child: T(m.tipShort, style: TextStyle(color: color, fontSize: 16, fontWeight: FontWeight.w900)),
+                    ),
                   if (prob != null)
                     T('$prob %',
-                        style: TextStyle(color: color, fontSize: 13, fontWeight: FontWeight.w800)),
-                  T(m.tipShort,
-                      maxLines: 1,
-                      overflow: TextOverflow.ellipsis,
-                      style: TextStyle(color: color, fontSize: 11, fontWeight: FontWeight.w600)),
+                        style: TextStyle(color: color, fontSize: kV2 ? 14.5 : 13, fontWeight: FontWeight.w800)),
+                  if (!kV2)
+                    T(m.tipShort,
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                        style: TextStyle(color: color, fontSize: 11, fontWeight: FontWeight.w600)),
                   if (m.tipOdd != null)
                     T('@${m.tipOdd!.toStringAsFixed(2)}',
-                        style: TextStyle(color: K.muted, fontSize: 10.5)),
+                        style: TextStyle(color: K.muted, fontSize: kV2 ? 12 : 10.5)),
                 ],
               ),
             ),

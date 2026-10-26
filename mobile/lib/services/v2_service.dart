@@ -29,6 +29,8 @@ class V2Service {
     return (prefs.getString(key), true);
   }
 
+  /// Dernières données lues (fiche d'un match : « Choix KOUNADIA »).
+  static V2Data? last;
   static Future<V2Data>? _pending;
   static DateTime? _at;
   static bool? _atPremium;
@@ -52,7 +54,7 @@ class V2Service {
     var (text, off) = await _get(prem);
     if (text == null && prem) (text, off) = await _get(false);
     if (text == null) {
-      throw FriendlyError('Les coupons sont momentanément indisponibles. Vérifie ta connexion puis réessaie.');
+      throw FriendlyError('Les données ne sont pas disponibles pour le moment. Tire vers le bas pour réessayer.');
     }
     final j = Map<String, dynamic>.from(jsonDecode(text) as Map);
     final today = j['today'] is Map ? V2Day.fromJson(Map<String, dynamic>.from(j['today'] as Map)) : null;
@@ -67,7 +69,7 @@ class V2Service {
     // Direct : les matchs PrimaTips du jour passent en « en cours » puis gagné/perdu sans attendre le robot.
     if (today != null) await _live(today);
     final at = DateTime.tryParse((j['updatedAt'] ?? '').toString())?.toLocal();
-    return V2Data(today, hist, stats, off, prem && today?.selection?.locked == false, at);
+    return last = V2Data(today, hist, stats, off, prem && today?.selection?.locked == false, at);
   }
 
   static Future<void> _live(V2Day d) async {
@@ -133,5 +135,22 @@ class V2Service {
       return g[1] == '+' ? t > line : t < line;
     }
     return null; // mi-temps, corners, fautes, tirs : réglés par le robot (statistiques officielles)
+  }
+
+  /// Statistiques des championnats (saison en cours) : public, gardé sur le téléphone.
+  static Future<List<Map<String, dynamic>>> leagues() async {
+    final prefs = await SharedPreferences.getInstance();
+    String? body;
+    try {
+      final r = await KFeed.get('v2/ligues.json?v=${DateTime.now().millisecondsSinceEpoch ~/ 3600000}').timeout(Duration(seconds: 30));
+      if (r.statusCode == 200) {
+        body = utf8.decode(r.bodyBytes);
+        await prefs.setString('kv2_ligues', body);
+      }
+    } catch (_) {}
+    body ??= prefs.getString('kv2_ligues');
+    if (body == null) throw FriendlyError('Les données ne sont pas disponibles pour le moment. Tire vers le bas pour réessayer.');
+    final j = jsonDecode(body) as Map;
+    return ((j['leagues'] as List?) ?? const []).map((e) => Map<String, dynamic>.from(e as Map)).toList();
   }
 }

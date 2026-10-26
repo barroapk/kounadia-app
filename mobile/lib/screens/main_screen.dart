@@ -83,7 +83,7 @@ class _MainScreenState extends State<MainScreen> with WidgetsBindingObserver {
     final auth = await maybeShowSetup(context);
     if (!mounted) return;
     await maybeShowWelcome(context);
-    if (!kV2) Notif.start(); // V2 (essai) : les notifications restent dans KOUNADIA
+    Notif.start();
     if (auth != null && mounted) {
       _ready = true;
       Navigator.push(context, MaterialPageRoute(builder: (_) => AccountScreen(signup: auth)));
@@ -114,13 +114,14 @@ class _MainScreenState extends State<MainScreen> with WidgetsBindingObserver {
     ScoresScreen(),
     CouponDayScreen(),
     PremiumGate(
-        title: "Sélection du jour",
-        pitch: "Les événements du jour choisis par la confiance KOUNADIA, triés par catégorie, avec les coupons cote 2+, 5+ et 10+.",
+        title: "Coups sûrs",
+        pitch: "Les paris du jour les plus sûrs : KOUNADIA, PrimaTips et nos analystes Expert doivent être d'accord.",
         perks: [
+          "Coups sûrs : un pari par match, de types variés",
           "Double chance, buts, mi-temps, corners, fautes, tirs…",
-          "Confiance KOUNADIA et « pourquoi ce choix » pour chaque événement",
-          "Coupons cote 2+, 5+ et 10+ composés avec la sélection",
-          "Historique intégral sur 14 jours, gagnés et perdus",
+          "Pourquoi ce choix, en bref, pour chaque pari",
+          "Coupons cote 2+, 5+ et 10+",
+          "Historique de la semaine : gagnés et perdus",
         ],
         icon: Icons.checklist_rounded,
         child: SelectionScreen()),
@@ -133,7 +134,7 @@ class _MainScreenState extends State<MainScreen> with WidgetsBindingObserver {
   ];
   static List<Widget> get _screens => kV2 ? _screensV2 : _screensV1;
   static final _titles = kV2
-      ? ['Matchs', 'Coupon du jour', 'Sélection du jour', 'Créer coupon']
+      ? ['Matchs', 'Coupon du jour', 'Coups sûrs', 'Créer coupon']
       : ['Matchs', 'Prédictions', 'Créer coupon', 'Historique'];
 
   void _push(Widget w) => Navigator.push(context, MaterialPageRoute(builder: (_) => w));
@@ -221,7 +222,7 @@ class _MainScreenState extends State<MainScreen> with WidgetsBindingObserver {
             child: Icon(Icons.sports_soccer_rounded, color: Colors.white, size: 19),
           ),
           SizedBox(width: 10),
-          T(kV2 ? 'KOUNADIA V2' : 'KOUNADIA',
+          T('KOUNADIA',
               style: TextStyle(color: K.text, fontSize: 19, fontWeight: FontWeight.w900, letterSpacing: 1)),
           SizedBox(width: 8),
           Flexible(
@@ -307,7 +308,7 @@ class _MainScreenState extends State<MainScreen> with WidgetsBindingObserver {
                     NavigationDestination(
                         icon: Icon(Icons.today_outlined), selectedIcon: Icon(Icons.today), label: tr('Coupon du jour')),
                     NavigationDestination(
-                        icon: Icon(Icons.checklist_outlined), selectedIcon: Icon(Icons.checklist), label: tr('Sélection')),
+                        icon: Icon(Icons.checklist_outlined), selectedIcon: Icon(Icons.checklist), label: tr('Coups sûrs')),
                     NavigationDestination(
                         icon: Icon(Icons.confirmation_number_outlined), selectedIcon: Icon(Icons.confirmation_number), label: tr('Créer coupon')),
                   ]

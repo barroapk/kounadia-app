@@ -36,9 +36,13 @@ jobs:
         working-directory: mobile
         run: flutter pub get
 
-      - name: Tests du moteur de coupons
+      - name: Vérifier le code
         working-directory: mobile
-        run: flutter test test/coupon_engine_test.dart test/tip_eval_test.dart
+        run: flutter analyze --no-fatal-infos --no-fatal-warnings lib
+
+      - name: Tests (coupons, pronostics, Coupon du jour et Coups sûrs)
+        working-directory: mobile
+        run: flutter test test/coupon_engine_test.dart test/tip_eval_test.dart test/v2_test.dart
 
       - name: Clé de signature
         env:
@@ -53,7 +57,7 @@ jobs:
           TYPE: ${{ inputs.type }}
         run: |
           # Part de la dernière version publiée (ex. v1.0.10) et monte selon le type choisi.
-          LAST=$(gh release list -R "${{ github.repository }}" --limit 1 --exclude-drafts --json tagName -q '.[0].tagName')
+          LAST=$(gh release list -R "${{ github.repository }}" --limit 1 --exclude-drafts --exclude-pre-releases --json tagName -q '.[0].tagName')
           X=1; Y=0; Z=0
           if [[ "$LAST" =~ ^v?([0-9]+)\.([0-9]+)\.([0-9]+)$ ]]; then
             X=${BASH_REMATCH[1]}; Y=${BASH_REMATCH[2]}; Z=${BASH_REMATCH[3]}

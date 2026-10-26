@@ -146,18 +146,22 @@ export function newLegs(m, c, tune) {
     return Math.round((tune.dcCut / (inv[i] + inv[j])) * 100) / 100;
   };
   const ev = [];
-  const add = (pick, odd, P) => {
-    if (odd > 1.01 && P > 0 && P < 1) ev.push({ id: m.id, pick, odd, prob: Math.round(P * 100), P });
+  // « Accord » : chance affichée = la plus prudente entre les cotes (P) et PrimaTips (pt, en %).
+  const add = (pick, odd, P, pt) => {
+    if (!(odd > 1.01 && P > 0 && P < 1)) return;
+    const shown = Number.isFinite(pt) && pt > 0 && pt < 100 && pt / 100 < P ? pt / 100 : P;
+    ev.push({ id: m.id, pick, odd, prob: Math.round(shown * 100), P });
   };
+  const pt = (i, j) => (okProbs(p) ? p[i] + (j == null ? 0 : p[j]) : undefined);
   if (c.win) {
-    add('1', o[0], q[0]);
-    add('2', o[2], q[2]);
+    add('1', o[0], q[0], pt(0));
+    add('2', o[2], q[2], pt(2));
   }
-  if (c.draw) add('X', o[1], q[1]);
+  if (c.draw) add('X', o[1], q[1], pt(1));
   if (c.dc) {
-    add('1X', dcOdd(0, 1, '1X'), q[0] + q[1]);
-    add('X2', dcOdd(1, 2, 'X2'), q[1] + q[2]);
-    add('12', dcOdd(0, 2, '12'), q[0] + q[2]);
+    add('1X', dcOdd(0, 1, '1X'), q[0] + q[1], pt(0, 1));
+    add('X2', dcOdd(1, 2, 'X2'), q[1] + q[2], pt(1, 2));
+    add('12', dcOdd(0, 2, '12'), q[0] + q[2], pt(0, 2));
   }
   return ev
     .filter((l) => l.odd >= c.oddMin && l.odd <= c.oddMax && l.prob >= c.probMin && l.prob <= c.probMax && l.P * l.odd >= tune.vmin)
@@ -176,6 +180,7 @@ export function newCandidates(matches, c, tune = DEFAULT_TUNE) {
 
 const sigOf = (legs) => legs.map((l) => `${l.id}:${l.pick}`).sort().join('|');
 
+const SAME_MAX = 2;
 export function newSearch(cands, c, exclude = new Set(), max = 5) {
   if (cands.length < c.countMin) return [];
   const pool = [];
@@ -191,6 +196,7 @@ export function newSearch(cands, c, exclude = new Set(), max = 5) {
       for (let i = st.last + 1; i < top.length; i++) {
         const l = top[i];
         if (st.legs.some((x) => x.id === l.id)) continue;
+        if (st.legs.filter((x) => x.pick === l.pick).length >= SAME_MAX) continue; // variété
         const total = st.total * l.odd;
         if (total > c.totalMax) continue;
         const ns = { legs: [...st.legs, l], total, lp: st.lp + Math.log(l.prob / 100), last: i };
