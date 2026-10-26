@@ -276,11 +276,54 @@ class _SelectionScreenState extends State<SelectionScreen> {
           child: T(f.title, maxLines: 1, overflow: TextOverflow.ellipsis, style: TextStyle(color: K.text, fontSize: 16, fontWeight: FontWeight.w900)),
         ),
       ]),
+      SizedBox(height: 10),
+      _chips(s),
       SizedBox(height: 12),
       ...body,
       KndBanner(),
     ]);
   }
+
+  /// Les catégories toujours visibles sous le titre (en plus du menu ☰).
+  Widget _chips(V2Selection? s) {
+    final ready = s != null && !s.locked;
+    final list = [for (final f in kSelFilters) if (f.key == _sel.key || !ready || _count(s!, f) > 0) f];
+    return SizedBox(
+      height: 38,
+      child: ListView(scrollDirection: Axis.horizontal, children: [
+        for (final f in list)
+          Padding(
+            padding: EdgeInsetsDirectional.only(end: 8),
+            child: Material(
+              color: f.key == _sel.key ? K.indigo : K.card,
+              shape: StadiumBorder(side: BorderSide(color: f.key == _sel.key ? K.indigo : K.border)),
+              child: InkWell(
+                customBorder: StadiumBorder(),
+                onTap: () => setState(() => _sel = f),
+                child: Padding(
+                  padding: EdgeInsets.symmetric(horizontal: 12),
+                  child: Row(mainAxisSize: MainAxisSize.min, children: [
+                    Icon(f.icon, size: 16, color: f.key == _sel.key ? Colors.white : K.muted),
+                    SizedBox(width: 6),
+                    T(_short(f), style: TextStyle(color: f.key == _sel.key ? Colors.white : K.text, fontSize: 13, fontWeight: FontWeight.w800)),
+                    if (ready && f.coupon == null) ...[
+                      SizedBox(width: 6),
+                      Text('${_count(s!, f)}', style: TextStyle(color: f.key == _sel.key ? Color(0xDDFFFFFF) : K.muted, fontSize: 12, fontWeight: FontWeight.w700)),
+                    ],
+                  ]),
+                ),
+              ),
+            ),
+          ),
+      ]),
+    );
+  }
+
+  /// Nom court d'une catégorie pour les pastilles.
+  String _short(SelFilter f) => const {
+        'dc': 'Double chance', 'res': 'Victoire', 'buts': 'Buts', 'btts': 'Les deux marquent', 'equipe': "Buts d'une équipe",
+        'mt': 'Mi-temps', 'c2': 'Cote 2+', 'c5': 'Cote 5+', 'c10': 'Cote 10+',
+      }[f.key] ?? f.title;
 
   Widget _favorites(V2Data d, V2Selection? s) {
     final all = <String, V2Leg>{for (final l in [...?s?.top, ...?s?.byFam]) l.key: l};

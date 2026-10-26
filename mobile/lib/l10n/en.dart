@@ -780,4 +780,8 @@ const Map<String, String> kEn = {
   '✓ Expert': '✓ Expert',
   'Nos analystes Expert ont aussi choisi ce pari.': 'Our Expert analysts also picked this bet.',
   'PrimaTips est d\'accord : # % de chances.': 'PrimaTips agrees: # % chance.',
+  'Double chance': 'Double chance',
+  'Cote 2+': 'Odds 2+',
+  'Cote 5+': 'Odds 5+',
+  'Cote 10+': 'Odds 10+',
 };

@@ -765,4 +765,7 @@ const Map<String, String> kAr = {
   '✓ Expert': '✓ خبير',
   'Nos analystes Expert ont aussi choisi ce pari.': 'اختار محللونا الخبراء هذا الرهان أيضًا.',
   'PrimaTips est d\'accord : # % de chances.': 'PrimaTips يوافق: فرصة # %.',
+  'Cote 2+': 'احتمال +2',
+  'Cote 5+': 'احتمال +5',
+  'Cote 10+': 'احتمال +10',
 };

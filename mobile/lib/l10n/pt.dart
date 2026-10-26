@@ -765,4 +765,7 @@ const Map<String, String> kPt = {
   '✓ Expert': '✓ Expert',
   'Nos analystes Expert ont aussi choisi ce pari.': 'Os nossos analistas Expert também escolheram esta aposta.',
   'PrimaTips est d\'accord : # % de chances.': 'A PrimaTips concorda: # % de chance.',
+  'Cote 2+': 'Odd 2+',
+  'Cote 5+': 'Odd 5+',
+  'Cote 10+': 'Odd 10+',
 };
