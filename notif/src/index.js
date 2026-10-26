@@ -541,9 +541,13 @@ export class Poller {
 
   /** File d'attente unique des notifications : 0 = buts, 1 = autres événements du direct, 2 = pronostics/coupons. */
   async enqueue(msgs, prio) {
-    if (!msgs.length) return;
+    await this.enqueueItems(msgs.map((m) => ({ p: prio, m })));
+  }
+
+  async enqueueItems(items) {
+    if (!items.length) return;
     const q = (await this.state.storage.get('outq')) || [];
-    for (const m of msgs) q.push({ p: prio, m });
+    q.push(...items);
     q.sort((a, b) => a.p - b.p); // tri stable : l'ordre d'arrivée est conservé
     await this.state.storage.put('outq', q.slice(0, OUTQ_MAX));
   }
@@ -597,9 +601,10 @@ export class Poller {
   async buildLive(e, n) {
     const h = leagueHash(n[2]);
     const msgs = [];
-    // Anciennes versions de l'app (abonnées aux sujets Firebase « _l_ / _m_ »).
+    // Anciennes versions de l'app (sujets Firebase « _l_ / _m_ ») : envoyées APRÈS les téléphones à jour.
+    const old = [];
     for (const lang of LANGS) {
-      msgs.push(this.liveMsg({ condition: `'${lang}_l_${h}' in topics || '${lang}_m_${e.id}' in topics` }, lang, e, n));
+      old.push(this.liveMsg({ condition: `'${lang}_l_${h}' in topics || '${lang}_m_${e.id}' in topics` }, lang, e, n));
     }
     // Nouvelle version : envoi direct à chaque téléphone (le plus rapide).
     const topics = LANGS.flatMap((L) => [`${L}_l2_${h}`, `${L}_m2_${e.id}`]);
@@ -616,7 +621,7 @@ export class Poller {
         if (d?.token) msgs.push(this.liveMsg({ token: d.token }, d.lang || 'en', e, n));
       }
     }
-    return msgs;
+    return { msgs, old };
   }
 
   async fcm(token, message) {
@@ -736,11 +741,18 @@ export class Poller {
     if (events.length) {
       if (events.some((e) => !this.names?.[e.id])) await this.loadNames(true);
       events.sort((a, b) => (a.t === 'goal' ? 0 : 1) - (b.t === 'goal' ? 0 : 1));
+      const built = [];
       for (const e of events) {
         const n = this.names?.[e.id];
         if (!n) continue; // match inconnu du flux : pas de nom à afficher
-        await this.enqueue(await this.buildLive(e, n), e.t === 'goal' ? 0 : 1);
+        const b = await this.buildLive(e, n);
+        built.push([b, e.t === 'goal' ? 0 : 1]);
       }
+      // D'abord tous les téléphones à jour (buts puis autres), ensuite les anciennes versions.
+      const items = [];
+      for (const [b, p] of built) for (const m of b.msgs) items.push({ p, m });
+      for (const [b, p] of built) for (const m of b.old) items.push({ p: p + 0.5, m });
+      await this.enqueueItems(items); // une seule écriture pour tout le passage
     }
     if (hadQueue) await this.state.storage.put('queue', []);
     const { sent, left } = await this.drain();
