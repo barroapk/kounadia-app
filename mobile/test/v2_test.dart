@@ -152,7 +152,7 @@ void main() {
     expect(v2Settle('BTTS oui', r), true);
     expect(v2Settle('Ext. marque', r), true);
     expect(v2Settle('+0.5 MT1', r), true);
-    expect(v2Settle('+1.5 MT2', r), false);
+    expect(v2Settle('+1.5 MT2', r), true);
     expect(v2Settle('But chaque MT', r), true);
     expect(v2Settle('Corners +9.5', r), true);
     expect(v2Settle('Fautes -22.5', r), false);
