@@ -69,7 +69,11 @@ class V2Service {
     // Direct : les matchs PrimaTips du jour passent en « en cours » puis gagné/perdu sans attendre le robot.
     if (today != null) await _live(today);
     final at = DateTime.tryParse((j['updatedAt'] ?? '').toString())?.toLocal();
-    return last = V2Data(today, hist, stats, off, prem && today?.selection?.locked == false, at);
+    final res = <String, V2Res>{
+      for (final e in ((j['res'] as Map?) ?? const {}).entries)
+        if (e.value is Map) e.key.toString(): V2Res.fromJson(Map<String, dynamic>.from(e.value as Map)),
+    };
+    return last = V2Data(today, hist, stats, off, prem && today?.selection?.locked == false, at, res: res);
   }
 
   static Future<void> _live(V2Day d) async {

@@ -12,6 +12,8 @@ class CouponCriteria {
   double oddMin, oddMax;
   int probMin, probMax;
   bool win, draw, dc, goals, btts;
+  /// Catégories KOUNADIA (liste « Créer coupon » du moteur) : buts d'une équipe, mi-temps, corners/fautes/tirs.
+  bool team, half, stats;
 
   CouponCriteria({
     this.period = 0,
@@ -28,6 +30,9 @@ class CouponCriteria {
     this.dc = true,
     this.goals = true,
     this.btts = true,
+    this.team = true,
+    this.half = true,
+    this.stats = false,
   });
 
   // Réglages validés par backtest (tools/coupon-lab) : cotes réalistes, peu de matchs par coupon.
@@ -48,6 +53,10 @@ class Leg {
   final int prob;
   final DateTime? date;
   String result; // pending, live, won, lost, void
+  /// Pari du moteur KOUNADIA (toutes catégories) : identifiant du match, code du pari, libellé.
+  final String? v2, mk, txt;
+  final int? pt;
+  String? score; // score connu (direct ou final)
 
   Leg({
     required this.matchId,
@@ -60,9 +69,15 @@ class Leg {
     required this.prob,
     required this.date,
     this.result = 'pending',
+    this.v2,
+    this.mk,
+    this.txt,
+    this.pt,
+    this.score,
   });
 
   String get label {
+    if (txt != null && txt!.isNotEmpty) return txt!;
     switch (pick) {
       case '1':
         return 'Victoire $home';
@@ -97,6 +112,11 @@ class Leg {
         'prob': prob,
         'date': date?.toIso8601String(),
         'result': result,
+        if (v2 != null) 'v2': v2,
+        if (mk != null) 'mk': mk,
+        if (txt != null) 'txt': txt,
+        if (pt != null) 'pt': pt,
+        if (score != null) 'score': score,
       };
 
   factory Leg.fromJson(Map<String, dynamic> j) => Leg(
@@ -110,6 +130,11 @@ class Leg {
         prob: (j['prob'] as num).toInt(),
         date: DateTime.tryParse((j['date'] ?? '').toString()),
         result: (j['result'] ?? 'pending').toString(),
+        v2: j['v2']?.toString(),
+        mk: j['mk']?.toString(),
+        txt: j['txt']?.toString(),
+        pt: (j['pt'] as num?)?.toInt(),
+        score: j['score']?.toString(),
       );
 }
 

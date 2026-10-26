@@ -161,11 +161,164 @@ class V2Selection {
 }
 
 /// Une journée : Coupon du jour + Sélection du jour.
+/// Un match de la liste « Créer coupon » (tous les bons paris du jour, toutes catégories).
+class V2PoolMatch {
+  final String id, home, away, country, league;
+  final String? flag, hl, al, espnLg, espnId;
+  final int? pt;
+  final DateTime? date;
+  /// (pari, chance %, cote, cote estimée, famille)
+  final List<(String, double, double, bool, String)> ev;
+
+  V2PoolMatch.fromJson(Map<String, dynamic> j)
+      : id = (j['id'] ?? '').toString(),
+        home = (j['home'] ?? '').toString(),
+        away = (j['away'] ?? '').toString(),
+        country = (j['country'] ?? '').toString(),
+        league = frLeague((j['league'] ?? '').toString()),
+        flag = j['flag']?.toString(),
+        hl = j['hl']?.toString(),
+        al = j['al']?.toString(),
+        espnLg = (j['espn'] as Map?)?['lg']?.toString(),
+        espnId = (j['espn'] as Map?)?['id']?.toString(),
+        pt = (j['pt'] as num?)?.toInt(),
+        date = DateTime.tryParse((j['date'] ?? '').toString())?.toLocal(),
+        ev = [
+          for (final e in ((j['ev'] as List?) ?? const []))
+            if (e is List && e.length >= 5)
+              ('${e[0]}', (e[1] as num).toDouble(), (e[2] as num).toDouble(), e[3] == 1, '${e[4]}'),
+        ];
+
+  String get leagueLabel => country.isEmpty || league.toLowerCase().startsWith(country.toLowerCase()) ? league : '$country - $league';
+}
+
+/// Résultat d'un match (score, mi-temps, statistiques) publié par le moteur.
+class V2Res {
+  final int? hg, ag;
+  final List<int>? h1;
+  final Map<String, List<int?>> st;
+  final bool done, isVoid;
+  V2Res.fromJson(Map<String, dynamic> j)
+      : hg = (j['hg'] as num?)?.toInt(),
+        ag = (j['ag'] as num?)?.toInt(),
+        h1 = (j['h1'] as List?)?.map((x) => (x as num).toInt()).toList(),
+        st = {
+          for (final e in ((j['st'] as Map?) ?? const {}).entries)
+            if (e.value is List) e.key.toString(): (e.value as List).map((x) => (x as num?)?.toInt()).toList(),
+        },
+        done = j['done'] == true,
+        isVoid = j['void'] == true;
+}
+
+/// Libellé d'un pari (mêmes textes que le moteur).
+String v2Label(String mk, String home, String away) {
+  const fixed = {
+    '12': '12 · Pas de match nul',
+    'BTTS oui': 'Les deux équipes marquent : Oui',
+    'BTTS non': 'Les deux équipes marquent : Non',
+    '+0.5 MT1': 'But en 1re mi-temps',
+    '+0.5 MT2': 'But en 2e mi-temps',
+    '+1.5 MT2': '2 buts ou plus en 2e mi-temps',
+    '-1.5 MT1': 'Moins de 2 buts en 1re mi-temps',
+    'But chaque MT': 'But dans chaque mi-temps',
+  };
+  final f = fixed[mk];
+  if (f != null) return f;
+  switch (mk) {
+    case '1':
+      return '1 · Victoire $home';
+    case '2':
+      return '2 · Victoire $away';
+    case '1X':
+      return '1X · $home ou nul';
+    case 'X2':
+      return 'X2 · $away ou nul';
+    case 'Dom. marque':
+      return '$home marque';
+    case 'Ext. marque':
+      return '$away marque';
+    case 'Dom. +1.5':
+      return '$home marque 2 buts ou plus';
+    case 'Ext. +1.5':
+      return '$away marque 2 buts ou plus';
+  }
+  final g = RegExp(r'^([+-])(\d)\.5$').firstMatch(mk);
+  if (g != null) return '${g[1] == '+' ? 'Plus' : 'Moins'} de ${g[2]},5 buts';
+  final s = RegExp(r'^(.+) ([+-])(\d+)\.5$').firstMatch(mk);
+  if (s != null) return '${s[2] == '+' ? 'Plus' : 'Moins'} de ${s[3]},5 ${s[1]!.toLowerCase()}';
+  return mk;
+}
+
+/// Règlement d'un pari avec le résultat complet (mêmes règles que le moteur). null = pas encore connu.
+bool? v2Settle(String mk, V2Res r) {
+  final hg = r.hg, ag = r.ag;
+  if (hg == null || ag == null) return null;
+  final t = hg + ag;
+  switch (mk) {
+    case '1':
+      return hg > ag;
+    case '2':
+      return ag > hg;
+    case '1X':
+      return hg >= ag;
+    case 'X2':
+      return ag >= hg;
+    case '12':
+      return hg != ag;
+    case 'BTTS oui':
+      return hg > 0 && ag > 0;
+    case 'BTTS non':
+      return hg == 0 || ag == 0;
+    case 'Dom. marque':
+      return hg > 0;
+    case 'Ext. marque':
+      return ag > 0;
+    case 'Dom. +1.5':
+      return hg > 1;
+    case 'Ext. +1.5':
+      return ag > 1;
+  }
+  final g = RegExp(r'^([+-])(\d\.5)$').firstMatch(mk);
+  if (g != null) {
+    final x = double.parse(g[2]!);
+    return g[1] == '+' ? t > x : t < x;
+  }
+  if (mk.contains('MT')) {
+    final h1 = r.h1;
+    if (h1 == null || h1.length < 2) return null;
+    final a1 = h1[0] + h1[1], a2 = t - a1;
+    switch (mk) {
+      case '+0.5 MT1':
+        return a1 > 0;
+      case '+0.5 MT2':
+        return a2 > 0;
+      case '+1.5 MT2':
+        return a2 > 1;
+      case '-1.5 MT1':
+        return a1 < 2;
+      case 'But chaque MT':
+        return a1 > 0 && a2 > 0;
+    }
+    return null;
+  }
+  final s = RegExp(r'^(.+) ([+-])(\d+\.5)$').firstMatch(mk);
+  if (s != null) {
+    final k = const {'Corners': 'c', 'Fautes': 'f', 'Tirs': 's', 'Tirs cadrés': 't'}[s[1]];
+    final v = k == null ? null : r.st[k];
+    if (v == null || v.length < 2 || v[0] == null || v[1] == null) return null;
+    final x = double.parse(s[3]!);
+    final tot = v[0]! + v[1]!;
+    return s[2] == '+' ? tot > x : tot < x;
+  }
+  return null;
+}
+
 class V2Day {
   final String day;
   final int matches;
   final Map<String, V2Coupon?> coupons;
   final V2Selection? selection;
+  final List<V2PoolMatch> pool;
 
   V2Day.fromJson(Map<String, dynamic> j)
       : day = (j['day'] ?? '').toString(),
@@ -174,7 +327,8 @@ class V2Day {
           for (final e in ((j['coupons'] as Map?) ?? const {}).entries)
             e.key.toString(): e.value == null ? null : V2Coupon.fromJson(Map<String, dynamic>.from(e.value as Map)),
         },
-        selection = j['selection'] is Map ? V2Selection.fromJson(Map<String, dynamic>.from(j['selection'] as Map)) : null;
+        selection = j['selection'] is Map ? V2Selection.fromJson(Map<String, dynamic>.from(j['selection'] as Map)) : null,
+        pool = [for (final m in ((j['pool'] as List?) ?? const [])) if (m is Map) V2PoolMatch.fromJson(Map<String, dynamic>.from(m))];
 
   Iterable<V2Leg> get allLegs sync* {
     for (final c in coupons.values) {
@@ -192,7 +346,9 @@ class V2Data {
   final Map<String, V2Stat> stats;
   final bool offline, premium;
   final DateTime? updatedAt;
-  V2Data(this.today, this.history, this.stats, this.offline, this.premium, this.updatedAt);
+  /// Résultats des matchs d'hier et d'aujourd'hui (coupons créés dans l'app).
+  final Map<String, V2Res> res;
+  V2Data(this.today, this.history, this.stats, this.offline, this.premium, this.updatedAt, {this.res = const {}});
 
   V2Stat stat(String key) => stats[key] ?? V2Stat(0, 0, null);
 }

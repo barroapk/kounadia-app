@@ -769,4 +769,5 @@ const Map<String, String> kPt = {
   'Cote 5+': 'Odd 5+',
   'Cote 10+': 'Odd 10+',
   'Auj.': 'Hoje',
+  'Corners, fautes, tirs': 'Escanteios, faltas, finalizações',
 };

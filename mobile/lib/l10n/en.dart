@@ -785,4 +785,5 @@ const Map<String, String> kEn = {
   'Cote 5+': 'Odds 5+',
   'Cote 10+': 'Odds 10+',
   'Auj.': 'Today',
+  'Corners, fautes, tirs': 'Corners, fouls, shots',
 };

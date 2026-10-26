@@ -10,6 +10,7 @@ import '../services/analytics.dart';
 import '../services/coupon_store.dart';
 import '../services/scores_service.dart';
 import '../services/live_socket.dart';
+import '../services/v2_service.dart';
 import '../services/markets_service.dart';
 import '../widgets/forecast_card.dart' show K, hm, two, kMessage;
 import '../widgets/k_ui.dart';
@@ -74,7 +75,7 @@ class _CouponTabState extends State<CouponTab> with AutomaticKeepAliveClientMixi
     });
     if (!changed) return;
     for (final c in _saved) {
-      CouponEngine.refresh(c, by);
+      CouponEngine.refresh(c, by, V2Service.last?.res ?? const {});
     }
     setState(() {});
     CouponStore.saveAll(_saved);
@@ -100,6 +101,9 @@ class _CouponTabState extends State<CouponTab> with AutomaticKeepAliveClientMixi
     try {
       _mk = await MarketsService.load();
     } catch (_) {}
+    try {
+      await V2Service.shared(); // liste « Créer coupon » du moteur + résultats des matchs
+    } catch (_) {}
   }
 
   Future<void> _loadSaved() async {
@@ -111,7 +115,7 @@ class _CouponTabState extends State<CouponTab> with AutomaticKeepAliveClientMixi
       // Le fichier des scores peut avoir quelques minutes de retard : on remet le direct du robot par-dessus.
       LiveSocket.last.forEach((id, v) => by[id]?.applyLive(v.$1, v.$2, v.$3));
       for (final c in l) {
-        CouponEngine.refresh(c, by);
+        CouponEngine.refresh(c, by, V2Service.last?.res ?? const {});
       }
       await CouponStore.saveAll(l);
       if (mounted) setState(() => _saved = l);
@@ -160,8 +164,15 @@ class _CouponTabState extends State<CouponTab> with AutomaticKeepAliveClientMixi
         : _c.period == 1
             ? [_key(1)]
             : [_key(0), _key(1)];
-    final matches = keys.expand((k) => _days[k] ?? <LiveMatch>[]).toList();
-    final cands = CouponEngine.candidates(matches, _c, _mk);
+    // Aujourd'hui : la liste complète du moteur KOUNADIA (toutes catégories, matchs hors PrimaTips compris) ;
+    // demain : les matchs PrimaTips.
+    final pool = V2Service.last?.today?.pool ?? const [];
+    final usePool = pool.isNotEmpty && _c.period != 1;
+    final matches = (usePool ? keys.where((k) => k != _key(0)) : keys).expand((k) => _days[k] ?? <LiveMatch>[]).toList();
+    final cands = [
+      if (usePool) ...CouponEngine.poolCandidates(pool, _c),
+      ...CouponEngine.candidates(matches, _c, _mk),
+    ];
     if (!more) _shown.clear();
     final res = CouponEngine.generate(cands, _c, exclude: _shown);
     _shown.addAll(res.map((c) => c.signature));
@@ -170,7 +181,7 @@ class _CouponTabState extends State<CouponTab> with AutomaticKeepAliveClientMixi
     setState(() {
       _busy = false;
       _results = res;
-      _analyzed = matches.length;
+      _analyzed = matches.length + (usePool ? pool.length : 0);
       _msg = res.isNotEmpty
           ? null
           : cands.length < _c.countMin
@@ -416,6 +427,9 @@ class _CouponTabState extends State<CouponTab> with AutomaticKeepAliveClientMixi
                 if (_c.dc && !_c.win && !_c.draw) return;
                 _edit(() => _c.dc = !_c.dc);
               }),
+              _toggle("Buts d'une équipe", _c.team, () => _edit(() => _c.team = !_c.team)),
+              _toggle('Mi-temps', _c.half, () => _edit(() => _c.half = !_c.half)),
+              _toggle('Corners, fautes, tirs', _c.stats, () => _edit(() => _c.stats = !_c.stats)),
             ]),
             SizedBox(height: 8),
           ],
@@ -624,6 +638,8 @@ class _CouponCard extends StatelessWidget {
                       color: l.result == 'won' || l.result == 'lost' ? rc : K.indigoText,
                       fontSize: 13,
                       fontWeight: FontWeight.w800)),
+              if (l.score != null)
+                Text(l.score!.replaceAll('-', ' - '), style: TextStyle(color: rc, fontSize: 12, fontWeight: FontWeight.w900)),
             ]),
           ),
           SizedBox(width: 8),

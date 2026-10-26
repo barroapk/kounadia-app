@@ -5,6 +5,8 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:kounadia/models/v2.dart';
 import 'package:kounadia/services/v2_service.dart';
 import 'package:kounadia/services/v2_live.dart';
+import 'package:kounadia/models/coupon.dart';
+import 'package:kounadia/services/coupon_engine.dart';
 
 Map<String, dynamic> _load(String f) =>
     Map<String, dynamic>.from(jsonDecode(File('test/fixtures/$f').readAsStringSync()) as Map);
@@ -137,5 +139,44 @@ void main() {
     expect(l.ptId, 7);
     expect(l.espnLg, 'fra.1');
     expect(l.code, '');
+  });
+
+  test('Créer coupon : règlement de toutes les catégories', () {
+    final r = V2Res.fromJson({
+      'hg': 2, 'ag': 1, 'h1': [1, 0], 'done': true,
+      'st': {'c': [6, 4], 'f': [12, 11], 's': [14, 9], 't': [5, 3]},
+    });
+    expect(v2Settle('1', r), true);
+    expect(v2Settle('X2', r), false);
+    expect(v2Settle('+2.5', r), true);
+    expect(v2Settle('BTTS oui', r), true);
+    expect(v2Settle('Ext. marque', r), true);
+    expect(v2Settle('+0.5 MT1', r), true);
+    expect(v2Settle('+1.5 MT2', r), false);
+    expect(v2Settle('But chaque MT', r), true);
+    expect(v2Settle('Corners +9.5', r), true);
+    expect(v2Settle('Fautes -22.5', r), false);
+    expect(v2Settle('Tirs cadrés +7.5', r), true);
+    expect(v2Settle('Corners +9.5', V2Res.fromJson({'hg': 1, 'ag': 0})), null);
+    expect(v2Label('Corners +9.5', 'A', 'B'), 'Plus de 9,5 corners');
+    expect(v2Label('-1.5 MT1', 'A', 'B'), 'Moins de 2 buts en 1re mi-temps');
+  });
+
+  test('Créer coupon : candidats de la liste du moteur', () {
+    final m = V2PoolMatch.fromJson({
+      'id': 'fd:E0:x', 'home': 'Arsenal', 'away': 'Leeds', 'country': 'Angleterre', 'league': 'Premier League',
+      'date': DateTime.now().toUtc().add(Duration(hours: 3)).toIso8601String(),
+      'ev': [['1', 72.0, 1.4, 0, 'res'], ['+0.5 MT2', 75.0, 1.3, 1, 'mt'], ['Corners +8.5', 70.0, 1.35, 1, 'stc']],
+    });
+    final c = CouponCriteria.balanced()..stats = false;
+    final cands = CouponEngine.poolCandidates([m], c);
+    expect(cands.length, 1);
+    expect(cands.first.map((l) => l.mk).toSet(), {'1', '+0.5 MT2'});
+    expect(cands.first.first.matchId < 0, true);
+    expect(cands.first.first.v2, 'fd:E0:x');
+    final leg = cands.first.firstWhere((l) => l.mk == '1');
+    final back = Leg.fromJson(leg.toJson());
+    expect(back.mk, '1');
+    expect(back.label, '1 · Victoire Arsenal');
   });
 }
