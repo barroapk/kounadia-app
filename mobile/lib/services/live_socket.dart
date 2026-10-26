@@ -107,7 +107,7 @@ class LiveSocket {
     if (!_want) return;
     _fails++;
     // Petit délai au hasard : si le robot redémarre, tous les téléphones ne reviennent pas à la même seconde.
-    final wait = Duration(milliseconds: (_fails * 3000).clamp(3000, 30000) + Random().nextInt(2000));
+    final wait = Duration(milliseconds: (_fails * 2000).clamp(1500, 10000) + Random().nextInt(1500));
     _retry?.cancel();
     _retry = Timer(wait, _connect);
   }
@@ -123,11 +123,8 @@ class LiveSocket {
         if (id == null || v is! List || v.length < 3) return;
         out[id] = ((v[0] as num?)?.toInt(), (v[1] as num?)?.toInt(), '${v[2]}'.trim());
       });
-      if (j['k'] == 'snap') {
-        last.clear();
-      } else {
-        _dataAt = DateTime.now();
-      }
+      if (j['k'] == 'snap') last.clear();
+      _dataAt = DateTime.now(); // la photo complète à la connexion compte aussi : direct à jour tout de suite
       last.addAll(out);
       if (out.isNotEmpty) updates.add(out);
       final ev = ((j['ev'] as List?) ?? const [])

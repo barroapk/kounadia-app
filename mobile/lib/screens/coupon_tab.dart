@@ -9,6 +9,7 @@ import '../services/coupon_engine.dart';
 import '../services/analytics.dart';
 import '../services/coupon_store.dart';
 import '../services/scores_service.dart';
+import '../services/live_socket.dart';
 import '../services/markets_service.dart';
 import '../widgets/forecast_card.dart' show K, hm, two, kMessage;
 import '../widgets/k_ui.dart';
@@ -55,11 +56,34 @@ class _CouponTabState extends State<CouponTab> with AutomaticKeepAliveClientMixi
     _timer = Timer.periodic(Duration(minutes: 2), (_) {
       if (_view == 1) _loadSaved();
     });
+    _sock = LiveSocket.updates.stream.listen(_onLive);
+  }
+
+  StreamSubscription<Map<int, (int?, int?, String)>>? _sock;
+
+  /// Direct du robot : les matchs de mes coupons passent en cours / gagné / perdu tout de suite.
+  void _onLive(Map<int, (int?, int?, String)> u) {
+    if (!mounted || _saved.isEmpty) return;
+    final mine = {for (final c in _saved) for (final l in c.legs) l.matchId};
+    if (!u.keys.any(mine.contains)) return;
+    final by = _byId;
+    var changed = false;
+    u.forEach((id, v) {
+      final m = by[id];
+      if (m != null && mine.contains(id) && m.applyLive(v.$1, v.$2, v.$3)) changed = true;
+    });
+    if (!changed) return;
+    for (final c in _saved) {
+      CouponEngine.refresh(c, by);
+    }
+    setState(() {});
+    CouponStore.saveAll(_saved);
   }
 
   @override
   void dispose() {
     _timer?.cancel();
+    _sock?.cancel();
     super.dispose();
   }
 
@@ -84,6 +108,8 @@ class _CouponTabState extends State<CouponTab> with AutomaticKeepAliveClientMixi
     try {
       await _fetch();
       final by = _byId;
+      // Le fichier des scores peut avoir quelques minutes de retard : on remet le direct du robot par-dessus.
+      LiveSocket.last.forEach((id, v) => by[id]?.applyLive(v.$1, v.$2, v.$3));
       for (final c in l) {
         CouponEngine.refresh(c, by);
       }

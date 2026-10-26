@@ -1,4 +1,6 @@
+import 'dart:async';
 import '../widgets/k_err.dart';
+import '../services/live_socket.dart';
 import 'package:flutter/material.dart';
 import '../models/live_match.dart';
 import '../services/match_detail_service.dart';
@@ -23,10 +25,31 @@ class PtMatchScreen extends StatefulWidget {
 class _PtMatchScreenState extends State<PtMatchScreen> {
   late Future<MatchDetail> _f = MatchDetailService.load(widget.match);
 
+  StreamSubscription<Map<int, (int?, int?, String)>>? _sock;
+  bool _live = false; // le robot a donné le direct de ce match
+
   @override
   void initState() {
     super.initState();
     Analytics.log('match_open', {'league': widget.match.leagueLabel});
+    // Direct à la seconde : score et minute du robot, mis à jour pendant que la page est ouverte.
+    final v = LiveSocket.last[widget.match.id];
+    if (v != null) {
+      widget.match.applyLive(v.$1, v.$2, v.$3);
+      _live = true;
+    }
+    _sock = LiveSocket.updates.stream.listen((u) {
+      final x = u[widget.match.id];
+      if (x == null || !mounted) return;
+      widget.match.applyLive(x.$1, x.$2, x.$3);
+      setState(() => _live = true);
+    });
+  }
+
+  @override
+  void dispose() {
+    _sock?.cancel();
+    super.dispose();
   }
 
   LiveMatch get m => widget.match;
@@ -211,7 +234,7 @@ class _PtMatchScreenState extends State<PtMatchScreen> {
 
   Widget _header(MatchDetail d) {
     String center;
-    if (d.liveScore != null && d.liveScore!.contains('-')) {
+    if (!_live && d.liveScore != null && d.liveScore!.contains('-')) {
       center = d.liveScore!;
     } else if (m.hs != null && m.as_ != null) {
       center = '${m.hs} - ${m.as_}';
@@ -222,7 +245,7 @@ class _PtMatchScreenState extends State<PtMatchScreen> {
     Color sc;
     switch (m.status) {
       case 'live':
-        status = (d.liveStatus?.isNotEmpty ?? false) ? d.liveStatus! : (m.minute ?? 'En direct');
+        status = !_live && (d.liveStatus?.isNotEmpty ?? false) ? d.liveStatus! : (m.minute ?? 'En direct');
         sc = K.red;
         break;
       case 'finished':

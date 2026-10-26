@@ -77,7 +77,7 @@ class _ScoresScreenState extends State<ScoresScreen> with WidgetsBindingObserver
       _tick++;
       if (_active && (_offline || _tick % 5 == 0)) _load(silent: true);
     });
-    _liveTimer = Timer.periodic(Duration(seconds: 30), (_) => _pollLive());
+    _liveTimer = Timer.periodic(Duration(seconds: 15), (_) => _pollLive());
     _sock = LiveSocket.updates.stream.listen(_onSocket);
   }
 
@@ -147,7 +147,8 @@ class _ScoresScreenState extends State<ScoresScreen> with WidgetsBindingObserver
         _loading = false;
         _error = null;
       });
-      if (LiveSocket.fresh && LiveSocket.last.isNotEmpty) _onSocket(Map.of(LiveSocket.last));
+      // Le fichier des scores peut avoir quelques minutes de retard : le direct du robot repasse par-dessus.
+      if (LiveSocket.connected && LiveSocket.last.isNotEmpty) _onSocket(Map.of(LiveSocket.last));
       _pollLive();
       _applyLogos();
     } catch (e) {

@@ -103,4 +103,24 @@ class LiveMatch {
     }
     return tip;
   }
+
+  /// Applique le direct du robot (score + minute) ; renvoie true si quelque chose a changé.
+  bool applyLive(int? h, int? a, String st) {
+    if (status == 'postponed') return false;
+    final d = date;
+    if (d != null && d.isAfter(DateTime.now().add(Duration(minutes: 5)))) return false;
+    final before = '$hs|$as_|$status|$minute';
+    final playing = RegExp(r'^(\d|HT|FT|AET|PEN)', caseSensitive: false).hasMatch(st);
+    if (!playing) return false; // pas encore commencé : rien à changer
+    hs = h ?? hs;
+    as_ = a ?? as_;
+    if (RegExp(r'^(FT|AET|PEN)', caseSensitive: false).hasMatch(st)) {
+      status = 'finished';
+      minute = null;
+    } else if (RegExp(r'^\d').hasMatch(st) || st.toUpperCase() == 'HT') {
+      status = 'live';
+      minute = RegExp(r'^\d').hasMatch(st) ? "$st'" : (st.toUpperCase() == 'HT' ? 'MT' : st);
+    }
+    return before != '$hs|$as_|$status|$minute';
+  }
 }
