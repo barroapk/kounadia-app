@@ -252,6 +252,11 @@ class V2MatchRow extends StatelessWidget {
   }
 }
 
+/// Aucune source nommée dans les explications (anciennes journées comprises).
+String v2CleanWhy(String w) => w
+    .replaceAll("PrimaTips est d'accord", "Une 2e analyse indépendante est d'accord")
+    .replaceAll('Nos analystes Expert', 'Nos analystes');
+
 /// « Pourquoi ce choix » : en bref, en français facile, avec les données visibles.
 void showV2Why(BuildContext context, V2Leg l) {
   final c = v2Color(l.r);
@@ -318,7 +323,7 @@ void showV2Why(BuildContext context, V2Leg l) {
                 child: Row(crossAxisAlignment: CrossAxisAlignment.start, children: [
                   Padding(padding: EdgeInsets.only(top: 6), child: Icon(Icons.circle, size: 6, color: K.indigoText)),
                   SizedBox(width: 8),
-                  Expanded(child: Text(w, style: TextStyle(color: K.text, fontSize: 13.5, height: 1.4))),
+                  Expanded(child: Text(v2CleanWhy(w), style: TextStyle(color: K.text, fontSize: 13.5, height: 1.4))),
                 ]),
               ),
           ],

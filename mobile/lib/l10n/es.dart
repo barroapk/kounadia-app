@@ -770,4 +770,6 @@ const Map<String, String> kEs = {
   'Cote 10+': 'Cuota 10+',
   'Auj.': 'Hoy',
   'Corners, fautes, tirs': 'Córners, faltas, tiros',
+  'Les paris du jour les plus sûrs : plusieurs analyses indépendantes doivent être d\'accord.': 'Las apuestas más seguras del día: varios análisis independientes deben coincidir.',
+  '• Un pari n\'entre dans les Coups sûrs que si plusieurs analyses indépendantes sont d\'accord. Si nos analystes l\'ont aussi choisi, c\'est indiqué.': '• Una apuesta solo entra en las apuestas seguras si varios análisis independientes coinciden. Si nuestros analistas también la eligieron, se indica.',
 };

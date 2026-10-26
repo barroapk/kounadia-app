@@ -115,7 +115,7 @@ class _MainScreenState extends State<MainScreen> with WidgetsBindingObserver {
     CouponDayScreen(),
     PremiumGate(
         title: "Coups sûrs",
-        pitch: "Les paris du jour les plus sûrs : KOUNADIA, PrimaTips et nos analystes Expert doivent être d'accord.",
+        pitch: "Les paris du jour les plus sûrs : plusieurs analyses indépendantes doivent être d'accord.",
         perks: [
           "Coups sûrs : un pari par match, de types variés",
           "Double chance, buts, mi-temps, corners, fautes, tirs…",

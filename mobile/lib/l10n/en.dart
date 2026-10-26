@@ -786,4 +786,6 @@ const Map<String, String> kEn = {
   'Cote 10+': 'Odds 10+',
   'Auj.': 'Today',
   'Corners, fautes, tirs': 'Corners, fouls, shots',
+  'Les paris du jour les plus sûrs : plusieurs analyses indépendantes doivent être d\'accord.': 'Today\'s safest bets: several independent analyses must agree.',
+  '• Un pari n\'entre dans les Coups sûrs que si plusieurs analyses indépendantes sont d\'accord. Si nos analystes l\'ont aussi choisi, c\'est indiqué.': '• A bet only joins the sure bets if several independent analyses agree. If our analysts also picked it, it is shown.',
 };

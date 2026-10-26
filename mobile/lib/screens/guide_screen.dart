@@ -38,7 +38,7 @@ class GuideScreen extends StatelessWidget {
           ]),
           DocSection('Coups sûrs', Icons.verified_rounded, [
             "Les paris du jour les plus sûrs, sur d'autres matchs que ceux des coupons : un pari par match, de types variés.",
-            "• Un pari n'entre dans les Coups sûrs que si KOUNADIA et PrimaTips sont d'accord. Si nos analystes Expert l'ont aussi choisi, c'est indiqué.",
+            "• Un pari n'entre dans les Coups sûrs que si plusieurs analyses indépendantes sont d'accord. Si nos analystes l'ont aussi choisi, c'est indiqué.",
             '• Touche ☰ pour choisir une catégorie : double chance, victoire, buts, les deux marquent, mi-temps, corners, fautes, tirs, tirs cadrés, coupons cote 2+, 5+ et 10+.',
             '• Une catégorie affiche les paris à 70 % de chance ou plus. Leur nombre change chaque jour selon les matchs.',
             '• Touche ☆ pour suivre un pari dans « Mes favoris ».',

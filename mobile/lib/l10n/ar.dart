@@ -770,4 +770,6 @@ const Map<String, String> kAr = {
   'Cote 10+': 'احتمال +10',
   'Auj.': 'اليوم',
   'Corners, fautes, tirs': 'ركنيات، أخطاء، تسديدات',
+  'Les paris du jour les plus sûrs : plusieurs analyses indépendantes doivent être d\'accord.': 'أضمن رهانات اليوم: يجب أن تتفق عدة تحليلات مستقلة.',
+  '• Un pari n\'entre dans les Coups sûrs que si plusieurs analyses indépendantes sont d\'accord. Si nos analystes l\'ont aussi choisi, c\'est indiqué.': '• لا يدخل الرهان ضمن الرهانات الآمنة إلا إذا اتفقت عدة تحليلات مستقلة. وإذا اختاره محللونا أيضًا تتم الإشارة إلى ذلك.',
 };
