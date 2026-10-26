@@ -260,7 +260,11 @@ class _SelectionScreenState extends State<SelectionScreen> {
         body.addAll(v2Groups(legs, favs: _favs, onStar: _star));
       }
     }
-    return _wrap(d, [
+    // En-tête fixe (menu, catégories) ; seules les cartes de matchs défilent.
+    final header = Container(
+      color: K.bg,
+      padding: EdgeInsets.fromLTRB(12, 10, 12, 8),
+      child: Column(crossAxisAlignment: CrossAxisAlignment.stretch, children: [
       Row(children: [
         Material(
           color: K.card,
@@ -278,9 +282,12 @@ class _SelectionScreenState extends State<SelectionScreen> {
       ]),
       SizedBox(height: 10),
       _chips(s),
-      SizedBox(height: 12),
-      ...body,
-      KndBanner(),
+      ]),
+    );
+    return Column(children: [
+      header,
+      Container(height: 1, color: K.border),
+      Expanded(child: _wrap(d, [...body, KndBanner()])),
     ]);
   }
 

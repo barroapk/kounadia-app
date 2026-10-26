@@ -120,40 +120,47 @@ class _V2HistoryScreenState extends State<V2HistoryScreen> {
         padding: EdgeInsets.only(left: 4, bottom: 6),
         child: T(title, style: TextStyle(color: K.muted, fontSize: 12.5, fontWeight: FontWeight.w800)),
       ),
-      SizedBox(
-        height: 54,
-        child: ListView(scrollDirection: Axis.horizontal, children: [
-          for (final d in days)
-            Padding(
-              padding: EdgeInsets.only(right: 8),
-              child: GestureDetector(
-                onTap: () => setState(() => _day = d),
-                child: Builder(builder: (_) {
-                  final on = _same(d, sel);
-                  final dd = _dayData(d);
-                  final (w, n) = dd == null ? (0, 0) : widget.cat.count(dd);
-                  return AnimatedContainer(
-                    duration: Duration(milliseconds: 160),
-                    width: 70,
-                    alignment: Alignment.center,
-                    decoration: BoxDecoration(
-                      color: on ? K.indigo : K.card,
-                      borderRadius: BorderRadius.circular(12),
-                      border: Border.all(color: on ? K.indigo : K.border),
+      // Les 7 jours tiennent sur l'écran (pas de défilement) : le jour choisi est toujours visible.
+      Row(children: [
+        for (var i = 0; i < 7; i++)
+          Expanded(
+            child: i >= days.length
+                ? SizedBox(height: 62)
+                : Padding(
+                    padding: EdgeInsets.symmetric(horizontal: 2),
+                    child: GestureDetector(
+                      onTap: () => setState(() => _day = days[i]),
+                      child: Builder(builder: (_) {
+                        final d = days[i];
+                        final on = _same(d, sel);
+                        final dd = _dayData(d);
+                        final (w, n) = dd == null ? (0, 0) : widget.cat.count(dd);
+                        return AnimatedContainer(
+                          duration: Duration(milliseconds: 160),
+                          height: 62,
+                          alignment: Alignment.center,
+                          decoration: BoxDecoration(
+                            color: on ? K.indigo : K.card,
+                            borderRadius: BorderRadius.circular(10),
+                            border: Border.all(color: on ? K.indigo : K.border, width: on ? 2 : 1),
+                          ),
+                          child: FittedBox(
+                            fit: BoxFit.scaleDown,
+                            child: Column(mainAxisSize: MainAxisSize.min, children: [
+                              Text(_same(d, today) ? tr("Auj.") : dayName(d.weekday),
+                                  style: TextStyle(color: on ? Colors.white : K.muted, fontSize: 11, fontWeight: FontWeight.w700)),
+                              Text('${d.day}',
+                                  style: TextStyle(color: on ? Colors.white : K.text, fontSize: 16, fontWeight: FontWeight.w900)),
+                              Text(n == 0 ? '–' : '$w/$n',
+                                  style: TextStyle(color: on ? Color(0xDDFFFFFF) : K.green, fontSize: 11, fontWeight: FontWeight.w800)),
+                            ]),
+                          ),
+                        );
+                      }),
                     ),
-                    child: Column(mainAxisAlignment: MainAxisAlignment.center, children: [
-                      Text(_same(d, today) ? tr("Aujourd'hui") : '${dayName(d.weekday)} ${d.day}',
-                          style: TextStyle(color: on ? Colors.white : K.text, fontSize: 12.5, fontWeight: FontWeight.w800)),
-                      SizedBox(height: 2),
-                      Text(n == 0 ? '–' : '$w/$n ✓',
-                          style: TextStyle(color: on ? Color(0xDDFFFFFF) : K.green, fontSize: 12, fontWeight: FontWeight.w700)),
-                    ]),
-                  );
-                }),
-              ),
-            ),
-        ]),
-      ),
+                  ),
+          ),
+      ]),
     ]);
   }
 

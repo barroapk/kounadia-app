@@ -768,4 +768,5 @@ const Map<String, String> kAr = {
   'Cote 2+': 'احتمال +2',
   'Cote 5+': 'احتمال +5',
   'Cote 10+': 'احتمال +10',
+  'Auj.': 'اليوم',
 };

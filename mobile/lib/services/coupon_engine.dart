@@ -169,7 +169,8 @@ class CouponEngine {
     final used = <int, int>{};
     for (final (_, legs, _) in sorted) {
       if (picked.length >= max) break;
-      if (legs.any((l) => (used[l.matchId] ?? 0) >= 2)) continue;
+      // Un match n'apparaît que dans UN seul coupon : un pari perdu ne fait jamais perdre deux coupons.
+      if (legs.any((l) => (used[l.matchId] ?? 0) >= 1)) continue;
       picked.add(Coupon.of(legs));
       for (final l in legs) {
         used[l.matchId] = (used[l.matchId] ?? 0) + 1;

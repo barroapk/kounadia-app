@@ -215,10 +215,14 @@ class V2MatchRow extends StatelessWidget {
                     ),
                   if (onStar != null) ...[
                     SizedBox(width: 4),
-                    GestureDetector(
+                    // Étoile bien visible : touche pour suivre ce pari dans « Mes favoris ».
+                    InkWell(
+                      borderRadius: BorderRadius.circular(16),
                       onTap: () => onStar!(l),
-                      child: Icon(fav == true ? Icons.star_rounded : Icons.star_border_rounded,
-                          color: fav == true ? K.amber : K.muted, size: 24),
+                      child: Padding(
+                        padding: EdgeInsets.all(2),
+                        child: Icon(fav == true ? Icons.star_rounded : Icons.star_border_rounded, color: K.amber, size: 28),
+                      ),
                     ),
                   ],
                 ]),

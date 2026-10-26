@@ -768,4 +768,5 @@ const Map<String, String> kPt = {
   'Cote 2+': 'Odd 2+',
   'Cote 5+': 'Odd 5+',
   'Cote 10+': 'Odd 10+',
+  'Auj.': 'Hoje',
 };

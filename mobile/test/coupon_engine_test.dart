@@ -40,6 +40,9 @@ void main() {
       final c = e.value();
       final res = CouponEngine.generate(CouponEngine.candidates(matches, c), c);
       expect(res, isNotEmpty);
+      // Un match dans un seul coupon.
+      final ids = [for (final cp in res) ...cp.legs.map((l) => l.matchId)];
+      expect(ids.toSet().length, ids.length);
       for (final cp in res) {
         expect(cp.legs.length, inInclusiveRange(c.countMin, c.countMax));
         expect(cp.total, inInclusiveRange(c.totalMin - 1e-9, c.totalMax + 1e-9));

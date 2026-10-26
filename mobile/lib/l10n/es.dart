@@ -768,4 +768,5 @@ const Map<String, String> kEs = {
   'Cote 2+': 'Cuota 2+',
   'Cote 5+': 'Cuota 5+',
   'Cote 10+': 'Cuota 10+',
+  'Auj.': 'Hoy',
 };

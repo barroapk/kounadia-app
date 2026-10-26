@@ -115,7 +115,7 @@ function diversify(sorted, max) {
   const used = new Map();
   for (const cp of sorted) {
     if (picked.length >= max) break;
-    if (cp.legs.some((l) => (used.get(l.id) || 0) >= 2)) continue;
+    if (cp.legs.some((l) => (used.get(l.id) || 0) >= 1)) continue; // un match = un seul coupon
     picked.push(cp);
     for (const l of cp.legs) used.set(l.id, (used.get(l.id) || 0) + 1);
   }
