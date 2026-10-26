@@ -196,7 +196,7 @@ export function newSearch(cands, c, exclude = new Set(), max = 5) {
       for (let i = st.last + 1; i < top.length; i++) {
         const l = top[i];
         if (st.legs.some((x) => x.id === l.id)) continue;
-        if (st.legs.filter((x) => x.pick === l.pick).length >= SAME_MAX) continue; // variété
+        if (st.legs.filter((x) => x.pick === l.pick).length >= (c.countMax <= 4 ? 1 : SAME_MAX)) continue; // variété
         const total = st.total * l.odd;
         if (total > c.totalMax) continue;
         const ns = { legs: [...st.legs, l], total, lp: st.lp + Math.log(l.prob / 100), last: i };

@@ -138,7 +138,8 @@ class CouponEngine {
         for (var i = st.last + 1; i < top.length; i++) {
           final l = top[i];
           if (st.legs.any((x) => x.matchId == l.matchId)) continue;
-          if (st.legs.where((x) => x.pick == l.pick).length >= _sameMax) continue;
+          // Variété : coupon de 4 matchs ou moins = jamais deux fois le même pari.
+          if (st.legs.where((x) => x.pick == l.pick).length >= (c.countMax <= 4 ? 1 : _sameMax)) continue;
           final total = st.total * l.odd;
           if (total > c.totalMax) continue;
           final ns = _State([...st.legs, l], total, st.lp + log(l.prob / 100), i);
