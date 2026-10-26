@@ -11,6 +11,7 @@ import '../services/coupon_store.dart';
 import '../services/scores_service.dart';
 import '../services/live_socket.dart';
 import '../services/v2_service.dart';
+import '../models/v2.dart';
 import '../services/markets_service.dart';
 import '../widgets/forecast_card.dart' show K, hm, two, kMessage;
 import '../widgets/k_ui.dart';
@@ -164,11 +165,14 @@ class _CouponTabState extends State<CouponTab> with AutomaticKeepAliveClientMixi
         : _c.period == 1
             ? [_key(1)]
             : [_key(0), _key(1)];
-    // Aujourd'hui : la liste complète du moteur KOUNADIA (toutes catégories, matchs hors PrimaTips compris) ;
-    // demain : les matchs PrimaTips.
-    final pool = V2Service.last?.today?.pool ?? const [];
-    final usePool = pool.isNotEmpty && _c.period != 1;
-    final matches = (usePool ? keys.where((k) => k != _key(0)) : keys).expand((k) => _days[k] ?? <LiveMatch>[]).toList();
+    // Liste complète du moteur KOUNADIA (toutes catégories, matchs hors PrimaTips compris), aujourd'hui ET demain,
+    // refaite toutes les 30 min avec les cotes du moment. Sans elle (hors ligne) : les matchs PrimaTips.
+    String dayOf(DateTime d) => '${d.year}-${two(d.month)}-${two(d.day)}';
+    final live = V2Service.last?.pool ?? const <V2PoolMatch>[];
+    final all = live.isNotEmpty ? live : (V2Service.last?.today?.pool ?? const <V2PoolMatch>[]);
+    final pool = [for (final m in all) if (m.date != null && keys.contains(dayOf(m.date!))) m];
+    final usePool = pool.isNotEmpty;
+    final matches = usePool ? <LiveMatch>[] : keys.expand((k) => _days[k] ?? <LiveMatch>[]).toList();
     final cands = [
       if (usePool) ...CouponEngine.poolCandidates(pool, _c),
       ...CouponEngine.candidates(matches, _c, _mk),

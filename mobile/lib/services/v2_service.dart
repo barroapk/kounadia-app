@@ -73,7 +73,8 @@ class V2Service {
       for (final e in ((j['res'] as Map?) ?? const {}).entries)
         if (e.value is Map) e.key.toString(): V2Res.fromJson(Map<String, dynamic>.from(e.value as Map)),
     };
-    return last = V2Data(today, hist, stats, off, prem && today?.selection?.locked == false, at, res: res);
+    final pool = [for (final m in ((j['pool'] as List?) ?? const [])) if (m is Map) V2PoolMatch.fromJson(Map<String, dynamic>.from(m))];
+    return last = V2Data(today, hist, stats, off, prem && today?.selection?.locked == false, at, res: res, pool: pool);
   }
 
   static Future<void> _live(V2Day d) async {

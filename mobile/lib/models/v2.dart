@@ -348,7 +348,10 @@ class V2Data {
   final DateTime? updatedAt;
   /// Résultats des matchs d'hier et d'aujourd'hui (coupons créés dans l'app).
   final Map<String, V2Res> res;
-  V2Data(this.today, this.history, this.stats, this.offline, this.premium, this.updatedAt, {this.res = const {}});
+  /// Liste « Créer coupon » vivante (aujourd'hui + demain, cotes du moment).
+  final List<V2PoolMatch> pool;
+  V2Data(this.today, this.history, this.stats, this.offline, this.premium, this.updatedAt,
+      {this.res = const {}, this.pool = const []});
 
   V2Stat stat(String key) => stats[key] ?? V2Stat(0, 0, null);
 }
