@@ -35,6 +35,24 @@ jobs:
         continue-on-error: true
         working-directory: mobile
         run: |
+          # Police intégrée : certains navigateurs (Facebook, Instagram) bloquent Google Fonts -> textes invisibles.
+          mkdir -p fonts
+          curl -fsSL "https://fonts.googleapis.com/css2?family=Roboto:wght@400;500;700;900" -o roboto.css || true
+          python3 - <<'PY' || true
+          import re, urllib.request
+          css = open('roboto.css').read()
+          got = []
+          for w, u in re.findall(r"font-weight:\s*(\d+);.*?src:\s*url\(([^)]+)\)", css, re.S):
+              if w in [x[0] for x in got]:
+                  continue
+              f = f"fonts/Roboto-{w}.ttf"
+              urllib.request.urlretrieve(u, f)
+              got.append((w, f))
+          if got:
+              y = "  fonts:\n    - family: Roboto\n      fonts:\n" + "".join(f"        - asset: {f}\n          weight: {w}\n" for w, f in got)
+              open('pubspec.yaml', 'a').write(y)
+              print('Polices integrees :', ', '.join(w for w, f in got))
+          PY
           flutter pub get
           flutter build web --release --base-href /app/ \
             --dart-define=KD_KEY=${{ secrets.KD_KEY }} \
