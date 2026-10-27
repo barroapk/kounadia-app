@@ -371,6 +371,8 @@ function start(e){
 }
 fetch("https://kounadia-notif.barroapk.workers.dev/contact",{cache:"no-store"}).then(function(r){return r.json()}).then(function(j){if(/^\d{8,15}$/.test(j.wa||""))document.querySelectorAll("a.wa").forEach(function(a){a.href="https://wa.me/"+j.wa})}).catch(function(){});
 document.querySelectorAll('a[href="/telecharger"]').forEach(function(a){a.addEventListener("click",start)});
+var autoDl=/^#(telecharger|download|apk)$/i.test(location.hash)||/[?&]dl(=|&|$)/.test(location.search);
+if(autoDl){var ev={defaultPrevented:false,preventDefault:function(){this.defaultPrevented=true}};start(ev);if(!ev.defaultPrevented)location.href="/telecharger"}
 $("dlX").addEventListener("click",function(){box.hidden=true});
 })();</script>
 </body>
