@@ -10,6 +10,7 @@ import '../services/user_prefs.dart';
 import 'forecast_card.dart' show K, hm, two;
 import '../config/store.dart';
 import '../l10n/tr.dart';
+import '../services/contact.dart';
 
 /// Reçu visuel d'un coupon (partagé en image).
 class CouponReceipt extends StatelessWidget {
@@ -143,8 +144,8 @@ class CouponReceipt extends StatelessWidget {
             Icon(Icons.chat_rounded, color: Color(0xFF25D366), size: 22),
             SizedBox(width: 10),
             Expanded(
-              child: T(
-                'Pour tout besoin de dépôt / retrait 1xBet, contactez KOUNADIA SERVICE sur WhatsApp : +226 52 57 12 01',
+              child: Text(
+                '${tr('Pour tout besoin de dépôt / retrait 1xBet, contactez KOUNADIA SERVICE sur WhatsApp :')} ${Contact.pretty}',
                 style: TextStyle(color: K.text, fontSize: 12, fontWeight: FontWeight.w600, height: 1.35),
               ),
             ),

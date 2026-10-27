@@ -21,11 +21,12 @@ import '../widgets/region_pickers.dart';
 import 'guide_screen.dart';
 import 'legal_screen.dart';
 import '../l10n/tr.dart';
+import '../services/contact.dart';
 import '../services/app_update.dart';
 import '../services/notif.dart';
 
 final _supportEmail = 'pierreclavers56@gmail.com';
-final _businessWhatsApp = '22652571201';
+String get _businessWhatsApp => Contact.wa;
 
 class SettingsScreen extends StatelessWidget {
   SettingsScreen({super.key});

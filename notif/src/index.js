@@ -160,6 +160,7 @@ export class Poller {
     }
     if (url.pathname === '/tr' && req.method === 'POST') return this.translate(req);
     if (url.pathname === '/coupons' && req.method === 'POST') return this.saveCoupons(req);
+    if (url.pathname === '/contact') return this.contact(req);
     if (url.pathname === '/log') {
       const ids = new Set((url.searchParams.get('ids') || '').split(',').filter(Boolean).slice(0, 300).map(Number));
       const log = ((await this.state.storage.get('log')) || []).filter((e) => ids.has(e.id));
@@ -175,6 +176,30 @@ export class Poller {
     const al = await this.state.storage.getAlarm();
     stat.nextTick = al ? new Date(al).toISOString() : null;
     return Response.json(stat);
+  }
+
+  // Numéro WhatsApp de KOUNADIA SERVICE (app, site, images) : lu par tous, changé depuis KOUNADIA Admin.
+  // Le changement n'est accepté qu'avec la session admin (vérifiée auprès du serveur KOUNADIA).
+  async contact(req) {
+    const H = { 'access-control-allow-origin': '*', 'cache-control': 'no-store' };
+    if (req.method === 'GET') return Response.json({ wa: (await this.state.storage.get('contact_wa')) || '22652571201' }, { headers: H });
+    if (req.method !== 'POST') return new Response('', { status: 405, headers: H });
+    const auth = req.headers.get('authorization') || '';
+    if (!/^Bearer\s+\S{10,}$/.test(auth)) return Response.json({ error: 'Reconnecte-toi.' }, { status: 401, headers: H });
+    let ok = false;
+    try {
+      const r = await fetch(`${API}/admin/kounadia/overview?days=1`, { headers: { authorization: auth } });
+      ok = r.ok;
+    } catch (_) {}
+    if (!ok) return Response.json({ error: 'Accès refusé.' }, { status: 403, headers: H });
+    let body = {};
+    try {
+      body = await req.json();
+    } catch (_) {}
+    const wa = String(body.wa || '').replace(/\D/g, '');
+    if (!/^\d{8,15}$/.test(wa)) return Response.json({ error: 'Numéro invalide.' }, { status: 400, headers: H });
+    await this.state.storage.put('contact_wa', wa);
+    return Response.json({ wa }, { headers: H });
   }
 
   // Traduction des publicités (texte écrit en français dans KND Tigui), gardée en mémoire.

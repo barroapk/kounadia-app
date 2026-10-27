@@ -8,6 +8,7 @@ import 'services/theme_controller.dart';
 import 'services/analytics.dart';
 import 'services/account.dart';
 import 'services/user_prefs.dart';
+import 'services/contact.dart';
 import 'services/currency.dart';
 import 'services/sync.dart';
 import 'services/notif.dart';
@@ -27,6 +28,7 @@ Future<void> main() async {
   };
   await ThemeCtl.init();
   await UserPrefs.init();
+  unawaited(Contact.load());
   Fx.init();
   Analytics.init();
   Account.init();
