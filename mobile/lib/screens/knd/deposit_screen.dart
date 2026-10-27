@@ -6,7 +6,7 @@ import '../../services/knd/player_cache_service.dart';
 import '../../widgets/forecast_card.dart' show K;
 import '../../l10n/tr.dart';
 
-final kWhatsAppNumber = '22655337782';
+final kWhatsAppNumber = '22652571201';
 final kMinDeposit = 500;
 final kMaxDeposit = 1000000;
 

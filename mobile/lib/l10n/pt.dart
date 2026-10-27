@@ -772,4 +772,6 @@ const Map<String, String> kPt = {
   'Corners, fautes, tirs': 'Escanteios, faltas, finalizações',
   'Les paris du jour les plus sûrs : plusieurs analyses indépendantes doivent être d\'accord.': 'As apostas mais seguras do dia: várias análises independentes têm de concordar.',
   '• Un pari n\'entre dans les Coups sûrs que si plusieurs analyses indépendantes sont d\'accord. Si nos analystes l\'ont aussi choisi, c\'est indiqué.': '• Uma aposta só entra nas apostas seguras se várias análises independentes concordarem. Se os nossos analistas também a escolheram, isso é indicado.',
+  'Nouveaux coupons dans': 'Novos cupons em',
+  'Résultats d\'hier': 'Resultados de ontem',
 };

@@ -5,6 +5,7 @@ import 'package:http/http.dart' as http;
 import '../models/v2.dart';
 import 'live_socket.dart';
 import 'v2_service.dart';
+import 'scores_service.dart';
 
 /// Direct des événements KOUNADIA V2.
 /// - Score et minute : robot KOUNADIA en temps réel (quelques secondes), comme l'onglet Matchs.
@@ -23,6 +24,7 @@ class V2Live {
     _sock ??= LiveSocket.updates.stream.listen(_onSocket);
     if (LiveSocket.last.isNotEmpty) _onSocket(Map.of(LiveSocket.last));
     _timer ??= Timer.periodic(Duration(seconds: 60), (_) => _stats());
+    _live ??= Timer.periodic(Duration(seconds: 20), (_) => _refreshLive());
     _stats();
   }
 
@@ -33,6 +35,35 @@ class V2Live {
     _sock = null;
     _timer?.cancel();
     _timer = null;
+    _live?.cancel();
+    _live = null;
+  }
+
+  static Timer? _live;
+
+  /// Toutes les 20 s : la minute avance à l'écran ; si le robot ne répond plus, on lit le direct du site.
+  static Future<void> _refreshLive() async {
+    final now = DateTime.now();
+    final ids = <int>{
+      for (final l in _legs)
+        if (l.ptId != null && l.r != 'won' && l.r != 'lost' && l.r != 'void' && l.date != null && now.isAfter(l.date!)) l.ptId!,
+    };
+    if (ids.isEmpty) return;
+    if (LiveSocket.fresh) {
+      _onSocket({for (final id in ids) if (LiveSocket.last[id] != null) id: LiveSocket.last[id]!});
+      tick.value++;
+      return;
+    }
+    try {
+      final m = <int, (int?, int?, String)>{};
+      for (final x in await ScoresService.live()) {
+        final id = (x['id'] as num?)?.toInt();
+        if (id == null || !ids.contains(id)) continue;
+        m[id] = ((x['hs'] as num?)?.toInt(), (x['as'] as num?)?.toInt(), (x['st'] ?? '').toString().trim());
+      }
+      if (m.isNotEmpty) _onSocket(m);
+      tick.value++;
+    } catch (_) {}
   }
 
   static void _onSocket(Map<int, (int?, int?, String)> m) {
@@ -46,7 +77,7 @@ class V2Live {
       final score = '${v.$1}-${v.$2}';
       final st = v.$3;
       final fin = RegExp(r'^(FT|AET|PEN)', caseSensitive: false).hasMatch(st);
-      final minute = fin ? 'Fin' : RegExp(r'^\d').hasMatch(st) ? "$st'" : (st.toUpperCase() == 'HT' ? 'MT' : st);
+      final minute = fin ? 'Fin' : (LiveSocket.minuteOf(id!, st) ?? (st.toUpperCase() == 'HT' ? 'MT' : st));
       if (score == l.score && minute == l.minute) continue;
       l.score = score;
       l.minute = minute;

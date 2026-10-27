@@ -198,7 +198,8 @@ class _SelectionScreenState extends State<SelectionScreen> {
           }
           if (snap.hasError) return kMessage(kV2Unavailable, onRetry: _reload);
           final d = snap.data!;
-          final s = d.today?.selection;
+          // Avant le calcul du matin : les Coups sûrs d'hier restent visibles, avec leurs résultats.
+          final s = d.today?.selection ?? (d.history.isNotEmpty ? d.history.first.selection : null);
           return Column(children: [
             Container(
               color: K.bg,
@@ -237,6 +238,15 @@ class _SelectionScreenState extends State<SelectionScreen> {
     final monday = v2Monday(DateTime.now());
     final week = f.cat().period(d, monday, monday.add(Duration(days: 7)));
     final body = <Widget>[];
+    if (d.today == null) {
+      body.add(V2NextCountdown());
+      if (s != null) {
+        body.add(Padding(
+          padding: EdgeInsets.fromLTRB(4, 0, 4, 10),
+          child: T('Résultats d\'hier', style: TextStyle(color: K.text, fontSize: 16, fontWeight: FontWeight.w900)),
+        ));
+      }
+    }
     if (s == null || s.locked) {
       body.add(SizedBox(height: 260, child: kMessage("Les Coups sûrs du jour ne sont pas encore prêts. Tire vers le bas pour actualiser.")));
     } else if (f.coupon != null) {

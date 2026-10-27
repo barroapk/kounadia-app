@@ -144,7 +144,7 @@ class CouponReceipt extends StatelessWidget {
             SizedBox(width: 10),
             Expanded(
               child: T(
-                'Pour tout besoin de dépôt / retrait 1xBet, contactez KOUNADIA SERVICE sur WhatsApp : +226 55 33 77 82',
+                'Pour tout besoin de dépôt / retrait 1xBet, contactez KOUNADIA SERVICE sur WhatsApp : +226 52 57 12 01',
                 style: TextStyle(color: K.text, fontSize: 12, fontWeight: FontWeight.w600, height: 1.35),
               ),
             ),

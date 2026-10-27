@@ -25,7 +25,7 @@ import '../services/app_update.dart';
 import '../services/notif.dart';
 
 final _supportEmail = 'pierreclavers56@gmail.com';
-final _businessWhatsApp = '22655337782';
+final _businessWhatsApp = '22652571201';
 
 class SettingsScreen extends StatelessWidget {
   SettingsScreen({super.key});

@@ -1,11 +1,95 @@
+import 'dart:async';
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
+import '../../models/coupon.dart' show Coupon, Leg;
+import '../../widgets/coupon_receipt.dart' show shareCoupon;
 import '../../l10n/tr.dart';
 import '../../models/v2.dart';
 import '../../services/logo_cache.dart';
 import '../../widgets/forecast_card.dart' show K, hm;
 import '../../widgets/jersey.dart';
 import '../account_screen.dart';
+
+/// Coupon du jour → coupon partageable en image (même reçu que « Créer coupon »).
+Coupon v2ToCoupon(V2Coupon c) => Coupon(DateTime.now(), [
+      for (final l in c.legs)
+        Leg(
+          matchId: l.ptId ?? 0,
+          home: l.home,
+          away: l.away,
+          league: l.leagueLabel,
+          flag: l.flag ?? '',
+          pick: l.mk,
+          odd: l.odd,
+          prob: l.p.round(),
+          date: l.date,
+          txt: l.label,
+          est: l.est,
+          result: l.r ?? 'pending',
+          score: l.score,
+        ),
+    ]);
+
+/// Prochains coupons : compte à rebours jusqu'à 05:00 (heure de calcul du moteur).
+class V2NextCountdown extends StatefulWidget {
+  V2NextCountdown({super.key});
+  @override
+  State<V2NextCountdown> createState() => _V2NextCountdownState();
+}
+
+class _V2NextCountdownState extends State<V2NextCountdown> {
+  Timer? _t;
+  @override
+  void initState() {
+    super.initState();
+    _t = Timer.periodic(Duration(seconds: 1), (_) {
+      if (mounted) setState(() {});
+    });
+  }
+
+  @override
+  void dispose() {
+    _t?.cancel();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final now = DateTime.now().toUtc();
+    var next = DateTime.utc(now.year, now.month, now.day, 5, 10);
+    if (!now.isBefore(next)) next = next.add(Duration(days: 1));
+    final left = next.difference(now);
+    String two(int n) => n.toString().padLeft(2, '0');
+    final txt = '${two(left.inHours)}:${two(left.inMinutes % 60)}:${two(left.inSeconds % 60)}';
+    final p = 1 - left.inSeconds / 86400;
+    return Container(
+      margin: EdgeInsets.only(bottom: 14),
+      padding: EdgeInsets.fromLTRB(16, 16, 16, 16),
+      decoration: BoxDecoration(
+        gradient: LinearGradient(colors: [Color(0xFF4F46E5), Color(0xFF7C3AED)], begin: Alignment.topLeft, end: Alignment.bottomRight),
+        borderRadius: BorderRadius.circular(18),
+      ),
+      child: Row(children: [
+        SizedBox(
+          width: 58,
+          height: 58,
+          child: Stack(alignment: Alignment.center, children: [
+            CircularProgressIndicator(value: p.clamp(0.0, 1.0), strokeWidth: 5, color: Colors.white, backgroundColor: Color(0x33FFFFFF)),
+            Icon(Icons.confirmation_number_rounded, color: Colors.white, size: 24),
+          ]),
+        ),
+        SizedBox(width: 14),
+        Expanded(
+          child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+            T('Nouveaux coupons dans', style: TextStyle(color: Color(0xDDFFFFFF), fontSize: 13, fontWeight: FontWeight.w700)),
+            SizedBox(height: 2),
+            Text(txt, style: TextStyle(color: Colors.white, fontSize: 28, fontWeight: FontWeight.w900, fontFeatures: [FontFeature.tabularFigures()])),
+          ]),
+        ),
+      ]),
+    );
+  }
+}
 
 String v2Num(double v, [int dec = 2]) => v.toStringAsFixed(dec).replaceAll('.', ',');
 String v2Pct(double v) => '${v.round()} %';
@@ -137,17 +221,17 @@ class V2MatchRow extends StatelessWidget {
   }
 
   Widget _team(String name, String? logo, int? n, bool win) => Row(children: [
-        TeamCrest(name: name, logo: logo ?? LogoCache.get(name), size: 22),
-        SizedBox(width: 8),
+        TeamCrest(name: name, logo: logo ?? LogoCache.get(name), size: 18),
+        SizedBox(width: 7),
         Expanded(
           child: Text(name,
               maxLines: 1,
               overflow: TextOverflow.ellipsis,
-              style: TextStyle(color: K.text, fontSize: 14.5, fontWeight: win ? FontWeight.w900 : FontWeight.w600)),
+              style: TextStyle(color: K.text, fontSize: 13.5, fontWeight: win ? FontWeight.w900 : FontWeight.w600)),
         ),
         if (n != null) ...[
           SizedBox(width: 6),
-          Text('$n', style: TextStyle(color: K.text, fontSize: 15, fontWeight: FontWeight.w900)),
+          Text('$n', style: TextStyle(color: K.text, fontSize: 13.5, fontWeight: FontWeight.w900)),
         ],
       ]);
 
@@ -160,11 +244,11 @@ class V2MatchRow extends StatelessWidget {
     Widget time;
     if (done) {
       time = Icon(l.r == 'won' ? Icons.check_circle_rounded : l.r == 'lost' ? Icons.cancel_rounded : Icons.remove_circle_rounded,
-          color: c, size: 24);
+          color: c, size: 20);
     } else if (l.r == 'live') {
-      time = Text(l.minute ?? 'Live', textAlign: TextAlign.center, style: TextStyle(color: K.red, fontSize: 13, fontWeight: FontWeight.w900));
+      time = Text(l.minute ?? 'Live', textAlign: TextAlign.center, style: TextStyle(color: K.red, fontSize: 12, fontWeight: FontWeight.w900));
     } else {
-      time = Text(l.date == null ? '--:--' : hm(l.date!), style: TextStyle(color: K.text, fontSize: 13.5, fontWeight: FontWeight.w800));
+      time = Text(l.date == null ? '--:--' : hm(l.date!), style: TextStyle(color: K.text, fontSize: 12.5, fontWeight: FontWeight.w800));
     }
     final pair = l.statPair;
     final String? statLine = pair != null && pair[0] != null && pair[1] != null
@@ -174,11 +258,11 @@ class V2MatchRow extends StatelessWidget {
       onTap: () => showV2Why(context, l),
       child: Container(
         color: l.r == 'live' ? Color(0x14EF4444) : null,
-        padding: EdgeInsets.fromLTRB(8, 10, 10, 10),
+        padding: EdgeInsets.fromLTRB(6, 7, 8, 7),
         child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
           if (showLeague)
             Padding(
-              padding: EdgeInsets.only(left: 48, bottom: 6),
+              padding: EdgeInsets.only(left: 42, bottom: 4),
               child: Row(children: [
                 v2Flag(l.flag),
                 SizedBox(width: 6),
@@ -189,12 +273,12 @@ class V2MatchRow extends StatelessWidget {
               ]),
             ),
           Row(crossAxisAlignment: CrossAxisAlignment.center, children: [
-            SizedBox(width: 44, child: Center(child: time)),
+            SizedBox(width: 40, child: Center(child: time)),
             SizedBox(width: 4),
             Expanded(
               child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
                 _team(l.home, l.hl, h, h != null && a != null && h > a && pair == null),
-                SizedBox(height: 6),
+                SizedBox(height: 3),
                 _team(l.away, l.al, a, h != null && a != null && a > h && pair == null),
                 if (statLine != null) ...[
                   SizedBox(height: 5),
@@ -204,14 +288,14 @@ class V2MatchRow extends StatelessWidget {
             ),
             SizedBox(width: 10),
             SizedBox(
-              width: 112,
+              width: 104,
               child: Column(crossAxisAlignment: CrossAxisAlignment.end, children: [
                 Row(mainAxisAlignment: MainAxisAlignment.end, children: [
                   if (l.code.isNotEmpty)
                     Container(
-                      padding: EdgeInsets.symmetric(horizontal: 8, vertical: 2),
-                      decoration: BoxDecoration(color: c.withAlpha(40), borderRadius: BorderRadius.circular(7)),
-                      child: Text(l.code, style: TextStyle(color: c, fontSize: 15, fontWeight: FontWeight.w900)),
+                      padding: EdgeInsets.symmetric(horizontal: 6, vertical: 1),
+                      decoration: BoxDecoration(color: c.withAlpha(40), borderRadius: BorderRadius.circular(6)),
+                      child: Text(l.code, style: TextStyle(color: c, fontSize: 13, fontWeight: FontWeight.w900)),
                     ),
                   if (onStar != null) ...[
                     SizedBox(width: 4),
@@ -221,7 +305,7 @@ class V2MatchRow extends StatelessWidget {
                       onTap: () => onStar!(l),
                       child: Padding(
                         padding: EdgeInsets.all(2),
-                        child: Icon(fav == true ? Icons.star_rounded : Icons.star_border_rounded, color: K.amber, size: 28),
+                        child: Icon(fav == true ? Icons.star_rounded : Icons.star_border_rounded, color: K.amber, size: 23),
                       ),
                     ),
                   ],
@@ -231,10 +315,10 @@ class V2MatchRow extends StatelessWidget {
                     textAlign: TextAlign.right,
                     maxLines: 2,
                     overflow: TextOverflow.ellipsis,
-                    style: TextStyle(color: c, fontSize: 12.5, fontWeight: FontWeight.w800, height: 1.2)),
-                SizedBox(height: 4),
+                    style: TextStyle(color: c, fontSize: 11.5, fontWeight: FontWeight.w800, height: 1.15)),
+                SizedBox(height: 2),
                 Text('${v2Pct(l.p)} · ${l.est ? '≈' : '@'}${v2Num(l.odd)}',
-                    style: TextStyle(color: K.muted, fontSize: 12, fontWeight: FontWeight.w700)),
+                    style: TextStyle(color: K.muted, fontSize: 11, fontWeight: FontWeight.w700)),
                 if (l.ex) ...[
                   SizedBox(height: 4),
                   Container(
@@ -357,6 +441,13 @@ class V2CouponCard extends StatelessWidget {
             Expanded(child: T(title, style: TextStyle(color: K.text, fontSize: 16, fontWeight: FontWeight.w900))),
             if (c?.r != null) ...[v2ResultBadge(c!.r), SizedBox(width: 8)],
             if (c != null) Text('@ ${v2Num(c.odd)}', style: TextStyle(color: K.text, fontSize: 19, fontWeight: FontWeight.w900)),
+            if (c != null && !c.locked && c.legs.isNotEmpty)
+              IconButton(
+                tooltip: tr('Partager'),
+                visualDensity: VisualDensity.compact,
+                icon: Icon(Icons.share_rounded, color: K.text, size: 22),
+                onPressed: () => shareCoupon(context, v2ToCoupon(c)),
+              ),
           ]),
         ),
         if (c == null)

@@ -77,7 +77,11 @@ class _ScoresScreenState extends State<ScoresScreen> with WidgetsBindingObserver
       _tick++;
       if (_active && (_offline || _tick % 5 == 0)) _load(silent: true);
     });
-    _liveTimer = Timer.periodic(Duration(seconds: 15), (_) => _pollLive());
+    _liveTimer = Timer.periodic(Duration(seconds: 15), (_) {
+      _pollLive();
+      // La minute avance à l'écran même si le site source tarde à la mettre à jour.
+      if (_active && mounted && _listFor(0).any((m) => m.status == 'live')) setState(() {});
+    });
     _sock = LiveSocket.updates.stream.listen(_onSocket);
   }
 
@@ -534,7 +538,8 @@ class _ScoresScreenState extends State<ScoresScreen> with WidgetsBindingObserver
   Widget _timeCell(LiveMatch m) {
     switch (m.status) {
       case 'live':
-        return T(m.minute ?? 'Live',
+        final st = LiveSocket.last[m.id]?.$3;
+        return T((st == null ? null : LiveSocket.minuteOf(m.id, st)) ?? m.minute ?? 'Live',
             style: TextStyle(color: K.red, fontSize: 13, fontWeight: FontWeight.w800));
       case 'finished':
         return T('Fin',
@@ -624,20 +629,20 @@ class _ScoresScreenState extends State<ScoresScreen> with WidgetsBindingObserver
             ),
             SizedBox(width: 10),
             SizedBox(
-              width: kV2 ? 78 : 72,
+              width: 66,
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.end,
                 children: [
                   if (kV2 && m.tipShort.isNotEmpty)
                     // V2 : le code du pari bien visible (1, X2…), puis la confiance.
                     Container(
-                      padding: EdgeInsets.symmetric(horizontal: 8, vertical: 2),
-                      decoration: BoxDecoration(color: color.withAlpha(40), borderRadius: BorderRadius.circular(7)),
-                      child: T(m.tipShort, style: TextStyle(color: color, fontSize: 16, fontWeight: FontWeight.w900)),
+                      padding: EdgeInsets.symmetric(horizontal: 6, vertical: 1),
+                      decoration: BoxDecoration(color: color.withAlpha(40), borderRadius: BorderRadius.circular(6)),
+                      child: T(m.tipShort, style: TextStyle(color: color, fontSize: 13, fontWeight: FontWeight.w900)),
                     ),
                   if (prob != null)
                     T('$prob %',
-                        style: TextStyle(color: color, fontSize: kV2 ? 14.5 : 13, fontWeight: FontWeight.w800)),
+                        style: TextStyle(color: color, fontSize: 12.5, fontWeight: FontWeight.w800)),
                   if (!kV2)
                     T(m.tipShort,
                         maxLines: 1,
@@ -645,7 +650,7 @@ class _ScoresScreenState extends State<ScoresScreen> with WidgetsBindingObserver
                         style: TextStyle(color: color, fontSize: 11, fontWeight: FontWeight.w600)),
                   if (m.tipOdd != null)
                     T('@${m.tipOdd!.toStringAsFixed(2)}',
-                        style: TextStyle(color: K.muted, fontSize: kV2 ? 12 : 10.5)),
+                        style: TextStyle(color: K.muted, fontSize: 10.5)),
                 ],
               ),
             ),

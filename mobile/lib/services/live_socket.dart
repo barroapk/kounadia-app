@@ -53,6 +53,24 @@ class LiveSocket {
     return connected && t != null && DateTime.now().difference(t) < const Duration(seconds: 90);
   }
 
+  static final Map<int, DateTime> _stAt = {};
+
+  /// Minute affichée d'un match en cours : celle du robot, avancée d'elle-même entre deux mises à jour
+  /// (le site source ne publie pas toujours chaque minute). Après 45' ou 90', on passe au temps
+  /// additionnel (45+2', 90+4') tant que la source n'annonce pas la mi-temps ou la fin.
+  static String? minuteOf(int id, String st) {
+    final m = RegExp(r"^(\d+)\s*'?\s*(?:\+\s*(\d+))?").firstMatch(st.trim());
+    if (m == null) return null;
+    final base = int.parse(m[1]!);
+    final plus = int.tryParse(m[2] ?? '') ?? 0;
+    final at = _stAt[id];
+    final e = at == null ? 0 : DateTime.now().difference(at).inMinutes;
+    final cap = base <= 45 ? 45 : base <= 90 ? 90 : base <= 105 ? 105 : 120;
+    final total = base + plus + e;
+    if (total <= cap) return "$total'";
+    return "$cap+${(total - cap).clamp(1, 15)}'";
+  }
+
   static Sock? _ws;
   static Timer? _ping, _retry;
   static bool _want = false;
@@ -125,6 +143,11 @@ class LiveSocket {
       });
       if (j['k'] == 'snap') last.clear();
       _dataAt = DateTime.now(); // la photo complète à la connexion compte aussi : direct à jour tout de suite
+      final now = DateTime.now();
+      out.forEach((id, v) {
+        final old = last[id];
+        if (old == null || old.$3 != v.$3) _stAt[id] = now; // la minute vient de changer
+      });
       last.addAll(out);
       if (out.isNotEmpty) updates.add(out);
       final ev = ((j['ev'] as List?) ?? const [])

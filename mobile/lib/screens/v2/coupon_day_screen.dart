@@ -4,7 +4,7 @@ import '../../models/v2.dart';
 import '../../services/account.dart';
 import '../../services/v2_live.dart';
 import '../../services/v2_service.dart';
-import '../../widgets/forecast_card.dart' show K, hm, kMessage, kOfflineBanner;
+import '../../widgets/forecast_card.dart' show K, kMessage, kOfflineBanner;
 import '../../widgets/knd_banner.dart';
 import 'v2_cats.dart';
 import 'v2_history_screen.dart';
@@ -111,20 +111,24 @@ class _CouponDayScreenState extends State<CouponDayScreen> {
   Widget _list(V2Data d, List<(String, String, Color)> cats, bool free) {
     final t = d.today;
     final monday = v2Monday(DateTime.now());
-    final five = DateTime.utc(2000, 1, 1, 5, 15).toLocal();
     return RefreshIndicator(
       color: K.indigo,
       onRefresh: _reload,
       child: ListView(physics: AlwaysScrollableScrollPhysics(), padding: EdgeInsets.fromLTRB(12, 12, 12, 96), children: [
         if (d.offline) kOfflineBanner(),
-        if (t == null)
-          Container(
-            padding: EdgeInsets.all(16),
-            decoration: BoxDecoration(color: K.card, borderRadius: BorderRadius.circular(16), border: Border.all(color: K.border)),
-            child: Text('${tr('Les coupons du jour arrivent chaque matin vers')} ${hm(five)}.',
-                style: TextStyle(color: K.text, fontSize: 14)),
-          )
-        else ...[
+        if (t == null) ...[
+          // Avant le calcul du matin : compte à rebours, et les coupons d'hier restent visibles avec leurs résultats.
+          V2NextCountdown(),
+          if (d.history.isNotEmpty) ...[
+            Padding(
+              padding: EdgeInsets.fromLTRB(4, 2, 4, 10),
+              child: T('Résultats d\'hier', style: TextStyle(color: K.text, fontSize: 16, fontWeight: FontWeight.w900)),
+            ),
+            for (final (key, title, color) in cats)
+              if (d.history.first.coupons[key] != null)
+                V2CouponCard(title: title, coupon: d.history.first.coupons[key], accent: color),
+          ],
+        ] else ...[
           for (final (key, title, color) in cats) ...[
             V2CouponCard(
               title: title,
