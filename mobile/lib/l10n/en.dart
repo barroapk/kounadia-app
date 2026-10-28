@@ -790,4 +790,7 @@ const Map<String, String> kEn = {
   '• Un pari n\'entre dans les Coups sûrs que si plusieurs analyses indépendantes sont d\'accord. Si nos analystes l\'ont aussi choisi, c\'est indiqué.': '• A bet only joins the sure bets if several independent analyses agree. If our analysts also picked it, it is shown.',
   'Nouveaux coupons dans': 'New slips in',
   'Résultats d\'hier': 'Yesterday\'s results',
+  'Les pronostics du jour sont réservés au Premium': 'Today\'s predictions are for Premium members',
+  'Regarde gratuitement l\'historique de chaque catégorie : les paris gagnés et perdus des jours passés.': 'See the history of each category for free: bets won and lost on previous days.',
+  'Devenir Premium · dès 250 F': 'Go Premium · from 250 F',
 };

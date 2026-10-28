@@ -774,4 +774,7 @@ const Map<String, String> kAr = {
   '• Un pari n\'entre dans les Coups sûrs que si plusieurs analyses indépendantes sont d\'accord. Si nos analystes l\'ont aussi choisi, c\'est indiqué.': '• لا يدخل الرهان ضمن الرهانات الآمنة إلا إذا اتفقت عدة تحليلات مستقلة. وإذا اختاره محللونا أيضًا تتم الإشارة إلى ذلك.',
   'Nouveaux coupons dans': 'قسائم جديدة خلال',
   'Résultats d\'hier': 'نتائج الأمس',
+  'Les pronostics du jour sont réservés au Premium': 'توقعات اليوم مخصصة لمشتركي بريميوم',
+  'Regarde gratuitement l\'historique de chaque catégorie : les paris gagnés et perdus des jours passés.': 'شاهد مجانًا سجل كل فئة: الرهانات الرابحة والخاسرة في الأيام السابقة.',
+  'Devenir Premium · dès 250 F': 'اشترك في بريميوم · ابتداءً من 250 F',
 };

@@ -774,4 +774,7 @@ const Map<String, String> kPt = {
   '• Un pari n\'entre dans les Coups sûrs que si plusieurs analyses indépendantes sont d\'accord. Si nos analystes l\'ont aussi choisi, c\'est indiqué.': '• Uma aposta só entra nas apostas seguras se várias análises independentes concordarem. Se os nossos analistas também a escolheram, isso é indicado.',
   'Nouveaux coupons dans': 'Novos cupons em',
   'Résultats d\'hier': 'Resultados de ontem',
+  'Les pronostics du jour sont réservés au Premium': 'Os palpites do dia são reservados ao Premium',
+  'Regarde gratuitement l\'historique de chaque catégorie : les paris gagnés et perdus des jours passés.': 'Veja grátis o histórico de cada categoria: apostas ganhas e perdidas dos dias anteriores.',
+  'Devenir Premium · dès 250 F': 'Seja Premium · a partir de 250 F',
 };

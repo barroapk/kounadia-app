@@ -10,6 +10,7 @@ import '../../widgets/knd_banner.dart';
 import 'v2_cats.dart';
 import 'v2_history_screen.dart';
 import 'v2_widgets.dart';
+import '../account_screen.dart';
 
 /// Une catégorie du menu ☰ de la Sélection du jour.
 class SelFilter {
@@ -147,7 +148,7 @@ class _SelectionScreenState extends State<SelectionScreen> {
                       child: ListView(
                         controller: ctl,
                         padding: EdgeInsets.only(bottom: 16),
-                        children: [for (final f in kSelFilters) _menuItem(ctx, f, s == null ? null : _count(s, f))],
+                        children: [for (final f in kSelFilters) _menuItem(ctx, f, s == null || s.locked ? null : _count(s, f))],
                       ),
                     ),
                   ),
@@ -247,7 +248,15 @@ class _SelectionScreenState extends State<SelectionScreen> {
         ));
       }
     }
-    if (s == null || s.locked) {
+    if (s != null && s.locked) {
+      // Mode gratuit : l'historique de chaque catégorie reste visible ; les pronostics du jour sont Premium.
+      body.add(Container(
+        margin: EdgeInsets.only(bottom: 12),
+        decoration: BoxDecoration(color: K.card, borderRadius: BorderRadius.circular(14), border: Border.all(color: K.border)),
+        child: v2WeekLine(week, onHistory: () => _history(d, f)),
+      ));
+      body.add(_lockCard());
+    } else if (s == null) {
       body.add(SizedBox(height: 260, child: kMessage("Les Coups sûrs du jour ne sont pas encore prêts. Tire vers le bas pour actualiser.")));
     } else if (f.coupon != null) {
       body.add(V2CouponCard(
@@ -300,6 +309,33 @@ class _SelectionScreenState extends State<SelectionScreen> {
       Expanded(child: _wrap(d, [...body, KndBanner()])),
     ]);
   }
+
+  Widget _lockCard() => Container(
+        padding: EdgeInsets.all(18),
+        decoration: BoxDecoration(
+          gradient: LinearGradient(colors: [Color(0xFF4F46E5), Color(0xFF7C3AED)], begin: Alignment.topLeft, end: Alignment.bottomRight),
+          borderRadius: BorderRadius.circular(18),
+        ),
+        child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+          Row(children: [
+            Icon(Icons.lock_rounded, color: Colors.white, size: 26),
+            SizedBox(width: 10),
+            Expanded(child: T('Les pronostics du jour sont réservés au Premium', style: TextStyle(color: Colors.white, fontSize: 16.5, fontWeight: FontWeight.w900))),
+          ]),
+          SizedBox(height: 8),
+          T("Regarde gratuitement l'historique de chaque catégorie : les paris gagnés et perdus des jours passés.",
+              style: TextStyle(color: Color(0xE6FFFFFF), fontSize: 13.5, height: 1.35)),
+          SizedBox(height: 14),
+          SizedBox(
+            width: double.infinity,
+            child: ElevatedButton(
+              style: ElevatedButton.styleFrom(backgroundColor: Colors.white, foregroundColor: Color(0xFF4F46E5), padding: EdgeInsets.symmetric(vertical: 13), shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12))),
+              onPressed: () => Navigator.push(context, MaterialPageRoute(builder: (_) => AccountScreen())),
+              child: T('Devenir Premium · dès 250 F', style: TextStyle(fontWeight: FontWeight.w900, fontSize: 15)),
+            ),
+          ),
+        ]),
+      );
 
   /// Les catégories toujours visibles sous le titre (en plus du menu ☰).
   Widget _chips(V2Selection? s) {

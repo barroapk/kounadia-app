@@ -113,18 +113,8 @@ class _MainScreenState extends State<MainScreen> with WidgetsBindingObserver {
   static final List<Widget> _screensV2 = [
     ScoresScreen(),
     CouponDayScreen(),
-    PremiumGate(
-        title: "Coups sûrs",
-        pitch: "Les paris du jour les plus sûrs : plusieurs analyses indépendantes doivent être d'accord.",
-        perks: [
-          "Coups sûrs : un pari par match, de types variés",
-          "Double chance, buts, mi-temps, corners, fautes, tirs…",
-          "Pourquoi ce choix, en bref, pour chaque pari",
-          "Coupons cote 2+, 5+ et 10+",
-          "Historique de la semaine : gagnés et perdus",
-        ],
-        icon: Icons.checklist_rounded,
-        child: SelectionScreen()),
+    // Coups sûrs : historique et catégories visibles par tous ; les pronostics du jour restent Premium.
+    SelectionScreen(),
     PremiumGate(
         title: "Créer un coupon",
         pitch: "Choisis ta cote et ton nombre de matchs : KOUNADIA compose ton coupon à partir de ses analyses.",
