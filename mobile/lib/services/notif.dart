@@ -8,6 +8,8 @@ import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import '../l10n/tr.dart';
 import 'coupon_store.dart';
+import 'account.dart';
+import '../screens/account_screen.dart';
 import 'fav_leagues.dart';
 import 'user_prefs.dart';
 import '../screens/match_open.dart';
@@ -88,6 +90,10 @@ class Notif {
   static void _open(RemoteMessage m) {
     final id = int.tryParse(m.data['id']?.toString() ?? '');
     final ctx = kNavKey.currentContext;
+    if (m.data['t'] == 'premium' && ctx != null) {
+      Navigator.push(ctx, MaterialPageRoute(builder: (_) => AccountScreen()));
+      return;
+    }
     if (id != null && ctx != null) openMatchId(ctx, id);
   }
 
@@ -117,7 +123,7 @@ class Notif {
       ?..hideCurrentSnackBar()
       ..showSnackBar(SnackBar(
         duration: const Duration(seconds: 5),
-        action: m.data['id'] == null ? null : SnackBarAction(label: tr('Voir'), onPressed: () => _open(m)),
+        action: m.data['id'] == null && m.data['t'] != 'premium' ? null : SnackBarAction(label: tr('Voir'), onPressed: () => _open(m)),
         content: Column(mainAxisSize: MainAxisSize.min, crossAxisAlignment: CrossAxisAlignment.start, children: [
           Text(n.title ?? '', style: const TextStyle(fontWeight: FontWeight.w800)),
           if ((n.body ?? '').isNotEmpty) Text(n.body!),
@@ -146,7 +152,9 @@ class Notif {
       final token = await FirebaseMessaging.instance.getToken();
       if (token == null || kLiveBase.isEmpty) return;
       final live = (topics.where((t) => t.contains('_l2_') || t.contains('_m2_')).toList()..sort());
-      final body = jsonEncode({'token': token, 'lang': appLang, 'coupons': list, 'topics': live});
+      // Abonné Premium : son ticket signé permet au robot de lui rappeler la fin de son abonnement.
+      final tk = Account.user.value?.ticket;
+      final body = jsonEncode({'token': token, 'lang': appLang, 'coupons': list, 'topics': live, if (tk != null) 'ticket': tk});
       if (p.getString('notif_cp') == body) return; // rien de nouveau
       final r = await http
           .post(Uri.parse('$kLiveBase/coupons'), headers: {'content-type': 'application/json'}, body: body)

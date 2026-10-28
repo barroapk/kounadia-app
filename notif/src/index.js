@@ -271,6 +271,9 @@ export class Poller {
     try {
       await this.checkHealth();
     } catch (_) {}
+    try {
+      await this.premiumJobs();
+    } catch (_) {}
     await this.state.storage.setAlarm(Date.now() + next);
   }
 
@@ -479,9 +482,64 @@ export class Poller {
     // Sujets suivis (nouvelle version de l'app) : notifications envoyées directement au téléphone.
     const topics = [...new Set((Array.isArray(b.topics) ? b.topics : []).map(String).filter((t) => TOPIC_RE.test(t)))].slice(0, 300);
     await this.reindex(key, prev?.topics || [], topics);
-    if (!coupons.length && !topics.length) await this.state.storage.delete(key);
-    else await this.state.storage.put(key, { token, lang: LANGS.includes(b.lang) ? b.lang : 'en', coupons, topics, at: Date.now() });
+    // Compte de l'abonné (ticket Premium signé) : sert aux rappels de fin d'abonnement sur ce téléphone.
+    const uid = (b.ticket ? await ticketUid(b.ticket, this.env) : null) || prev?.uid || null;
+    if (uid && uid !== prev?.uid) {
+      if (prev?.uid) await this.unlinkUid(prev.uid, key);
+      const list = ((await this.state.storage.get(`u:${uid}`)) || []).filter((k) => k !== key);
+      list.push(key);
+      await this.state.storage.put(`u:${uid}`, list.slice(-5));
+    }
+    if (!coupons.length && !topics.length && !uid) await this.state.storage.delete(key);
+    else await this.state.storage.put(key, { token, lang: LANGS.includes(b.lang) ? b.lang : 'en', coupons, topics, uid, at: Date.now() });
     return Response.json({ ok: true });
+  }
+
+  async unlinkUid(uid, key) {
+    const list = ((await this.state.storage.get(`u:${uid}`)) || []).filter((k) => k !== key);
+    if (list.length) await this.state.storage.put(`u:${uid}`, list);
+    else await this.state.storage.delete(`u:${uid}`);
+  }
+
+  // Rappels de fin d'abonnement (chaque heure, de 6 h à 23 h) : le serveur envoie les e-mails
+  // et renvoie les abonnés concernés ; le robot prévient leurs téléphones.
+  async premiumJobs() {
+    if (!this.env.BACKUP_CRON_SECRET) return;
+    const now = Date.now();
+    const h = new Date(now).getUTCHours();
+    const st = (await this.state.storage.get('prem')) || {};
+    if (h < 6 || now - (st.at || 0) < 60 * 60000) return;
+    st.at = now;
+    await this.state.storage.put('prem', st);
+    const r = await fetch(`${API}/internal/premium/reminders`, {
+      method: 'POST',
+      headers: { 'x-cron-secret': this.env.BACKUP_CRON_SECRET, 'content-type': 'application/json' },
+      body: JSON.stringify({ since: st.since || now - 3600000 }),
+    }).catch(() => null);
+    if (!r?.ok) return;
+    const j = await r.json().catch(() => null);
+    if (!j?.ok) return;
+    const T = {
+      fr: { soon: ['👑 Ton Premium se termine demain', 'Renouvelle-le pour garder les coupons VIP et les Coups sûrs.'], end: ['👑 Ton Premium est terminé', 'Renouvelle-le dès 250 F pour retrouver les coupons VIP.'] },
+      en: { soon: ['👑 Your Premium ends tomorrow', 'Renew it to keep VIP slips and sure bets.'], end: ['👑 Your Premium has ended', 'Renew it from 250 F to get VIP slips back.'] },
+      pt: { soon: ['👑 O seu Premium termina amanhã', 'Renove para manter os cupons VIP e as apostas seguras.'], end: ['👑 O seu Premium terminou', 'Renove a partir de 250 F para voltar a ter os cupons VIP.'] },
+      es: { soon: ['👑 Tu Premium termina mañana', 'Renuévalo para conservar los cupones VIP y las apuestas seguras.'], end: ['👑 Tu Premium ha terminado', 'Renuévalo desde 250 F para recuperar los cupones VIP.'] },
+      ar: { soon: ['👑 ينتهي بريميوم غدًا', 'جدّده للاحتفاظ بقسائم VIP والرهانات الآمنة.'], end: ['👑 انتهى بريميوم', 'جدّده ابتداءً من 250 F لاستعادة قسائم VIP.'] },
+    };
+    const msgs = [];
+    for (const x of Array.isArray(j.sent) ? j.sent.slice(0, 500) : []) {
+      const keys = (await this.state.storage.get(`u:${x.uid}`)) || [];
+      for (const k of keys) {
+        const d = await this.state.storage.get(k);
+        if (!d?.token) continue;
+        const t = (T[d.lang] || T[x.lang] || T.fr)[x.kind === 'soon' ? 'soon' : 'end'];
+        msgs.push({ token: d.token, notification: { title: t[0], body: t[1] }, data: { t: 'premium' },
+          android: { priority: 'HIGH', ttl: '86400s', notification: { channel_id: 'live', tag: 'premium', sound: 'default', default_vibrate_timings: true, visibility: 'PUBLIC' } } });
+      }
+    }
+    if (msgs.length) await this.enqueue(msgs, 2);
+    st.since = Number(j.until) || now;
+    await this.state.storage.put('prem', st);
   }
 
   /** Index « sujet -> téléphones », pour retrouver vite qui prévenir. */
@@ -894,6 +952,19 @@ async function ticketOk(req, env) {
     return !!p?.uid && Number(p.exp) > Date.now();
   } catch (_) {
     return false;
+  }
+}
+/** Identifiant du compte contenu dans un ticket Premium signé (même expiré) ; null si faux. */
+async function ticketUid(t, env) {
+  try {
+    const [body, sig] = String(t || '').trim().split('.');
+    if (!body || !sig || !env.TICKET_SECRET) return null;
+    const key = await crypto.subtle.importKey('raw', enc(env.TICKET_SECRET), { name: 'HMAC', hash: 'SHA-256' }, false, ['verify']);
+    if (!(await crypto.subtle.verify('HMAC', key, unb64url(sig), enc(body)))) return null;
+    const p = JSON.parse(new TextDecoder().decode(unb64url(body)));
+    return p?.uid ? String(p.uid).slice(0, 64) : null;
+  } catch (_) {
+    return null;
   }
 }
 const premMem = new Map(); // chemin -> [heure, texte déchiffré]
