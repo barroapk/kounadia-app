@@ -168,6 +168,10 @@ html[dir="rtl"] .back svg{transform:scaleX(-1)}
 .dlc .act{display:flex;gap:8px;flex-wrap:wrap}
 .dlc .act a,.dlc .act button{font:700 14px var(--f-body);border:0;border-radius:10px;padding:9px 14px;cursor:pointer;text-decoration:none;background:var(--indigo);color:#fff}
 .dlc .act .x{background:transparent;color:var(--mist);border:1px solid var(--line)}
+.ubar{display:flex;align-items:center;justify-content:center;gap:8px;padding:9px max(16px,env(safe-area-inset-left,0px));background:linear-gradient(90deg,var(--indigo),var(--violet));color:#fff;font:700 14px/1.35 var(--f-body);text-align:center}
+.ubar svg{flex:none;width:18px;height:18px}
+.join{display:inline-flex;align-items:center;gap:8px;margin:0 0 10px;padding:6px 12px;border-radius:999px;background:color-mix(in srgb,var(--gold) 16%,transparent);color:var(--gold);font:800 14px var(--f-body)}
+.join svg{width:16px;height:16px}
 </style>
 </head>
 <body>
@@ -183,6 +187,7 @@ html[dir="rtl"] .back svg{transform:scaleX(-1)}
 </header>
 
 <div id="iab" class="iab" hidden><span id="iabT">Tu es dans le navigateur de Facebook : une partie de KOUNADIA peut ne pas s'afficher.</span><a id="iabGo" href="#">Ouvrir dans Chrome</a></div>
+<div class="ubar"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="M3 12h18M12 3c2.5 2.7 3.8 5.7 3.8 9s-1.3 6.3-3.8 9c-2.5-2.7-3.8-5.7-3.8-9S9.5 5.7 12 3z"/></svg><span id="uBar">Plus de 5 000 personnes utilisent KOUNADIA partout dans le monde</span></div>
 <main id="home">
   <div class="hero">
     <div class="pitch"></div><div class="glow"></div>
@@ -191,6 +196,7 @@ html[dir="rtl"] .back svg{transform:scaleX(-1)}
         <span class="eyebrow" data-t="eye"></span>
         <h1 class="display" data-t="h1" data-html></h1>
         <p class="lead" data-t="lead"></p>
+        <p class="join"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" aria-hidden="true"><circle cx="9" cy="8" r="3.5"/><path d="M2.5 20c.8-3.6 3.4-5.5 6.5-5.5s5.7 1.9 6.5 5.5"/><path d="M16 4.6a3.5 3.5 0 0 1 0 6.8M18.5 14.8c1.6.8 2.6 2.5 3 5.2"/></svg><span id="uJoin">Rejoins les +5 000 utilisateurs</span></p>
         <div class="cta-row">
           <a class="btn dl" href="/telecharger"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3v12m0 0-5-5m5 5 5-5M4 19h16"/></svg><span data-t="cta"></span></a>
           <span class="cta-note"><span data-t="note" data-html></span><span class="meta" id="meta" hidden></span></span>
@@ -375,5 +381,8 @@ var autoDl=/^#(telecharger|download|apk)$/i.test(location.hash)||/[?&]dl(=|&|$)/
 if(autoDl){var ev={defaultPrevented:false,preventDefault:function(){this.defaultPrevented=true}};start(ev);if(!ev.defaultPrevented)location.href="/telecharger"}
 $("dlX").addEventListener("click",function(){box.hidden=true});
 })();</script>
+<script>(function(){var T={fr:["Plus de 5 000 personnes utilisent KOUNADIA partout dans le monde","Rejoins les +5 000 utilisateurs"],en:["More than 5,000 people use KOUNADIA all over the world","Join 5,000+ users"],pt:["Mais de 5 000 pessoas usam a KOUNADIA no mundo todo","Junte-se a mais de 5 000 usuários"],es:["Más de 5 000 personas usan KOUNADIA en todo el mundo","Únete a más de 5 000 usuarios"],ar:["أكثر من 5000 شخص يستخدمون KOUNADIA حول العالم","انضم إلى أكثر من 5000 مستخدم"]};
+function f(){var t=T[document.documentElement.lang]||T.fr;document.getElementById("uBar").textContent=t[0];document.getElementById("uJoin").textContent=t[1]}
+f();var l=document.getElementById("lang");if(l)l.addEventListener("change",function(){setTimeout(f,0)})})();</script>
 </body>
 </html>
