@@ -54,6 +54,7 @@ class LiveSocket {
   }
 
   static final Map<int, DateTime> _stAt = {};
+  static final Map<int, String> _stVal = {}, _stLast = {};
 
   /// Minute affichée d'un match en cours : celle du robot, avancée d'elle-même entre deux mises à jour
   /// (le site source ne publie pas toujours chaque minute). Après 45' ou 90', on passe au temps
@@ -63,6 +64,12 @@ class LiveSocket {
     if (m == null) return null;
     final base = int.parse(m[1]!);
     final plus = int.tryParse(m[2] ?? '') ?? 0;
+    // Minute qui change, quelle que soit la source (robot ou lecture directe du site) : on repart de maintenant.
+    if (_stVal[id] != st) {
+      _stVal[id] = st;
+      if (!_stAt.containsKey(id) || _stLast[id] != st) _stAt[id] = DateTime.now();
+      _stLast[id] = st;
+    }
     final at = _stAt[id];
     final e = at == null ? 0 : DateTime.now().difference(at).inMinutes;
     final cap = base <= 45 ? 45 : base <= 90 ? 90 : base <= 105 ? 105 : 120;

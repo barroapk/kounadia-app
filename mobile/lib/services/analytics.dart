@@ -50,7 +50,18 @@ class Analytics {
   static String _cut(String s, int n) => s.length <= n ? s : s.substring(0, n);
 
   /// Plantage de l'app : type, message et début de la pile (5 au maximum par ouverture, rien de personnel).
+  /// Pas de vrais plantages : logo ou drapeau qui n'a pas pu se charger (réseau coupé : le maillot s'affiche
+  /// à la place), ou erreur venant d'une extension du navigateur (version iPhone).
+  static bool _noise(Object error, StackTrace? stack) {
+    final m = error.toString();
+    if (stack?.toString().contains('chrome-extension://') ?? false) return true;
+    final net = RegExp(r'ClientException|SocketException|HttpException|HandshakeException|Connection closed|connection abort|Failed host lookup|Connection reset|timed out', caseSensitive: false).hasMatch(m);
+    final img = RegExp(r'\.(png|jpe?g|webp|svg|gif)(\?|$|,|\s)', caseSensitive: false).hasMatch(m) || m.contains('/images/');
+    return net && img;
+  }
+
   static void crash(Object error, StackTrace? stack, {bool fatal = false}) {
+    if (_noise(error, stack)) return;
     if (_crashes >= 5) return;
     _crashes++;
     log('crash', {
