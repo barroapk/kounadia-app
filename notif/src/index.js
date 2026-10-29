@@ -25,6 +25,14 @@ const TIP = {
   es: { sure: '🎯 Apuestas seguras del día', sureB: '{n} apuestas bien analizadas te esperan', pro: '🎟️ Cupones del día', proB: 'El simple, el cupón gratis y los cupones VIP están listos', win: '✅ Apuesta segura ganada', cw: '🎉 ¡Cupón ganado!', cwB: '{n}/{n} partidos ganados · cuota {odd}', cl: '❌ Cupón perdido', clB: '{m} hizo fallar tu cupón' },
   ar: { sure: '🎯 رهانات اليوم الآمنة', sureB: '{n} رهانات مدروسة بعناية بانتظارك', pro: '🎟️ قسائم اليوم', proB: 'الرهان الفردي والقسيمة المجانية وقسائم VIP جاهزة', win: '✅ ربح الرهان الآمن', cw: '🎉 ربحت القسيمة!', cwB: '{n}/{n} مباريات رابحة · الاحتمال {odd}', cl: '❌ خسرت القسيمة', clB: '{m} أفشلت قسيمتك' },
 };
+// Coupons gagnés (Coupon du jour, VIP, Coups sûrs) : annoncés à tous, uniquement quand ils sont gagnés.
+const CPN = {
+  fr: { single: 'Single du jour', free: 'Coupon gratuit', vip2: 'Coupon VIP cote 2', vip3: 'Coupon VIP cote 3', vip5: 'Coupon VIP cote 5', c2: 'Coup sûr cote 2+', c5: 'Coup sûr cote 5+', c10: 'Coup sûr cote 10+', t: '🎉 {c} gagné !', b: '{n}/{n} matchs gagnés · cote {odd}', vb: '{n}/{n} matchs gagnés · cote {odd} · Rejoins le Premium dès 250 F' },
+  en: { single: 'Single of the day', free: 'Free slip', vip2: 'VIP slip odds 2', vip3: 'VIP slip odds 3', vip5: 'VIP slip odds 5', c2: 'Sure bets odds 2+', c5: 'Sure bets odds 5+', c10: 'Sure bets odds 10+', t: '🎉 {c} won!', b: '{n}/{n} matches won · odds {odd}', vb: '{n}/{n} matches won · odds {odd} · Go Premium from 250 F' },
+  pt: { single: 'Simples do dia', free: 'Cupom grátis', vip2: 'Cupom VIP odd 2', vip3: 'Cupom VIP odd 3', vip5: 'Cupom VIP odd 5', c2: 'Apostas seguras odd 2+', c5: 'Apostas seguras odd 5+', c10: 'Apostas seguras odd 10+', t: '🎉 {c} ganho!', b: '{n}/{n} jogos ganhos · odd {odd}', vb: '{n}/{n} jogos ganhos · odd {odd} · Seja Premium a partir de 250 F' },
+  es: { single: 'Simple del día', free: 'Cupón gratis', vip2: 'Cupón VIP cuota 2', vip3: 'Cupón VIP cuota 3', vip5: 'Cupón VIP cuota 5', c2: 'Apuestas seguras cuota 2+', c5: 'Apuestas seguras cuota 5+', c10: 'Apuestas seguras cuota 10+', t: '🎉 ¡{c} ganado!', b: '{n}/{n} partidos ganados · cuota {odd}', vb: '{n}/{n} partidos ganados · cuota {odd} · Hazte Premium desde 250 F' },
+  ar: { single: 'رهان اليوم الفردي', free: 'القسيمة المجانية', vip2: 'قسيمة VIP احتمال 2', vip3: 'قسيمة VIP احتمال 3', vip5: 'قسيمة VIP احتمال 5', c2: 'رهانات آمنة احتمال 2+', c5: 'رهانات آمنة احتمال 5+', c10: 'رهانات آمنة احتمال 10+', t: '🎉 ربحت {c}!', b: '{n}/{n} مباريات رابحة · الاحتمال {odd}', vb: '{n}/{n} مباريات رابحة · الاحتمال {odd} · اشترك في بريميوم ابتداءً من 250 F' },
+};
 const fill = (t, v) => t.replace(/\{(\w+)\}/g, (_, k) => (v[k] ?? ''));
 
 // Même règle que l'app (CouponEngine.evalPick).
@@ -449,6 +457,29 @@ export class Poller {
           if (!first) for (const lang of LANGS) jobs.push(['tips', lang, TIP[lang].sure, fill(TIP[lang].sureB, { n: top.length }), { t: 'sure' }, 'sure']);
         }
       }
+      // Coupons gagnés (aujourd'hui, et hier pour les matchs finis après minuit) : une seule annonce par coupon.
+      const fresh = !st.cwInit; // premier passage : on note ceux déjà gagnés, sans notifier
+      st.cw = st.cw || {};
+      for (const D of [t, ...(Array.isArray(v2?.history) ? v2.history.slice(0, 1) : [])]) {
+        if (!D?.day) continue;
+        const list = [['single', D.coupons?.single], ['free', D.coupons?.free], ['vip2', D.coupons?.vip2], ['vip3', D.coupons?.vip3], ['vip5', D.coupons?.vip5],
+          ['c2', D.selection?.coupons?.c2], ['c5', D.selection?.coupons?.c5], ['c10', D.selection?.coupons?.c10]];
+        for (const [k, c] of list) {
+          const id = `${D.day}:${k}`;
+          if (c?.r !== 'won' || st.cw[id]) continue;
+          st.cw[id] = Date.now();
+          if (fresh || first) continue;
+          const n = Array.isArray(c.legs) ? c.legs.length : c.n || 0;
+          const odd = String(c.odd ?? '').replace('.', ',');
+          const vip = k !== 'single' && k !== 'free';
+          for (const lang of LANGS) {
+            const T = CPN[lang] || CPN.fr;
+            jobs.push(['tips', lang, fill(T.t, { c: T[k] }), fill(vip ? T.vb : T.b, { n, odd }), { t: 'day' }, `w${k}`]);
+          }
+        }
+      }
+      for (const [id, at] of Object.entries(st.cw)) if (Date.now() - at > 4 * 86400000) delete st.cw[id];
+      st.cwInit = true;
     } catch (_) {}
     st.init = true;
     await this.state.storage.put('tips', st);
