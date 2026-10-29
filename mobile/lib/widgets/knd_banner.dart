@@ -336,39 +336,40 @@ class _CarouselState extends State<_Carousel> {
     } catch (_) {}
   }
 
-  static const _titleStyle = TextStyle(color: Colors.white, fontSize: 19, fontWeight: FontWeight.w900, height: 1.15);
-  static const _textStyle = TextStyle(color: Color(0xE6FFFFFF), fontSize: 13.5, height: 1.3);
+  static const _titleStyle = TextStyle(color: Colors.white, fontSize: 17, fontWeight: FontWeight.w900, height: 1.12);
+  static const _textStyle = TextStyle(color: Color(0xE6FFFFFF), fontSize: 13, height: 1.25);
 
-  /// Hauteur juste suffisante pour la page la plus remplie (texte entier, taille normale).
-  double _height(BuildContext context, double w) {
+  /// Hauteur d'une pub : juste ce qu'il faut pour sa page la plus remplie (texte entier, lisible).
+  /// Pub texte : carte basse ; pub photo : format de la photo (2:1), rien n'est coupé.
+  double _slideHeight(BuildContext context, BannerSlide s, double w) {
     final scaler = MediaQuery.textScalerOf(context);
     final dir = Directionality.of(context);
-    final tw = w - 4 - 36; // marges de la carte et du texte
-    double h = w / 2.2;
+    final tw = w - 4 - 32; // marges de la carte et du texte
+    double h = w / 3.4;
     double measure(String t, TextStyle st) {
       if (t.isEmpty) return 0;
       final tp = TextPainter(text: TextSpan(text: t, style: st), textDirection: dir, textScaler: scaler)
         ..layout(maxWidth: tw);
       return tp.height;
     }
-    for (final s in widget.slides) {
-      for (final p in s.pages) {
-        if (p.photo) {
-          h = max(h, w / 2);
-          continue;
-        }
-        final body = measure(p.title, _titleStyle) + (p.text.isEmpty ? 0 : 6 + measure(p.text, _textStyle));
-        h = max(h, 34 + body + (s.hasButton ? 58 : 18));
+    for (final p in s.pages) {
+      if (p.photo) {
+        h = max(h, w / 2);
+        continue;
       }
+      final body = measure(p.title, _titleStyle) + (p.text.isEmpty ? 0 : 4 + measure(p.text, _textStyle));
+      h = max(h, 28 + body + (s.hasButton ? 46 : 14));
     }
-    return min(h, w * 1.25);
+    return min(h, w * 1.1);
   }
 
   @override
   Widget build(BuildContext context) {
     return LayoutBuilder(
-      builder: (context, bc) => SizedBox(
-      height: _height(context, bc.maxWidth),
+      builder: (context, bc) => AnimatedContainer(
+      duration: const Duration(milliseconds: 350),
+      curve: Curves.easeInOutCubic,
+      height: _slideHeight(context, _s(_ad), bc.maxWidth),
       child: PageView.builder(
         controller: _h,
         onPageChanged: (i) {
@@ -452,7 +453,7 @@ class _AdViewState extends State<_AdView> {
           ),
         ),
         Padding(
-          padding: EdgeInsets.fromLTRB(18, 34, 18, widget.slide.hasButton ? 58 : 18),
+          padding: EdgeInsets.fromLTRB(16, 28, 16, widget.slide.hasButton ? 46 : 14),
           // Texte entier : la taille se réduit d'elle-même si le texte est long.
           child: LayoutBuilder(
             builder: (_, bc) => FittedBox(
@@ -467,7 +468,7 @@ class _AdViewState extends State<_AdView> {
                     if (p.title.isNotEmpty)
                       Text(p.title, style: _CarouselState._titleStyle),
                     if (p.text.isNotEmpty) ...[
-                      const SizedBox(height: 6),
+                      const SizedBox(height: 4),
                       Text(p.text, style: _CarouselState._textStyle),
                     ],
                   ],
@@ -486,8 +487,8 @@ class _AdViewState extends State<_AdView> {
       );
 
   Widget _button(BannerSlide s, Color c) => Container(
-        padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
-        constraints: const BoxConstraints(maxWidth: 170),
+        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+        constraints: const BoxConstraints(maxWidth: 160),
         decoration: BoxDecoration(
           color: Colors.white,
           borderRadius: BorderRadius.circular(22),
@@ -498,7 +499,7 @@ class _AdViewState extends State<_AdView> {
             child: T(s.cta,
                 maxLines: 1,
                 overflow: TextOverflow.ellipsis,
-                style: TextStyle(color: c, fontSize: 13, fontWeight: FontWeight.w900)),
+                style: TextStyle(color: c, fontSize: 12.5, fontWeight: FontWeight.w900)),
           ),
           const SizedBox(width: 6),
           Icon(Icons.arrow_forward_rounded, color: c, size: 15),
@@ -548,8 +549,8 @@ class _AdViewState extends State<_AdView> {
           if (n > 1) Positioned(top: 10, right: 10, child: _chip('${widget.page + 1}/$n', size: 11)),
           if (s.hasButton)
             Positioned(
-              right: 12,
-              bottom: 12,
+              right: 10,
+              bottom: 10,
               child: AnimatedOpacity(
                 opacity: last ? 1 : 0,
                 duration: const Duration(milliseconds: 300),

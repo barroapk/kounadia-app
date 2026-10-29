@@ -1,10 +1,13 @@
 import 'dart:async';
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import '../../models/coupon.dart' show Coupon, Leg;
 import '../../widgets/coupon_receipt.dart' show shareCoupon;
 import '../../l10n/tr.dart';
 import '../../models/v2.dart';
+import '../../services/analytics.dart';
+import '../../services/codes.dart';
 import '../../services/logo_cache.dart';
 import '../../widgets/forecast_card.dart' show K, hm;
 import '../../widgets/jersey.dart';
@@ -421,7 +424,18 @@ class V2CouponCard extends StatelessWidget {
   final (int, int)? week;
   final VoidCallback? onHistory;
   final Color accent;
-  V2CouponCard({super.key, required this.title, required this.coupon, this.week, this.onHistory, this.accent = const Color(0xFF4F46E5)});
+  // Code 1xBet du coupon (saisi dans KOUNADIA Admin) : clé du coupon et jour.
+  final String? codeKey;
+  final String? codeDay;
+  V2CouponCard(
+      {super.key,
+      required this.title,
+      required this.coupon,
+      this.week,
+      this.onHistory,
+      this.accent = const Color(0xFF4F46E5),
+      this.codeKey,
+      this.codeDay});
 
   @override
   Widget build(BuildContext context) {
@@ -459,6 +473,18 @@ class V2CouponCard extends StatelessWidget {
             if (i > 0) Container(height: 1, color: K.border),
             V2MatchRow(c.legs[i], showLeague: true),
           ],
+        if (c != null && !c.locked && c.r == null && codeKey != null)
+          ValueListenableBuilder<Map<String, String>>(
+            valueListenable: Codes.data,
+            builder: (_, __, ___) {
+              final code = Codes.of(codeKey!, codeDay);
+              if (code == null) return SizedBox.shrink();
+              return Column(crossAxisAlignment: CrossAxisAlignment.stretch, children: [
+                Container(height: 1, color: K.border),
+                V2CodeRow(code: code, kind: codeKey!),
+              ]);
+            },
+          ),
         if (week != null) ...[
           Container(height: 1, color: K.border),
           v2WeekLine(week!, onHistory: onHistory),
@@ -486,6 +512,62 @@ class V2CouponCard extends StatelessWidget {
             label: T('Débloquer avec Premium', style: TextStyle(fontWeight: FontWeight.w900)),
           ),
         ]),
+      );
+}
+
+/// Code 1xBet d'un coupon : l'utilisateur le copie puis le charge dans 1xBet (Coupon › Charger).
+class V2CodeRow extends StatelessWidget {
+  final String code;
+  final String kind;
+  V2CodeRow({super.key, required this.code, required this.kind});
+
+  static const _blue = Color(0xFF1A73E8);
+
+  void _copy(BuildContext context) {
+    Clipboard.setData(ClipboardData(text: code));
+    Analytics.log('code_copy', {'k': kind});
+    ScaffoldMessenger.of(context).hideCurrentSnackBar();
+    ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+      duration: Duration(seconds: 5),
+      content: T('Code $code copié. Dans 1xBet : Coupon › Charger un coupon, puis colle le code.'),
+    ));
+  }
+
+  @override
+  Widget build(BuildContext context) => InkWell(
+        onTap: () => _copy(context),
+        child: Container(
+          color: _blue.withAlpha(26),
+          padding: EdgeInsets.fromLTRB(14, 10, 10, 10),
+          child: Row(children: [
+            Icon(Icons.confirmation_number_rounded, color: _blue, size: 24),
+            SizedBox(width: 10),
+            Expanded(
+              child: Column(crossAxisAlignment: CrossAxisAlignment.start, mainAxisSize: MainAxisSize.min, children: [
+                T('Code coupon 1xBet', style: TextStyle(color: K.muted, fontSize: 11.5, fontWeight: FontWeight.w800)),
+                SizedBox(height: 2),
+                FittedBox(
+                  fit: BoxFit.scaleDown,
+                  alignment: AlignmentDirectional.centerStart,
+                  child: Text(code,
+                      style: TextStyle(color: K.text, fontSize: 19, fontWeight: FontWeight.w900, letterSpacing: 1.6, fontFamily: 'monospace')),
+                ),
+              ]),
+            ),
+            SizedBox(width: 8),
+            FilledButton.icon(
+              style: FilledButton.styleFrom(
+                backgroundColor: _blue,
+                foregroundColor: Colors.white,
+                visualDensity: VisualDensity.compact,
+                padding: EdgeInsets.symmetric(horizontal: 14),
+              ),
+              onPressed: () => _copy(context),
+              icon: Icon(Icons.copy_rounded, size: 17),
+              label: T('Copier', style: TextStyle(fontWeight: FontWeight.w900)),
+            ),
+          ]),
+        ),
       );
 }
 

@@ -1,8 +1,10 @@
+import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import '../../l10n/tr.dart';
 import '../../models/v2.dart';
 import '../../services/account.dart';
+import '../../services/codes.dart';
 import '../../services/v2_live.dart';
 import '../../services/v2_service.dart';
 import '../../widgets/forecast_card.dart' show K, kMessage, kOfflineBanner;
@@ -78,9 +80,11 @@ class _SelectionScreenState extends State<SelectionScreen> {
 
   void _live() {
     if (mounted) setState(() {});
+    unawaited(Codes.load());
   }
 
   Future<V2Data> _load({bool force = false}) async {
+    unawaited(Codes.load(force: force));
     final d = await V2Service.shared(force: force);
     final s = d.today?.selection;
     if (s != null) V2Live.follow(this, s.allLegs);
@@ -264,6 +268,8 @@ class _SelectionScreenState extends State<SelectionScreen> {
         coupon: s.coupons[f.coupon],
         week: week,
         accent: f.coupon == 'c10' ? Color(0xFFDC2626) : f.coupon == 'c5' ? Color(0xFFEA580C) : Color(0xFF4F46E5),
+        codeKey: f.coupon,
+        codeDay: d.today?.day,
         onHistory: () => _history(d, f),
       ));
     } else {

@@ -169,6 +169,7 @@ export class Poller {
     if (url.pathname === '/tr' && req.method === 'POST') return this.translate(req);
     if (url.pathname === '/coupons' && req.method === 'POST') return this.saveCoupons(req);
     if (url.pathname === '/contact') return this.contact(req);
+    if (url.pathname === '/codes') return this.codes(req, url);
     if (url.pathname === '/log') {
       const ids = new Set((url.searchParams.get('ids') || '').split(',').filter(Boolean).slice(0, 300).map(Number));
       const log = ((await this.state.storage.get('log')) || []).filter((e) => ids.has(e.id));
@@ -194,12 +195,7 @@ export class Poller {
     if (req.method !== 'POST') return new Response('', { status: 405, headers: H });
     const auth = req.headers.get('authorization') || '';
     if (!/^Bearer\s+\S{10,}$/.test(auth)) return Response.json({ error: 'Reconnecte-toi.' }, { status: 401, headers: H });
-    let ok = false;
-    try {
-      const r = await fetch(`${API}/admin/kounadia/overview?days=1`, { headers: { authorization: auth } });
-      ok = r.ok;
-    } catch (_) {}
-    if (!ok) return Response.json({ error: 'Accès refusé.' }, { status: 403, headers: H });
+    if (!(await this.isAdmin(auth))) return Response.json({ error: 'Accès refusé.' }, { status: 403, headers: H });
     let body = {};
     try {
       body = await req.json();
@@ -208,6 +204,54 @@ export class Poller {
     if (!/^\d{8,15}$/.test(wa)) return Response.json({ error: 'Numéro invalide.' }, { status: 400, headers: H });
     await this.state.storage.put('contact_wa', wa);
     return Response.json({ wa }, { headers: H });
+  }
+
+  /** Session admin KOUNADIA (vérifiée auprès du serveur). */
+  async isAdmin(auth) {
+    if (!/^Bearer\s+\S{10,}$/.test(auth || '')) return false;
+    try {
+      const r = await fetch(`${API}/admin/kounadia/ads-full`, { headers: { authorization: auth } });
+      return r.ok;
+    } catch (_) {
+      return false;
+    }
+  }
+
+  // Codes 1xBet des coupons du jour : saisis dans KOUNADIA Admin, copiés par les utilisateurs dans l'app.
+  // Single et coupon gratuit : pour tous ; coupons VIP et Coups sûrs : seulement avec un ticket Premium (ou l'admin).
+  async codes(req, url) {
+    const H = { 'access-control-allow-origin': '*', 'cache-control': 'no-store' };
+    const KEYS = ['single', 'free', 'vip2', 'vip3', 'vip5', 'c2', 'c5', 'c10'];
+    const FREE = new Set(['single', 'free']);
+    const st = (await this.state.storage.get('codes')) || { day: '', c: {} };
+    if (req.method === 'GET') {
+      let all = await ticketOk(req, this.env);
+      if (!all && url.searchParams.get('admin') === '1') all = await this.isAdmin(req.headers.get('authorization') || '');
+      const c = {};
+      for (const [k, v] of Object.entries(st.c || {})) if (all || FREE.has(k)) c[k] = v;
+      return Response.json({ day: st.day || '', codes: c }, { headers: H });
+    }
+    if (req.method !== 'POST') return new Response('', { status: 405, headers: H });
+    const auth = req.headers.get('authorization') || '';
+    if (!/^Bearer\s+\S{10,}$/.test(auth)) return Response.json({ error: 'Reconnecte-toi.' }, { status: 401, headers: H });
+    if (!(await this.isAdmin(auth))) return Response.json({ error: 'Accès refusé.' }, { status: 403, headers: H });
+    let body = {};
+    try {
+      body = await req.json();
+    } catch (_) {}
+    const day = String(body.day || '');
+    if (!/^\d{4}-\d{2}-\d{2}$/.test(day)) return Response.json({ error: 'Date invalide.' }, { status: 400, headers: H });
+    const c = st.day === day ? { ...(st.c || {}) } : {};
+    const inp = body.codes && typeof body.codes === 'object' ? body.codes : {};
+    for (const k of KEYS) {
+      if (!(k in inp)) continue;
+      const v = String(inp[k] ?? '').toUpperCase().replace(/[^A-Z0-9]/g, '');
+      if (!v) delete c[k];
+      else if (v.length >= 4 && v.length <= 24) c[k] = v;
+      else return Response.json({ error: `Code invalide : ${k}` }, { status: 400, headers: H });
+    }
+    await this.state.storage.put('codes', { day, c, at: Date.now() });
+    return Response.json({ day, codes: c }, { headers: H });
   }
 
   // Traduction des publicités (texte écrit en français dans KND Tigui), gardée en mémoire.

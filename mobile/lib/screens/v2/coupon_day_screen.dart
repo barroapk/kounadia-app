@@ -1,7 +1,9 @@
+import 'dart:async';
 import 'package:flutter/material.dart';
 import '../../l10n/tr.dart';
 import '../../models/v2.dart';
 import '../../services/account.dart';
+import '../../services/codes.dart';
 import '../../services/v2_live.dart';
 import '../../services/v2_service.dart';
 import '../../widgets/forecast_card.dart' show K, kMessage, kOfflineBanner;
@@ -53,9 +55,11 @@ class _CouponDayScreenState extends State<CouponDayScreen> {
 
   void _live() {
     if (mounted) setState(() {});
+    unawaited(Codes.load());
   }
 
   Future<V2Data> _load({bool force = false}) async {
+    unawaited(Codes.load(force: force));
     final d = await V2Service.shared(force: force);
     final t = d.today;
     if (t != null) V2Live.follow(this, [for (final c in t.coupons.values) ...?c?.legs]);
@@ -134,6 +138,8 @@ class _CouponDayScreenState extends State<CouponDayScreen> {
               title: title,
               coupon: t.coupons[key],
               accent: color,
+              codeKey: key,
+              codeDay: t.day,
               week: dayCat(key, title).period(d, monday, monday.add(Duration(days: 7))),
               onHistory: () => Navigator.push(context, MaterialPageRoute(builder: (_) => V2HistoryScreen(dayCat(key, title), d))),
             ),
