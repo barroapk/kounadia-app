@@ -124,9 +124,8 @@ Widget v2ResultBadge(String? r, {double size = 12}) {
   );
 }
 
-/// Ligne « Cette semaine : 4/6 ✓ · Historique › ».
+/// Ligne « Résultats d'hier · Historique › » (sans statistiques de la semaine).
 Widget v2WeekLine((int, int) week, {VoidCallback? onHistory}) {
-  final (w, n) = week;
   return InkWell(
     onTap: onHistory,
     child: Padding(
@@ -134,9 +133,7 @@ Widget v2WeekLine((int, int) week, {VoidCallback? onHistory}) {
       child: Row(children: [
         Icon(Icons.calendar_month_rounded, color: K.indigoText, size: 16),
         SizedBox(width: 7),
-        T('Cette semaine', style: TextStyle(color: K.muted, fontSize: 12.5, fontWeight: FontWeight.w600)),
-        SizedBox(width: 6),
-        Text(n == 0 ? '–' : '$w/$n ✓', style: TextStyle(color: n == 0 ? K.muted : K.green, fontSize: 13, fontWeight: FontWeight.w900)),
+        T("Résultats d'hier", style: TextStyle(color: K.muted, fontSize: 12.5, fontWeight: FontWeight.w600)),
         Spacer(),
         if (onHistory != null) ...[
           T('Historique', style: TextStyle(color: K.indigoText, fontSize: 12.5, fontWeight: FontWeight.w800)),
