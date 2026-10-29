@@ -1,0 +1,3 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Les sons des notifications sont utilisés par leur nom (canaux Android) : ne pas les retirer. -->
+<resources xmlns:tools="http://schemas.android.com/tools" tools:keep="@raw/k_*" />

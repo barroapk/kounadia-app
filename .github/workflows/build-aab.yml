@@ -74,6 +74,11 @@ jobs:
           SUB=$(curl -s -H "Authorization: Bearer $CF_T" "https://api.cloudflare.com/client/v4/accounts/$CF_A/workers/subdomain" | jq -r '.result.subdomain // empty')
           test -n "$SUB" && echo "LIVE_URL=https://kounadia-notif.$SUB.workers.dev" >> "$GITHUB_ENV"
 
+      - name: Sons des notifications (créés par calcul, sans fichier externe)
+        run: |
+          python3 -m pip install --quiet --break-system-packages numpy scipy 2>/dev/null || python3 -m pip install --quiet numpy scipy
+          python3 tools/sons/sons.py mobile/android/app/src/main/res/raw
+
       - name: Compiler l'AAB (Android App Bundle) signé
         working-directory: mobile
         env:

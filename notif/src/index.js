@@ -444,7 +444,7 @@ export class Poller {
         const top = Array.isArray(t.selection?.top) ? t.selection.top : [];
         if (st.dayDate !== today && t.coupons?.single) {
           st.dayDate = today;
-          if (!first) for (const lang of LANGS) jobs.push(['tips', lang, TIP[lang].pro, TIP[lang].proB, { t: 'day' }, 'day']);
+          if (!first) for (const lang of LANGS) jobs.push(['tips', lang, TIP[lang].pro, TIP[lang].proB, { t: 'day' }, 'day', 'k_tips']);
         }
         if (top.length && st.vipDate !== today) {
           st.vipDate = today;
@@ -454,7 +454,7 @@ export class Poller {
             .map((l) => ({ id: Number(l.pt), pick: v2Pick(String(l.mk)), home: String(l.home), away: String(l.away) }))
             .filter((l) => Number.isFinite(l.id) && l.id > 0 && l.pick);
           st.won = [];
-          if (!first) for (const lang of LANGS) jobs.push(['tips', lang, TIP[lang].sure, fill(TIP[lang].sureB, { n: top.length }), { t: 'sure' }, 'sure']);
+          if (!first) for (const lang of LANGS) jobs.push(['tips', lang, TIP[lang].sure, fill(TIP[lang].sureB, { n: top.length }), { t: 'sure' }, 'sure', 'k_tips']);
         }
       }
       // Coupons gagnés (aujourd'hui, et hier pour les matchs finis après minuit) : une seule annonce par coupon.
@@ -474,7 +474,7 @@ export class Poller {
           const vip = k !== 'single' && k !== 'free';
           for (const lang of LANGS) {
             const T = CPN[lang] || CPN.fr;
-            jobs.push(['tips', lang, fill(T.t, { c: T[k] }), fill(vip ? T.vb : T.b, { n, odd }), { t: 'day' }, `w${k}`]);
+            jobs.push(['tips', lang, fill(T.t, { c: T[k] }), fill(vip ? T.vb : T.b, { n, odd }), { t: 'day' }, `w${k}`, 'k_coupon']);
           }
         }
       }
@@ -620,7 +620,7 @@ export class Poller {
         const f = fin[l.id];
         if (f && f[0] != null && evalPick(l.pick, f[0], f[1]) && !st.won.includes(l.id)) {
           st.won.push(l.id);
-          for (const lang of LANGS) jobs.push(['tips', lang, TIP[lang].win, `${l.home} ${f[0]}-${f[1]} ${l.away}`, { t: 'sure', id: String(l.id) }, `s${l.id}`]);
+          for (const lang of LANGS) jobs.push(['tips', lang, TIP[lang].win, `${l.home} ${f[0]}-${f[1]} ${l.away}`, { t: 'sure', id: String(l.id) }, `s${l.id}`, 'k_sure']);
         }
       }
       await this.state.storage.put('tips', st);
@@ -642,7 +642,7 @@ export class Poller {
           jobs.push(['token', u.token, t.cl, fill(t.clB, { m: `${l.home} - ${l.away}` }), { t: 'coupon' }, `c${c.sig.slice(0, 20)}`]);
           c.done = changed = true;
         } else if (res.every((x) => x === true)) {
-          jobs.push(['token', u.token, t.cw, fill(t.cwB, { n: c.legs.length, odd: c.odd }), { t: 'coupon' }, `c${c.sig.slice(0, 20)}`]);
+          jobs.push(['token', u.token, t.cw, fill(t.cwB, { n: c.legs.length, odd: c.odd }), { t: 'coupon' }, `c${c.sig.slice(0, 20)}`, 'k_coupon']);
           c.done = changed = true;
         }
       }
@@ -654,17 +654,20 @@ export class Poller {
   // Envoi groupé : [type ('tips' | 'token'), cible (langue ou jeton), titre, texte, data, tag]
   async sendJobs(jobs) {
     if (!jobs.length) return;
-    const msgs = jobs.map(([kind, target, title, body, data, tag]) => ({
+    const msgs = jobs.map(([kind, target, title, body, data, tag, ch]) => ({
       ...(kind === 'tips' ? { topic: `${target}_tips` } : { token: target }),
       notification: { title, body },
       data,
-      android: { priority: 'HIGH', ttl: '3600s', notification: this.androidNote(tag) },
+      android: { priority: 'HIGH', ttl: '3600s', notification: this.androidNote(tag, ch || 'live') },
     }));
     await this.enqueue(msgs, 2);
   }
 
-  androidNote(tag) {
-    return { channel_id: 'live', tag, sound: 'default', notification_priority: 'PRIORITY_MAX', default_vibrate_timings: true, visibility: 'PUBLIC' };
+  // Canal = son KOUNADIA : k_goal (but), k_fulltime (fin), k_sure (coup sûr validé), k_coupon (coupon validé),
+  // k_tips (coupons disponibles). Les anciennes versions de l'app reçoivent le son par défaut.
+  androidNote(tag, ch = 'live') {
+    const SND = { k_goal: 'k_goal', k_fulltime: 'k_fulltime', k_sure: 'k_sure_won', k_coupon: 'k_coupon_won', k_tips: 'k_tips' };
+    return { channel_id: ch, tag, sound: SND[ch] || 'default', notification_priority: 'PRIORITY_MAX', default_vibrate_timings: true, visibility: 'PUBLIC' };
   }
 
   /** File d'attente unique des notifications : 0 = buts, 1 = autres événements du direct, 2 = pronostics/coupons. */
@@ -721,7 +724,7 @@ export class Poller {
       ...target,
       notification: this.liveText(lang, e, n),
       data: { id: String(e.id), t: e.t },
-      android: { priority: 'HIGH', ttl: '600s', notification: this.androidNote(`m${e.id}`) },
+      android: { priority: 'HIGH', ttl: '600s', notification: this.androidNote(`m${e.id}`, e.t === 'goal' ? 'k_goal' : e.t === 'ft' ? 'k_fulltime' : 'live') },
     };
   }
 

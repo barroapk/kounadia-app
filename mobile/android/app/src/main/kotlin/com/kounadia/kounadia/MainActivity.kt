@@ -3,6 +3,7 @@ package com.kounadia.kounadia
 import android.app.NotificationChannel
 import android.app.NotificationManager
 import android.content.Intent
+import android.media.AudioAttributes
 import android.net.Uri
 import android.os.Build
 import android.os.Bundle
@@ -21,7 +22,27 @@ class MainActivity : FlutterActivity() {
             val ch = NotificationChannel("live", "Matchs en direct", NotificationManager.IMPORTANCE_HIGH)
             ch.enableVibration(true)
             ch.description = "Buts, coups d'envoi, mi-temps et fins de match"
-            getSystemService(NotificationManager::class.java)?.createNotificationChannel(ch)
+            val nm = getSystemService(NotificationManager::class.java)
+            nm?.createNotificationChannel(ch)
+            // Un son KOUNADIA par type de notification (reconnaissable sans regarder l'écran).
+            val attrs = AudioAttributes.Builder()
+                .setUsage(AudioAttributes.USAGE_NOTIFICATION)
+                .setContentType(AudioAttributes.CONTENT_TYPE_SONIFICATION)
+                .build()
+            for ((id, name, desc) in listOf(
+                Triple("k_goal", "Buts", "Un but dans un match suivi"),
+                Triple("k_fulltime", "Fins de match", "Le coup de sifflet final"),
+                Triple("k_sure", "Coups sûrs validés", "Un Coup sûr gagné"),
+                Triple("k_coupon", "Coupons validés", "Un coupon gagné"),
+                Triple("k_tips", "Coupons et Coups sûrs disponibles", "Les coupons et Coups sûrs du jour sont prêts"),
+            )) {
+                val snd = if (id == "k_sure") "k_sure_won" else if (id == "k_coupon") "k_coupon_won" else id
+                val c = NotificationChannel(id, name, NotificationManager.IMPORTANCE_HIGH)
+                c.description = desc
+                c.enableVibration(true)
+                c.setSound(Uri.parse("android.resource://$packageName/raw/$snd"), attrs)
+                nm?.createNotificationChannel(c)
+            }
         }
     }
 

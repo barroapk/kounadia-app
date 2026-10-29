@@ -89,6 +89,11 @@ jobs:
           SUB=$(curl -s -H "Authorization: Bearer $CF_T" "https://api.cloudflare.com/client/v4/accounts/$CF_A/workers/subdomain" | jq -r '.result.subdomain // empty')
           if [ -n "$SUB" ]; then echo "LIVE_URL=https://kounadia-notif.$SUB.workers.dev" >> "$GITHUB_ENV"; echo "Robot : kounadia-notif.$SUB.workers.dev"; else echo "::warning::Sous-domaine workers.dev introuvable : direct par le site (30 s)"; fi
 
+      - name: Sons des notifications (créés par calcul, sans fichier externe)
+        run: |
+          python3 -m pip install --quiet --break-system-packages numpy scipy 2>/dev/null || python3 -m pip install --quiet numpy scipy
+          python3 tools/sons/sons.py mobile/android/app/src/main/res/raw
+
       - name: Compiler l'APK (mode release)
         working-directory: mobile
         env:
