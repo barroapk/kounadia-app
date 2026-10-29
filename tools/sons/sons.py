@@ -38,8 +38,14 @@ OUT = sys.argv[1] if len(sys.argv) > 1 else '.'
 os.makedirs(OUT, exist_ok=True)
 def finish(x, name, tail=0.25):
     x = np.concatenate([x, np.zeros(int(SR * tail))])
-    x = reverb(x); x = np.tanh(x * 1.1)
-    x = x / np.max(np.abs(x)) * 0.89
+    x = reverb(x)
+    # Plus fort : présence (2-4 kHz) renforcée, puis volume moyen relevé avec un limiteur doux (sans saturer).
+    x = x + 0.35 * bp(x, 1800, 4200)
+    x = x / np.max(np.abs(x))
+    rms = np.sqrt(np.mean(x[np.abs(x) > 0.02] ** 2)) + 1e-9
+    g = min(2.2, 0.30 / rms)
+    x = np.tanh(x * g * 1.3) / np.tanh(g * 1.3)
+    x = x / np.max(np.abs(x)) * 0.97
     n = int(SR * 0.03); x[-n:] *= np.linspace(1, 0, n)
     wavfile.write(os.path.join(OUT, name + '.wav'), SR, (x * 32767).astype(np.int16)); print(name, round(len(x) / SR, 2), 's')
 
@@ -56,17 +62,43 @@ kick = np.sin(2 * np.pi * np.cumsum(50 + 90 * np.exp(-t_(0.3) * 30)) / SR) * np.
 place(b, kick * 0.9, 0.17)
 finish(b, 'k_goal')
 
-# 2. FIN DU MATCH : coup de sifflet stylisé (court, court, long) + accord de clôture
-f = np.zeros(int(SR * 1.75))
-def whistle(d):
-    t = t_(d); trill = 0.55 + 0.45 * np.sign(np.sin(2 * np.pi * 34 * t))
-    x = np.sin(2 * np.pi * (2850 + 25 * np.sin(2 * np.pi * 6 * t)) * t) * trill
-    x += 0.15 * bp(rng.standard_normal(len(t)), 2400, 3400)
-    env = np.minimum(1, t / 0.01) * np.minimum(1, (d - t) / 0.03)
-    return lp(x, 4500) * env * 0.45
-place(f, whistle(0.14), 0.00); place(f, whistle(0.14), 0.22); place(f, whistle(0.55), 0.44)
-for fr in (196.0, 246.9, 293.7, 392.0): place(f, marimba(fr, 0.9) * 0.35, 1.02)
-finish(f, 'k_fulltime')
+# 2. FIN DU MATCH : vrai sifflet d'arbitre à bille (court, court, long), écho du stade, puis applaudissements
+def whistle(d, f0=3050):
+    t = t_(d); n = len(t)
+    # La bille qui tourne : vibration rapide et irrégulière de la hauteur et du volume (≈ 30 fois par seconde).
+    rate = 30 + 4 * np.cumsum(rng.standard_normal(n)) / np.sqrt(n * 40)
+    ph = 2 * np.pi * np.cumsum(rate) / SR
+    pea = np.sin(ph) + 0.3 * np.sin(2 * ph + 1.3)
+    rise = 1 - 0.12 * np.exp(-t / 0.025)                        # attaque : la note monte vite
+    fall = 1 - 0.05 * np.clip((t - (d - 0.05)) / 0.05, 0, 1)     # fin : la note retombe un peu
+    f = f0 * rise * fall * (1 + 0.035 * pea)
+    p = 2 * np.pi * np.cumsum(f) / SR
+    am = 1 - 0.45 * (0.5 + 0.5 * pea)
+    x = np.sin(p) + 0.22 * np.sin(2 * p + 0.4) + 0.06 * np.sin(3 * p)
+    breath = bp(rng.standard_normal(n), f0 * 0.8, f0 * 1.25) * 0.35 + hp(rng.standard_normal(n), 5000) * 0.08
+    env = np.minimum(1, t / 0.012) * np.minimum(1, (d - t) / 0.04)
+    env *= 1 + 0.08 * np.sin(2 * np.pi * t / max(d, 0.3))   # souffle naturel
+    return (x * am + breath) * env
+def stadium(x):
+    # écho des tribunes (grand espace ouvert)
+    out = x.copy()
+    for dl, g in ((0.09, .30), (0.16, .22), (0.24, .16), (0.35, .10), (0.48, .06)):
+        k = int(dl * SR); y = np.zeros_like(x); y[k:] = x[:-k] * g; out += lp(y, 3500)
+    return out
+f = np.zeros(int(SR * 2.4))
+place(f, whistle(0.17), 0.00); place(f, whistle(0.17), 0.30); place(f, whistle(0.85), 0.60)
+f = stadium(f)
+# applaudissements et clameur qui montent après le coup de sifflet
+nA = int(SR * 1.3); tA = t_(1.3)
+claps = np.zeros(nA)
+for k in range(260):
+    at = int(rng.uniform(0, 1.25) * SR); L = int(0.012 * SR)
+    burst = bp(rng.standard_normal(L), rng.uniform(900, 1600), 4200) * np.exp(-np.arange(L) / (0.003 * SR))
+    claps[at:at + L] += burst[: max(0, min(L, nA - at))] * rng.uniform(0.4, 1)
+roar = bp(rng.standard_normal(nA), 300, 2200)
+envA = np.minimum(1, tA / 0.35) * np.exp(-np.maximum(0, tA - 0.5) * 2.2)
+place(f, (claps * 0.5 + roar * 0.35) * envA * 0.55, 1.05)
+finish(f, 'k_fulltime', tail=0.15)
 
 # 3. COUP SÛR VALIDÉ : deux notes de cristal montantes (quinte) + éclat
 s = np.zeros(int(SR * 1.1))
