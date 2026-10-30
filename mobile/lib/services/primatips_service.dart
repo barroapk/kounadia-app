@@ -7,6 +7,7 @@ import 'kounadia_data_service.dart' show FriendlyError;
 import 'match_detail_service.dart' show StandRow, MatchDetailService;
 import '../l10n/tr.dart' show appLang;
 import 'live_socket.dart' show ptUrl;
+import 'footlive_service.dart';
 
 class PtLink {
   final String name;
@@ -24,7 +25,9 @@ class PtSection {
 class PtTable {
   final String title;
   final List<StandRow> rows;
-  PtTable(this.title, this.rows);
+  /// Classement footlive à charger quand on l'ouvre (lignes vides en attendant).
+  final String? flPath;
+  PtTable(this.title, this.rows, [this.flPath]);
 }
 
 class PtFormRow {
@@ -242,6 +245,20 @@ class PrimaTipsService {
           .toList();
       if (items.isNotEmpty) secs.add(PtSection(_frSection(txt(p.substring(0, end))), items));
     }
+    // Pays footlive absents de PrimaTips : ajoutés dans leur continent.
+    final known = {for (final s in secs) for (final l in s.items) l.name.trim().toLowerCase()};
+    for (final c in kFlCountries) {
+      if (known.contains(c.en.toLowerCase())) continue;
+      PtSection? sec;
+      for (final s in secs) {
+        if (s.title == c.section) sec = s;
+      }
+      if (sec == null) {
+        sec = PtSection(c.section, []);
+        secs.add(sec);
+      }
+      sec.items.add(PtLink(c.en, 'fl:${c.slug}', c.img));
+    }
     int rank(PtSection s) => s.title == 'Grands championnats'
         ? 0
         : s.title == 'Afrique'
@@ -255,6 +272,34 @@ class PrimaTipsService {
       return r != 0 ? r : idx[a]!.compareTo(idx[b]!);
     });
     return secs;
+  }
+
+  /// Classements d'un pays : PrimaTips + compétitions footlive en plus.
+  /// [titlesOnly] : noms des compétitions seulement (Mes championnats), sans charger les classements footlive.
+  static Future<List<PtTable>> countryTables(PtLink link, {bool titlesOnly = false}) async {
+    FlCountry? fl;
+    if (link.path.startsWith('fl:')) {
+      for (final c in kFlCountries) {
+        if (c.slug == link.path.substring(3)) fl = c;
+      }
+    } else {
+      fl = flCountryOf(link.name);
+    }
+    final out = link.path.startsWith('fl:') ? <PtTable>[] : await tables(link.path);
+    if (fl == null) return out;
+    try {
+      String n(String s) => s.toLowerCase().replaceAll(RegExp(r'[^a-z0-9]'), '');
+      final have = out.map((t) => n(t.title)).toSet();
+      for (final c in await FootliveService.competitions(fl)) {
+        final k = n(c.title);
+        if (have.any((h) => h.isNotEmpty && (h == k || h.contains(k) || k.contains(h)))) continue;
+        if (!titlesOnly && c.standings == null) continue;
+        out.add(PtTable(c.title, const [], c.standings));
+      }
+    } catch (e) {
+      if (out.isEmpty) rethrow;
+    }
+    return out;
   }
 
   static Future<List<PtTable>> tables(String path) async {

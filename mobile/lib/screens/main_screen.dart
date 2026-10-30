@@ -18,6 +18,7 @@ import 'account_screen.dart';
 import '../l10n/tr.dart';
 import '../services/app_update.dart';
 import '../services/notif.dart';
+import '../services/engage.dart';
 import '../services/live_socket.dart';
 import '../config/store.dart';
 import 'alerts_screen.dart';
@@ -92,6 +93,8 @@ class _MainScreenState extends State<MainScreen> with WidgetsBindingObserver {
     await Future<void>.delayed(Duration(seconds: 3));
     _ready = true;
     if (mounted) await AppUpdate.checkOnStart(context);
+    // Championnats préférés (1er lancement) ou relance douce des notifications : une question au plus.
+    if (mounted) unawaited(Engage.run(context));
   }
   static final List<Widget> _screensV1 = [
     ScoresScreen(),

@@ -1,6 +1,8 @@
 import '../../widgets/k_err.dart';
 import 'package:flutter/material.dart';
 import '../../services/primatips_service.dart';
+import '../../services/footlive_service.dart';
+import '../../services/match_detail_service.dart' show StandRow;
 import '../../widgets/forecast_card.dart' show K, kMessage;
 import '../../widgets/k_ui.dart';
 import '../../widgets/standing_table.dart';
@@ -100,12 +102,19 @@ class CountryTablesScreen extends StatefulWidget {
 }
 
 class _CountryTablesScreenState extends State<CountryTablesScreen> {
-  late Future<List<PtTable>> _f = PrimaTipsService.tables(widget.link.path);
+  late Future<List<PtTable>> _f = PrimaTipsService.countryTables(widget.link);
 
-  Widget _view(PtTable t) => ListView(
+  Widget _view(PtTable t) {
+    final p = t.flPath;
+    if (t.rows.isNotEmpty || p == null) {
+      return ListView(
         padding: EdgeInsets.fromLTRB(16, 12, 16, 32),
         children: [StandingTable(rows: t.rows, full: true)],
       );
+    }
+    // Classement footlive : chargé à l'ouverture de l'onglet.
+    return _FlStandings(path: p);
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -118,7 +127,7 @@ class _CountryTablesScreenState extends State<CountryTablesScreen> {
           if (snap.connectionState != ConnectionState.done) return kLoader();
           if (snap.hasError) {
             return kMessage(kErr(snap.error),
-                onRetry: () => setState(() => _f = PrimaTipsService.tables(widget.link.path)));
+                onRetry: () => setState(() => _f = PrimaTipsService.countryTables(widget.link)));
           }
           final t = snap.data!;
           if (t.isEmpty) return kMessage('Aucun classement disponible pour le moment.');
@@ -142,6 +151,46 @@ class _CountryTablesScreenState extends State<CountryTablesScreen> {
           );
         },
       ),
+    );
+  }
+}
+
+class _FlStandings extends StatefulWidget {
+  final String path;
+  _FlStandings({required this.path});
+  @override
+  State<_FlStandings> createState() => _FlStandingsState();
+}
+
+class _FlStandingsState extends State<_FlStandings> with AutomaticKeepAliveClientMixin {
+  late Future<List<List<StandRow>>> _f = FootliveService.standings(widget.path);
+
+  @override
+  bool get wantKeepAlive => true;
+
+  @override
+  Widget build(BuildContext context) {
+    super.build(context);
+    return FutureBuilder<List<List<StandRow>>>(
+      future: _f,
+      builder: (context, snap) {
+        if (snap.connectionState != ConnectionState.done) return kLoader();
+        if (snap.hasError) {
+          return kMessage(kErr(snap.error), onRetry: () => setState(() => _f = FootliveService.standings(widget.path)));
+        }
+        final groups = snap.data!;
+        if (groups.isEmpty) return kMessage('Aucun classement disponible pour le moment.');
+        return ListView(padding: EdgeInsets.fromLTRB(16, 12, 16, 32), children: [
+          for (var i = 0; i < groups.length; i++) ...[
+            if (groups.length > 1)
+              Padding(
+                padding: EdgeInsets.fromLTRB(4, i == 0 ? 0 : 16, 4, 8),
+                child: T('${tr('Groupe')} ${i + 1}', style: TextStyle(color: K.text, fontSize: 15, fontWeight: FontWeight.w800)),
+              ),
+            StandingTable(rows: groups[i], full: true),
+          ],
+        ]);
+      },
     );
   }
 }

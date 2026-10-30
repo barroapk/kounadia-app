@@ -43,6 +43,13 @@ class MainActivity : FlutterActivity() {
                 c.setSound(Uri.parse("android.resource://$packageName/raw/$snd"), attrs)
                 nm?.createNotificationChannel(c)
             }
+            // Infos personnalisées : discrètes (son léger + petite vibration, pas de bannière insistante).
+            val info = NotificationChannel("k_info", "Infos pour toi", NotificationManager.IMPORTANCE_DEFAULT)
+            info.description = "Tes équipes du jour et les faits de tes championnats (rarement)"
+            info.enableVibration(true)
+            info.vibrationPattern = longArrayOf(0, 120)
+            info.setSound(Uri.parse("android.resource://$packageName/raw/k_info"), attrs)
+            nm?.createNotificationChannel(info)
         }
     }
 
@@ -51,6 +58,20 @@ class MainActivity : FlutterActivity() {
         super.configureFlutterEngine(flutterEngine)
         MethodChannel(flutterEngine.dartExecutor.binaryMessenger, "kounadia/update").setMethodCallHandler { call, result ->
             when (call.method) {
+                // Réglages des notifications de l'app (quand Android ne montre plus sa fenêtre d'autorisation).
+                "notifSettings" -> {
+                    try {
+                        val i = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+                            Intent(Settings.ACTION_APP_NOTIFICATION_SETTINGS).putExtra(Settings.EXTRA_APP_PACKAGE, packageName)
+                        } else {
+                            Intent(Settings.ACTION_APPLICATION_DETAILS_SETTINGS, Uri.parse("package:$packageName"))
+                        }
+                        startActivity(i.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK))
+                        result.success(true)
+                    } catch (e: Exception) {
+                        result.success(false)
+                    }
+                }
                 "canInstall" -> result.success(
                     Build.VERSION.SDK_INT < Build.VERSION_CODES.O || packageManager.canRequestPackageInstalls()
                 )

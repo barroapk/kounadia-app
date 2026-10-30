@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'package:flutter/foundation.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'user_prefs.dart';
@@ -53,7 +54,16 @@ class FavLeagues {
     } catch (_) {}
   }
 
+  /// L'utilisateur a choisi lui-même au moins une fois (on ne lui repose plus la question).
+  static Future<void> _chosen() async {
+    try {
+      final p = await SharedPreferences.getInstance();
+      await p.setBool('fav_chosen', true);
+    } catch (_) {}
+  }
+
   static Future<void> toggle(String league) async {
+    unawaited(_chosen());
     await load();
     final s = {...set.value};
     final hit = s.where((f) => matches(f, league)).toList();
@@ -67,6 +77,7 @@ class FavLeagues {
 
   /// Ajoute ou retire exactement cette clé (écran Mes championnats).
   static Future<void> toggleExact(String key) async {
+    unawaited(_chosen());
     await load();
     final s = {...set.value};
     if (!s.remove(key)) s.add(key);

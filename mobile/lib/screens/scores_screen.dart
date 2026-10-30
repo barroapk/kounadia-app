@@ -1,4 +1,5 @@
 import '../widgets/k_err.dart';
+import '../services/interests.dart';
 import 'dart:async';
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
@@ -131,6 +132,7 @@ class _ScoresScreenState extends State<ScoresScreen> with WidgetsBindingObserver
 
   Future<void> _toggleFav(LiveMatch m) async {
     final added = !_fav.contains(m.id);
+    if (added) Interests.match(m.home, m.away, m.leagueLabel, w: 3);
     setState(() => added ? _fav.add(m.id) : _fav.remove(m.id));
     ScaffoldMessenger.of(context)
       ..hideCurrentSnackBar()

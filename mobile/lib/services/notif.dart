@@ -11,6 +11,7 @@ import 'coupon_store.dart';
 import 'account.dart';
 import '../screens/account_screen.dart';
 import 'fav_leagues.dart';
+import 'interests.dart';
 import 'user_prefs.dart';
 import '../screens/match_open.dart';
 
@@ -41,6 +42,8 @@ String leagueHash(String s) {
 /// et les matchs de ses coupons.
 class Notif {
   static bool _ok = false;
+  /// Firebase prêt (notifications possibles sur ce téléphone).
+  static bool get ready => _ok;
   static final enabled = ValueNotifier<bool>(true);
   static Set<String> _labels = {};
   static bool _busy = false, _again = false;
@@ -154,7 +157,9 @@ class Notif {
       final live = (topics.where((t) => t.contains('_l2_') || t.contains('_m2_')).toList()..sort());
       // Abonné Premium : son ticket signé permet au robot de lui rappeler la fin de son abonnement.
       final tk = Account.user.value?.ticket;
-      final body = jsonEncode({'token': token, 'lang': appLang, 'coupons': list, 'topics': live, if (tk != null) 'ticket': tk});
+      // Centres d'intérêt (équipes, championnats) : infos personnalisées, rares et espacées.
+      final prof = enabled.value ? await Interests.profile(FavLeagues.set.value) : null;
+      final body = jsonEncode({'token': token, 'lang': appLang, 'coupons': list, 'topics': live, if (tk != null) 'ticket': tk, if (prof != null) 'prof': prof});
       if (p.getString('notif_cp') == body) return; // rien de nouveau
       final r = await http
           .post(Uri.parse('$kLiveBase/coupons'), headers: {'content-type': 'application/json'}, body: body)

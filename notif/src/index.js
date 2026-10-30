@@ -173,6 +173,7 @@ export class Poller {
     if (url.pathname === '/coupons' && req.method === 'POST') return this.saveCoupons(req);
     if (url.pathname === '/contact') return this.contact(req);
     if (url.pathname === '/codes') return this.codes(req, url);
+    if (url.pathname === '/audit') return this.audit(req);
     if (url.pathname === '/log') {
       const ids = new Set((url.searchParams.get('ids') || '').split(',').filter(Boolean).slice(0, 300).map(Number));
       const log = ((await this.state.storage.get('log')) || []).filter((e) => ids.has(e.id));
@@ -210,6 +211,51 @@ export class Poller {
     return Response.json({ wa }, { headers: H });
   }
 
+  /** Audit (KOUNADIA Admin) : état du robot et fraîcheur de toutes les données, en une fois. */
+  async audit(req) {
+    const H = { 'access-control-allow-origin': '*', 'cache-control': 'no-store' };
+    if (!(await this.isAdmin(req.headers.get('authorization') || ''))) return Response.json({ error: 'Accès refusé.' }, { status: 403, headers: H });
+    const now = Date.now();
+    const g = async (k) => (await this.state.storage.get(k)) ?? null;
+    const feed = async (path) => {
+      try {
+        const d = await this.feed(path);
+        const t = Date.parse(d?.updatedAt || '');
+        return { ok: !!d, ageMin: Number.isFinite(t) ? Math.round((now - t) / 60000) : null, d };
+      } catch (e) {
+        return { ok: false, ageMin: null, err: String(e).slice(0, 120) };
+      }
+    };
+    const sc = await feed('scores/scores.json');
+    const v2 = await feed('v2/v2.json');
+    const pronos = await feed('pronos/today_p.json');
+    const vip = await feed('vip/vip_stats.json');
+    const day = new Date(now).toISOString().slice(0, 10);
+    const days = sc.d?.days || {};
+    const todayList = days[day] || [];
+    const t = v2.d?.today || null;
+    const codes = (await g('codes')) || {};
+    const al = await this.state.storage.getAlarm();
+    const stat = (await g('stat')) || {};
+    const devices = (await this.state.storage.list({ prefix: 'cp:', limit: 5000 })).size;
+    return Response.json({
+      at: new Date(now).toISOString(),
+      robot: {
+        nextTickSec: al ? Math.round((al - now) / 1000) : null, clients: this.state.getWebSockets().length, live: stat.live ?? null,
+        sent: stat.sent ?? null, queue: ((await g('outq')) || []).length, devices,
+        src: await g('src'), flSrc: await g('flSrc'), err: await g('err'), fcmErr: await g('fcmErr'), kickErr: await g('kickErr'), infoErr: await g('infoErr'),
+        backupDay: ((await g('api')) || {}).bakDay || null, info: await g('info'),
+      },
+      scores: { ok: sc.ok, ageMin: sc.ageMin, today: todayList.length, live: todayList.filter((m) => m.status === 'live').length,
+        footlive: sc.d?.footlive || null, noScore: todayList.filter((m) => m.status === 'upcoming' && Date.parse(m.date) < now - 3 * 3600000).length },
+      v2: { ok: v2.ok, ageMin: v2.ageMin, day: t?.day || null, coupons: t ? Object.entries(t.coupons || {}).map(([k, c]) => `${k}:${c ? c.legs?.length ?? c.n ?? '?' : '-'}`) : [],
+        selection: t?.selection ? (t.selection.top?.length ?? t.selection.n ?? null) : null },
+      pronos: { ok: pronos.ok, ageMin: pronos.ageMin }, vip: { ok: vip.ok, ageMin: vip.ageMin },
+      codes: { day: codes.day || null, n: Object.keys(codes.c || {}).length },
+      contact: (await g('contact_wa')) || null,
+    }, { headers: H });
+  }
+
   /** Session admin KOUNADIA (vérifiée auprès du serveur). */
   async isAdmin(auth) {
     if (!/^Bearer\s+\S{10,}$/.test(auth || '')) return false;
@@ -225,7 +271,7 @@ export class Poller {
   // Single et coupon gratuit : pour tous ; coupons VIP et Coups sûrs : seulement avec un ticket Premium (ou l'admin).
   async codes(req, url) {
     const H = { 'access-control-allow-origin': '*', 'cache-control': 'no-store' };
-    const KEYS = ['single', 'free', 'vip2', 'vip3', 'vip5', 'c2', 'c5', 'c10'];
+    const KEYS = ['single', 'free', 'vip2', 'vip3', 'vip5'];
     const FREE = new Set(['single', 'free']);
     const st = (await this.state.storage.get('codes')) || { day: '', c: {} };
     if (req.method === 'GET') {
@@ -330,6 +376,11 @@ export class Poller {
     try {
       await this.premiumJobs();
     } catch (_) {}
+    try {
+      await this.infoJobs();
+    } catch (e) {
+      await this.saveIf('infoErr', `${new Date().toISOString()} ${e}`.slice(0, 200));
+    }
     await this.state.storage.setAlarm(Date.now() + next);
   }
 
@@ -510,8 +561,8 @@ export class Poller {
       st.cw = st.cw || {};
       for (const D of [t, ...(Array.isArray(v2?.history) ? v2.history.slice(0, 1) : [])]) {
         if (!D?.day) continue;
-        const list = [['single', D.coupons?.single], ['free', D.coupons?.free], ['vip2', D.coupons?.vip2], ['vip3', D.coupons?.vip3], ['vip5', D.coupons?.vip5],
-          ['c2', D.selection?.coupons?.c2], ['c5', D.selection?.coupons?.c5], ['c10', D.selection?.coupons?.c10]];
+        // Coups sûrs : plus de coupons (cote 2, 5, 10) depuis la 1.5.0 ; seuls les coupons du jour sont annoncés.
+        const list = [['single', D.coupons?.single], ['free', D.coupons?.free], ['vip2', D.coupons?.vip2], ['vip3', D.coupons?.vip3], ['vip5', D.coupons?.vip5]];
         for (const [k, c] of list) {
           const id = `${D.day}:${k}`;
           if (c?.r !== 'won' || st.cw[id]) continue;
@@ -569,8 +620,15 @@ export class Poller {
       list.push(key);
       await this.state.storage.put(`u:${uid}`, list.slice(-5));
     }
-    if (!coupons.length && !topics.length && !uid) await this.state.storage.delete(key);
-    else await this.state.storage.put(key, { token, lang: LANGS.includes(b.lang) ? b.lang : 'en', coupons, topics, uid, at: Date.now() });
+    // Centres d'intérêt (infos personnalisées) : équipes et championnats, quelques noms seulement.
+    const str = (a, n) => (Array.isArray(a) ? a : []).map((x) => String(x).slice(0, 80)).filter(Boolean).slice(0, n);
+    const prof = b.prof && typeof b.prof === 'object' && !b.prof.off ? { teams: str(b.prof.teams, 8), leagues: str(b.prof.leagues, 8) } : null;
+    const hasProf = !!prof && (prof.teams.length || prof.leagues.length);
+    if (!coupons.length && !topics.length && !uid && !hasProf) await this.state.storage.delete(key);
+    else {
+      await this.state.storage.put(key, { token, lang: LANGS.includes(b.lang) ? b.lang : 'en', coupons, topics, uid, at: Date.now(),
+        prof: hasProf ? prof : null, info: prev?.info || null });
+    }
     return Response.json({ ok: true });
   }
 
@@ -619,6 +677,95 @@ export class Poller {
     if (msgs.length) await this.enqueue(msgs, 2);
     st.since = Number(j.until) || now;
     await this.state.storage.put('prem', st);
+  }
+
+  // ---------- Infos personnalisées : rares, utiles, jamais la nuit ----------
+  // Une seule par jour au plus, et seulement s'il y a quelque chose qui concerne l'utilisateur :
+  // 1. ses équipes jouent aujourd'hui (le matin) ;
+  // 2. sinon, le résultat d'hier de ses équipes (au plus tous les 2 jours) ;
+  // 3. sinon, le programme du jour de son championnat préféré (au plus tous les 4 jours).
+  // Canal « Infos » : son léger + vibreur, sans bannière insistante.
+  async infoJobs() {
+    const now = Date.now();
+    const h = new Date(now).getUTCHours();
+    if (h < 8 || h > 18) return;
+    const st = (await this.state.storage.get('info')) || {};
+    if (now - (st.at || 0) < 50 * 60000) return; // une tournée par heure
+    st.at = now;
+    const day = new Date(now).toISOString().slice(0, 10);
+    if (st.day !== day) {
+      st.day = day;
+      st.cursor = '';
+      st.done = false;
+    }
+    if (st.done) return await this.state.storage.put('info', st);
+    const sc = await this.feed('scores/scores.json').catch(() => null);
+    if (!sc?.days) return await this.state.storage.put('info', st);
+    const yday = new Date(now - 86400000).toISOString().slice(0, 10);
+    const today = (sc.days[day] || []).filter((m) => m.status !== 'postponed');
+    const past = (sc.days[yday] || []).filter((m) => m.status === 'finished' && m.score);
+    const n = (x) => String(x || '').toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '').replace(/[^a-z0-9]/g, '');
+    const label = (m) => (m.country ? `${m.country} - ${m.league}` : m.league);
+    const hm = (iso) => {
+      const d = new Date(iso);
+      return `${String(d.getUTCHours()).padStart(2, '0')}:${String(d.getUTCMinutes()).padStart(2, '0')}`;
+    };
+    const T = {
+      fr: { play1: '⚽ {t} joue aujourd\'hui', playN: '⚽ Tes équipes jouent aujourd\'hui', vs: '{t} – {o} à {h} (GMT)', res: '📋 Résultat d\'hier', lg: '📅 {l} aujourd\'hui', lgB: '{n} matchs, dont {a} – {b} à {h} (GMT)' },
+      en: { play1: '⚽ {t} play today', playN: '⚽ Your teams play today', vs: '{t} – {o} at {h} (GMT)', res: '📋 Yesterday\'s result', lg: '📅 {l} today', lgB: '{n} matches, including {a} – {b} at {h} (GMT)' },
+      pt: { play1: '⚽ {t} joga hoje', playN: '⚽ As tuas equipas jogam hoje', vs: '{t} – {o} às {h} (GMT)', res: '📋 Resultado de ontem', lg: '📅 {l} hoje', lgB: '{n} jogos, incluindo {a} – {b} às {h} (GMT)' },
+      es: { play1: '⚽ {t} juega hoy', playN: '⚽ Tus equipos juegan hoy', vs: '{t} – {o} a las {h} (GMT)', res: '📋 Resultado de ayer', lg: '📅 {l} hoy', lgB: '{n} partidos, entre ellos {a} – {b} a las {h} (GMT)' },
+      ar: { play1: '⚽ {t} يلعب اليوم', playN: '⚽ فرقك تلعب اليوم', vs: '{t} – {o} الساعة {h} (GMT)', res: '📋 نتيجة الأمس', lg: '📅 {l} اليوم', lgB: '{n} مباريات، منها {a} – {b} الساعة {h} (GMT)' },
+    };
+    const fill = (s, o) => s.replace(/\{(\w)\}/g, (_, k) => o[k] ?? '');
+    const list = await this.state.storage.list({ prefix: 'cp:', start: st.cursor ? st.cursor + '\u0000' : undefined, limit: 300 });
+    const msgs = [];
+    let last = '';
+    for (const [key, d] of list) {
+      last = key;
+      if (!d?.token || !d.prof) continue;
+      const inf = d.info || {};
+      if (inf.day === day) continue; // déjà une info aujourd'hui
+      const L = T[d.lang] || T.en;
+      const teams = new Set((d.prof.teams || []).map(n));
+      let msg = null;
+      // 1. Ses équipes jouent aujourd'hui (pas encore commencé).
+      const mine = today.filter((m) => m.status === 'upcoming' && Date.parse(m.date) > now && (teams.has(n(m.home)) || teams.has(n(m.away))));
+      if (mine.length) {
+        const lines = mine.slice(0, 3).map((m) => {
+          const home = teams.has(n(m.home));
+          return fill(L.vs, { t: home ? m.home : m.away, o: home ? m.away : m.home, h: hm(m.date) });
+        });
+        const first = teams.has(n(mine[0].home)) ? mine[0].home : mine[0].away;
+        msg = [mine.length === 1 ? fill(L.play1, { t: first }) : L.playN, lines.join(' · '), 'team', mine[0].id];
+      }
+      // 2. Résultat d'hier de ses équipes (au plus tous les 2 jours).
+      if (!msg && now - (inf.at || 0) > 44 * 3600000) {
+        const r = past.filter((m) => teams.has(n(m.home)) || teams.has(n(m.away))).slice(0, 2);
+        if (r.length) msg = [L.res, r.map((m) => `${m.home} ${m.score.h}-${m.score.a} ${m.away}`).join(' · '), 'res', r[0].id];
+      }
+      // 3. Programme du jour de son championnat préféré (au plus tous les 4 jours).
+      if (!msg && now - (inf.lgAt || 0) > 92 * 3600000) {
+        for (const lg of d.prof.leagues || []) {
+          const k = n(lg);
+          const ms = today.filter((m) => m.status === 'upcoming' && Date.parse(m.date) > now && (n(label(m)) === k || n(label(m)).includes(k)));
+          if (ms.length < 2) continue;
+          const top = ms[0];
+          msg = [fill(L.lg, { l: label(top).replace(' - ', ' · ') }), fill(L.lgB, { n: ms.length, a: top.home, b: top.away, h: hm(top.date) }), 'league', top.id];
+          break;
+        }
+      }
+      if (!msg) continue;
+      const [title, body, kind, id] = msg;
+      msgs.push({ token: d.token, notification: { title, body }, data: { t: 'info', ...(id ? { id: String(id) } : {}) },
+        android: { priority: 'NORMAL', ttl: '21600s', notification: { channel_id: 'k_info', tag: 'info', sound: 'k_info', notification_priority: 'PRIORITY_DEFAULT', default_vibrate_timings: true, visibility: 'PUBLIC' } } });
+      d.info = { day, at: now, kind, lgAt: kind === 'league' ? now : inf.lgAt || 0 };
+      await this.state.storage.put(key, d);
+    }
+    st.cursor = last;
+    if (list.size < 300) st.done = true; // tous les téléphones ont été vus aujourd'hui
+    await this.state.storage.put('info', st);
+    if (msgs.length) await this.enqueue(msgs, 3);
   }
 
   /** Index « sujet -> téléphones », pour retrouver vite qui prévenir. */
@@ -1145,6 +1292,13 @@ async function ptRelay(url) {
   return v;
 }
 
+// footlive (version navigateur de l'app) : pages pays et classements seulement, gardées 10 min.
+async function flRelay(path) {
+  if (!/^\/(classement\/)?[a-z0-9-]+\/([a-z0-9-]+\/)?$/.test(path)) return [404, 'text/plain', 'introuvable'];
+  const r = await fetch(`https://www.footlive.fr${path}`, { headers: FL_UA, cf: { cacheTtl: 600, cacheEverything: true } });
+  return [r.status, 'text/html; charset=utf-8', await r.text()];
+}
+
 // Autorise l'app navigateur (kounadia.pages.dev) à appeler le robot.
 const CORS = { 'access-control-allow-origin': '*', 'access-control-allow-methods': 'GET, POST, OPTIONS', 'access-control-allow-headers': 'content-type, authorization', 'access-control-max-age': '86400' };
 function withCors(res) {
@@ -1177,6 +1331,14 @@ export default {
     }
     if (url.pathname === '/geo') {
       return withCors(new Response(`loc=${req.cf?.country || ''}\n`, { headers: { 'content-type': 'text/plain', 'cache-control': 'no-store' } }));
+    }
+    if (url.pathname.startsWith('/fl/') && req.method === 'GET') {
+      try {
+        const [status, type, text] = await flRelay(url.pathname.slice(3));
+        return withCors(new Response(text, { status, headers: { 'content-type': type, 'cache-control': 'public, max-age=600' } }));
+      } catch (e) {
+        return withCors(new Response('indisponible', { status: 502 }));
+      }
     }
     if (url.pathname.startsWith('/pt/') && req.method === 'GET') {
       try {

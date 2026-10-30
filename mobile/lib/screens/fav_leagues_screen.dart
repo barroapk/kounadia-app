@@ -155,7 +155,7 @@ class FavCountryScreen extends StatefulWidget {
 }
 
 class _FavCountryScreenState extends State<FavCountryScreen> {
-  late Future<List<PtTable>> _f = PrimaTipsService.tables(widget.link.path);
+  late Future<List<PtTable>> _f = PrimaTipsService.countryTables(widget.link, titlesOnly: true);
 
   Widget _row(String label, String key, bool on, {bool dim = false, bool bold = false}) => InkWell(
         onTap: () => FavLeagues.toggleExact(key),
@@ -202,7 +202,7 @@ class _FavCountryScreenState extends State<FavCountryScreen> {
               if (snap.hasError) ...[
                 SizedBox(height: 16),
                 kMessage(snap.error.toString(),
-                    onRetry: () => setState(() => _f = PrimaTipsService.tables(widget.link.path))),
+                    onRetry: () => setState(() => _f = PrimaTipsService.countryTables(widget.link, titlesOnly: true))),
               ],
               Padding(
                 padding: EdgeInsets.fromLTRB(4, 12, 4, 0),

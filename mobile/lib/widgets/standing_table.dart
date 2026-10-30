@@ -42,19 +42,20 @@ class StandingTable extends StatelessWidget {
     final hs = TextStyle(color: K.muted, fontSize: 11.5, fontWeight: FontWeight.w700);
     Widget cell(String t, double w, TextStyle s) =>
         SizedBox(width: w, child: T(t, textAlign: TextAlign.center, style: s));
+    // Colonnes de chiffres étroites : le nom du club garde la place (2 lignes si besoin, jamais coupé).
     List<Widget> nums(StandRow? r, TextStyle s) => [
-          cell(r?.mp ?? 'J', 26, s),
-          if (full) ...[cell(r?.w ?? 'G', 24, s), cell(r?.d ?? 'N', 24, s), cell(r?.l ?? 'P', 24, s)],
-          cell(r?.diff ?? 'Diff', 36, s),
-          cell(r?.pts ?? 'Pts', 32, s.copyWith(fontWeight: FontWeight.w800)),
+          cell(r?.mp ?? 'J', 22, s),
+          if (full) ...[cell(r?.w ?? 'G', 20, s), cell(r?.d ?? 'N', 20, s), cell(r?.l ?? 'P', 20, s)],
+          cell(r?.diff ?? 'Diff', 32, s),
+          cell(r?.pts ?? 'Pts', 30, s.copyWith(fontWeight: FontWeight.w900, color: K.text)),
         ];
 
     final list = <Widget>[
       Padding(
         padding: EdgeInsets.fromLTRB(12, 10, 12, 8),
         child: Row(children: [
-          cell('#', 24, hs),
-          SizedBox(width: 30),
+          cell('#', 22, hs),
+          SizedBox(width: 28),
           Expanded(child: T('Équipe', style: hs)),
           ...nums(null, hs),
         ]),
@@ -63,6 +64,7 @@ class StandingTable extends StatelessWidget {
     for (final r in rows) {
       final mine = highlight.contains(r.team);
       final ts = TextStyle(color: K.text, fontSize: 13, fontWeight: mine ? FontWeight.w800 : FontWeight.w500);
+      final name = TextStyle(color: K.text, fontSize: 13.5, height: 1.15, fontWeight: mine ? FontWeight.w900 : FontWeight.w700);
       list.add(Container(height: 1, color: K.border));
       list.add(Container(
         color: mine ? Color(0x264F46E5) : null,
@@ -70,10 +72,10 @@ class StandingTable extends StatelessWidget {
         child: Row(children: [
           Container(width: 4, height: 22, color: zones[r.zone] ?? Colors.transparent),
           SizedBox(width: 8),
-          cell('${r.pos}', 24, ts),
+          cell('${r.pos}', 22, ts),
           TeamCrest(name: r.team, logo: LogoCache.get(r.team), size: 20),
-          SizedBox(width: 10),
-          Expanded(child: T(r.team, maxLines: 1, overflow: TextOverflow.ellipsis, style: ts)),
+          SizedBox(width: 8),
+          Expanded(child: Text(r.team, maxLines: 2, softWrap: true, overflow: TextOverflow.ellipsis, style: name)),
           ...nums(r, ts),
         ]),
       ));

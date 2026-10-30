@@ -107,6 +107,12 @@ place(c, bell(1046.5, 1.3, 0.7, 2.6) * 0.45, 0.34)
 place(c, bell(1568.0, 1.3, 0.7, 2.6) * 0.3, 0.34)
 finish(c, 'k_coupon_won')
 
+# 6. INFOS POUR TOI : une seule note douce et courte, volume bas (discrète)
+i = np.zeros(int(SR * 0.7))
+place(i, marimba(880.0, 0.6) * 0.5, 0.0)
+place(i, bell(1760.0, 0.5, 0.3, 7) * 0.12, 0.0)
+finish(i, 'k_info', tail=0.1, level=0.12, boost=0.0, peak=0.4)
+
 # 5. COUPONS / COUPS SÛRS DISPONIBLES : « ding-dong-ding » doux et chaleureux
 d = np.zeros(int(SR * 1.2))
 for at, fr, g in ((0.0, 784.0, 0.55), (0.16, 1174.7, 0.5), (0.32, 1568.0, 0.42)):

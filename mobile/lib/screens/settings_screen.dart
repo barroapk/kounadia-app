@@ -1,4 +1,5 @@
 import '../config/store.dart';
+import '../services/interests.dart';
 import 'v2/leagues_stats_screen.dart';
 import 'package:flutter/material.dart';
 import 'package:share_plus/share_plus.dart';
@@ -235,6 +236,21 @@ class SettingsScreen extends StatelessWidget {
               builder: (_, on, __) => _tile(Icons.notifications_active_rounded, K.red, 'Notifications en direct',
                   'Buts et résultats de tes favoris et coupons', () => Notif.setEnabled(!on),
                   trailing: Switch(value: on, activeThumbColor: K.indigo, onChanged: Notif.setEnabled)),
+            ),
+            ValueListenableBuilder<bool>(
+              valueListenable: Interests.enabled,
+              builder: (_, on, __) => _tile(Icons.tips_and_updates_rounded, K.green, 'Infos pour toi',
+                  'Rarement : tes équipes du jour et les faits de tes championnats', () async {
+                await Interests.setEnabled(!on);
+                Notif.sync();
+              },
+                  trailing: Switch(
+                      value: on,
+                      activeThumbColor: K.indigo,
+                      onChanged: (v) async {
+                        await Interests.setEnabled(v);
+                        Notif.sync();
+                      })),
             ),
             _tile(Icons.leaderboard_rounded, K.indigoText, 'Classements', 'Tous les championnats du monde',
                 () => _open(context, TablesScreen())),

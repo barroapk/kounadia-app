@@ -1,4 +1,6 @@
 import 'dart:async';
+import '../services/interests.dart';
+import '../services/notif.dart';
 import '../widgets/k_err.dart';
 import '../services/live_socket.dart';
 import 'package:flutter/material.dart';
@@ -32,6 +34,7 @@ class _PtMatchScreenState extends State<PtMatchScreen> {
   void initState() {
     super.initState();
     Analytics.log('match_open', {'league': widget.match.leagueLabel});
+    Interests.match(widget.match.home, widget.match.away, widget.match.leagueLabel).then((_) => Notif.sync());
     // Direct à la seconde : score et minute du robot, mis à jour pendant que la page est ouverte.
     final v = LiveSocket.last[widget.match.id];
     if (v != null) {

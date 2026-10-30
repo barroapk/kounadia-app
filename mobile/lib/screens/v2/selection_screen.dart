@@ -44,9 +44,6 @@ const kSelFilters = <SelFilter>[
   SelFilter('stf', 'Fautes', Icons.front_hand_rounded, fam: 'stf'),
   SelFilter('sts', 'Tirs', Icons.ads_click_rounded, fam: 'sts'),
   SelFilter('stt', 'Tirs cadrés', Icons.gps_fixed_rounded, fam: 'stt'),
-  SelFilter('c2', 'Coupon cote 2+', Icons.confirmation_number_rounded, coupon: 'c2'),
-  SelFilter('c5', 'Coupon cote 5+', Icons.confirmation_number_rounded, coupon: 'c5'),
-  SelFilter('c10', 'Coupon cote 10+', Icons.local_fire_department_rounded, coupon: 'c10'),
 ];
 
 class SelectionScreen extends StatefulWidget {
