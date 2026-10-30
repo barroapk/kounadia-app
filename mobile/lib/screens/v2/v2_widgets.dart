@@ -473,7 +473,8 @@ class V2CouponCard extends StatelessWidget {
             if (i > 0) Container(height: 1, color: K.border),
             V2MatchRow(c.legs[i], showLeague: true),
           ],
-        if (c != null && !c.locked && c.r == null && codeKey != null)
+        // Code 1xBet : affiché sur le coupon du jour (avant, pendant et après les matchs).
+        if (c != null && !c.locked && codeKey != null)
           ValueListenableBuilder<Map<String, String>>(
             valueListenable: Codes.data,
             builder: (_, __, ___) {

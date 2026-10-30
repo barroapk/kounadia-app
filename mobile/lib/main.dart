@@ -31,6 +31,8 @@ Future<void> main() async {
   unawaited(Contact.load());
   Fx.init();
   Analytics.init();
+  // Pays choisi dans l'app : statistiques par pays dans KOUNADIA Admin.
+  Analytics.log('cty_${(UserPrefs.iso ?? 'XX').toUpperCase()}');
   Account.init();
   Sync.start();
   await Notif.init();
