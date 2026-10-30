@@ -30,11 +30,11 @@ const TIP = {
 };
 // Coupons gagnés (Coupon du jour, VIP, Coups sûrs) : annoncés à tous, uniquement quand ils sont gagnés.
 const CPN = {
-  fr: { single: 'Single du jour', free: 'Coupon gratuit', vip2: 'Coupon VIP cote 2', vip3: 'Coupon VIP cote 3', vip5: 'Coupon VIP cote 5', c2: 'Coup sûr cote 2+', c5: 'Coup sûr cote 5+', c10: 'Coup sûr cote 10+', t: '🎉 {c} gagné !', b: '{n}/{n} matchs gagnés · cote {odd}', vb: '{n}/{n} matchs gagnés · cote {odd} · Rejoins le Premium dès 250 F' },
-  en: { single: 'Single of the day', free: 'Free slip', vip2: 'VIP slip odds 2', vip3: 'VIP slip odds 3', vip5: 'VIP slip odds 5', c2: 'Sure bets odds 2+', c5: 'Sure bets odds 5+', c10: 'Sure bets odds 10+', t: '🎉 {c} won!', b: '{n}/{n} matches won · odds {odd}', vb: '{n}/{n} matches won · odds {odd} · Go Premium from 250 F' },
-  pt: { single: 'Simples do dia', free: 'Cupom grátis', vip2: 'Cupom VIP odd 2', vip3: 'Cupom VIP odd 3', vip5: 'Cupom VIP odd 5', c2: 'Apostas seguras odd 2+', c5: 'Apostas seguras odd 5+', c10: 'Apostas seguras odd 10+', t: '🎉 {c} ganho!', b: '{n}/{n} jogos ganhos · odd {odd}', vb: '{n}/{n} jogos ganhos · odd {odd} · Seja Premium a partir de 250 F' },
-  es: { single: 'Simple del día', free: 'Cupón gratis', vip2: 'Cupón VIP cuota 2', vip3: 'Cupón VIP cuota 3', vip5: 'Cupón VIP cuota 5', c2: 'Apuestas seguras cuota 2+', c5: 'Apuestas seguras cuota 5+', c10: 'Apuestas seguras cuota 10+', t: '🎉 ¡{c} ganado!', b: '{n}/{n} partidos ganados · cuota {odd}', vb: '{n}/{n} partidos ganados · cuota {odd} · Hazte Premium desde 250 F' },
-  ar: { single: 'رهان اليوم الفردي', free: 'القسيمة المجانية', vip2: 'قسيمة VIP احتمال 2', vip3: 'قسيمة VIP احتمال 3', vip5: 'قسيمة VIP احتمال 5', c2: 'رهانات آمنة احتمال 2+', c5: 'رهانات آمنة احتمال 5+', c10: 'رهانات آمنة احتمال 10+', t: '🎉 ربحت {c}!', b: '{n}/{n} مباريات رابحة · الاحتمال {odd}', vb: '{n}/{n} مباريات رابحة · الاحتمال {odd} · اشترك في بريميوم ابتداءً من 250 F' },
+  fr: { single: 'Single du jour', free: 'Coupon gratuit', vip2: 'Coupon VIP cote 2', vip3: 'Coupon VIP cote 3', vip5: 'Coupon VIP cote 5', c2: 'Coup sûr cote 2+', c5: 'Coup sûr cote 5+', c10: 'Coup sûr cote 10+', t: '🎉 {c} gagné !', b: '{n}/{n} matchs gagnés · cote {odd}', vb: '{n}/{n} matchs gagnés · cote {odd} · Rejoins le Premium dès 525 F' },
+  en: { single: 'Single of the day', free: 'Free slip', vip2: 'VIP slip odds 2', vip3: 'VIP slip odds 3', vip5: 'VIP slip odds 5', c2: 'Sure bets odds 2+', c5: 'Sure bets odds 5+', c10: 'Sure bets odds 10+', t: '🎉 {c} won!', b: '{n}/{n} matches won · odds {odd}', vb: '{n}/{n} matches won · odds {odd} · Go Premium from 525 F' },
+  pt: { single: 'Simples do dia', free: 'Cupom grátis', vip2: 'Cupom VIP odd 2', vip3: 'Cupom VIP odd 3', vip5: 'Cupom VIP odd 5', c2: 'Apostas seguras odd 2+', c5: 'Apostas seguras odd 5+', c10: 'Apostas seguras odd 10+', t: '🎉 {c} ganho!', b: '{n}/{n} jogos ganhos · odd {odd}', vb: '{n}/{n} jogos ganhos · odd {odd} · Seja Premium a partir de 525 F' },
+  es: { single: 'Simple del día', free: 'Cupón gratis', vip2: 'Cupón VIP cuota 2', vip3: 'Cupón VIP cuota 3', vip5: 'Cupón VIP cuota 5', c2: 'Apuestas seguras cuota 2+', c5: 'Apuestas seguras cuota 5+', c10: 'Apuestas seguras cuota 10+', t: '🎉 ¡{c} ganado!', b: '{n}/{n} partidos ganados · cuota {odd}', vb: '{n}/{n} partidos ganados · cuota {odd} · Hazte Premium desde 525 F' },
+  ar: { single: 'رهان اليوم الفردي', free: 'القسيمة المجانية', vip2: 'قسيمة VIP احتمال 2', vip3: 'قسيمة VIP احتمال 3', vip5: 'قسيمة VIP احتمال 5', c2: 'رهانات آمنة احتمال 2+', c5: 'رهانات آمنة احتمال 5+', c10: 'رهانات آمنة احتمال 10+', t: '🎉 ربحت {c}!', b: '{n}/{n} مباريات رابحة · الاحتمال {odd}', vb: '{n}/{n} مباريات رابحة · الاحتمال {odd} · اشترك في بريميوم ابتداءً من 525 F' },
 };
 const fill = (t, v) => t.replace(/\{(\w+)\}/g, (_, k) => (v[k] ?? ''));
 
@@ -658,11 +658,11 @@ export class Poller {
     const j = await r.json().catch(() => null);
     if (!j?.ok) return;
     const T = {
-      fr: { soon: ['👑 Ton Premium se termine demain', 'Renouvelle-le pour garder les coupons VIP et les Coups sûrs.'], end: ['👑 Ton Premium est terminé', 'Renouvelle-le dès 250 F pour retrouver les coupons VIP.'] },
-      en: { soon: ['👑 Your Premium ends tomorrow', 'Renew it to keep VIP slips and sure bets.'], end: ['👑 Your Premium has ended', 'Renew it from 250 F to get VIP slips back.'] },
-      pt: { soon: ['👑 O seu Premium termina amanhã', 'Renove para manter os cupons VIP e as apostas seguras.'], end: ['👑 O seu Premium terminou', 'Renove a partir de 250 F para voltar a ter os cupons VIP.'] },
-      es: { soon: ['👑 Tu Premium termina mañana', 'Renuévalo para conservar los cupones VIP y las apuestas seguras.'], end: ['👑 Tu Premium ha terminado', 'Renuévalo desde 250 F para recuperar los cupones VIP.'] },
-      ar: { soon: ['👑 ينتهي بريميوم غدًا', 'جدّده للاحتفاظ بقسائم VIP والرهانات الآمنة.'], end: ['👑 انتهى بريميوم', 'جدّده ابتداءً من 250 F لاستعادة قسائم VIP.'] },
+      fr: { soon: ['👑 Ton Premium se termine demain', 'Renouvelle-le pour garder les coupons VIP et les Coups sûrs.'], end: ['👑 Ton Premium est terminé', 'Renouvelle-le dès 525 F pour retrouver les coupons VIP.'] },
+      en: { soon: ['👑 Your Premium ends tomorrow', 'Renew it to keep VIP slips and sure bets.'], end: ['👑 Your Premium has ended', 'Renew it from 525 F to get VIP slips back.'] },
+      pt: { soon: ['👑 O seu Premium termina amanhã', 'Renove para manter os cupons VIP e as apostas seguras.'], end: ['👑 O seu Premium terminou', 'Renove a partir de 525 F para voltar a ter os cupons VIP.'] },
+      es: { soon: ['👑 Tu Premium termina mañana', 'Renuévalo para conservar los cupones VIP y las apuestas seguras.'], end: ['👑 Tu Premium ha terminado', 'Renuévalo desde 525 F para recuperar los cupones VIP.'] },
+      ar: { soon: ['👑 ينتهي بريميوم غدًا', 'جدّده للاحتفاظ بقسائم VIP والرهانات الآمنة.'], end: ['👑 انتهى بريميوم', 'جدّده ابتداءً من 525 F لاستعادة قسائم VIP.'] },
     };
     const msgs = [];
     for (const x of Array.isArray(j.sent) ? j.sent.slice(0, 500) : []) {

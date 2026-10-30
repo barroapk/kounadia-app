@@ -41,10 +41,10 @@ class KPlan {
 }
 
 const kPlans = [
-  KPlan('day', '3 jours', 250, 3),
-  KPlan('week', 'Hebdomadaire', 500, 7),
-  KPlan('month', 'Mensuel', 2000, 30),
-  KPlan('year', 'Annuel', 20000, 365),
+  KPlan('day', '3 jours', 525, 3),
+  KPlan('week', '1 semaine', 1050, 7),
+  KPlan('month', '1 mois', 4200, 30),
+  KPlan('quarter', '3 mois', 10500, 90),
 ];
 
 /// Compte KOUNADIA : session, statut Premium, paiement MoneyFusion (via knd-api).

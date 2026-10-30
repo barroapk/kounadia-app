@@ -497,9 +497,9 @@ class _AccountScreenState extends State<AccountScreen> {
     final best = p.id == 'month';
     final sub = switch (p.id) {
       'day' => '3 jours d\'accès complet · idéal pour essayer',
-      'week' => '7 jours · soit 71 F par jour',
-      'month' => '30 jours · le plus choisi',
-      _ => '365 jours · 2 mois offerts',
+      'week' => '7 jours · soit 150 F par jour',
+      'month' => '30 jours · soit 140 F par jour · le plus choisi',
+      _ => '90 jours · 2 100 F économisés (soit 117 F par jour)',
     };
     return Padding(
       padding: EdgeInsets.only(bottom: 10),

@@ -203,7 +203,7 @@ class SettingsScreen extends StatelessWidget {
                         Icon(Icons.workspace_premium_rounded, color: Color(0xFFD4A017), size: 20),
                         SizedBox(width: 8),
                         Expanded(
-                          child: T(tr('Passe à Premium · dès 250 F') + (Fx.approx(250) == null ? '' : ' (${Fx.approx(250)})'),
+                          child: T(tr('Passe à Premium · dès 525 F') + (Fx.approx(525) == null ? '' : ' (${Fx.approx(525)})'),
                               style: TextStyle(color: Color(0xFF1F2937), fontSize: 13.5, fontWeight: FontWeight.w800)),
                         ),
                         Icon(Icons.arrow_forward_rounded, color: Color(0xFF4F46E5), size: 18),
@@ -216,6 +216,69 @@ class SettingsScreen extends StatelessWidget {
           );
         },
       );
+
+  /// Sous-page de réglages (même présentation que la page principale).
+  void _page(BuildContext c, String title, List<Widget> Function(BuildContext) children) {
+    Analytics.log('settings_open', {'page': title});
+    Navigator.push(
+        c,
+        MaterialPageRoute(
+            builder: (ctx) => Scaffold(
+                  backgroundColor: K.bg,
+                  appBar: kAppBar(title),
+                  body: ListView(padding: EdgeInsets.fromLTRB(16, 4, 16, 32), children: children(ctx)),
+                )));
+  }
+
+  Widget _notifTiles() => kDividers([
+        ValueListenableBuilder<bool>(
+          valueListenable: Notif.enabled,
+          builder: (_, on, __) => _tile(Icons.notifications_active_rounded, K.red, 'Notifications en direct',
+              'Buts, résultats, coupons gagnés et Coups sûrs du jour', () => Notif.setEnabled(!on),
+              trailing: Switch(value: on, activeThumbColor: K.indigo, onChanged: Notif.setEnabled)),
+        ),
+        ValueListenableBuilder<bool>(
+          valueListenable: Interests.enabled,
+          builder: (_, on, __) => _tile(Icons.tips_and_updates_rounded, K.green, 'Infos pour toi',
+              'Une par jour au plus : tes équipes, tes championnats, le classement', () async {
+            await Interests.setEnabled(!on);
+            Notif.sync();
+          },
+              trailing: Switch(
+                  value: on,
+                  activeThumbColor: K.indigo,
+                  onChanged: (v) async {
+                    await Interests.setEnabled(v);
+                    Notif.sync();
+                  })),
+        ),
+      ]);
+
+  Widget _prefTiles(BuildContext context) => ValueListenableBuilder<int>(
+        valueListenable: UserPrefs.changed,
+        builder: (_, __, ___) {
+          final c = UserPrefs.country;
+          return kDividers([
+            _tile(Icons.public_rounded, K.green, 'Pays', c == null ? 'Choisir mon pays' : '${c.flag} ${c.label}', () async {
+              final n = await pickCountry(context, selected: c?.iso);
+              if (n != null) await UserPrefs.setCountry(n);
+            }),
+            _tile(Icons.payments_rounded, K.amber, 'Devise', '${UserPrefs.currency} · ${Fx.symbol(UserPrefs.currency)}', () async {
+              final v = await pickCurrency(context, UserPrefs.currency);
+              if (v != null) await UserPrefs.setCurrency(v);
+            }),
+            _tile(Icons.translate_rounded, K.indigoText, 'Langue', langName(UserPrefs.lang), () async {
+              final v = await pickLang(context, UserPrefs.lang);
+              if (v != null) await UserPrefs.setLang(v);
+            }),
+            _tile(Icons.schedule_rounded, Color(0xFF06B6D4), 'Fuseau horaire', '${UserPrefs.gmt()} · ${tr('heure du téléphone')}', () {},
+                trailing: SizedBox.shrink()),
+          ]);
+        },
+      );
+
+  Widget _premium(String title, String pitch, List<String> perks, IconData icon, Widget child) =>
+      PremiumGate(standalone: true, title: title, pitch: pitch, perks: perks, icon: icon, child: child);
 
   @override
   Widget build(BuildContext context) {
@@ -231,129 +294,100 @@ class SettingsScreen extends StatelessWidget {
           kDividers([
             _tile(Icons.star_rounded, K.amber, 'Mes championnats', 'Tes favoris en premier dans Matchs',
                 () => _open(context, FavLeaguesScreen())),
-            ValueListenableBuilder<bool>(
-              valueListenable: Notif.enabled,
-              builder: (_, on, __) => _tile(Icons.notifications_active_rounded, K.red, 'Notifications en direct',
-                  'Buts et résultats de tes favoris et coupons', () => Notif.setEnabled(!on),
-                  trailing: Switch(value: on, activeThumbColor: K.indigo, onChanged: Notif.setEnabled)),
-            ),
-            ValueListenableBuilder<bool>(
-              valueListenable: Interests.enabled,
-              builder: (_, on, __) => _tile(Icons.tips_and_updates_rounded, K.green, 'Infos pour toi',
-                  'Rarement : tes équipes du jour et les faits de tes championnats', () async {
-                await Interests.setEnabled(!on);
-                Notif.sync();
-              },
-                  trailing: Switch(
-                      value: on,
-                      activeThumbColor: K.indigo,
-                      onChanged: (v) async {
-                        await Interests.setEnabled(v);
-                        Notif.sync();
-                      })),
-            ),
-            _tile(Icons.leaderboard_rounded, K.indigoText, 'Classements', 'Tous les championnats du monde',
+            _tile(Icons.leaderboard_rounded, K.indigoText, 'Classements', 'Les championnats du monde entier',
                 () => _open(context, TablesScreen())),
-            if (kV2)
-              _tile(Icons.query_stats_rounded, K.green, 'Statistiques des championnats', 'Buts, corners, fautes et cartons par équipe',
-                  () => _open(context, LeaguesStatsScreen())),
-            _tile(Icons.lightbulb_rounded, K.amber, 'Faits du jour', 'Séries et chiffres clés des matchs',
-                () => _open(context, PremiumGate(
-                    standalone: true,
-                    title: "Faits du jour",
-                    pitch: "Les séries et chiffres clés des matchs du jour, pour parier en connaissance de cause.",
-                    perks: ["Séries en cours : victoires, buts, matchs nuls", "Chiffres clés de chaque équipe", "Mis à jour chaque jour"],
-                    icon: Icons.lightbulb_rounded,
-                    child: FactsScreen()))),
-            _tile(Icons.trending_up_rounded, K.green, 'Forme des équipes', 'Les équipes en forme et en difficulté',
-                () => _open(context, PremiumGate(
-                    standalone: true,
-                    title: "Forme des équipes",
-                    pitch: "Repère en un coup d'œil les équipes en forme et celles en difficulté.",
-                    perks: ["Équipes en forme et en difficulté", "Résultats récents de chaque équipe", "Tous les grands championnats"],
-                    icon: Icons.trending_up_rounded,
-                    child: FormScreen()))),
+            _tile(Icons.query_stats_rounded, K.green, 'Statistiques et analyses', 'Statistiques des championnats, faits du jour, forme',
+                () => _page(context, 'Statistiques et analyses', (c) => [
+                      kTitle('Premium'),
+                      kDividers([
+                        if (kV2)
+                          _tile(Icons.query_stats_rounded, K.green, 'Statistiques des championnats',
+                              'Buts, corners, fautes, cartons et meilleurs par thème', () => _open(c, _premium(
+                                  'Statistiques des championnats',
+                                  'Les chiffres de chaque championnat et de chaque équipe, pour choisir tes paris en connaissance de cause.',
+                                  ['Buts, +2,5, les deux marquent', 'Corners, fautes, tirs et cartons', 'Les meilleures équipes par thème'],
+                                  Icons.query_stats_rounded,
+                                  LeaguesStatsScreen()))),
+                        _tile(Icons.lightbulb_rounded, K.amber, 'Faits du jour', 'Séries et chiffres clés des matchs', () => _open(c, _premium(
+                            'Faits du jour',
+                            'Les séries et chiffres clés des matchs du jour, pour parier en connaissance de cause.',
+                            ['Séries en cours : victoires, buts, matchs nuls', 'Chiffres clés de chaque équipe', 'Mis à jour chaque jour'],
+                            Icons.lightbulb_rounded,
+                            FactsScreen()))),
+                        _tile(Icons.trending_up_rounded, K.green, 'Forme des équipes', 'Les équipes en forme et en difficulté', () => _open(c, _premium(
+                            'Forme des équipes',
+                            "Repère en un coup d'œil les équipes en forme et celles en difficulté.",
+                            ['Équipes en forme et en difficulté', 'Résultats récents de chaque équipe', 'Tous les grands championnats'],
+                            Icons.trending_up_rounded,
+                            FormScreen()))),
+                      ]),
+                    ])),
           ]),
 
+          kTitle('Notifications'),
+          _notifTiles(),
+
           kTitle('Préférences'),
-          ValueListenableBuilder<int>(
-            valueListenable: UserPrefs.changed,
-            builder: (_, __, ___) {
-              final c = UserPrefs.country;
-              return kDividers([
-                _tile(Icons.public_rounded, K.green, 'Pays', c == null ? 'Choisir mon pays' : '${c.flag} ${c.label}',
-                    () async {
-                  final n = await pickCountry(context, selected: c?.iso);
-                  if (n != null) await UserPrefs.setCountry(n);
-                }),
-                _tile(Icons.payments_rounded, K.amber, 'Devise', '${UserPrefs.currency} · ${Fx.symbol(UserPrefs.currency)}',
-                    () async {
-                  final v = await pickCurrency(context, UserPrefs.currency);
-                  if (v != null) await UserPrefs.setCurrency(v);
-                }),
-                _tile(Icons.translate_rounded, K.indigoText, 'Langue', langName(UserPrefs.lang), () async {
-                  final v = await pickLang(context, UserPrefs.lang);
-                  if (v != null) await UserPrefs.setLang(v);
-                }),
-                _tile(Icons.schedule_rounded, Color(0xFF06B6D4), 'Fuseau horaire', '${UserPrefs.gmt()} · ${tr('heure du téléphone')}', () {},
-                    trailing: SizedBox.shrink()),
-              ]);
-            },
-          ),
-          SizedBox(height: 12),
-          ThemeSelector(),
+          kDividers([
+            ValueListenableBuilder<int>(
+              valueListenable: UserPrefs.changed,
+              builder: (_, __, ___) {
+                final c = UserPrefs.country;
+                return _tile(Icons.tune_rounded, K.indigoText, 'Pays, langue, devise',
+                    '${c == null ? '' : '${c.flag} ${c.label} · '}${langName(UserPrefs.lang)} · ${UserPrefs.currency}',
+                    () => _page(context, 'Préférences', (c) => [_prefTiles(c), SizedBox(height: 12), ThemeSelector()]));
+              },
+            ),
+          ]),
 
           kTitle('KOUNADIA'),
           kDividers([
-            _tile(Icons.campaign_rounded, Color(0xFFEC4899), 'Partenariat & publicité', 'Fais connaître ta marque sur KOUNADIA',
-                () => _contactSheet(
-                      context,
-                      title: 'Partenariat & publicité',
-                      pitch: 'Bannières dans l\'application, partenariats, offres pour bookmakers et marques : '
-                          'parlons de ton projet. Réponse rapide de l\'équipe KOUNADIA.',
-                      subject: 'KOUNADIA - Partenariat / Publicité',
-                      message: 'Bonjour KOUNADIA 👋\nJe souhaite discuter d\'un partenariat / d\'une publicité sur l\'application.\n\nMon entreprise : \nMon projet : ',
-                      event: 'contact_partner',
-                    )),
+            _tile(Icons.auto_awesome_rounded, K.amber, 'Découvrir KOUNADIA', 'Tout ce que l\'application t\'offre', () => showWelcome(context)),
+            _tile(Icons.support_agent_rounded, K.indigoText, 'Aide et contact', 'Guide, support, jeu responsable, partenariat',
+                () => _page(context, 'Aide et contact', (c) => [
+                      kDividers([
+                        _tile(Icons.menu_book_rounded, K.green, "Guide d'utilisation", 'Tout savoir sur KOUNADIA', () => _open(c, GuideScreen())),
+                        _tile(Icons.support_agent_rounded, K.indigoText, 'Contacter le support', 'Un problème, une question, une idée',
+                            () => _contactSheet(
+                                  c,
+                                  title: 'Contacter le support',
+                                  pitch: 'Un souci avec l\'application ou ton abonnement ? Écris-nous, on te répond rapidement.',
+                                  subject: 'KOUNADIA $kAppVersion - Support',
+                                  message: 'Bonjour KOUNADIA 👋\nJ\'ai besoin d\'aide : ',
+                                  event: 'contact_support',
+                                )),
+                        _tile(Icons.health_and_safety_rounded, K.red, 'Jeu responsable', '18+ · À lire avant de parier',
+                            () => _open(c, ResponsibleScreen())),
+                        _tile(Icons.campaign_rounded, Color(0xFFEC4899), 'Partenariat & publicité', 'Fais connaître ta marque sur KOUNADIA',
+                            () => _contactSheet(
+                                  c,
+                                  title: 'Partenariat & publicité',
+                                  pitch: 'Bannières dans l\'application, partenariats, offres pour bookmakers et marques : '
+                                      'parlons de ton projet. Réponse rapide de l\'équipe KOUNADIA.',
+                                  subject: 'KOUNADIA - Partenariat / Publicité',
+                                  message: 'Bonjour KOUNADIA 👋\nJe souhaite discuter d\'un partenariat / d\'une publicité sur l\'application.\n\nMon entreprise : \nMon projet : ',
+                                  event: 'contact_partner',
+                                )),
+                      ]),
+                    ])),
             _tile(Icons.share_rounded, Color(0xFF06B6D4), 'Partager KOUNADIA', 'Invite tes amis',
-                () => Share.share('${tr('⚽ KOUNADIA : scores en direct, prédictions IA et Coup sûr du jour. Essaie-la !')}\n👉 https://kounadia.pages.dev')),
-            _tile(Icons.auto_awesome_rounded, K.amber, 'Découvrir KOUNADIA', 'Tout ce que l\'application t\'offre',
-                () => showWelcome(context)),
-          ]),
-
-          kTitle('Aide'),
-          kDividers([
-            _tile(Icons.menu_book_rounded, K.green, "Guide d'utilisation", 'Tout savoir sur KOUNADIA',
-                () => _open(context, GuideScreen())),
-            _tile(Icons.support_agent_rounded, K.indigoText, 'Contacter le support', 'Un problème, une question, une idée',
-                () => _contactSheet(
-                      context,
-                      title: 'Contacter le support',
-                      pitch: 'Un souci avec l\'application ou ton abonnement ? Écris-nous, on te répond rapidement.',
-                      subject: 'KOUNADIA $kAppVersion - Support',
-                      message: 'Bonjour KOUNADIA 👋\nJ\'ai besoin d\'aide : ',
-                      event: 'contact_support',
-                    )),
-            _tile(Icons.health_and_safety_rounded, K.red, 'Jeu responsable', '18+ · À lire avant de parier',
-                () => _open(context, ResponsibleScreen())),
-          ]),
-
-          kTitle('Informations légales'),
-          kDividers([
-            _tile(Icons.description_rounded, K.indigoText, "Conditions d'utilisation", 'Les règles du service',
-                () => _open(context, TermsScreen())),
-            _tile(Icons.privacy_tip_rounded, K.green, 'Confidentialité', 'Tes données et tes droits',
-                () => _open(context, PrivacyScreen())),
-            _tile(Icons.system_update_rounded, K.indigoText, 'Mises à jour', 'Version $kAppVersion',
-                () => AppUpdate.checkNow(context)),
-            _tile(Icons.info_rounded, K.muted, 'À propos', 'Version $kAppVersion', () => _info(
-                  context,
-                  'KOUNADIA',
-                  'Scores en direct, classements, statistiques et pronostics de football.\n\n'
-                      'Les pronostics sont fournis à titre informatif uniquement. '
-                      'Ils ne constituent ni une garantie de résultat ni un conseil financier.\n\n'
-                      'Fondateur & PDG : Pierre Clavers BARRO\nKOUNADIA SERVICE\n\nDéveloppé au Burkina Faso 🇧🇫',
-                )),
+                () => Share.share('${tr('⚽ KOUNADIA : scores en direct, coupons du jour et Coups sûrs. Essaie-la !')}\n👉 https://kounadia.pages.dev')),
+            _tile(Icons.info_rounded, K.muted, 'À propos et mentions légales', 'Conditions, confidentialité, mises à jour',
+                () => _page(context, 'À propos', (c) => [
+                      kDividers([
+                        _tile(Icons.system_update_rounded, K.indigoText, 'Mises à jour', 'Version $kAppVersion', () => AppUpdate.checkNow(c)),
+                        _tile(Icons.description_rounded, K.indigoText, "Conditions d'utilisation", 'Les règles du service', () => _open(c, TermsScreen())),
+                        _tile(Icons.privacy_tip_rounded, K.green, 'Confidentialité', 'Tes données et tes droits', () => _open(c, PrivacyScreen())),
+                        _tile(Icons.info_rounded, K.muted, 'À propos', 'KOUNADIA SERVICE', () => _info(
+                              c,
+                              'KOUNADIA',
+                              'Scores en direct, classements, statistiques, coupons du jour et Coups sûrs de football.\n\n'
+                                  'Les pronostics sont fournis à titre informatif uniquement. '
+                                  'Ils ne constituent ni une garantie de résultat ni un conseil financier. 18+ · Joue de manière responsable.\n\n'
+                                  'Une application de KOUNADIA SERVICE\nDéveloppée au Burkina Faso 🇧🇫',
+                            )),
+                      ]),
+                    ])),
           ]),
           SizedBox(height: 24),
           Center(

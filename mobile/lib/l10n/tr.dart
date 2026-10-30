@@ -30,6 +30,8 @@ final _rules = <(RegExp, Map<String, String>)>[
   (RegExp(r'^Moins de ([\d,]+) corners$'), {'en': 'Under {1} corners', 'pt': 'Menos de {1} escanteios', 'es': 'Menos de {1} córners', 'ar': 'أقل من {1} ركنية'}),
   (RegExp(r'^Plus de ([\d,]+) fautes$'), {'en': 'Over {1} fouls', 'pt': 'Mais de {1} faltas', 'es': 'Más de {1} faltas', 'ar': 'أكثر من {1} خطأ'}),
   (RegExp(r'^Moins de ([\d,]+) fautes$'), {'en': 'Under {1} fouls', 'pt': 'Menos de {1} faltas', 'es': 'Menos de {1} faltas', 'ar': 'أقل من {1} خطأ'}),
+  (RegExp(r'^Plus de ([\d,]+) cartons jaunes$'), {'en': 'Over {1} yellow cards', 'pt': 'Mais de {1} cartões amarelos', 'es': 'Más de {1} tarjetas amarillas', 'ar': 'أكثر من {1} بطاقة صفراء'}),
+  (RegExp(r'^Moins de ([\d,]+) cartons jaunes$'), {'en': 'Under {1} yellow cards', 'pt': 'Menos de {1} cartões amarelos', 'es': 'Menos de {1} tarjetas amarillas', 'ar': 'أقل من {1} بطاقة صفراء'}),
   (RegExp(r'^Plus de ([\d,]+) tirs cadrés$'), {'en': 'Over {1} shots on target', 'pt': 'Mais de {1} chutes no gol', 'es': 'Más de {1} tiros a puerta', 'ar': 'أكثر من {1} تسديدة على المرمى'}),
   (RegExp(r'^Moins de ([\d,]+) tirs cadrés$'), {'en': 'Under {1} shots on target', 'pt': 'Menos de {1} chutes no gol', 'es': 'Menos de {1} tiros a puerta', 'ar': 'أقل من {1} تسديدة على المرمى'}),
   (RegExp(r'^Plus de ([\d,]+) tirs$'), {'en': 'Over {1} shots', 'pt': 'Mais de {1} finalizações', 'es': 'Más de {1} tiros', 'ar': 'أكثر من {1} تسديدة'}),

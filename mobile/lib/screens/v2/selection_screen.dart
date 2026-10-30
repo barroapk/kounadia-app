@@ -44,6 +44,7 @@ const kSelFilters = <SelFilter>[
   SelFilter('stf', 'Fautes', Icons.front_hand_rounded, fam: 'stf'),
   SelFilter('sts', 'Tirs', Icons.ads_click_rounded, fam: 'sts'),
   SelFilter('stt', 'Tirs cadrés', Icons.gps_fixed_rounded, fam: 'stt'),
+  SelFilter('sty', 'Cartons', Icons.style_rounded, fam: 'sty'),
 ];
 
 class SelectionScreen extends StatefulWidget {
@@ -334,7 +335,7 @@ class _SelectionScreenState extends State<SelectionScreen> {
             child: ElevatedButton(
               style: ElevatedButton.styleFrom(backgroundColor: Colors.white, foregroundColor: Color(0xFF4F46E5), padding: EdgeInsets.symmetric(vertical: 13), shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12))),
               onPressed: () => Navigator.push(context, MaterialPageRoute(builder: (_) => AccountScreen())),
-              child: T('Devenir Premium · dès 250 F', style: TextStyle(fontWeight: FontWeight.w900, fontSize: 15)),
+              child: T('Devenir Premium · dès 525 F', style: TextStyle(fontWeight: FontWeight.w900, fontSize: 15)),
             ),
           ),
         ]),

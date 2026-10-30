@@ -147,7 +147,9 @@ class FlCatalog {
     final out = <FlCountry>[];
     (await countries()).forEach((slug, v) {
       if (fixed.contains(slug) || v is! Map) return;
-      out.add(FlCountry(slug, '${v['flag'] ?? ''}', '${v['en'] ?? ''}', '${v['fr'] ?? ''}', '${v['sec'] ?? 'Europe'}'));
+      final c = FlCountry(slug, '${v['flag'] ?? ''}', '${v['en'] ?? ''}', '${v['fr'] ?? ''}', '${v['sec'] ?? 'Europe'}');
+      if (c.en.isNotEmpty && c.fr.isNotEmpty) _flFr.putIfAbsent(c.en, () => c.fr);
+      out.add(c);
     });
     return out.where((c) => c.en.isNotEmpty).toList();
   }
@@ -160,6 +162,10 @@ class FlCatalog {
     return [for (final e in c.entries) FlComp('${e.key}', e.value is Map && e.value['st'] != null ? '${e.value['st']}' : null)];
   }
 }
+
+/// Nom français d'un pays footlive (« Ivory Coast » → « Côte d'Ivoire »).
+final _flFr = <String, String>{for (final c in kFlCountries) c.en: c.fr};
+String? flFrName(String en) => _flFr[en];
 
 FlCountry? flCountryOf(String en) {
   final k = en.trim().toLowerCase();

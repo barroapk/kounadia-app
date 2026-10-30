@@ -55,10 +55,10 @@ class V2Leg {
   static String? _s(dynamic v) => v == null || v.toString().isEmpty ? null : v.toString();
 
   /// Pari sur une statistique (corners, fautes, tirs, tirs cadrés) : clé c, f, s ou t.
-  String? get statKey => const {'stc': 'c', 'stf': 'f', 'sts': 's', 'stt': 't'}[fam];
+  String? get statKey => const {'stc': 'c', 'stf': 'f', 'sts': 's', 'stt': 't', 'sty': 'y'}[fam];
 
   /// Nom de la statistique du pari.
-  String? get statName => const {'c': 'Corners', 'f': 'Fautes', 's': 'Tirs', 't': 'Tirs cadrés'}[statKey];
+  String? get statName => const {'c': 'Corners', 'f': 'Fautes', 's': 'Tirs', 't': 'Tirs cadrés', 'y': 'Cartons jaunes'}[statKey];
 
   /// Valeurs [domicile, extérieur] de la statistique du pari, si connues.
   List<int?>? get statPair => statKey == null ? null : st[statKey];

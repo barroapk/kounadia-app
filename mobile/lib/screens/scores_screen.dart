@@ -463,8 +463,12 @@ class _ScoresScreenState extends State<ScoresScreen> with WidgetsBindingObserver
             ),
           ),
       ]);
-    } else {
-      children.add(KndBanner());
+    }
+    // Liste construite au fil du défilement (des centaines de matchs avec footlive) : seuls les
+    // championnats visibles à l'écran sont dessinés, le direct reste fluide.
+    final makers = <Widget Function()>[for (final w in children) () => w];
+    if (items.isNotEmpty) {
+      makers.add(() => KndBanner());
       var rows = 0;
       var block = 0;
       final ordered = [
@@ -472,13 +476,12 @@ class _ScoresScreenState extends State<ScoresScreen> with WidgetsBindingObserver
         ...groups.entries.where((e) => !FavLeagues.has(e.key)),
       ];
       for (final e in ordered) {
-        children
-          ..add(_group(e.key, e.value))
-          ..add(SizedBox(height: 10));
+        makers.add(() => Padding(padding: EdgeInsets.only(bottom: 10), child: _group(e.key, e.value)));
         rows += e.value.length;
         if (rows ~/ 10 > block) {
           block = rows ~/ 10;
-          children.add(KndBanner(afterCards: block * 10, total: items.length));
+          final b = block;
+          makers.add(() => KndBanner(afterCards: b * 10, total: items.length));
         }
       }
     }
@@ -490,10 +493,11 @@ class _ScoresScreenState extends State<ScoresScreen> with WidgetsBindingObserver
         BannerService.reload();
         return _load();
       },
-      child: ListView(
+      child: ListView.builder(
         physics: AlwaysScrollableScrollPhysics(),
         padding: EdgeInsets.fromLTRB(12, 0, 12, 96),
-        children: children,
+        itemCount: makers.length,
+        itemBuilder: (_, i) => makers[i](),
       ),
     );
   }

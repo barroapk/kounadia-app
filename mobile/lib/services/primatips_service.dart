@@ -136,7 +136,7 @@ String frName(String s) {
   if (appLang != 'fr') return t == 'Bosnia&Herz.' ? 'Bosnia-Herzegovina' : t; // noms d'origine (anglais)
   if (t == "Cote d'Ivoire") return "Côte d'Ivoire";
   if (t == 'Bosnia&Herz.') return 'Bosnie-Herzégovine';
-  return _namesFr[t] ?? t;
+  return _namesFr[t] ?? flFrName(t) ?? t;
 }
 
 String frLeague(String l) {

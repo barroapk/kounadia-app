@@ -115,6 +115,8 @@ class _CouponDayScreenState extends State<CouponDayScreen> {
   Widget _list(V2Data d, List<(String, String, Color)> cats, bool free) {
     final t = d.today;
     final monday = v2Monday(DateTime.now());
+    // Coupons VIP : leur historique et leurs résultats restent réservés au Premium.
+    final hideHist = !free && !Account.premium;
     return RefreshIndicator(
       color: K.indigo,
       onRefresh: _reload,
@@ -123,7 +125,7 @@ class _CouponDayScreenState extends State<CouponDayScreen> {
         if (t == null) ...[
           // Avant le calcul du matin : compte à rebours, et les coupons d'hier restent visibles avec leurs résultats.
           V2NextCountdown(),
-          if (d.history.isNotEmpty) ...[
+          if (d.history.isNotEmpty && !hideHist) ...[
             Padding(
               padding: EdgeInsets.fromLTRB(4, 2, 4, 10),
               child: T('Résultats d\'hier', style: TextStyle(color: K.text, fontSize: 16, fontWeight: FontWeight.w900)),
@@ -140,8 +142,8 @@ class _CouponDayScreenState extends State<CouponDayScreen> {
               accent: color,
               codeKey: key,
               codeDay: t.day,
-              week: dayCat(key, title).period(d, monday, monday.add(Duration(days: 7))),
-              onHistory: () => Navigator.push(context, MaterialPageRoute(builder: (_) => V2HistoryScreen(dayCat(key, title), d))),
+              week: hideHist ? null : dayCat(key, title).period(d, monday, monday.add(Duration(days: 7))),
+              onHistory: hideHist ? null : () => Navigator.push(context, MaterialPageRoute(builder: (_) => V2HistoryScreen(dayCat(key, title), d))),
             ),
             if (free && key == 'single') KndBanner(),
           ],

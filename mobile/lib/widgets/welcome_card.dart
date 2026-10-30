@@ -114,22 +114,24 @@ class _WelcomeDialog extends StatelessWidget {
               padding: EdgeInsets.fromLTRB(18, 4, 18, 18),
               child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
                 _section('Gratuit, pour tous', Icons.sports_soccer_rounded, K.green, [
-                  _point('Scores en direct', 'tous les championnats, minute par minute.'),
-                  _point('Mes matchs', 'tes championnats favoris toujours en premier.'),
-                  _point('Classements', 'le monde entier en un geste.'),
-                  if (kV2) _point('Coupon du jour', 'le Single du jour et un coupon gratuit, chaque matin.'),
+                  _point('Scores en direct', 'des centaines de championnats du monde entier, minute par minute.'),
+                  _point('Mes championnats', 'choisis tes favoris : leurs matchs en premier et les buts en direct.'),
+                  _point('Classements', 'plus de 100 pays, mis à jour chaque jour.'),
+                  if (kV2) _point('Coupon du jour', 'le Single du jour et un coupon gratuit chaque matin, avec le code 1xBet à copier.'),
+                  _point('Notifications', 'buts, résultats et coupons gagnés ; une info utile par jour au plus.'),
                 ]),
                 _section('Premium, pour aller plus loin', Icons.workspace_premium_rounded, Color(0xFFD4A017), [
                   if (kV2) ...[
-                    _point('Coupons VIP', 'trois coupons du jour à cote 2, 3 et 5.'),
-                    _point('Coups sûrs', 'les paris les plus sûrs du jour, de types variés.'),
+                    _point('Coupons VIP', 'trois coupons du jour à cote 2, 3 et 5, avec leur code 1xBet et leur historique.'),
+                    _point('Coups sûrs', 'les paris les plus sûrs du jour : double chance, buts, mi-temps, corners, fautes, tirs, cartons.'),
+                    _point('Statistiques des championnats', 'buts, corners, cartons et meilleures équipes par thème.'),
                   ] else ...[
                     _point('Prédictions', 'Kounadia IA et nos experts, chaque jour.'),
                     _point('Coup sûr', 'les sélections du jour les mieux notées par nos analyses.'),
                   ],
                   _point('Coupons', 'un coupon prêt selon la cote que tu veux.'),
                   _point('Fiches match', 'forme, faits du jour et statistiques complètes.'),
-                  _para('Dès 250 F pour 3 jours. Sans engagement.'),
+                  _para('Dès 525 F pour 3 jours · 4 200 F le mois · 10 500 F les 3 mois. Sans engagement.'),
                 ]),
                 if (!kPlay && UserPrefs.iso == 'BF')
                   _section('Dépôt · Retrait 1xBet', Icons.swap_vert_rounded, K.indigoText, [
@@ -144,7 +146,7 @@ class _WelcomeDialog extends StatelessWidget {
                     border: Border.all(color: K.border),
                   ),
                   child: T(
-                    'Fondé par M. Pierre Clavers BARRO,\njeune entrepreneur burkinabè 🇧🇫',
+                    'Une application de KOUNADIA SERVICE 🇧🇫\nDes milliers de passionnés de football nous font confiance.',
                     textAlign: TextAlign.center,
                     style: TextStyle(color: K.text, fontSize: 13.5, fontWeight: FontWeight.w700, height: 1.4),
                   ),
