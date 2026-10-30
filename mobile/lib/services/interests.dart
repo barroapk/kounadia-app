@@ -6,7 +6,7 @@ import 'package:shared_preferences/shared_preferences.dart';
 /// suit ou recherche. Sert aux notifications d'infos personnalisées (rares et espacées).
 /// Les points baissent avec le temps : ce qui n'intéresse plus disparaît tout seul.
 class Interests {
-  static Map<String, double> _teams = {}, _leagues = {};
+  static Map<String, double> _teams = {}, _leagues = {}, _tabs = {};
   static bool _loaded = false;
   static int _day = 0;
   /// Infos personnalisées activées (Paramètres).
@@ -20,12 +20,14 @@ class Interests {
       enabled.value = p.getBool('info_on') ?? true;
       _teams = _dec(p.getString('int_teams'));
       _leagues = _dec(p.getString('int_leagues'));
+      _tabs = _dec(p.getString('int_tabs'));
       _day = p.getInt('int_day') ?? 0;
       final today = DateTime.now().millisecondsSinceEpoch ~/ 86400000;
       if (_day > 0 && today > _day) {
         final f = _pow(0.94, today - _day); // −6 % par jour
         _teams.updateAll((_, v) => v * f);
         _leagues.updateAll((_, v) => v * f);
+        _tabs.updateAll((_, v) => v * f);
         _teams.removeWhere((_, v) => v < 0.3);
         _leagues.removeWhere((_, v) => v < 0.3);
       }
@@ -59,6 +61,7 @@ class Interests {
       _leagues = Map.fromEntries(top(_leagues));
       await p.setString('int_teams', jsonEncode(_teams));
       await p.setString('int_leagues', jsonEncode(_leagues));
+      await p.setString('int_tabs', jsonEncode(_tabs));
       await p.setInt('int_day', _day);
     } catch (_) {}
   }
@@ -71,6 +74,13 @@ class Interests {
       _teams[t] = (_teams[t] ?? 0) + w;
     }
     if (league.trim().isNotEmpty) _leagues[league] = (_leagues[league] ?? 0) + w;
+    await _save();
+  }
+
+  /// Onglet ouvert (Matchs, Coupon du jour, Coups sûrs…).
+  static Future<void> tab(String name) async {
+    await load();
+    _tabs[name] = (_tabs[name] ?? 0) + 0.5;
     await _save();
   }
 
@@ -90,8 +100,10 @@ class Interests {
         (m.entries.where((e) => e.value >= 2).toList()..sort((a, b) => b.value.compareTo(a.value))).take(n).map((e) => e.key).toList();
     final teams = best(_teams, 8);
     final leagues = {...favLeagues.take(6), ...best(_leagues, 6)}.take(8).toList();
-    if (teams.isEmpty && leagues.isEmpty) return null;
-    return {'teams': teams, 'leagues': leagues};
+    if (teams.isEmpty && leagues.isEmpty && best(_tabs, 1).isEmpty) return null;
+    // Onglet préféré : oriente le type d'info (ex. bilan des Coups sûrs pour qui les consulte souvent).
+    final tabs = best(_tabs, 1);
+    return {'teams': teams, 'leagues': leagues, if (tabs.isNotEmpty) 'tab': tabs.first};
   }
 
   static Future<void> setEnabled(bool on) async {

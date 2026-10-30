@@ -3,6 +3,7 @@ import 'dart:convert';
 import 'dart:io';
 import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:http/http.dart' as http;
+import 'package:shared_preferences/shared_preferences.dart';
 import 'kounadia_data_service.dart' show FriendlyError;
 import 'live_socket.dart' show kLiveBase;
 import 'match_detail_service.dart' show StandRow;
@@ -110,6 +111,56 @@ const kFlCountries = <FlCountry>[
   FlCountry('nouvelle-zelande', 'nz', 'New Zealand', 'Nouvelle-Zélande', 'Océanie'),
 ];
 
+/// Catalogue footlive (pays → compétitions → lien du classement), complété chaque jour par KOUNADIA.
+class FlCatalog {
+  static const _url = 'https://raw.githubusercontent.com/barroapk/kfeed/flcat/flcat.json';
+  static Map<String, dynamic>? _mem;
+  static DateTime? _at;
+
+  static Future<Map<String, dynamic>> countries() async {
+    if (_mem != null && _at != null && DateTime.now().difference(_at!) < const Duration(hours: 1)) return _mem!;
+    SharedPreferences? p;
+    try {
+      p = await SharedPreferences.getInstance();
+      final r = await http.get(Uri.parse(_url)).timeout(const Duration(seconds: 12));
+      if (r.statusCode == 200) {
+        final body = utf8.decode(r.bodyBytes);
+        final c = (jsonDecode(body) as Map)['countries'];
+        if (c is Map) {
+          _mem = Map<String, dynamic>.from(c);
+          _at = DateTime.now();
+          await p.setString('kflcat', body);
+          return _mem!;
+        }
+      }
+    } catch (_) {}
+    try {
+      final c = (jsonDecode(p?.getString('kflcat') ?? '{}') as Map)['countries'];
+      if (c is Map) return _mem = Map<String, dynamic>.from(c);
+    } catch (_) {}
+    return _mem ?? {};
+  }
+
+  /// Pays du catalogue absents de la liste fixe.
+  static Future<List<FlCountry>> extraCountries() async {
+    final fixed = {for (final c in kFlCountries) c.slug};
+    final out = <FlCountry>[];
+    (await countries()).forEach((slug, v) {
+      if (fixed.contains(slug) || v is! Map) return;
+      out.add(FlCountry(slug, '${v['flag'] ?? ''}', '${v['en'] ?? ''}', '${v['fr'] ?? ''}', '${v['sec'] ?? 'Europe'}'));
+    });
+    return out.where((c) => c.en.isNotEmpty).toList();
+  }
+
+  /// Compétitions connues d'un pays (titre → lien du classement).
+  static Future<List<FlComp>> comps(String slug) async {
+    final v = (await countries())[slug];
+    final c = v is Map ? v['comps'] : null;
+    if (c is! Map) return [];
+    return [for (final e in c.entries) FlComp('${e.key}', e.value is Map && e.value['st'] != null ? '${e.value['st']}' : null)];
+  }
+}
+
 FlCountry? flCountryOf(String en) {
   final k = en.trim().toLowerCase();
   for (final c in kFlCountries) {
@@ -162,11 +213,19 @@ class FootliveService {
       .replaceAll(RegExp(r'\s+'), ' ')
       .trim();
 
-  /// Compétitions d'un pays (jeunes et réserves exclues).
+  /// Compétitions d'un pays (jeunes et réserves exclues) : page du pays + catalogue KOUNADIA.
   static Future<List<FlComp>> competitions(FlCountry c) async {
-    final h = await _get('/${c.slug}/');
     final out = <FlComp>[];
     final seen = <String>{};
+    String h = '';
+    try {
+      h = await _get('/${c.slug}/');
+    } catch (e) {
+      // Page du pays indisponible : le catalogue suffit (sinon on remonte l'erreur).
+      final cat = await FlCatalog.comps(c.slug);
+      if (cat.isEmpty) rethrow;
+      return cat;
+    }
     final youth = RegExp(r'\bU-?1[3-9]\b|\bU-?2[0-3]\b|youth|reserve|primavera|moins de \d+ ans|jeunes|espoirs', caseSensitive: false);
     for (final m in RegExp(r"id='compName_\d+'([\s\S]*?)</table>").allMatches(h)) {
       final b = m[1]!;
@@ -175,6 +234,9 @@ class FootliveService {
       if (title.isEmpty || youth.hasMatch(title) || !seen.add(title)) continue;
       final st = RegExp(r"href='(/classement/[^']+)'").firstMatch(b)?[1];
       out.add(FlComp(title, st));
+    }
+    for (final x in await FlCatalog.comps(c.slug)) {
+      if (seen.add(x.title)) out.add(x);
     }
     return out;
   }

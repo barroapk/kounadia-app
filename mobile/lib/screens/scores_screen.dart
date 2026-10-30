@@ -130,6 +130,29 @@ class _ScoresScreenState extends State<ScoresScreen> with WidgetsBindingObserver
     } catch (_) {}
   }
 
+  Timer? _searchT;
+
+  /// Recherche d'une équipe (après 3 s sans taper) : centre d'intérêt pour les infos personnalisées.
+  void _noteSearch(String v) {
+    _searchT?.cancel();
+    final q = _sn(v.trim());
+    if (q.length < 3) return;
+    _searchT = Timer(Duration(seconds: 3), () {
+      final teams = <String>{};
+      for (final l in _days.values) {
+        for (final m in l) {
+          if (_sn(m.home).contains(q)) teams.add(m.home);
+          if (_sn(m.away).contains(q)) teams.add(m.away);
+        }
+      }
+      if (teams.isNotEmpty && teams.length <= 3) {
+        for (final t in teams) {
+          Interests.search(t);
+        }
+      }
+    });
+  }
+
   Future<void> _toggleFav(LiveMatch m) async {
     final added = !_fav.contains(m.id);
     if (added) Interests.match(m.home, m.away, m.leagueLabel, w: 3);
@@ -302,7 +325,10 @@ class _ScoresScreenState extends State<ScoresScreen> with WidgetsBindingObserver
               padding: EdgeInsets.fromLTRB(12, 0, 12, 10),
               child: TextField(
                 autofocus: true,
-                onChanged: (v) => setState(() => _q = v),
+                onChanged: (v) {
+                  setState(() => _q = v);
+                  _noteSearch(v);
+                },
                 style: TextStyle(color: K.text),
                 decoration: InputDecoration(
                   hintText: tr('Équipe ou championnat…'),

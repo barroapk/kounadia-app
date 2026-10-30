@@ -622,8 +622,9 @@ export class Poller {
     }
     // Centres d'intérêt (infos personnalisées) : équipes et championnats, quelques noms seulement.
     const str = (a, n) => (Array.isArray(a) ? a : []).map((x) => String(x).slice(0, 80)).filter(Boolean).slice(0, n);
-    const prof = b.prof && typeof b.prof === 'object' && !b.prof.off ? { teams: str(b.prof.teams, 8), leagues: str(b.prof.leagues, 8) } : null;
-    const hasProf = !!prof && (prof.teams.length || prof.leagues.length);
+    const prof = b.prof && typeof b.prof === 'object' && !b.prof.off
+      ? { teams: str(b.prof.teams, 8), leagues: str(b.prof.leagues, 8), tab: String(b.prof.tab || '').slice(0, 40) } : null;
+    const hasProf = !!prof && (prof.teams.length || prof.leagues.length || prof.tab);
     if (!coupons.length && !topics.length && !uid && !hasProf) await this.state.storage.delete(key);
     else {
       await this.state.storage.put(key, { token, lang: LANGS.includes(b.lang) ? b.lang : 'en', coupons, topics, uid, at: Date.now(),
@@ -711,12 +712,51 @@ export class Poller {
       return `${String(d.getUTCHours()).padStart(2, '0')}:${String(d.getUTCMinutes()).padStart(2, '0')}`;
     };
     const T = {
-      fr: { play1: '⚽ {t} joue aujourd\'hui', playN: '⚽ Tes équipes jouent aujourd\'hui', vs: '{t} – {o} à {h} (GMT)', res: '📋 Résultat d\'hier', lg: '📅 {l} aujourd\'hui', lgB: '{n} matchs, dont {a} – {b} à {h} (GMT)' },
-      en: { play1: '⚽ {t} play today', playN: '⚽ Your teams play today', vs: '{t} – {o} at {h} (GMT)', res: '📋 Yesterday\'s result', lg: '📅 {l} today', lgB: '{n} matches, including {a} – {b} at {h} (GMT)' },
-      pt: { play1: '⚽ {t} joga hoje', playN: '⚽ As tuas equipas jogam hoje', vs: '{t} – {o} às {h} (GMT)', res: '📋 Resultado de ontem', lg: '📅 {l} hoje', lgB: '{n} jogos, incluindo {a} – {b} às {h} (GMT)' },
-      es: { play1: '⚽ {t} juega hoy', playN: '⚽ Tus equipos juegan hoy', vs: '{t} – {o} a las {h} (GMT)', res: '📋 Resultado de ayer', lg: '📅 {l} hoy', lgB: '{n} partidos, entre ellos {a} – {b} a las {h} (GMT)' },
-      ar: { play1: '⚽ {t} يلعب اليوم', playN: '⚽ فرقك تلعب اليوم', vs: '{t} – {o} الساعة {h} (GMT)', res: '📋 نتيجة الأمس', lg: '📅 {l} اليوم', lgB: '{n} مباريات، منها {a} – {b} الساعة {h} (GMT)' },
+      fr: { play1: '⚽ {t} joue aujourd\'hui', playN: '⚽ Tes équipes jouent aujourd\'hui', vs: '{t} – {o} à {h} (GMT)', res: '📋 Résultat d\'hier', lg: '📅 {l} aujourd\'hui', lgB: '{n} matchs, dont {a} – {b} à {h} (GMT)',
+        tb: '📊 {l} : le classement après la journée', rank: '{t} est {r}e ({p} pts)', sure: '✅ Coups sûrs d\'hier', sureB: '{w} gagnés sur {n} pronostics. Ceux d\'aujourd\'hui sont prêts.' },
+      en: { play1: '⚽ {t} play today', playN: '⚽ Your teams play today', vs: '{t} – {o} at {h} (GMT)', res: '📋 Yesterday\'s result', lg: '📅 {l} today', lgB: '{n} matches, including {a} – {b} at {h} (GMT)',
+        tb: '📊 {l}: table after the matchday', rank: '{t} is {r}th ({p} pts)', sure: '✅ Yesterday\'s sure bets', sureB: '{w} won out of {n} tips. Today\'s are ready.' },
+      pt: { play1: '⚽ {t} joga hoje', playN: '⚽ As tuas equipas jogam hoje', vs: '{t} – {o} às {h} (GMT)', res: '📋 Resultado de ontem', lg: '📅 {l} hoje', lgB: '{n} jogos, incluindo {a} – {b} às {h} (GMT)',
+        tb: '📊 {l}: classificação após a jornada', rank: '{t} está em {r}º ({p} pts)', sure: '✅ Apostas seguras de ontem', sureB: '{w} ganhas em {n} prognósticos. As de hoje estão prontas.' },
+      es: { play1: '⚽ {t} juega hoy', playN: '⚽ Tus equipos juegan hoy', vs: '{t} – {o} a las {h} (GMT)', res: '📋 Resultado de ayer', lg: '📅 {l} hoy', lgB: '{n} partidos, entre ellos {a} – {b} a las {h} (GMT)',
+        tb: '📊 {l}: clasificación tras la jornada', rank: '{t} es {r}º ({p} pts)', sure: '✅ Apuestas seguras de ayer', sureB: '{w} ganadas de {n} pronósticos. Las de hoy están listas.' },
+      ar: { play1: '⚽ {t} يلعب اليوم', playN: '⚽ فرقك تلعب اليوم', vs: '{t} – {o} الساعة {h} (GMT)', res: '📋 نتيجة الأمس', lg: '📅 {l} اليوم', lgB: '{n} مباريات، منها {a} – {b} الساعة {h} (GMT)',
+        tb: '📊 {l}: الترتيب بعد الجولة', rank: '{t} في المركز {r} ({p} نقطة)', sure: '✅ رهانات الأمس الآمنة', sureB: 'ربح {w} من {n} توقعات. توقعات اليوم جاهزة.' },
     };
+    // Classements footlive (catalogue KOUNADIA) : au plus 12 classements lus par tournée.
+    const cat = await fetch('https://raw.githubusercontent.com/barroapk/kfeed/flcat/flcat.json').then((r) => (r.ok ? r.json() : null)).catch(() => null);
+    const tables = new Map();
+    let fetched = 0;
+    const tableOf = async (lg) => {
+      if (tables.has(lg)) return tables.get(lg);
+      let rows = null;
+      const i = lg.indexOf(' - ');
+      const c = n(i > 0 ? lg.slice(0, i) : ''), t = n(i > 0 ? lg.slice(i + 3) : lg);
+      const e = Object.values(cat?.countries || {}).find((x) => n(x.en) === c);
+      const comp = e && Object.entries(e.comps || {}).find(([k, v]) => v?.st && (n(k) === t || n(k).includes(t) || t.includes(n(k))));
+      if (comp && fetched < 12) {
+        fetched++;
+        try {
+          const r = await fetch(`https://www.footlive.fr${comp[1].st}`, { headers: FL_UA, cf: { cacheTtl: 1800, cacheEverything: true } });
+          const h = r.ok ? await r.text() : '';
+          const tb = (h.match(/<table class='standings'>([\s\S]*?)<\/table>/) || [])[1] || '';
+          rows = [...tb.matchAll(/<td class='text-center'>(\d+)<\/td>([\s\S]*?)(?=<tr>|<\/tbody>|$)/g)].map((m) => {
+            const c2 = [...m[2].matchAll(/<td[^>]*>([\s\S]*?)<\/td>/g)].map((x) => x[1].replace(/<[^>]+>/g, '').replace(/&#0?39;/g, "'").replace(/&amp;/g, '&').trim());
+            return { pos: Number(m[1]), team: c2[0], pts: c2[6] };
+          }).filter((x) => x.team && x.pts);
+          if (rows.length < 4) rows = null;
+        } catch (_) {
+          rows = null;
+        }
+      }
+      tables.set(lg, rows);
+      return rows;
+    };
+    // Bilan des Coups sûrs d'hier (pour ceux qui les consultent souvent).
+    const v2 = await this.feed('v2/v2.json').catch(() => null);
+    const hy = Array.isArray(v2?.history) ? v2.history.find((x) => x?.day === yday) : null;
+    const sl = (hy?.selection?.top || []).filter((l) => l?.r === 'won' || l?.r === 'lost');
+    const sureWon = sl.filter((l) => l.r === 'won').length;
     const fill = (s, o) => s.replace(/\{(\w)\}/g, (_, k) => o[k] ?? '');
     const list = await this.state.storage.list({ prefix: 'cp:', start: st.cursor ? st.cursor + '\u0000' : undefined, limit: 300 });
     const msgs = [];
@@ -744,7 +784,27 @@ export class Poller {
         const r = past.filter((m) => teams.has(n(m.home)) || teams.has(n(m.away))).slice(0, 2);
         if (r.length) msg = [L.res, r.map((m) => `${m.home} ${m.score.h}-${m.score.a} ${m.away}`).join(' · '), 'res', r[0].id];
       }
-      // 3. Programme du jour de son championnat préféré (au plus tous les 4 jours).
+      // 3. Classement de son championnat après la journée d'hier (au plus tous les 3 jours).
+      if (!msg && now - (inf.tbAt || 0) > 68 * 3600000) {
+        const lgs = [...(d.prof.leagues || [])];
+        for (const m of past) if ((teams.has(n(m.home)) || teams.has(n(m.away))) && !lgs.includes(label(m))) lgs.unshift(label(m));
+        for (const lg of lgs.slice(0, 4)) {
+          const played = past.filter((m) => n(label(m)) === n(lg)).length;
+          if (played < 3) continue;
+          const rows = await tableOf(lg);
+          if (!rows) continue;
+          const top = rows.slice(0, 3).map((x) => `${x.pos}. ${x.team} ${x.pts}`).join(' · ');
+          const mine = rows.find((x) => teams.has(n(x.team)) && x.pos > 3);
+          const body = mine ? `${top} · ${fill(L.rank, { t: mine.team, r: mine.pos, p: mine.pts })}` : top;
+          msg = [fill(L.tb, { l: lg.replace(' - ', ' · ') }), body, 'table', null];
+          break;
+        }
+      }
+      // 4. Bilan des Coups sûrs d'hier, pour qui ouvre souvent les Coups sûrs (au plus 1 fois par semaine).
+      if (!msg && /coups? s[uû]r/i.test(d.prof.tab || '') && sl.length >= 5 && sureWon / sl.length >= 0.6 && now - (inf.suAt || 0) > 6.5 * 86400000) {
+        msg = [L.sure, fill(L.sureB, { w: sureWon, n: sl.length }), 'sure', null];
+      }
+      // 5. Programme du jour de son championnat préféré (au plus tous les 4 jours).
       if (!msg && now - (inf.lgAt || 0) > 92 * 3600000) {
         for (const lg of d.prof.leagues || []) {
           const k = n(lg);
@@ -757,9 +817,9 @@ export class Poller {
       }
       if (!msg) continue;
       const [title, body, kind, id] = msg;
-      msgs.push({ token: d.token, notification: { title, body }, data: { t: 'info', ...(id ? { id: String(id) } : {}) },
+      msgs.push({ token: d.token, notification: { title, body }, data: { t: kind === 'sure' ? 'day' : 'info', ...(id ? { id: String(id) } : {}) },
         android: { priority: 'NORMAL', ttl: '21600s', notification: { channel_id: 'k_info', tag: 'info', sound: 'k_info', notification_priority: 'PRIORITY_DEFAULT', default_vibrate_timings: true, visibility: 'PUBLIC' } } });
-      d.info = { day, at: now, kind, lgAt: kind === 'league' ? now : inf.lgAt || 0 };
+      d.info = { day, at: now, kind, lgAt: kind === 'league' ? now : inf.lgAt || 0, tbAt: kind === 'table' ? now : inf.tbAt || 0, suAt: kind === 'sure' ? now : inf.suAt || 0 };
       await this.state.storage.put(key, d);
     }
     st.cursor = last;

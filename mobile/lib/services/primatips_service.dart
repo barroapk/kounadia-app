@@ -247,8 +247,12 @@ class PrimaTipsService {
     }
     // Pays footlive absents de PrimaTips : ajoutés dans leur continent.
     final known = {for (final s in secs) for (final l in s.items) l.name.trim().toLowerCase()};
-    for (final c in kFlCountries) {
-      if (known.contains(c.en.toLowerCase())) continue;
+    List<FlCountry> extra = const [];
+    try {
+      extra = await FlCatalog.extraCountries();
+    } catch (_) {}
+    for (final c in [...kFlCountries, ...extra]) {
+      if (!known.add(c.en.toLowerCase())) continue;
       PtSection? sec;
       for (final s in secs) {
         if (s.title == c.section) sec = s;
@@ -279,11 +283,24 @@ class PrimaTipsService {
   static Future<List<PtTable>> countryTables(PtLink link, {bool titlesOnly = false}) async {
     FlCountry? fl;
     if (link.path.startsWith('fl:')) {
+      final slug = link.path.substring(3);
       for (final c in kFlCountries) {
-        if (c.slug == link.path.substring(3)) fl = c;
+        if (c.slug == slug) fl = c;
       }
+      if (fl == null) {
+        for (final c in await FlCatalog.extraCountries()) {
+          if (c.slug == slug) fl = c;
+        }
+      }
+      fl ??= FlCountry(slug, '', link.name, link.name, '');
     } else {
       fl = flCountryOf(link.name);
+      if (fl == null) {
+        final k = link.name.trim().toLowerCase();
+        for (final c in await FlCatalog.extraCountries()) {
+          if (c.en.toLowerCase() == k) fl = c;
+        }
+      }
     }
     final out = link.path.startsWith('fl:') ? <PtTable>[] : await tables(link.path);
     if (fl == null) return out;
