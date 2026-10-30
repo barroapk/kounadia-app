@@ -665,6 +665,8 @@ class _PayGuide extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final ussd = '*144*4*6*${plan.price}#';
+    // Le code Orange Money ci-dessous n'existe qu'au Burkina Faso.
+    final bf = (UserPrefs.iso ?? '').toUpperCase() == 'BF';
     Widget step(String n, Widget child) => Padding(
           padding: EdgeInsets.only(bottom: 10),
           child: Row(crossAxisAlignment: CrossAxisAlignment.start, children: [
@@ -697,6 +699,7 @@ class _PayGuide extends StatelessWidget {
                   style: TextStyle(color: K.text, fontSize: 12.5, fontWeight: FontWeight.w700)),
             ]),
           ),
+          if (bf) ...[
           SizedBox(height: 14),
           T('Avec Orange Money :', style: TextStyle(color: K.text, fontSize: 14, fontWeight: FontWeight.w800)),
           SizedBox(height: 8),
@@ -727,6 +730,7 @@ class _PayGuide extends StatelessWidget {
           SizedBox(height: 4),
           T('Avec Moov Money : suis les étapes de la page, toujours avec le montant exact.',
               style: TextStyle(color: K.muted, fontSize: 12.5, height: 1.4)),
+          ],
         ]),
       ),
       actions: [

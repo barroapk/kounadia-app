@@ -8,6 +8,7 @@ import 'match_detail_service.dart' show StandRow, MatchDetailService;
 import '../l10n/tr.dart' show appLang;
 import 'live_socket.dart' show ptUrl;
 import 'footlive_service.dart';
+import '../config/countries.dart' show countryByIso;
 
 class PtLink {
   final String name;
@@ -233,6 +234,20 @@ class PrimaTipsService {
     }
   }
 
+  /// Nom comparable : sans accents, espaces ni ponctuation.
+  static String _key(String s) {
+    var t = s.toLowerCase();
+    const from = 'àâäáãåçéèêëíìîïñóòôöõúùûüÿ';
+    const to = 'aaaaaaceeeeiiiinooooouuuuy';
+    for (var i = 0; i < from.length; i++) {
+      t = t.replaceAll(from[i], to[i]);
+    }
+    t = t.replaceAll(RegExp(r'[^a-z0-9]'), '');
+    if (t == 'ivorycoast') return 'cotedivoire';
+    if (t == 'drcongo' || t == 'congodr') return 'congokinshasa';
+    return t;
+  }
+
   static Future<List<PtSection>> countries() async {
     final h = await _get('/tables');
     final secs = <PtSection>[];
@@ -246,13 +261,18 @@ class PrimaTipsService {
       if (items.isNotEmpty) secs.add(PtSection(_frSection(txt(p.substring(0, end))), items));
     }
     // Pays footlive absents de PrimaTips : ajoutés dans leur continent.
-    final known = {for (final s in secs) for (final l in s.items) l.name.trim().toLowerCase()};
+    final known = {for (final s in secs) for (final l in s.items) _key(l.name)};
     List<FlCountry> extra = const [];
     try {
       extra = await FlCatalog.extraCountries();
     } catch (_) {}
-    for (final c in [...kFlCountries, ...extra]) {
-      if (!known.add(c.en.toLowerCase())) continue;
+    for (final c in [...kFlCountries, ...extra, ...kFlMore]) {
+      final k = _key(c.en);
+      // Déjà présent sous un autre nom (ex. « Ivory Coast » / « Côte d'Ivoire ») ?
+      final kc = countryByIso(c.flag.length == 2 ? c.flag.toUpperCase() : null);
+      final names = {k, _key(c.fr), if (kc != null) ...[_key(kc.name), ...kc.aliases.map(_key)]};
+      if (names.any(known.contains)) continue;
+      known.addAll(names);
       PtSection? sec;
       for (final s in secs) {
         if (s.title == c.section) sec = s;
@@ -292,6 +312,19 @@ class PrimaTipsService {
           if (c.slug == slug) fl = c;
         }
       }
+      if (fl == null) {
+        for (final c in kFlMore) {
+          if (c.slug == slug) fl = c;
+        }
+        // Pays sans compétition connue : liste vide, pas de message d'erreur.
+        if (fl != null) {
+          try {
+            return await _flTables(fl, <PtTable>[], titlesOnly);
+          } catch (_) {
+            return <PtTable>[];
+          }
+        }
+      }
       fl ??= FlCountry(slug, '', link.name, link.name, '');
     } else {
       fl = flCountryOf(link.name);
@@ -304,6 +337,10 @@ class PrimaTipsService {
     }
     final out = link.path.startsWith('fl:') ? <PtTable>[] : await tables(link.path);
     if (fl == null) return out;
+    return _flTables(fl, out, titlesOnly);
+  }
+
+  static Future<List<PtTable>> _flTables(FlCountry fl, List<PtTable> out, bool titlesOnly) async {
     try {
       String n(String s) => s.toLowerCase().replaceAll(RegExp(r'[^a-z0-9]'), '');
       final have = out.map((t) => n(t.title)).toSet();

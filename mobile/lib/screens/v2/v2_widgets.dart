@@ -527,6 +527,7 @@ class V2CodeRow extends StatelessWidget {
   void _copy(BuildContext context) {
     Clipboard.setData(ClipboardData(text: code));
     Analytics.log('code_copy', {'k': kind});
+    Analytics.log('code_copy_$kind');
     ScaffoldMessenger.of(context).hideCurrentSnackBar();
     ScaffoldMessenger.of(context).showSnackBar(SnackBar(
       duration: Duration(seconds: 5),
