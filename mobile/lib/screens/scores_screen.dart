@@ -109,7 +109,17 @@ class _ScoresScreenState extends State<ScoresScreen> with WidgetsBindingObserver
     return '${d.year}-${two(d.month)}-${two(d.day)}';
   }
 
-  List<LiveMatch> _listFor(int off) => _days[_key(off)] ?? [];
+  List<LiveMatch> _listFor(int off) {
+    final l = _days[_key(off)] ?? [];
+    if (off != 0) return l;
+    // Après minuit : les matchs d'hier soir (en cours ou finis depuis peu) restent aussi dans « Aujourd'hui »,
+    // avec leur direct, pendant 4 h après le coup d'envoi.
+    final now = DateTime.now();
+    final late = (_days[_key(-1)] ?? [])
+        .where((m) => m.date != null && m.status != 'postponed' && now.difference(m.date!).inMinutes < 240)
+        .toList();
+    return late.isEmpty ? l : [...late, ...l];
+  }
 
   Future<void> _loadFav() async {
     try {
