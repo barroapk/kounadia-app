@@ -602,7 +602,14 @@ class _ScoresScreenState extends State<ScoresScreen> with WidgetsBindingObserver
     final prob = m.tipProb;
 
     return InkWell(
-      onTap: () => Navigator.push(context, MaterialPageRoute(builder: (_) => PremiumGate(
+      // Match venu de footlive (numéro négatif) : score et direct seulement, pas de fiche d'analyse.
+      onTap: m.id < 0
+          ? () {
+              ScaffoldMessenger.of(context)
+                ..hideCurrentSnackBar()
+                ..showSnackBar(SnackBar(duration: Duration(seconds: 2), content: T("Pas d'analyse détaillée pour ce match : score et direct seulement.")));
+            }
+          : () => Navigator.push(context, MaterialPageRoute(builder: (_) => PremiumGate(
                     standalone: true,
                     title: "Analyse du match",
                     pitch: "Statistiques, forme, confrontations et marchés détaillés pour chaque match.",

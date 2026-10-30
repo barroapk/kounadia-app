@@ -5,7 +5,13 @@ import '../widgets/premium_gate.dart';
 import 'pt_match_screen.dart';
 
 /// Ouvre l'analyse d'un match (même accès Premium que depuis l'onglet Matchs).
-Future<void> openMatch(BuildContext context, LiveMatch m) => Navigator.push(
+Future<void> openMatch(BuildContext context, LiveMatch m) async {
+  // Match venu de footlive (numéro négatif) : pas de fiche d'analyse.
+  if (m.id < 0) return;
+  await _openMatch(context, m);
+}
+
+Future<void> _openMatch(BuildContext context, LiveMatch m) => Navigator.push(
     context,
     MaterialPageRoute(
         builder: (_) => PremiumGate(

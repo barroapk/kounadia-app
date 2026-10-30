@@ -3,6 +3,9 @@
 // mi-temps / fin, et envoie la notification Firebase aux abonnés du championnat ou du match.
 
 const LIVE_URL = 'https://primatips.com/liveresults?day=0';
+// footlive.fr (accord du site) : direct des matchs absents de PrimaTips (numéros négatifs, comme dans scores.json).
+const FL_LIVE = 'https://www.footlive.fr/matchs-en-cours/';
+const FL_UA = { 'User-Agent': 'Mozilla/5.0 (compatible; KOUNADIA-Bot/1.0; +https://kounadia.pages.dev)' };
 const UA = { 'User-Agent': 'KOUNADIA-App/1.0' };
 const FAST = 3000; // matchs en cours
 const SLOW = 20000; // aucun match en cours
@@ -180,6 +183,7 @@ export class Poller {
     stat.err = (await this.state.storage.get('err')) || null;
     stat.fcmErr = (await this.state.storage.get('fcmErr')) || null;
     stat.src = (await this.state.storage.get('src')) || null;
+    stat.flSrc = (await this.state.storage.get('flSrc')) || null;
     stat.kickErr = (await this.state.storage.get('kickErr')) || null;
     stat.backup = ((await this.state.storage.get('api')) || {}).bakDay || null;
     const al = await this.state.storage.getAlarm();
@@ -831,20 +835,75 @@ export class Poller {
     await this.state.storage.put(key, val);
   }
 
+  /** Direct footlive (au plus toutes les 30 s) : [{ id: -numéro, hs, as, st }] au format PrimaTips. */
+  async footliveLive() {
+    if (this._flAt && Date.now() - this._flAt < 30000) return this._fl || [];
+    this._flAt = Date.now();
+    try {
+      const r = await fetch(FL_LIVE, { headers: FL_UA, cf: { cacheTtl: 0 } });
+      if (!r.ok) throw new Error(`HTTP ${r.status}`);
+      const html = await r.text();
+      const now = Date.now();
+      const seen = new Map();
+      for (const m of html.matchAll(/<div class='feedGame'([^>]*)>/g)) {
+        const a = {};
+        for (const x of m[1].matchAll(/data-([a-z0-9_]+)='([^']*)'/g)) a[x[1]] = x[2];
+        const id = Number(a.id);
+        if (!id || !/^\d+$/.test(a.score1 || '') || !/^\d+$/.test(a.score2 || '')) continue;
+        const s = (a.status || '').trim();
+        let st;
+        if (s === '1 MT' || s === '2 MT' || s === 'Prol.') st = /^\d+$/.test(a.minute || '') ? a.minute : s === 'Prol.' ? '105' : s === '2 MT' ? '46' : '1';
+        else if (s === 'MT') st = 'HT';
+        else if (s === 'Pen.') st = '120';
+        else if (/^(Term|Fin|Gag)/.test(s)) st = 'FT';
+        else continue;
+        seen.set(-id, { id: -id, hs: Number(a.score1), as: Number(a.score2), st, at: now });
+      }
+      // Match sorti du direct : terminé s'il était en fin de match, sinon dernier état gardé 5 min.
+      for (const [id, x] of this._flMap || new Map()) {
+        if (seen.has(id)) continue;
+        if (x.st === 'FT') {
+          if (now - x.at < 20 * 60000) seen.set(id, x);
+        } else if (parseInt(x.st, 10) >= 85) {
+          seen.set(id, { ...x, st: 'FT', at: now });
+        } else if (now - x.at < 5 * 60000) {
+          seen.set(id, x);
+        }
+      }
+      this._flMap = seen;
+      this._fl = [...seen.values()].map(({ id, hs, as, st }) => ({ id, hs, as, st }));
+      await this.saveIf('flSrc', 'ok');
+    } catch (e) {
+      await this.saveIf('flSrc', String(e).slice(0, 160));
+    }
+    return this._fl || [];
+  }
+
   // ---------- Boucle principale ----------
   async tick() {
-    const r = await fetch(`${LIVE_URL}&_=${Date.now()}`, { headers: UA, cf: { cacheTtl: 0 } });
-    const body = await r.text();
+    let r = null;
+    let body = '';
+    try {
+      r = await fetch(`${LIVE_URL}&_=${Date.now()}`, { headers: UA, cf: { cacheTtl: 0 } });
+      body = await r.text();
+    } catch (e) {
+      body = String(e);
+    }
     let list = null;
     try {
       list = JSON.parse(body);
     } catch (_) {}
     // Écritures limitées (Cloudflare gratuit : 100 000 écritures par jour) : seulement si quelque chose change.
-    if (!r.ok || !Array.isArray(list)) {
-      await this.saveIf('src', `HTTP ${r.status} ${body.slice(0, 160)}`);
-      return SLOW;
+    if (!r?.ok || !Array.isArray(list)) {
+      await this.saveIf('src', `HTTP ${r?.status ?? 'erreur'} ${body.slice(0, 160)}`);
+      list = null;
+    } else {
+      await this.saveIf('src', 'ok');
     }
-    await this.saveIf('src', 'ok');
+    // footlive : en plus (et en relais si PrimaTips ne répond pas).
+    const fl = await this.footliveLive();
+    if (!list && !fl.length) return SLOW;
+    list = (list || []).concat(fl);
 
     // État précédent (en mémoire, sinon stocké) ; trop ancien (robot relancé après une pause) = on repart sans notifier.
     if (this._live === undefined) {
@@ -869,7 +928,7 @@ export class Poller {
       const hs = Number.isFinite(l.hs) ? l.hs : l.hs == null ? null : Number(l.hs);
       const as = Number.isFinite(l.as) ? l.as : l.as == null ? null : Number(l.as);
       cur[id] = [hs, as, st];
-      if (inPlay(st)) live++;
+      if (inPlay(st) && id > 0) live++;
       const q = prev?.[id];
       if (!q || q[0] !== hs || q[1] !== as || q[2] !== st) changed[id] = cur[id];
       if (!prev) continue; // premier passage : on mémorise sans notifier
