@@ -17,7 +17,7 @@ const _ch = MethodChannel('kounadia/video');
 /// intégrée à KOUNADIA (on revient à l'app avec « Retour »), sans passer par l'app YouTube.
 Future<void> _external(HlVideo v) async {
   // Bloquée dans le pays de l'utilisateur par son propriétaire : même YouTube ne la montre pas.
-  final ok = [v.id, ...v.alts].where((id) => v.okIn(id, UserPrefs.iso)).toList();
+  final ok = {if (v.web.isNotEmpty) v.web, v.id, ...v.alts}.where((id) => v.okIn(id, UserPrefs.iso)).toList();
   if (ok.isEmpty) {
     Analytics.log('hl_region', {'m': v.home.isNotEmpty ? '${v.home} - ${v.away}' : v.title, 'c': UserPrefs.iso ?? ''});
     kMessengerKey.currentState

@@ -185,7 +185,7 @@ class V2Group extends StatelessWidget {
       clipBehavior: Clip.antiAlias,
       decoration: BoxDecoration(color: K.card, borderRadius: BorderRadius.circular(14), border: Border.all(color: K.border)),
       child: Column(children: [
-        v2LeagueHead(legs.first, live: legs.any((l) => l.r == 'live')),
+        v2LeagueHead(legs.first, live: legs.any((l) => l.r == 'live' && !l.stale)),
         for (var i = 0; i < legs.length; i++) ...[
           if (i > 0) Container(height: 1, color: K.border),
           V2MatchRow(legs[i], fav: favs?.contains(legs[i].key), onStar: onStar),
@@ -245,6 +245,8 @@ class V2MatchRow extends StatelessWidget {
     if (done) {
       time = Icon(l.r == 'won' ? Icons.check_circle_rounded : l.r == 'lost' ? Icons.cancel_rounded : Icons.remove_circle_rounded,
           color: c, size: 20);
+    } else if (l.stale) {
+      time = Text(tr('Rep.'), textAlign: TextAlign.center, style: TextStyle(color: K.amber, fontSize: 12, fontWeight: FontWeight.w900));
     } else if (l.r == 'live') {
       time = Text(l.minute ?? 'Live', textAlign: TextAlign.center, style: TextStyle(color: K.red, fontSize: 12, fontWeight: FontWeight.w900));
     } else {
@@ -257,7 +259,7 @@ class V2MatchRow extends StatelessWidget {
     return InkWell(
       onTap: () => showV2Why(context, l),
       child: Container(
-        color: l.r == 'live' ? Color(0x14EF4444) : null,
+        color: l.r == 'live' && !l.stale ? Color(0x14EF4444) : null,
         padding: EdgeInsets.fromLTRB(6, 7, 8, 7),
         child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
           if (showLeague)

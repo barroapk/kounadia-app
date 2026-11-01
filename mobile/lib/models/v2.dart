@@ -18,6 +18,21 @@ class V2Leg {
   String? r; // won, lost, void, live, null = à venir
   String? score;
   String? minute; // direct
+
+  /// Données figées du site : match pas joué à l'heure (plus de 2 h 30 après, sans score)
+  /// ou direct bloqué en début de match depuis des heures : affiché « Rep. ».
+  bool get stale {
+    final d = date;
+    if (d == null) return false;
+    final m = DateTime.now().difference(d).inMinutes;
+    if (r == null && score == null && ptId != null && m > 150) return true;
+    if (r == 'live' && m > 170) {
+      final mn = minute ?? '';
+      final n = int.tryParse(mn.replaceAll(RegExp(r'[^0-9]'), ''));
+      return (n != null && n < 80) || mn == 'MT';
+    }
+    return false;
+  }
   /// Statistiques du match [domicile, extérieur] : c corners, f fautes, s tirs, t tirs cadrés.
   Map<String, List<int?>> st;
   List<int>? h1; // score à la mi-temps
@@ -106,7 +121,8 @@ class V2Coupon {
   /// Résultat recalculé à partir des événements (direct compris).
   void refresh() {
     if (legs.isEmpty) return;
-    final rs = legs.map((l) => l.r).toList();
+    // Événement au direct figé (reporté / interrompu) : n'est plus compté « en cours ».
+    final rs = legs.map((l) => l.r == 'live' && l.stale ? null : l.r).toList();
     if (rs.contains('lost')) {
       r = 'lost';
     } else if (rs.every((x) => x == 'won' || x == 'void')) {

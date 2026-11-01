@@ -116,6 +116,13 @@ class _ScoresScreenState extends State<ScoresScreen> with WidgetsBindingObserver
 
   List<LiveMatch> _listFor(int off) {
     final l = _days[_key(off)] ?? [];
+    final t = DateTime.now();
+    for (final m in l) {
+      m.fixStale(t);
+    }
+    for (final m in _days[_key(-1)] ?? const <LiveMatch>[]) {
+      m.fixStale(t);
+    }
     if (off != 0) return l;
     // Après minuit : les matchs d'hier soir (en cours ou finis depuis peu) restent aussi dans « Aujourd'hui »,
     // avec leur direct, pendant 4 h après le coup d'envoi.
@@ -246,6 +253,8 @@ class _ScoresScreenState extends State<ScoresScreen> with WidgetsBindingObserver
       m.status = 'live';
       m.minute = RegExp(r'^\d').hasMatch(st) ? "$st'" : (st.toUpperCase() == 'HT' ? 'MT' : st);
     }
+    // Direct figé (ex. bloqué à 7' depuis des heures) : reporté ou terminé.
+    m.fixStale(now);
   }
 
   void _onSocket(Map<int, (int?, int?, String)> u) {

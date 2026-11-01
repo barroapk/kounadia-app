@@ -16,9 +16,11 @@ class HlVideo {
   final List<String> alts;
   /// Pays où chaque vidéo est bloquée par son propriétaire (id → codes pays).
   final Map<String, Set<String>> blocked;
+  /// Vidéo officielle à ouvrir sur la page YouTube si aucune ne se lit dans le lecteur (ex. LaLiga).
+  final String web;
   bool okIn(String id, String? iso) => iso == null || !(blocked[id]?.contains(iso.toUpperCase()) ?? false);
   HlVideo(this.id, this.title, this.channel, this.embed, this.club,
-      {this.match = 0, this.home = '', this.away = '', this.score = '', this.league = '', this.date, this.alts = const [], this.blocked = const {}});
+      {this.match = 0, this.home = '', this.away = '', this.score = '', this.league = '', this.date, this.alts = const [], this.blocked = const {}, this.web = ''});
   String get url => 'https://www.youtube.com/watch?v=$id';
   String get thumb => 'https://i.ytimg.com/vi/$id/hqdefault.jpg';
 }
@@ -79,6 +81,7 @@ class Highlights {
             league: '${x['l'] ?? ''}',
             date: DateTime.tryParse('${x['d'] ?? ''}')?.toLocal(),
             alts: x['x'] is List ? [for (final a in x['x'] as List) '$a'] : const [],
+            web: '${x['w'] ?? ''}',
             blocked: x['b'] is Map ? {for (final e in (x['b'] as Map).entries) '${e.key}': '${e.value}'.split(',').toSet()} : const {});
       });
       final diff = out.length != _v.length || out.keys.any((k) => _v[k]?.id != out[k]!.id || _v[k]?.score != out[k]!.score);

@@ -62,6 +62,24 @@ class LiveMatch {
     );
   }
 
+  /// Données du site parfois figées : match « à venir » bien après l'heure, ou direct bloqué à 7'.
+  /// Plus de 2 h 30 après l'heure sans score : reporté. Plus de 2 h 50 en direct : terminé,
+  /// ou reporté / interrompu s'il est resté bloqué en début de match (avant la 80e) ou à la mi-temps.
+  void fixStale(DateTime now) {
+    final d = date;
+    if (d == null) return;
+    final mins = now.difference(d).inMinutes;
+    if (status == 'upcoming' && mins > 150) {
+      status = hs == null ? 'postponed' : 'finished';
+      minute = null;
+    } else if (status == 'live' && mins > 170) {
+      final mn = minute ?? '';
+      final n = int.tryParse(mn.replaceAll(RegExp(r'[^0-9]'), ''));
+      status = (n != null && n < 80) || mn == 'MT' ? 'postponed' : 'finished';
+      minute = null;
+    }
+  }
+
   String get leagueLabel => country.isEmpty ? league : '$country - $league';
 
   int? get tipProb {
