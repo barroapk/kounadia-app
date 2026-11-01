@@ -80,7 +80,7 @@ class _HlCard extends StatelessWidget {
     final league = frName(m?.league ?? v.league);
     final shadow = [Shadow(blurRadius: 8, color: Colors.black87)];
     return GestureDetector(
-      onTap: () => openHighlight(context, v, title: '$home - $away'),
+      onTap: () => openHighlight(context, v, title: '$home - $away', src: 'liste'),
       child: ClipRRect(
         borderRadius: BorderRadius.circular(16),
         child: AspectRatio(

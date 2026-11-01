@@ -11,16 +11,26 @@ import '../l10n/tr.dart';
 
 const _ch = MethodChannel('kounadia/video');
 
+/// Vidéo que son propriétaire ne laisse lire que sur YouTube : page YouTube ouverte dans une fenêtre
+/// intégrée à KOUNADIA (on revient à l'app avec « Retour »), sans passer par l'app YouTube.
 Future<void> _external(HlVideo v) async {
+  Analytics.log('hl_web', {'m': v.home.isNotEmpty ? '${v.home} - ${v.away}' : v.title});
   try {
-    await launchUrl(Uri.parse(v.url), mode: LaunchMode.externalApplication);
-  } catch (_) {}
+    if (!await launchUrl(Uri.parse(v.url), mode: LaunchMode.inAppBrowserView)) {
+      await launchUrl(Uri.parse(v.url), mode: LaunchMode.externalApplication);
+    }
+  } catch (_) {
+    try {
+      await launchUrl(Uri.parse(v.url), mode: LaunchMode.externalApplication);
+    } catch (_) {}
+  }
 }
 
-/// Temps forts : lecteur YouTube officiel dans KOUNADIA (en haut de l'écran), sinon l'app YouTube.
-Future<void> openHighlight(BuildContext context, HlVideo v, {String? title}) async {
-  Analytics.log('hl_open', {'e': v.embed ? 1 : 0});
-  if (!v.embed) {
+/// Temps forts : lecteur YouTube officiel dans KOUNADIA (en haut de l'écran).
+/// [src] : d'où vient l'ouverture (carte des grands matchs ou liste Temps forts), pour les statistiques.
+Future<void> openHighlight(BuildContext context, HlVideo v, {String? title, String src = ''}) async {
+  Analytics.log('hl_open', {'e': v.embed ? 1 : 0, 'src': src, 'm': title ?? '${v.home} - ${v.away}'});
+  if (!v.embed && v.alts.isEmpty) {
     await _external(v);
     return;
   }
@@ -44,6 +54,12 @@ class _HlPlayerHostState extends State<HlPlayerHost> {
   bool _miniTools = false;
   double _rate = 1;
   Timer? _slow;
+  // Vidéos à essayer pour ce match (la principale puis celles de secours) et temps regardé.
+  List<String> _queue = [];
+  int _qi = 0;
+  DateTime? _since;
+  int _watched = 0;
+  bool _played = false;
   // Réglage par glissement : luminosité (gauche) ou volume (droite).
   String? _adj;
   double _adjV = 0;
@@ -56,7 +72,10 @@ class _HlPlayerHostState extends State<HlPlayerHost> {
     HlPlayer.mode.addListener(_onMode);
     HlPlayer.pip.addListener(_re);
     _ch.setMethodCallHandler((c) async {
-      if (c.method == 'pip') HlPlayer.pip.value = c.arguments == true;
+      if (c.method == 'pip') {
+        HlPlayer.pip.value = c.arguments == true;
+        if (c.arguments == true && HlPlayer.current.value != null) Analytics.log('hl_mode', {'k': 'pip'});
+      }
       return null;
     });
   }
@@ -92,9 +111,17 @@ function rate(r){try{p.setPlaybackRate(r);}catch(x){}}
 function pause(){try{p.pauseVideo();}catch(x){}}
 </script></body></html>''';
 
+  void _logWatch() {
+    if (_since != null) _watched += DateTime.now().difference(_since!).inSeconds;
+    _since = null;
+    if (_watched > 0) Analytics.log('hl_watch', {'s': _watched.clamp(0, 3600), 'm': HlPlayer.title});
+    _watched = 0;
+  }
+
   void _onVideo() {
     final v = HlPlayer.current.value;
     _slow?.cancel();
+    if (_loaded != null && v?.id != _loaded) _logWatch();
     if (v == null) {
       _c?.runJavaScript('pause()').catchError((_) {});
       _c = null;
@@ -109,6 +136,35 @@ function pause(){try{p.pauseVideo();}catch(x){}}
       return;
     }
     _loaded = v.id;
+    _played = false;
+    _queue = [if (v.embed) v.id, ...v.alts.where((a) => a != v.id)];
+    _qi = 0;
+    if (_queue.isEmpty) {
+      HlPlayer.close();
+      _external(v);
+      return;
+    }
+    _ch.invokeMethod('allowPip', true).catchError((_) => null);
+    _loadId(_queue[0]);
+  }
+
+  /// Vidéo bloquée hors de YouTube : on passe toute seule à la suivante, sinon fenêtre YouTube intégrée.
+  void _next() {
+    final v = HlPlayer.current.value;
+    if (v == null) return;
+    if (_qi + 1 < _queue.length) {
+      _qi++;
+      Analytics.log('hl_alt', {'m': HlPlayer.title});
+      _loadId(_queue[_qi]);
+      return;
+    }
+    // Aucune vidéo lisible ici : YouTube s'ouvre tout seul dans une fenêtre de KOUNADIA.
+    HlPlayer.close();
+    _external(v);
+  }
+
+  void _loadId(String id) {
+    _slow?.cancel();
     _ready = false;
     _failed = false;
     _rate = 1;
@@ -119,9 +175,12 @@ function pause(){try{p.pauseVideo();}catch(x){}}
         if (!mounted) return;
         if (m.message == 'ready') {
           setState(() => _ready = true);
+          if (!_played) Analytics.log('hl_play', {'m': HlPlayer.title, 'alt': _qi});
+          _played = true;
+          _since ??= DateTime.now();
         } else if (m.message.startsWith('err')) {
           Analytics.log('hl_err', {'c': m.message});
-          setState(() => _failed = true);
+          _next();
         }
       })
       ..setNavigationDelegate(NavigationDelegate(onNavigationRequest: (r) {
@@ -132,18 +191,18 @@ function pause(){try{p.pauseVideo();}catch(x){}}
         }
         return NavigationDecision.navigate;
       }))
-      ..loadHtmlString(_html(v.id), baseUrl: 'https://kounadia.pages.dev/');
+      ..loadHtmlString(_html(id), baseUrl: 'https://kounadia.pages.dev/');
     final p = c.platform;
     if (p is AndroidWebViewController) p.setMediaPlaybackRequiresUserGesture(false);
     _c = c;
-    _ch.invokeMethod('allowPip', true).catchError((_) => null);
     _slow = Timer(Duration(seconds: 20), () {
-      if (mounted && !_ready) setState(() => _failed = true);
+      if (mounted && !_ready) _next();
     });
     _re();
   }
 
   void _onMode() {
+    if (HlPlayer.current.value != null && HlPlayer.mode.value != 'dock') Analytics.log('hl_mode', {'k': HlPlayer.mode.value});
     if (HlPlayer.mode.value == 'full') {
       SystemChrome.setPreferredOrientations([DeviceOrientation.landscapeLeft, DeviceOrientation.landscapeRight]);
       SystemChrome.setEnabledSystemUIMode(SystemUiMode.immersiveSticky);
@@ -163,6 +222,7 @@ function pause(){try{p.pauseVideo();}catch(x){}}
     const rates = [1.0, 1.25, 1.5, 2.0, 0.75];
     _rate = rates[(rates.indexOf(_rate) + 1) % rates.length];
     _c?.runJavaScript('rate($_rate)').catchError((_) {});
+    Analytics.log('hl_rate', {'r': _rate});
     _re();
   }
 
@@ -374,7 +434,7 @@ function pause(){try{p.pauseVideo();}catch(x){}}
           borderRadius: mode == 'mini' && !pip ? BorderRadius.circular(12) : null,
           clipBehavior: Clip.antiAlias,
           child: Stack(children: [
-            Positioned.fromRect(rect: video, child: WebViewWidget(key: ValueKey(_loaded), controller: _c!)),
+            Positioned.fromRect(rect: video, child: WebViewWidget(key: ValueKey('$_loaded/$_qi'), controller: _c!)),
             Positioned.fromRect(rect: video, child: _overlays(video.height)),
             ...tools,
           ]),

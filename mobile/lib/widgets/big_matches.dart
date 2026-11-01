@@ -180,7 +180,7 @@ class _BigCard extends StatelessWidget {
       ],
       if (hl != null) ...[
         SizedBox(height: 6),
-        _PlayButton(onTap: () => openHighlight(context, hl, title: '${m.home} - ${m.away}')),
+        _PlayButton(onTap: () => openHighlight(context, hl, title: '${m.home} - ${m.away}', src: 'carte')),
       ],
     ];
     final status = live

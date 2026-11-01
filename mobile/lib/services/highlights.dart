@@ -12,8 +12,10 @@ class HlVideo {
   final int match;
   final String home, away, score, league;
   final DateTime? date;
+  /// Autres vidéos officielles du même match, lisibles dans l'app (si la première est bloquée).
+  final List<String> alts;
   HlVideo(this.id, this.title, this.channel, this.embed, this.club,
-      {this.match = 0, this.home = '', this.away = '', this.score = '', this.league = '', this.date});
+      {this.match = 0, this.home = '', this.away = '', this.score = '', this.league = '', this.date, this.alts = const []});
   String get url => 'https://www.youtube.com/watch?v=$id';
   String get thumb => 'https://i.ytimg.com/vi/$id/hqdefault.jpg';
 }
@@ -72,7 +74,8 @@ class Highlights {
             away: '${x['a'] ?? ''}',
             score: '${x['s'] ?? ''}',
             league: '${x['l'] ?? ''}',
-            date: DateTime.tryParse('${x['d'] ?? ''}')?.toLocal());
+            date: DateTime.tryParse('${x['d'] ?? ''}')?.toLocal(),
+            alts: x['x'] is List ? [for (final a in x['x'] as List) '$a'] : const []);
       });
       final diff = out.length != _v.length || out.keys.any((k) => _v[k]?.id != out[k]!.id || _v[k]?.score != out[k]!.score);
       _v = out;
