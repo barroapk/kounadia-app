@@ -50,10 +50,22 @@ class ScoresService {
   }
 
   static Future<List<Map<String, dynamic>>> live() async {
-    final r = await http.get(Uri.parse(ptUrl(_live)), headers: _ua).timeout(Duration(seconds: 10));
-    if (r.statusCode != 200) return [];
-    final d = jsonDecode(utf8.decode(r.bodyBytes));
-    return (d is List) ? d.whereType<Map<String, dynamic>>().toList() : [];
+    Future<List<Map<String, dynamic>>> one(String u) async {
+      final r = await http.get(Uri.parse(ptUrl(u)), headers: _ua).timeout(Duration(seconds: 10));
+      if (r.statusCode != 200) return [];
+      final d = jsonDecode(utf8.decode(r.bodyBytes));
+      return (d is List) ? d.whereType<Map<String, dynamic>>().toList() : [];
+    }
+
+    final today = await one(_live);
+    // Après minuit : les matchs d'hier soir sont dans la liste d'hier (jusqu'à 5 h).
+    if (DateTime.now().toUtc().hour >= 5) return today;
+    try {
+      final ids = {for (final x in today) '${x['id']}'};
+      return [...today, ...(await one(_live.replaceFirst('day=0', 'day=-1'))).where((x) => !ids.contains('${x['id']}'))];
+    } catch (_) {
+      return today;
+    }
   }
 }
 

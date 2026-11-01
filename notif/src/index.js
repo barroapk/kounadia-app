@@ -1086,6 +1086,28 @@ export class Poller {
     return this._fl || [];
   }
 
+  async yesterdayLive() {
+    let h = 12;
+    try {
+      h = Number(new Intl.DateTimeFormat('en-GB', { timeZone: 'Europe/London', hour: '2-digit', hourCycle: 'h23' }).format(new Date()));
+    } catch (_) {}
+    if (!(h < 5)) {
+      this._yl = null;
+      return [];
+    }
+    // Relue toutes les 20 secondes au plus.
+    if (this._yl && Date.now() - this._ylAt < 20000) return this._yl;
+    try {
+      const r = await fetch(`${LIVE_URL.replace('day=0', 'day=-1')}&_=${Date.now()}`, { headers: UA, cf: { cacheTtl: 0 } });
+      const l = r.ok ? JSON.parse(await r.text()) : null;
+      if (Array.isArray(l)) {
+        this._yl = l;
+        this._ylAt = Date.now();
+      }
+    } catch (_) {}
+    return this._yl || [];
+  }
+
   // ---------- Boucle principale ----------
   async tick() {
     let r = null;
@@ -1106,6 +1128,13 @@ export class Poller {
       list = null;
     } else {
       await this.saveIf('src', 'ok');
+    }
+    // Après minuit (heure de Londres, celle du site) : les matchs d'hier soir ne sont plus dans la liste du jour.
+    // On lit aussi la liste d'hier jusqu'à 5 h pour garder leur direct et leur score final.
+    const yl = await this.yesterdayLive();
+    if (yl.length) {
+      const ids = new Set((list || []).map((x) => Number(x.id)));
+      list = (list || []).concat(yl.filter((x) => !ids.has(Number(x.id))));
     }
     // footlive : en plus (et en relais si PrimaTips ne répond pas).
     const fl = await this.footliveLive();

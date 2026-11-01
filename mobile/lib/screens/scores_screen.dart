@@ -469,7 +469,8 @@ class _ScoresScreenState extends State<ScoresScreen> with WidgetsBindingObserver
     // championnats visibles à l'écran sont dessinés, le direct reste fluide.
     final makers = <Widget Function()>[for (final w in children) () => w];
     // En haut : les grands matchs du jour (défilent seuls), à la place de la première pub.
-    final big = _q.trim().isEmpty && _view != 'live' ? bigMatches(all) : const <LiveMatch>[];
+    // Seulement les matchs du jour choisi (Hier, Aujourd'hui, Demain), avec leur direct.
+    final big = _q.trim().isEmpty && _view != 'live' ? bigMatches(_days[_key(_offset)] ?? const <LiveMatch>[]) : const <LiveMatch>[];
     if (big.isNotEmpty) {
       makers.insert(_offline ? 1 : 0, () => BigMatchesCarousel(
             key: ValueKey('big$_offset'),

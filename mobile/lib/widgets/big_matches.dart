@@ -160,7 +160,9 @@ class _BigCard extends StatelessWidget {
     final live = m.status == 'live';
     final done = m.status == 'finished';
     final has = m.hs != null && m.as_ != null;
-    final hl = done ? Highlights.of(m.id) : null;
+    // Temps forts : seulement pour un match terminé depuis moins de 3 jours.
+    final recent = m.date != null && DateTime.now().difference(m.date!) < Duration(days: 3);
+    final hl = done && recent ? Highlights.of(m.id) : null;
     final center = <Widget>[
       if (has && (live || done))
         Text('${m.hs}  -  ${m.as_}',
