@@ -851,4 +851,10 @@ const Map<String, String> kEs = {
   'Scores en direct, classements, statistiques, coupons du jour et Coups sûrs de football.\n\nLes pronostics sont fournis à titre informatif uniquement. Ils ne constituent ni une garantie de résultat ni un conseil financier. 18+ · Joue de manière responsable.\n\nUne application de KOUNADIA SERVICE\nDéveloppée au Burkina Faso 🇧🇫': 'Resultados en directo, clasificaciones, estadísticas, cupones del día y apuestas seguras de fútbol.\n\nLos pronósticos son solo informativos. No son una garantía de resultado ni un consejo financiero. 18+ · Juega con responsabilidad.\n\nUna aplicación de KOUNADIA SERVICE\nDesarrollada en Burkina Faso 🇧🇫',
   '⚽ KOUNADIA : scores en direct, coupons du jour et Coups sûrs. Essaie-la !': '⚽ KOUNADIA: resultados en directo, cupones del día y apuestas seguras. ¡Pruébala!',
   'Cartons jaunes': 'Tarjetas amarillas',
+  'Temps forts': 'Resumen',
+  'Terminé · Temps forts': 'Finalizado · Resumen',
+  'Ouvrir dans YouTube': 'Abrir en YouTube',
+  'Cette vidéo se regarde dans YouTube.': 'Este vídeo se ve en YouTube.',
+  'Plein écran': 'Pantalla completa',
+  'Chaîne officielle': 'Canal oficial',
 };

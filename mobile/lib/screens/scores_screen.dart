@@ -9,6 +9,7 @@ import '../services/scores_service.dart';
 import '../widgets/forecast_card.dart' show K, kMessage, kOfflineBanner, hm, two;
 import '../widgets/jersey.dart';
 import '../widgets/knd_banner.dart';
+import '../widgets/big_matches.dart';
 import '../services/logo_cache.dart';
 import '../services/markets_service.dart';
 import 'pt_match_screen.dart';
@@ -467,8 +468,18 @@ class _ScoresScreenState extends State<ScoresScreen> with WidgetsBindingObserver
     // Liste construite au fil du défilement (des centaines de matchs avec footlive) : seuls les
     // championnats visibles à l'écran sont dessinés, le direct reste fluide.
     final makers = <Widget Function()>[for (final w in children) () => w];
+    // En haut : les grands matchs du jour (défilent seuls), à la place de la première pub.
+    final big = _q.trim().isEmpty && _view != 'live' ? bigMatches(all) : const <LiveMatch>[];
+    if (big.isNotEmpty) {
+      makers.insert(_offline ? 1 : 0, () => BigMatchesCarousel(
+            key: ValueKey('big$_offset'),
+            matches: big,
+            logo: (n) => _logos[n] ?? LogoCache.get(n),
+            onOpen: _open,
+          ));
+    }
     if (items.isNotEmpty) {
-      makers.add(() => KndBanner());
+      if (big.isEmpty) makers.add(() => KndBanner());
       var rows = 0;
       var block = 0;
       final ordered = [
@@ -621,6 +632,26 @@ class _ScoresScreenState extends State<ScoresScreen> with WidgetsBindingObserver
 
   Color m_scoreColor(int? g) => g == null ? K.muted : K.text;
 
+  void _open(LiveMatch m) {
+    // Match venu de footlive (numéro négatif) : score et direct seulement, pas de fiche d'analyse.
+    if (m.id < 0) {
+      ScaffoldMessenger.of(context)
+        ..hideCurrentSnackBar()
+        ..showSnackBar(SnackBar(duration: Duration(seconds: 2), content: T("Pas d'analyse détaillée pour ce match : score et direct seulement.")));
+      return;
+    }
+    Navigator.push(context, MaterialPageRoute(builder: (_) => PremiumGate(
+              standalone: true,
+              title: "Analyse du match",
+              pitch: "Statistiques, forme, confrontations et marchés détaillés pour chaque match.",
+              perks: ["Probabilités et cotes : 1X2, buts, les deux marquent","Forme récente et classement","Confrontations directes","Analyse KOUNADIA du match"],
+              icon: Icons.query_stats_rounded,
+              child: PtMatchScreen(match: m))))
+        .then((_) {
+      if (mounted) setState(() {});
+    });
+  }
+
   Widget _row(LiveMatch m) {
     final h = m.hs;
     final a = m.as_;
@@ -635,22 +666,7 @@ class _ScoresScreenState extends State<ScoresScreen> with WidgetsBindingObserver
 
     return InkWell(
       // Match venu de footlive (numéro négatif) : score et direct seulement, pas de fiche d'analyse.
-      onTap: m.id < 0
-          ? () {
-              ScaffoldMessenger.of(context)
-                ..hideCurrentSnackBar()
-                ..showSnackBar(SnackBar(duration: Duration(seconds: 2), content: T("Pas d'analyse détaillée pour ce match : score et direct seulement.")));
-            }
-          : () => Navigator.push(context, MaterialPageRoute(builder: (_) => PremiumGate(
-                    standalone: true,
-                    title: "Analyse du match",
-                    pitch: "Statistiques, forme, confrontations et marchés détaillés pour chaque match.",
-                    perks: ["Probabilités et cotes : 1X2, buts, les deux marquent","Forme récente et classement","Confrontations directes","Analyse KOUNADIA du match"],
-                    icon: Icons.query_stats_rounded,
-                    child: PtMatchScreen(match: m))))
-          .then((_) {
-        if (mounted) setState(() {});
-      }),
+      onTap: () => _open(m),
       onLongPress: () => _toggleFav(m),
       child: Container(
         color: m.status == 'live' ? Color(0x14EF4444) : null,

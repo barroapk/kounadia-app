@@ -24,6 +24,9 @@ dependencies:
   # Version navigateur (iPhone) : direct en temps réel et données compressées.
   web_socket_channel: ^3.0.1
   archive: ^3.6.1
+  # Temps forts des grands matchs : lecteur YouTube officiel dans l'app.
+  webview_flutter: ^4.10.0
+  webview_flutter_android: any
 
 dev_dependencies:
   flutter_test:

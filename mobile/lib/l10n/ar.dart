@@ -851,4 +851,10 @@ const Map<String, String> kAr = {
   'Scores en direct, classements, statistiques, coupons du jour et Coups sûrs de football.\n\nLes pronostics sont fournis à titre informatif uniquement. Ils ne constituent ni une garantie de résultat ni un conseil financier. 18+ · Joue de manière responsable.\n\nUne application de KOUNADIA SERVICE\nDéveloppée au Burkina Faso 🇧🇫': 'نتائج مباشرة وترتيب وإحصائيات وقسائم اليوم والرهانات الآمنة لكرة القدم.\n\nالتوقعات للمعلومة فقط. ليست ضمانًا للنتيجة ولا نصيحة مالية. +18 · العب بمسؤولية.\n\nتطبيق من KOUNADIA SERVICE\nتم تطويره في بوركينا فاسو 🇧🇫',
   '⚽ KOUNADIA : scores en direct, coupons du jour et Coups sûrs. Essaie-la !': '⚽ KOUNADIA: نتائج مباشرة وقسائم اليوم ورهانات آمنة. جرّبها!',
   'Cartons jaunes': 'البطاقات الصفراء',
+  'Temps forts': 'أبرز اللقطات',
+  'Terminé · Temps forts': 'انتهت · أبرز اللقطات',
+  'Ouvrir dans YouTube': 'فتح في يوتيوب',
+  'Cette vidéo se regarde dans YouTube.': 'يُشاهَد هذا الفيديو على يوتيوب.',
+  'Plein écran': 'ملء الشاشة',
+  'Chaîne officielle': 'القناة الرسمية',
 };
