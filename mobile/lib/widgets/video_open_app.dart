@@ -7,6 +7,8 @@ import 'package:webview_flutter_android/webview_flutter_android.dart';
 import '../services/analytics.dart';
 import '../services/highlights.dart';
 import '../services/hl_player.dart';
+import '../services/notif.dart' show kNavKey, kMessengerKey;
+import '../services/user_prefs.dart';
 import '../l10n/tr.dart';
 
 const _ch = MethodChannel('kounadia/video');
@@ -14,16 +16,71 @@ const _ch = MethodChannel('kounadia/video');
 /// Vidéo que son propriétaire ne laisse lire que sur YouTube : page YouTube ouverte dans une fenêtre
 /// intégrée à KOUNADIA (on revient à l'app avec « Retour »), sans passer par l'app YouTube.
 Future<void> _external(HlVideo v) async {
-  Analytics.log('hl_web', {'m': v.home.isNotEmpty ? '${v.home} - ${v.away}' : v.title});
-  try {
-    if (!await launchUrl(Uri.parse(v.url), mode: LaunchMode.inAppBrowserView)) {
-      await launchUrl(Uri.parse(v.url), mode: LaunchMode.externalApplication);
-    }
-  } catch (_) {
-    try {
-      await launchUrl(Uri.parse(v.url), mode: LaunchMode.externalApplication);
-    } catch (_) {}
+  // Bloquée dans le pays de l'utilisateur par son propriétaire : même YouTube ne la montre pas.
+  final ok = [v.id, ...v.alts].where((id) => v.okIn(id, UserPrefs.iso)).toList();
+  if (ok.isEmpty) {
+    Analytics.log('hl_region', {'m': v.home.isNotEmpty ? '${v.home} - ${v.away}' : v.title, 'c': UserPrefs.iso ?? ''});
+    kMessengerKey.currentState
+      ?..hideCurrentSnackBar()
+      ..showSnackBar(SnackBar(content: T("Ces temps forts ne sont pas disponibles dans ton pays.")));
+    return;
   }
+  Analytics.log('hl_web', {'m': v.home.isNotEmpty ? '${v.home} - ${v.away}' : v.title});
+  final nav = kNavKey.currentState;
+  if (nav == null) return;
+  nav.push(MaterialPageRoute(builder: (_) => _YtPage(id: ok.first, title: v.home.isNotEmpty ? '${v.home} - ${v.away}' : v.title)));
+}
+
+/// Page YouTube (son site mobile, tel quel) dans KOUNADIA : pour les vidéos que leur propriétaire
+/// ne laisse lire que sur YouTube. On revient à l'app avec la flèche ou « Retour ».
+class _YtPage extends StatefulWidget {
+  final String id, title;
+  _YtPage({required this.id, required this.title});
+
+  @override
+  State<_YtPage> createState() => _YtPageState();
+}
+
+class _YtPageState extends State<_YtPage> {
+  late final WebViewController _c;
+  int _progress = 0;
+
+  @override
+  void initState() {
+    super.initState();
+    _c = WebViewController()
+      ..setJavaScriptMode(JavaScriptMode.unrestricted)
+      ..setBackgroundColor(Colors.black)
+      ..setNavigationDelegate(NavigationDelegate(
+        onProgress: (p) {
+          if (mounted) setState(() => _progress = p);
+        },
+        onNavigationRequest: (r) {
+          // Liens « ouvrir l'app YouTube » : ignorés, on reste dans KOUNADIA.
+          final u = r.url;
+          if (u.startsWith('intent:') || u.startsWith('vnd.youtube') || u.startsWith('market:')) return NavigationDecision.prevent;
+          return NavigationDecision.navigate;
+        },
+      ))
+      ..loadRequest(Uri.parse('https://m.youtube.com/watch?v=${widget.id}'));
+    final p = _c.platform;
+    if (p is AndroidWebViewController) p.setMediaPlaybackRequiresUserGesture(false);
+  }
+
+  @override
+  Widget build(BuildContext context) => Scaffold(
+        backgroundColor: Colors.black,
+        appBar: AppBar(
+          backgroundColor: Colors.black,
+          foregroundColor: Colors.white,
+          elevation: 0,
+          title: Text(widget.title, maxLines: 1, overflow: TextOverflow.ellipsis, style: TextStyle(fontSize: 15, fontWeight: FontWeight.w800)),
+          bottom: _progress < 100
+              ? PreferredSize(preferredSize: Size.fromHeight(2), child: LinearProgressIndicator(value: _progress / 100, minHeight: 2, color: Color(0xFFFF0000), backgroundColor: Colors.white12))
+              : null,
+        ),
+        body: SafeArea(top: false, child: WebViewWidget(controller: _c)),
+      );
 }
 
 /// Temps forts : lecteur YouTube officiel dans KOUNADIA (en haut de l'écran).
@@ -137,7 +194,8 @@ function pause(){try{p.pauseVideo();}catch(x){}}
     }
     _loaded = v.id;
     _played = false;
-    _queue = [if (v.embed) v.id, ...v.alts.where((a) => a != v.id)];
+    // Sans les vidéos bloquées dans le pays de l'utilisateur.
+    _queue = [if (v.embed) v.id, ...v.alts.where((a) => a != v.id)].where((id) => v.okIn(id, UserPrefs.iso)).toList();
     _qi = 0;
     if (_queue.isEmpty) {
       HlPlayer.close();

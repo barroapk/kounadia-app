@@ -876,4 +876,5 @@ const Map<String, String> kEn = {
   'Plein écran': 'Full screen',
   'Chaîne officielle': 'Official channel',
   'Aucun temps fort pour le moment.\nLes vidéos des grands matchs arrivent environ 2 h après la fin.': 'No highlights yet.\nVideos of big matches arrive about 2 hours after the final whistle.',
+  'Ces temps forts ne sont pas disponibles dans ton pays.': 'These highlights are not available in your country.',
 };

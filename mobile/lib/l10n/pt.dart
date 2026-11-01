@@ -858,4 +858,5 @@ const Map<String, String> kPt = {
   'Plein écran': 'Tela cheia',
   'Chaîne officielle': 'Canal oficial',
   'Aucun temps fort pour le moment.\nLes vidéos des grands matchs arrivent environ 2 h après la fin.': 'Ainda não há melhores momentos.\nOs vídeos dos grandes jogos chegam cerca de 2 h após o fim.',
+  'Ces temps forts ne sont pas disponibles dans ton pays.': 'Estes melhores momentos não estão disponíveis no teu país.',
 };
