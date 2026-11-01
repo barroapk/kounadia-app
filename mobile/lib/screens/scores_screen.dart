@@ -10,6 +10,8 @@ import '../widgets/forecast_card.dart' show K, kMessage, kOfflineBanner, hm, two
 import '../widgets/jersey.dart';
 import '../widgets/knd_banner.dart';
 import '../widgets/big_matches.dart';
+import '../widgets/hl_list.dart';
+import '../services/highlights.dart';
 import '../services/logo_cache.dart';
 import '../services/markets_service.dart';
 import 'pt_match_screen.dart';
@@ -61,6 +63,7 @@ class _ScoresScreenState extends State<ScoresScreen> with WidgetsBindingObserver
   void initState() {
     super.initState();
     WidgetsBinding.instance.addObserver(this);
+    Highlights.load();
     _loadFav();
     FavLeagues.load().then((_) {
       if (FavLeagues.set.value.isNotEmpty && _filter == 'all') {
@@ -356,10 +359,20 @@ class _ScoresScreenState extends State<ScoresScreen> with WidgetsBindingObserver
                         dot: all.any((m) => m.status == 'live'))),
                 SizedBox(width: 6),
                 Expanded(child: _seg('mine', 'Mes matchs', all.where(_mine).length)),
+                SizedBox(width: 6),
+                Expanded(
+                  child: ValueListenableBuilder<int>(
+                    valueListenable: Highlights.changed,
+                    builder: (_, __, ___) => _seg('hl', 'Temps forts', Highlights.recent().length),
+                  ),
+                ),
               ],
             ),
           ),
-          Expanded(child: _body(all)),
+          Expanded(
+              child: _view == 'hl'
+                  ? HighlightsList(byId: {for (final l in _days.values) for (final m in l) m.id: m})
+                  : _body(all)),
         ],
       ),
     );

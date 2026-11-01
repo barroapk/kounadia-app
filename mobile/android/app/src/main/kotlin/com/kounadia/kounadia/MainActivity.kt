@@ -2,7 +2,12 @@ package com.kounadia.kounadia
 
 import android.app.NotificationChannel
 import android.app.NotificationManager
+import android.app.PictureInPictureParams
+import android.content.Context
 import android.content.Intent
+import android.content.res.Configuration
+import android.media.AudioManager
+import android.util.Rational
 import android.media.AudioAttributes
 import android.net.Uri
 import android.os.Build
@@ -54,8 +59,72 @@ class MainActivity : FlutterActivity() {
     }
 
     // Mise à jour dans l'app : autorisation d'installer + lancement de l'installation.
+    // Temps forts : fenêtre flottante (image dans l'image) en quittant l'app pendant une vidéo,
+    // luminosité de l'écran et volume réglés depuis le lecteur.
+    private var pipAllowed = false
+    private var video: MethodChannel? = null
+
+    private fun enterPip(): Boolean {
+        if (Build.VERSION.SDK_INT < Build.VERSION_CODES.O) return false
+        return try {
+            enterPictureInPictureMode(PictureInPictureParams.Builder().setAspectRatio(Rational(16, 9)).build())
+        } catch (e: Exception) {
+            false
+        }
+    }
+
+    override fun onUserLeaveHint() {
+        super.onUserLeaveHint()
+        if (pipAllowed) enterPip()
+    }
+
+    override fun onPictureInPictureModeChanged(isInPictureInPictureMode: Boolean, newConfig: Configuration) {
+        super.onPictureInPictureModeChanged(isInPictureInPictureMode, newConfig)
+        video?.invokeMethod("pip", isInPictureInPictureMode)
+    }
+
     override fun configureFlutterEngine(flutterEngine: FlutterEngine) {
         super.configureFlutterEngine(flutterEngine)
+        video = MethodChannel(flutterEngine.dartExecutor.binaryMessenger, "kounadia/video")
+        video?.setMethodCallHandler { call, result ->
+            try {
+                val am = getSystemService(Context.AUDIO_SERVICE) as AudioManager
+                when (call.method) {
+                    "allowPip" -> {
+                        pipAllowed = call.arguments == true
+                        result.success(true)
+                    }
+                    "enterPip" -> result.success(enterPip())
+                    "getBrightness" -> {
+                        val b = window.attributes.screenBrightness
+                        result.success(
+                            if (b >= 0f) b.toDouble()
+                            else Settings.System.getInt(contentResolver, Settings.System.SCREEN_BRIGHTNESS, 128) / 255.0
+                        )
+                    }
+                    "setBrightness" -> {
+                        val v = (call.arguments as Number).toFloat().coerceIn(0.02f, 1f)
+                        val lp = window.attributes
+                        lp.screenBrightness = v
+                        window.attributes = lp
+                        result.success(true)
+                    }
+                    "getVolume" -> {
+                        val max = am.getStreamMaxVolume(AudioManager.STREAM_MUSIC)
+                        result.success(if (max > 0) am.getStreamVolume(AudioManager.STREAM_MUSIC).toDouble() / max else 0.5)
+                    }
+                    "setVolume" -> {
+                        val max = am.getStreamMaxVolume(AudioManager.STREAM_MUSIC)
+                        val v = (call.arguments as Number).toDouble().coerceIn(0.0, 1.0)
+                        am.setStreamVolume(AudioManager.STREAM_MUSIC, Math.round(v * max).toInt(), 0)
+                        result.success(true)
+                    }
+                    else -> result.notImplemented()
+                }
+            } catch (e: Exception) {
+                result.success(null)
+            }
+        }
         MethodChannel(flutterEngine.dartExecutor.binaryMessenger, "kounadia/update").setMethodCallHandler { call, result ->
             when (call.method) {
                 // Réglages des notifications de l'app (quand Android ne montre plus sa fenêtre d'autorisation).

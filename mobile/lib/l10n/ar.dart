@@ -857,4 +857,5 @@ const Map<String, String> kAr = {
   'Cette vidéo se regarde dans YouTube.': 'يُشاهَد هذا الفيديو على يوتيوب.',
   'Plein écran': 'ملء الشاشة',
   'Chaîne officielle': 'القناة الرسمية',
+  'Aucun temps fort pour le moment.\nLes vidéos des grands matchs arrivent environ 2 h après la fin.': 'لا توجد أبرز لقطات حاليًا.\nتصل فيديوهات المباريات الكبرى بعد نحو ساعتين من نهايتها.',
 };

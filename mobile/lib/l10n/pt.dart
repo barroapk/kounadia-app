@@ -857,4 +857,5 @@ const Map<String, String> kPt = {
   'Cette vidéo se regarde dans YouTube.': 'Este vídeo abre no YouTube.',
   'Plein écran': 'Tela cheia',
   'Chaîne officielle': 'Canal oficial',
+  'Aucun temps fort pour le moment.\nLes vidéos des grands matchs arrivent environ 2 h après la fin.': 'Ainda não há melhores momentos.\nOs vídeos dos grandes jogos chegam cerca de 2 h após o fim.',
 };

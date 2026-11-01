@@ -857,4 +857,5 @@ const Map<String, String> kEs = {
   'Cette vidéo se regarde dans YouTube.': 'Este vídeo se ve en YouTube.',
   'Plein écran': 'Pantalla completa',
   'Chaîne officielle': 'Canal oficial',
+  'Aucun temps fort pour le moment.\nLes vidéos des grands matchs arrivent environ 2 h après la fin.': 'Todavía no hay resúmenes.\nLos vídeos de los grandes partidos llegan unas 2 h después del final.',
 };

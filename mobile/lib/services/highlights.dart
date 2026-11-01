@@ -9,7 +9,11 @@ class HlVideo {
   final String id, title, channel;
   final bool embed; // lecture possible dans l'app
   final bool club; // chaîne d'un des deux clubs
-  HlVideo(this.id, this.title, this.channel, this.embed, this.club);
+  final int match;
+  final String home, away, score, league;
+  final DateTime? date;
+  HlVideo(this.id, this.title, this.channel, this.embed, this.club,
+      {this.match = 0, this.home = '', this.away = '', this.score = '', this.league = '', this.date});
   String get url => 'https://www.youtube.com/watch?v=$id';
   String get thumb => 'https://i.ytimg.com/vi/$id/hqdefault.jpg';
 }
@@ -23,6 +27,14 @@ class Highlights {
   static Future<void>? _running;
 
   static HlVideo? of(int matchId) => _v['$matchId'];
+
+  /// Temps forts des 3 derniers jours, du plus récent au plus ancien.
+  static List<HlVideo> recent() {
+    final now = DateTime.now();
+    final l = _v.values.where((x) => x.date != null && now.difference(x.date!) < const Duration(days: 3)).toList();
+    l.sort((a, b) => b.date!.compareTo(a.date!));
+    return l;
+  }
 
   /// Charge la liste si elle a plus de 10 minutes (ou jamais chargée).
   static Future<void> load({bool force = false}) {
@@ -54,9 +66,15 @@ class Highlights {
       final out = <String, HlVideo>{};
       v.forEach((k, x) {
         if (x is! Map || x['v'] == null) return;
-        out['$k'] = HlVideo('${x['v']}', '${x['t'] ?? ''}', '${x['c'] ?? ''}', x['e'] != 0, x['k'] == 'club');
+        out['$k'] = HlVideo('${x['v']}', '${x['t'] ?? ''}', '${x['c'] ?? ''}', x['e'] != 0, x['k'] == 'club',
+            match: int.tryParse('$k') ?? 0,
+            home: '${x['h'] ?? ''}',
+            away: '${x['a'] ?? ''}',
+            score: '${x['s'] ?? ''}',
+            league: '${x['l'] ?? ''}',
+            date: DateTime.tryParse('${x['d'] ?? ''}')?.toLocal());
       });
-      final diff = out.length != _v.length || out.keys.any((k) => _v[k]?.id != out[k]!.id);
+      final diff = out.length != _v.length || out.keys.any((k) => _v[k]?.id != out[k]!.id || _v[k]?.score != out[k]!.score);
       _v = out;
       if (diff) changed.value++;
       return true;

@@ -13,6 +13,7 @@ import 'services/currency.dart';
 import 'services/sync.dart';
 import 'services/notif.dart';
 import 'widgets/forecast_card.dart' show K;
+import 'widgets/video_open.dart' show HlPlayerHost;
 import 'l10n/tr.dart';
 
 Future<void> main() async {
@@ -136,7 +137,7 @@ class _KounadiaAppState extends State<KounadiaApp> with WidgetsBindingObserver {
         final mq = MediaQuery.of(context);
         return MediaQuery(
           data: mq.copyWith(textScaler: mq.textScaler.clamp(minScaleFactor: 0.85, maxScaleFactor: 1.1)),
-          child: Directionality(textDirection: isRtl ? TextDirection.rtl : TextDirection.ltr, child: child!),
+          child: Directionality(textDirection: isRtl ? TextDirection.rtl : TextDirection.ltr, child: HlPlayerHost(child: child!)),
         );
       },
       home: MainScreen(),
