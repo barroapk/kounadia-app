@@ -859,4 +859,5 @@ const Map<String, String> kEs = {
   'Chaîne officielle': 'Canal oficial',
   'Aucun temps fort pour le moment.\nLes vidéos des grands matchs arrivent environ 2 h après la fin.': 'Todavía no hay resúmenes.\nLos vídeos de los grandes partidos llegan unas 2 h después del final.',
   'Ces temps forts ne sont pas disponibles dans ton pays.': 'Este resumen no está disponible en tu país.',
+  'Pendant le paiement, mets uniquement ce montant.': 'Durante el pago, pon solo este importe.',
 };

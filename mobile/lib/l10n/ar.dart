@@ -859,4 +859,5 @@ const Map<String, String> kAr = {
   'Chaîne officielle': 'القناة الرسمية',
   'Aucun temps fort pour le moment.\nLes vidéos des grands matchs arrivent environ 2 h après la fin.': 'لا توجد أبرز لقطات حاليًا.\nتصل فيديوهات المباريات الكبرى بعد نحو ساعتين من نهايتها.',
   'Ces temps forts ne sont pas disponibles dans ton pays.': 'هذه اللقطات غير متاحة في بلدك.',
+  'Pendant le paiement, mets uniquement ce montant.': 'أثناء الدفع، أدخل هذا المبلغ فقط.',
 };
