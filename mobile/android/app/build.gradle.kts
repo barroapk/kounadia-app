@@ -42,8 +42,10 @@ android {
     buildTypes {
         release {
             signingConfig = signingConfigs.getByName(if (releaseKs != null) "release" else "debug")
-            isMinifyEnabled = false
-            isShrinkResources = false
+            // Application plus légère : code Java/Kotlin inutilisé et ressources inutilisées retirés (R8).
+            isMinifyEnabled = true
+            isShrinkResources = true
+            proguardFiles(getDefaultProguardFile("proguard-android-optimize.txt"), "proguard-rules.pro")
         }
     }
 }

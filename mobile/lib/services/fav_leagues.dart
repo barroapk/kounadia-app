@@ -90,10 +90,11 @@ class FavLeagues {
         if (v is! Map || v['comps'] is! Map) return;
         final en = '${v['en'] ?? ''}';
         (v['comps'] as Map).forEach((t, x) {
-          if (x is Map && x['pt'] != null && en.isNotEmpty) {
+          // Seulement les paires sûres (même pays, notées avec la règle des deux équipes).
+          if (x is Map && x['pt'] != null && x['ptv'] == 2 && en.isNotEmpty) {
             final (c1, l1) = _raw('$en - $t');
             final (c2, l2) = _raw('${x['pt']}');
-            if (l1 != l2 || c1 != c2) out['$c1|$l1'] = '$c2|$l2';
+            if (c1 == c2 && l1 != l2) out['$c1|$l1'] = '$c2|$l2';
           }
         });
       });
