@@ -860,4 +860,8 @@ const Map<String, String> kPt = {
   'Aucun temps fort pour le moment.\nLes vidéos des grands matchs arrivent environ 2 h après la fin.': 'Ainda não há melhores momentos.\nOs vídeos dos grandes jogos chegam cerca de 2 h após o fim.',
   'Ces temps forts ne sont pas disponibles dans ton pays.': 'Estes melhores momentos não estão disponíveis no teu país.',
   'Pendant le paiement, mets uniquement ce montant.': 'Durante o pagamento, coloca apenas este valor.',
+  'Grands matchs': 'Grandes jogos',
+  'Ligue des champions, Ligue Europa et grands championnats : les pronostics KOUNADIA des prochaines 48 h.': 'Liga dos Campeões, Liga Europa e grandes campeonatos: os prognósticos KOUNADIA das próximas 48 h.',
+  'Pas de grand match dans les prochaines 48 h.': 'Nenhum grande jogo nas próximas 48 h.',
+  'Grands matchs analysés': 'Grandes jogos analisados',
 };

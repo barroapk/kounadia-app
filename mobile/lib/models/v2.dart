@@ -149,6 +149,10 @@ class V2Selection {
   final int n;
   final bool locked;
   final List<V2Leg> top, byFam, fav;
+  /// Grands matchs (Ligue des champions, grands championnats) des prochaines 48 h : pronostics KOUNADIA.
+  final List<V2Leg> big;
+  /// Version gratuite : nombre de grands matchs (contenu réservé au Premium).
+  final int bigN;
   final Map<String, V2Coupon?> coupons;
 
   V2Selection.fromJson(Map<String, dynamic> j)
@@ -157,6 +161,8 @@ class V2Selection {
         top = _legs(j['top']),
         byFam = _legs(j['byFam']),
         fav = _legs(j['fav']),
+        big = j['big'] is List ? _legs(j['big']) : const [],
+        bigN = j['big'] is num ? (j['big'] as num).toInt() : 0,
         coupons = {
           for (final e in ((j['coupons'] as Map?) ?? const {}).entries)
             e.key.toString(): e.value == null ? null : V2Coupon.fromJson(Map<String, dynamic>.from(e.value as Map)),
@@ -170,6 +176,7 @@ class V2Selection {
     yield* top;
     yield* byFam;
     yield* fav;
+    yield* big;
     for (final c in coupons.values) {
       if (c != null) yield* c.legs;
     }

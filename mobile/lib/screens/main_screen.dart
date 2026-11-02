@@ -1,5 +1,6 @@
 import 'dart:async';
 import 'package:flutter/material.dart';
+import 'package:flutter/rendering.dart' show ScrollDirection;
 import '../widgets/knd_banner.dart' show BannerService;
 import '../widgets/forecast_card.dart' show K;
 import '../services/analytics.dart';
@@ -37,6 +38,7 @@ class MainScreen extends StatefulWidget {
 
 class _MainScreenState extends State<MainScreen> with WidgetsBindingObserver {
   int _i = 0;
+  bool _fabMini = false;
 
   String _adLang = UserPrefs.lang;
 
@@ -244,7 +246,16 @@ class _MainScreenState extends State<MainScreen> with WidgetsBindingObserver {
           child: Container(height: 1, color: K.border),
         ),
       ),
-      body: Column(children: [UpdateBanner(), Expanded(child: IndexedStack(index: _i, children: _screens))]),
+      // Bouton Dépôt · Retrait : réduit à une pastille quand on fait défiler vers le bas (il ne cache plus le contenu).
+      body: NotificationListener<UserScrollNotification>(
+        onNotification: (n) {
+          if (n.metrics.axis != Axis.vertical) return false;
+          final mini = n.direction == ScrollDirection.reverse ? true : n.direction == ScrollDirection.forward ? false : _fabMini;
+          if (mini != _fabMini) setState(() => _fabMini = mini);
+          return false;
+        },
+        child: Column(children: [UpdateBanner(), Expanded(child: IndexedStack(index: _i, children: _screens))]),
+      ),
       // Dépôt / Retrait : service disponible uniquement au Burkina Faso.
       floatingActionButton: kPlay || UserPrefs.iso != 'BF' ? null : Material(
         color: k1xBet,
@@ -256,7 +267,11 @@ class _MainScreenState extends State<MainScreen> with WidgetsBindingObserver {
             Analytics.log('knd_menu');
             _openKnd();
           },
-          child: Padding(
+          child: AnimatedSize(
+            duration: Duration(milliseconds: 180),
+            child: _fabMini
+                ? Padding(padding: EdgeInsets.all(11), child: Icon(Icons.swap_vert_rounded, color: Colors.white, size: 20))
+                : Padding(
             padding: EdgeInsets.fromLTRB(12, 9, 10, 9),
             child: Row(mainAxisSize: MainAxisSize.min, children: [
               Icon(Icons.swap_vert_rounded, color: Colors.white, size: 18),
@@ -271,6 +286,7 @@ class _MainScreenState extends State<MainScreen> with WidgetsBindingObserver {
                     style: TextStyle(color: k1xBet, fontSize: 11.5, fontWeight: FontWeight.w900)),
               ),
             ]),
+          ),
           ),
         ),
       ),

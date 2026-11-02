@@ -9,7 +9,7 @@ import '../../models/v2.dart';
 import '../../services/analytics.dart';
 import '../../services/codes.dart';
 import '../../services/logo_cache.dart';
-import '../../widgets/forecast_card.dart' show K, hm;
+import '../../widgets/forecast_card.dart' show K, hm, two;
 import '../../widgets/jersey.dart';
 import '../account_screen.dart';
 
@@ -250,7 +250,18 @@ class V2MatchRow extends StatelessWidget {
     } else if (l.r == 'live') {
       time = Text(l.minute ?? 'Live', textAlign: TextAlign.center, style: TextStyle(color: K.red, fontSize: 12, fontWeight: FontWeight.w900));
     } else {
-      time = Text(l.date == null ? '--:--' : hm(l.date!), style: TextStyle(color: K.text, fontSize: 12.5, fontWeight: FontWeight.w800));
+      // Match d'un autre jour (Grands matchs : demain) : le jour au-dessus de l'heure.
+      final d = l.date;
+      final now = DateTime.now();
+      final other = d != null && (d.year != now.year || d.month != now.month || d.day != now.day);
+      final t = Text(d == null ? '--:--' : hm(d), style: TextStyle(color: K.text, fontSize: 12.5, fontWeight: FontWeight.w800));
+      time = !other
+          ? t
+          : Column(mainAxisSize: MainAxisSize.min, children: [
+              Text(d.difference(DateTime(now.year, now.month, now.day)).inDays == 1 ? tr('Demain') : '${two(d.day)}/${two(d.month)}',
+                  style: TextStyle(color: K.amber, fontSize: 10.5, fontWeight: FontWeight.w800)),
+              t,
+            ]);
     }
     final pair = l.statPair;
     final String? statLine = pair != null && pair[0] != null && pair[1] != null

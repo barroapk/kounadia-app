@@ -24,6 +24,7 @@ class SelFilter {
 
   List<V2Leg> legs(V2Selection s) {
     if (key == 'all') return s.top;
+    if (key == 'big') return s.big;
     return s.byFam.where((l) => l.fam == fam).toList()..sort((a, b) => b.p.compareTo(a.p));
   }
 
@@ -34,6 +35,7 @@ class SelFilter {
 
 const kSelFilters = <SelFilter>[
   SelFilter('all', 'Coups sûrs', Icons.verified_rounded),
+  SelFilter('big', 'Grands matchs', Icons.stars_rounded),
   SelFilter('dc', 'Double chance (1X · X2 · 12)', Icons.shield_rounded, fam: 'dc'),
   SelFilter('res', 'Victoire (1 · 2)', Icons.emoji_events_rounded, fam: 'res'),
   SelFilter('buts', 'Plus / moins de buts', Icons.sports_soccer_rounded, fam: 'buts'),
@@ -257,6 +259,13 @@ class _SelectionScreenState extends State<SelectionScreen> {
         decoration: BoxDecoration(color: K.card, borderRadius: BorderRadius.circular(14), border: Border.all(color: K.border)),
         child: v2WeekLine(week, onHistory: () => _history(d, f)),
       ));
+      if (f.key == 'big' && s.bigN > 0) {
+        body.add(Padding(
+          padding: EdgeInsets.fromLTRB(4, 0, 4, 10),
+          child: Text('${tr('Grands matchs analysés')} : ${s.bigN}',
+              style: TextStyle(color: K.text, fontSize: 15, fontWeight: FontWeight.w800)),
+        ));
+      }
       body.add(_lockCard());
     } else if (s == null) {
       body.add(SizedBox(height: 260, child: kMessage("Les Coups sûrs du jour ne sont pas encore prêts. Tire vers le bas pour actualiser.")));
@@ -272,13 +281,24 @@ class _SelectionScreenState extends State<SelectionScreen> {
       ));
     } else {
       final legs = f.legs(s);
-      body.add(Container(
-        margin: EdgeInsets.only(bottom: 12),
-        decoration: BoxDecoration(color: K.card, borderRadius: BorderRadius.circular(14), border: Border.all(color: K.border)),
-        child: v2WeekLine(week, onHistory: () => _history(d, f)),
-      ));
+      if (f.key == 'big') {
+        // Grands matchs : pronostics des prochaines 48 h (pas d'historique de la semaine).
+        body.add(Padding(
+          padding: EdgeInsets.fromLTRB(4, 0, 4, 12),
+          child: T('Ligue des champions, Ligue Europa et grands championnats : les pronostics KOUNADIA des prochaines 48 h.',
+              style: TextStyle(color: K.muted, fontSize: 13, height: 1.35)),
+        ));
+      } else {
+        body.add(Container(
+          margin: EdgeInsets.only(bottom: 12),
+          decoration: BoxDecoration(color: K.card, borderRadius: BorderRadius.circular(14), border: Border.all(color: K.border)),
+          child: v2WeekLine(week, onHistory: () => _history(d, f)),
+        ));
+      }
       if (legs.isEmpty) {
-        body.add(SizedBox(height: 200, child: kMessage("Rien dans cette catégorie aujourd'hui.")));
+        body.add(SizedBox(
+            height: 200,
+            child: kMessage(f.key == 'big' ? 'Pas de grand match dans les prochaines 48 h.' : "Rien dans cette catégorie aujourd'hui.")));
       } else {
         body.addAll(v2Groups(legs, favs: _favs, onStar: _star));
       }

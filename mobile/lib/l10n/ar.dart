@@ -860,4 +860,8 @@ const Map<String, String> kAr = {
   'Aucun temps fort pour le moment.\nLes vidéos des grands matchs arrivent environ 2 h après la fin.': 'لا توجد أبرز لقطات حاليًا.\nتصل فيديوهات المباريات الكبرى بعد نحو ساعتين من نهايتها.',
   'Ces temps forts ne sont pas disponibles dans ton pays.': 'هذه اللقطات غير متاحة في بلدك.',
   'Pendant le paiement, mets uniquement ce montant.': 'أثناء الدفع، أدخل هذا المبلغ فقط.',
+  'Grands matchs': 'المباريات الكبرى',
+  'Ligue des champions, Ligue Europa et grands championnats : les pronostics KOUNADIA des prochaines 48 h.': 'دوري الأبطال والدوري الأوروبي والبطولات الكبرى: توقعات KOUNADIA للساعات الـ48 القادمة.',
+  'Pas de grand match dans les prochaines 48 h.': 'لا توجد مباراة كبرى في الساعات الـ48 القادمة.',
+  'Grands matchs analysés': 'المباريات الكبرى المحللة',
 };
