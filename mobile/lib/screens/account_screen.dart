@@ -7,6 +7,7 @@ import '../services/analytics.dart';
 import '../services/currency.dart';
 import '../services/user_prefs.dart';
 import 'legal_screen.dart';
+import 'pay_screen.dart';
 import '../widgets/forecast_card.dart' show K, two;
 import '../config/store.dart';
 import '../l10n/tr.dart';
@@ -361,6 +362,29 @@ class _AccountScreenState extends State<AccountScreen> {
         ),
       );
       return;
+    }
+    // Paiement dans l'app (pays, moyen, numéro) quand AlphaPay est disponible ; sinon la page de paiement.
+    setState(() => _busy = true);
+    var shown = true;
+    showDialog<void>(
+      context: context,
+      barrierDismissible: false,
+      builder: (_) => PopScope(canPop: false, child: _Connecting(plan: p)),
+    );
+    List<PayCountry> cs = [];
+    try {
+      cs = await Account.payMethods();
+    } catch (_) {}
+    if (shown && mounted) {
+      shown = false;
+      Navigator.of(context, rootNavigator: true).pop();
+    }
+    if (!mounted) return;
+    setState(() => _busy = false);
+    if (cs.isNotEmpty) {
+      final r = await Navigator.of(context).push<Object?>(MaterialPageRoute(builder: (_) => PayScreen(plan: p, countries: cs)));
+      if (r == true) Account.refresh();
+      if (r != 'hosted' || !mounted) return;
     }
     // D'abord le bon montant : un code Orange généré avec des « frais » en plus est refusé.
     final go = await showDialog<bool>(context: context, builder: (_) => _PayGuide(plan: p));

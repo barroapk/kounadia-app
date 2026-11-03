@@ -198,13 +198,55 @@ class Account {
     return (j['token'].toString(), j['url'].toString());
   }
 
-  /// 'paid', 'pending', 'failure'… (le serveur vérifie auprès de MoneyFusion).
-  static Future<String> paymentStatus(String token) async {
+  /// 'paid', 'pending', 'failure'… (le serveur vérifie auprès du service de paiement).
+  static Future<String> paymentStatus(String token) async => (await paymentCheck(token))['status'].toString();
+
+  /// État complet : status, et pour certains réseaux needOtp + instructions.
+  static Future<Map<String, dynamic>> paymentCheck(String token) async {
     final j = await _call('GET', '/kounadia/pay/status/${Uri.encodeComponent(token)}');
-    final st = (j['status'] ?? 'pending').toString();
-    if (st == 'paid' && j['user'] is Map) {
+    j['status'] = (j['status'] ?? 'pending').toString();
+    if (j['status'] == 'paid' && j['user'] is Map) {
       await _save(_token, _keepEmail(KUser.fromJson(Map<String, dynamic>.from(j['user'] as Map))));
     }
-    return st;
+    return j;
   }
+
+  /// Pays (en F CFA) et moyens de paiement disponibles pour payer dans l'app.
+  static Future<List<PayCountry>> payMethods() async {
+    final j = await _call('GET', '/kounadia/pay/methods');
+    final l = j['countries'];
+    if (j['ok'] != true || l is! List) return [];
+    return [
+      for (final c in l)
+        if (c is Map && c['nets'] is List && (c['nets'] as List).isNotEmpty)
+          PayCountry('${c['iso']}', '${c['name']}', [
+            for (final n in c['nets'] as List)
+              if (n is Map) PayNet('${n['code']}', '${n['name']}'),
+          ]),
+    ];
+  }
+
+  /// Paiement direct : la demande arrive sur le téléphone de l'abonné. Renvoie token, instructions, url…
+  static Future<Map<String, dynamic>> startDirect(String plan, String network, String phone, {String? otp}) =>
+      _call('POST', '/kounadia/pay/direct', {'plan': plan, 'network': network, 'phone': phone, if (otp != null && otp.isNotEmpty) 'otp': otp});
+
+  /// Code de confirmation demandé par certains réseaux.
+  static Future<Map<String, dynamic>> confirmOtp(String token, String otp) async {
+    final j = await _call('POST', '/kounadia/pay/otp', {'token': token, 'otp': otp});
+    if (j['status'] == 'paid' && j['user'] is Map) {
+      await _save(_token, _keepEmail(KUser.fromJson(Map<String, dynamic>.from(j['user'] as Map))));
+    }
+    return j;
+  }
+}
+
+class PayNet {
+  final String code, name;
+  const PayNet(this.code, this.name);
+}
+
+class PayCountry {
+  final String iso, name;
+  final List<PayNet> nets;
+  const PayCountry(this.iso, this.name, this.nets);
 }
