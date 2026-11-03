@@ -36,7 +36,8 @@ int? bigRank(LiveMatch m) {
   return null;
 }
 
-/// Grands matchs du jour : direct d'abord, puis à venir, puis terminés (au plus 12).
+/// Grands matchs du jour : direct d'abord, puis à venir, puis terminés (tous ceux du jour, au plus 30 :
+/// un soir de Ligue des champions, les matchs terminés ne sont plus coupés par la limite).
 List<LiveMatch> bigMatches(List<LiveMatch> all) {
   final l = all.where((m) => bigRank(m) != null && m.status != 'postponed').toList();
   int st(LiveMatch m) => m.status == 'live' ? 0 : (m.status == 'finished' ? 2 : 1);
@@ -48,7 +49,7 @@ List<LiveMatch> bigMatches(List<LiveMatch> all) {
     final da = a.date ?? DateTime(2000), db = b.date ?? DateTime(2000);
     return st(a) == 2 ? db.compareTo(da) : da.compareTo(db);
   });
-  return l.take(12).toList();
+  return l.take(30).toList();
 }
 
 /// Bandeau des grands matchs, qui défile seul de droite à gauche.
