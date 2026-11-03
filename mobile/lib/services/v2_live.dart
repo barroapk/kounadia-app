@@ -6,6 +6,7 @@ import '../models/v2.dart';
 import 'live_socket.dart';
 import 'v2_service.dart';
 import 'scores_service.dart';
+import '../models/live_match.dart';
 
 /// Direct des événements KOUNADIA V2.
 /// - Score et minute : robot KOUNADIA en temps réel (quelques secondes), comme l'onglet Matchs.
@@ -25,7 +26,9 @@ class V2Live {
     if (LiveSocket.last.isNotEmpty) _onSocket(Map.of(LiveSocket.last));
     _timer ??= Timer.periodic(Duration(seconds: 60), (_) => _stats());
     _live ??= Timer.periodic(Duration(seconds: 20), (_) => _refreshLive());
+    _feed ??= Timer.periodic(Duration(seconds: 60), (_) => _fromFeed());
     _stats();
+    _fromFeed();
   }
 
   static void stop(Object owner) {
@@ -37,16 +40,103 @@ class V2Live {
     _timer = null;
     _live?.cancel();
     _live = null;
+    _feed?.cancel();
+    _feed = null;
   }
 
   static Timer? _live;
+  static Timer? _feed;
+  static DateTime? _feedAt;
+
+  /// Identifiant du direct de chaque pari (celui du coupon, sinon retrouvé dans la liste des matchs).
+  /// Un match de coupon sans identifiant (ex. Argentine à 00:15) ne recevait jamais son score.
+  static final Map<String, int> _alias = {};
+  static int? _idOf(V2Leg l) => l.ptId ?? _alias[l.id];
+
+  static String _n(String s) {
+    var t = s.toLowerCase();
+    const from = 'àâäáãåçéèêëíìîïñóòôöõúùûüÿ', to = 'aaaaaaceeeeiiiinooooouuuuy';
+    for (var i = 0; i < from.length; i++) {
+      t = t.replaceAll(from[i], to[i]);
+    }
+    return t.replaceAll(RegExp(r'\b(fc|cf|afc|sc|ac|ss|as|club|de|cd|ud|sd|ca|atl|atletico)\b'), ' ').replaceAll(RegExp(r'[^a-z0-9]'), '');
+  }
+
+  static bool _same(String a, String b) {
+    final x = _n(a), y = _n(b);
+    if (x.isEmpty || y.isEmpty) return false;
+    if (x == y || (x.length >= 4 && y.length >= 4 && (x.contains(y) || y.contains(x)))) return true;
+    Set<String> tri(String s) => {for (var i = 0; i + 3 <= s.length; i++) s.substring(i, i + 3)};
+    final A = tri(x), B = tri(y);
+    if (A.isEmpty || B.isEmpty) return false;
+    final k = A.where(B.contains).length;
+    return k / (A.length < B.length ? A.length : B.length) >= 0.6;
+  }
+
+  /// Chaque minute : score et état de chaque pari commencé et pas encore réglé, pris dans la liste des matchs
+  /// (la même que l'onglet Matchs, footlive compris). Rattrape aussi les matchs d'après minuit et ceux sans
+  /// identifiant de direct.
+  static Future<void> _fromFeed() async {
+    final now = DateTime.now();
+    final todo = [
+      for (final l in _legs)
+        if (l.r != 'won' && l.r != 'lost' && l.r != 'void' && l.date != null && now.isAfter(l.date!)) l,
+    ];
+    if (todo.isEmpty) return;
+    if (_feedAt != null && now.difference(_feedAt!) < Duration(seconds: 50)) return;
+    _feedAt = now;
+    try {
+      final (days, _) = await ScoresService.load(quiet: true);
+      final all = days.values.expand((x) => x).toList();
+      final byId = {for (final m in all) m.id: m};
+      var changed = false;
+      for (final l in todo) {
+        LiveMatch? m = _idOf(l) != null ? byId[_idOf(l)] : null;
+        if (m == null) {
+          for (final x in all) {
+            if (x.date == null || (x.date!.difference(l.date!).inMinutes).abs() > 100) continue;
+            if (_same(x.home, l.home) && _same(x.away, l.away)) {
+              m = x;
+              break;
+            }
+          }
+          if (m != null) _alias[l.id] = m.id;
+        }
+        if (m == null) continue;
+        m.fixStale(now);
+        final h = m.hs, a = m.as_;
+        if (m.status == 'postponed') {
+          if (l.minute != 'Rep.') {
+            l.minute = 'Rep.';
+            changed = true;
+          }
+          continue;
+        }
+        if (h == null || a == null) continue;
+        final score = '$h-$a';
+        final fin = m.status == 'finished';
+        final minute = fin ? 'Fin' : (m.minute ?? l.minute);
+        if (score == l.score && minute == l.minute && (!fin || l.r != 'live')) continue;
+        l.score = score;
+        l.minute = minute;
+        if (fin) {
+          final r = V2Service.quick(l.mk, h, a);
+          if (r != null) l.r = r ? 'won' : 'lost';
+        } else if (m.status == 'live' && l.r == null) {
+          l.r = 'live';
+        }
+        changed = true;
+      }
+      if (changed) tick.value++;
+    } catch (_) {}
+  }
 
   /// Toutes les 20 s : la minute avance à l'écran ; si le robot ne répond plus, on lit le direct du site.
   static Future<void> _refreshLive() async {
     final now = DateTime.now();
     final ids = <int>{
       for (final l in _legs)
-        if (l.ptId != null && l.r != 'won' && l.r != 'lost' && l.r != 'void' && l.date != null && now.isAfter(l.date!)) l.ptId!,
+        if (_idOf(l) != null && l.r != 'won' && l.r != 'lost' && l.r != 'void' && l.date != null && now.isAfter(l.date!)) _idOf(l)!,
     };
     if (ids.isEmpty) return;
     if (LiveSocket.fresh) {
@@ -69,7 +159,7 @@ class V2Live {
   static void _onSocket(Map<int, (int?, int?, String)> m) {
     var changed = false;
     for (final l in _legs) {
-      final id = l.ptId;
+      final id = _idOf(l);
       final v = id == null ? null : m[id];
       if (v == null || v.$1 == null || v.$2 == null) continue;
       if (l.r == 'won' || l.r == 'lost' || l.r == 'void') continue;

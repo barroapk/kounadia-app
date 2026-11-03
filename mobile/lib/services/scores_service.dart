@@ -12,7 +12,8 @@ class ScoresService {
   static final _live = 'https://primatips.com/liveresults?day=0';
   static final _ua = {'User-Agent': 'KOUNADIA-App/1.0'};
 
-  static Future<(Map<String, List<LiveMatch>>, bool)> load() async {
+  /// [quiet] : lecture seule (coupons en direct), sans mise à jour des favoris ni des abonnements aux notifications.
+  static Future<(Map<String, List<LiveMatch>>, bool)> load({bool quiet = false}) async {
     final prefs = await SharedPreferences.getInstance();
     try {
       final bust = DateTime.now().millisecondsSinceEpoch ~/ 60000;
@@ -20,8 +21,10 @@ class ScoresService {
       if (r.statusCode != 200) throw Exception('indisponible');
       final body = utf8.decode(r.bodyBytes);
       final days = _parse(body);
-      FavLeagues.autoSeed(days.values.expand((l) => l).map((m) => m.leagueLabel));
-      Notif.leagues(days.values.expand((l) => l).map((m) => m.leagueLabel));
+      if (!quiet) {
+        FavLeagues.autoSeed(days.values.expand((l) => l).map((m) => m.leagueLabel));
+        Notif.leagues(days.values.expand((l) => l).map((m) => m.leagueLabel));
+      }
       await prefs.setString('kscores', body);
       return (days, false);
     } catch (e) {
