@@ -79,7 +79,7 @@ class _BigMatchesCarouselState extends State<BigMatchesCarousel> {
     super.initState();
     Highlights.load();
     Highlights.changed.addListener(_re);
-    _auto = Timer.periodic(Duration(milliseconds: 4500), (_) => _next());
+    _auto = Timer.periodic(Duration(milliseconds: 3200), (_) => _next());
   }
 
   void _re() {
@@ -90,7 +90,7 @@ class _BigMatchesCarouselState extends State<BigMatchesCarousel> {
     if (!mounted || widget.matches.length <= 1 || !_pc.hasClients) return;
     if (DateTime.now().isBefore(_pauseUntil) || !TickerMode.of(context)) return;
     Highlights.load();
-    _pc.nextPage(duration: Duration(milliseconds: 650), curve: Curves.easeInOutCubic);
+    _pc.nextPage(duration: Duration(milliseconds: 550), curve: Curves.easeInOutCubic);
   }
 
   @override
