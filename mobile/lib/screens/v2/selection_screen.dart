@@ -116,6 +116,58 @@ class _SelectionScreenState extends State<SelectionScreen> {
     } catch (_) {}
   }
 
+  final Set<String> _bigOpen = {};
+
+  /// Grands matchs : une carte par match avec LE pronostic le plus sûr ; les autres derrière « Voir … ».
+  /// (Le robot les envoie déjà du plus sûr au moins sûr pour chaque match.)
+  List<Widget> _bigCards(List<V2Leg> legs) {
+    final byMatch = <String, List<V2Leg>>{};
+    for (final l in legs) {
+      byMatch.putIfAbsent(l.id, () => []).add(l);
+    }
+    final out = <Widget>[];
+    for (final e in byMatch.entries) {
+      final best = e.value.first;
+      final more = e.value.skip(1).toList();
+      final open = _bigOpen.contains(e.key);
+      out.add(Container(
+        margin: EdgeInsets.only(bottom: 12),
+        clipBehavior: Clip.antiAlias,
+        decoration: BoxDecoration(color: K.card, borderRadius: BorderRadius.circular(16), border: Border.all(color: K.border)),
+        child: Column(crossAxisAlignment: CrossAxisAlignment.stretch, children: [
+          V2MatchRow(best, showLeague: true, fav: _favs.contains(best.key), onStar: _star),
+          if (more.isNotEmpty) ...[
+            Container(height: 1, color: K.border),
+            if (open)
+              for (final l in more)
+                Padding(
+                  padding: EdgeInsets.fromLTRB(52, 10, 14, 10),
+                  child: Row(children: [
+                    Expanded(child: T(l.label, style: TextStyle(color: K.text, fontSize: 14, fontWeight: FontWeight.w700))),
+                    SizedBox(width: 10),
+                    Text('${v2Pct(l.p)} · ${l.est ? '≈' : '@'}${v2Num(l.odd)}',
+                        style: TextStyle(color: K.muted, fontSize: 13, fontWeight: FontWeight.w700)),
+                  ]),
+                ),
+            InkWell(
+              onTap: () => setState(() => open ? _bigOpen.remove(e.key) : _bigOpen.add(e.key)),
+              child: Padding(
+                padding: EdgeInsets.symmetric(vertical: 11),
+                child: Row(mainAxisAlignment: MainAxisAlignment.center, children: [
+                  Text(open ? tr('Masquer') : '${tr('Voir les autres pronostics')} (${more.length})',
+                      style: TextStyle(color: K.indigoText, fontSize: 13.5, fontWeight: FontWeight.w800)),
+                  SizedBox(width: 4),
+                  Icon(open ? Icons.expand_less_rounded : Icons.expand_more_rounded, color: K.indigoText, size: 20),
+                ]),
+              ),
+            ),
+          ],
+        ]),
+      ));
+    }
+    return out;
+  }
+
   // Grands matchs : nombre de matchs (3 pronostics par match), pas de pronostics.
   int _count(V2Selection s, SelFilter f) => f.coupon != null
       ? (s.coupons[f.coupon] == null ? 0 : 1)
@@ -304,6 +356,8 @@ class _SelectionScreenState extends State<SelectionScreen> {
         body.add(SizedBox(
             height: 200,
             child: kMessage(f.key == 'big' ? 'Pas de grand match dans les prochaines 48 h.' : "Rien dans cette catégorie aujourd'hui.")));
+      } else if (f.key == 'big') {
+        body.addAll(_bigCards(legs));
       } else {
         body.addAll(v2Groups(legs, favs: _favs, onStar: _star));
       }

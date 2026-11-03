@@ -864,4 +864,6 @@ const Map<String, String> kAr = {
   'Ligue des champions, Ligue Europa et grands championnats : les pronostics KOUNADIA des prochaines 48 h.': 'دوري الأبطال والدوري الأوروبي والبطولات الكبرى: توقعات KOUNADIA للساعات الـ48 القادمة.',
   'Pas de grand match dans les prochaines 48 h.': 'لا توجد مباراة كبرى في الساعات الـ48 القادمة.',
   'Grands matchs analysés': 'المباريات الكبرى المحللة',
+  'Voir les autres pronostics': 'عرض التوقعات الأخرى',
+  'Masquer': 'إخفاء',
 };

@@ -864,4 +864,6 @@ const Map<String, String> kEs = {
   'Ligue des champions, Ligue Europa et grands championnats : les pronostics KOUNADIA des prochaines 48 h.': 'Liga de Campeones, Liga Europa y grandes ligas: los pronósticos KOUNADIA de las próximas 48 h.',
   'Pas de grand match dans les prochaines 48 h.': 'Ningún gran partido en las próximas 48 h.',
   'Grands matchs analysés': 'Grandes partidos analizados',
+  'Voir les autres pronostics': 'Ver otros pronósticos',
+  'Masquer': 'Ocultar',
 };
