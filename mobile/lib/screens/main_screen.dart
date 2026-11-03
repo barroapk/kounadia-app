@@ -220,13 +220,6 @@ class _MainScreenState extends State<MainScreen> with WidgetsBindingObserver {
           SizedBox(width: 10),
           T('KOUNADIA',
               style: TextStyle(color: K.text, fontSize: 19, fontWeight: FontWeight.w900, letterSpacing: 1)),
-          SizedBox(width: 8),
-          Flexible(
-            child: T('· ${tr(_titles[_i])}',
-                maxLines: 1,
-                overflow: TextOverflow.ellipsis,
-                style: TextStyle(color: K.muted, fontSize: 14, fontWeight: FontWeight.w600)),
-          ),
         ]),
         actions: [
           IconButton(
@@ -269,7 +262,8 @@ class _MainScreenState extends State<MainScreen> with WidgetsBindingObserver {
           },
           child: AnimatedSize(
             duration: Duration(milliseconds: 180),
-            child: _fabMini
+            // Grand bouton seulement sur Matchs, en haut de liste ; ailleurs une pastille qui ne cache rien.
+            child: _fabMini || _i != 0
                 ? Padding(padding: EdgeInsets.all(11), child: Icon(Icons.swap_vert_rounded, color: Colors.white, size: 20))
                 : Padding(
             padding: EdgeInsets.fromLTRB(12, 9, 10, 9),

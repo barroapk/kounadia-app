@@ -108,7 +108,7 @@ class _BigMatchesCarouselState extends State<BigMatchesCarousel> {
     return Padding(
       padding: EdgeInsets.only(bottom: 12),
       child: SizedBox(
-        height: 196,
+        height: 180,
         child: NotificationListener<ScrollNotification>(
           onNotification: (s) {
             // L'utilisateur fait défiler lui-même : on attend avant de reprendre.
@@ -144,7 +144,7 @@ class _BigCard extends StatelessWidget {
           Container(
             padding: EdgeInsets.all(3),
             decoration: BoxDecoration(shape: BoxShape.circle, color: Colors.white.withAlpha(30)),
-            child: TeamCrest(name: name, logo: logo(name), size: 50),
+            child: TeamCrest(name: name, logo: logo(name), size: 44),
           ),
           SizedBox(height: 8),
           Text(name,
@@ -166,10 +166,10 @@ class _BigCard extends StatelessWidget {
     final center = <Widget>[
       if (has && (live || done))
         Text('${m.hs}  -  ${m.as_}',
-            style: TextStyle(color: Colors.white, fontSize: 30, fontWeight: FontWeight.w900, letterSpacing: 1, shadows: [Shadow(blurRadius: 8, color: Colors.black54)]))
+            style: TextStyle(color: Colors.white, fontSize: 28, fontWeight: FontWeight.w900, letterSpacing: 1, shadows: [Shadow(blurRadius: 8, color: Colors.black54)]))
       else
         Text(m.date != null ? hm(m.date!) : '--:--',
-            style: TextStyle(color: Colors.white, fontSize: 30, fontWeight: FontWeight.w900, shadows: [Shadow(blurRadius: 8, color: Colors.black54)])),
+            style: TextStyle(color: Colors.white, fontSize: 28, fontWeight: FontWeight.w900, shadows: [Shadow(blurRadius: 8, color: Colors.black54)])),
       if (live && (m.minute ?? '').isNotEmpty) ...[
         SizedBox(height: 4),
         Container(

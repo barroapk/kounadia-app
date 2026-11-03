@@ -226,7 +226,7 @@ class SettingsScreen extends StatelessWidget {
             builder: (ctx) => Scaffold(
                   backgroundColor: K.bg,
                   appBar: kAppBar(title),
-                  body: ListView(padding: EdgeInsets.fromLTRB(16, 4, 16, 32), children: children(ctx)),
+                  body: ListView(padding: EdgeInsets.fromLTRB(16, 4, 16, 32 + MediaQuery.of(ctx).padding.bottom), children: children(ctx)),
                 )));
   }
 
@@ -286,7 +286,7 @@ class SettingsScreen extends StatelessWidget {
       backgroundColor: K.bg,
       appBar: kAppBar('Paramètres'),
       body: ListView(
-        padding: EdgeInsets.fromLTRB(16, 4, 16, 32),
+        padding: EdgeInsets.fromLTRB(16, 4, 16, 32 + MediaQuery.of(context).padding.bottom),
         children: [
           _header(context),
 

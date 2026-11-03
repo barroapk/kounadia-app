@@ -461,10 +461,20 @@ class V2CouponCard extends StatelessWidget {
         Container(
           padding: EdgeInsets.fromLTRB(14, 12, 12, 12),
           decoration: BoxDecoration(gradient: LinearGradient(colors: [accent.withAlpha(80), accent.withAlpha(20)])),
+          // Titre sur sa ligne ; résultat et cote dessous (le titre n'est plus coupé en deux).
           child: Row(children: [
-            Expanded(child: T(title, style: TextStyle(color: K.text, fontSize: 16, fontWeight: FontWeight.w900))),
-            if (c?.r != null) ...[v2ResultBadge(c!.r), SizedBox(width: 8)],
-            if (c != null) Text('@ ${v2Num(c.odd)}', style: TextStyle(color: K.text, fontSize: 19, fontWeight: FontWeight.w900)),
+            Expanded(
+              child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+                T(title, maxLines: 1, overflow: TextOverflow.ellipsis, style: TextStyle(color: K.text, fontSize: 16, fontWeight: FontWeight.w900)),
+                if (c != null) ...[
+                  SizedBox(height: 6),
+                  Row(children: [
+                    Text('@ ${v2Num(c.odd)}', style: TextStyle(color: K.text, fontSize: 19, fontWeight: FontWeight.w900)),
+                    if (c.r != null) ...[SizedBox(width: 10), v2ResultBadge(c.r)],
+                  ]),
+                ],
+              ]),
+            ),
             if (c != null && !c.locked && c.legs.isNotEmpty)
               IconButton(
                 tooltip: tr('Partager'),

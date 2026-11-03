@@ -116,7 +116,12 @@ class _SelectionScreenState extends State<SelectionScreen> {
     } catch (_) {}
   }
 
-  int _count(V2Selection s, SelFilter f) => f.coupon != null ? (s.coupons[f.coupon] == null ? 0 : 1) : f.legs(s).length;
+  // Grands matchs : nombre de matchs (3 pronostics par match), pas de pronostics.
+  int _count(V2Selection s, SelFilter f) => f.coupon != null
+      ? (s.coupons[f.coupon] == null ? 0 : 1)
+      : f.key == 'big'
+          ? s.big.map((l) => l.id).toSet().length
+          : f.legs(s).length;
 
   /// Menu ☰ : panneau latéral assez large pour lire les catégories, avec barre de défilement visible.
   Future<void> _openMenu(V2Data d) async {
