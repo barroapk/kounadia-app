@@ -866,4 +866,5 @@ const Map<String, String> kEs = {
   'Grands matchs analysés': 'Grandes partidos analizados',
   'Voir les autres pronostics': 'Ver otros pronósticos',
   'Masquer': 'Ocultar',
+  'Chance du coupon': 'Probabilidad del cupón',
 };

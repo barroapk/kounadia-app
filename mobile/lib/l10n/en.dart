@@ -884,4 +884,5 @@ const Map<String, String> kEn = {
   'Grands matchs analysés': 'Big matches analysed',
   'Voir les autres pronostics': 'See other predictions',
   'Masquer': 'Hide',
+  'Chance du coupon': 'Slip chance',
 };

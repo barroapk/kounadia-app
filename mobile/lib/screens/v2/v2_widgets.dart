@@ -472,6 +472,11 @@ class V2CouponCard extends StatelessWidget {
                     Text('@ ${v2Num(c.odd)}', style: TextStyle(color: K.text, fontSize: 19, fontWeight: FontWeight.w900)),
                     if (c.r != null) ...[SizedBox(width: 10), v2ResultBadge(c.r)],
                   ]),
+                  // Chance du coupon entier (les pourcentages des matchs se multiplient : plus de matchs, moins de chances).
+                  if (c.p > 0) ...[
+                    SizedBox(height: 3),
+                    Text('${tr('Chance du coupon')} : ${v2Pct(c.p)}', style: TextStyle(color: K.muted, fontSize: 12.5, fontWeight: FontWeight.w700)),
+                  ],
                 ],
               ]),
             ),

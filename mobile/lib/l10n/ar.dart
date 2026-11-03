@@ -866,4 +866,5 @@ const Map<String, String> kAr = {
   'Grands matchs analysés': 'المباريات الكبرى المحللة',
   'Voir les autres pronostics': 'عرض التوقعات الأخرى',
   'Masquer': 'إخفاء',
+  'Chance du coupon': 'فرصة القسيمة',
 };

@@ -866,4 +866,5 @@ const Map<String, String> kPt = {
   'Grands matchs analysés': 'Grandes jogos analisados',
   'Voir les autres pronostics': 'Ver outros prognósticos',
   'Masquer': 'Ocultar',
+  'Chance du coupon': 'Chance do bilhete',
 };
