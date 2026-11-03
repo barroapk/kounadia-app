@@ -866,5 +866,6 @@ const Map<String, String> kAr = {
   'Grands matchs analysés': 'المباريات الكبرى المحللة',
   'Voir les autres pronostics': 'عرض التوقعات الأخرى',
   'Masquer': 'إخفاء',
-  'Chance du coupon': 'فرصة القسيمة',
+  'Ligue des champions, Ligue Europa et grands championnats : les pronostics KOUNADIA du jour.': 'دوري الأبطال والدوري الأوروبي والبطولات الكبرى: توقعات KOUNADIA لليوم.',
+  'Pas de grand match aujourd\'hui.': 'لا توجد مباراة كبرى اليوم.',
 };

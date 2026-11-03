@@ -884,5 +884,6 @@ const Map<String, String> kEn = {
   'Grands matchs analysés': 'Big matches analysed',
   'Voir les autres pronostics': 'See other predictions',
   'Masquer': 'Hide',
-  'Chance du coupon': 'Slip chance',
+  'Ligue des champions, Ligue Europa et grands championnats : les pronostics KOUNADIA du jour.': 'Champions League, Europa League and top leagues: today\'s KOUNADIA predictions.',
+  'Pas de grand match aujourd\'hui.': 'No big match today.',
 };

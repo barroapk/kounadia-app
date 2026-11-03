@@ -866,5 +866,6 @@ const Map<String, String> kPt = {
   'Grands matchs analysés': 'Grandes jogos analisados',
   'Voir les autres pronostics': 'Ver outros prognósticos',
   'Masquer': 'Ocultar',
-  'Chance du coupon': 'Chance do bilhete',
+  'Ligue des champions, Ligue Europa et grands championnats : les pronostics KOUNADIA du jour.': 'Liga dos Campeões, Liga Europa e grandes campeonatos: os prognósticos KOUNADIA do dia.',
+  'Pas de grand match aujourd\'hui.': 'Nenhum grande jogo hoje.',
 };

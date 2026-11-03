@@ -339,10 +339,10 @@ class _SelectionScreenState extends State<SelectionScreen> {
     } else {
       final legs = f.legs(s);
       if (f.key == 'big') {
-        // Grands matchs : pronostics des prochaines 48 h (pas d'historique de la semaine).
+        // Grands matchs : pronostics du jour (pas d'historique de la semaine).
         body.add(Padding(
           padding: EdgeInsets.fromLTRB(4, 0, 4, 12),
-          child: T('Ligue des champions, Ligue Europa et grands championnats : les pronostics KOUNADIA des prochaines 48 h.',
+          child: T('Ligue des champions, Ligue Europa et grands championnats : les pronostics KOUNADIA du jour.',
               style: TextStyle(color: K.muted, fontSize: 13, height: 1.35)),
         ));
       } else {
@@ -355,7 +355,7 @@ class _SelectionScreenState extends State<SelectionScreen> {
       if (legs.isEmpty) {
         body.add(SizedBox(
             height: 200,
-            child: kMessage(f.key == 'big' ? 'Pas de grand match dans les prochaines 48 h.' : "Rien dans cette catégorie aujourd'hui.")));
+            child: kMessage(f.key == 'big' ? "Pas de grand match aujourd'hui." : "Rien dans cette catégorie aujourd'hui.")));
       } else if (f.key == 'big') {
         body.addAll(_bigCards(legs));
       } else {
