@@ -888,4 +888,6 @@ const Map<String, String> kEs = {
   'J\'ai validé, vérifier maintenant': 'Ya confirmé, verificar ahora',
   'Changer de numéro ou de moyen': 'Cambiar número o método',
   'Validation du paiement': 'Validación del pago',
+  'Premium activé automatiquement dès la confirmation.': 'Premium activado automáticamente tras la confirmación.',
+  'Vérifier': 'Verificar',
 };

@@ -576,3 +576,158 @@ class _PayWebState extends State<_PayWeb> {
         body: WebViewWidget(controller: _c),
       );
 }
+
+/// Page de paiement AlphaPay affichée dans KOUNADIA (Orange, Moov, carte…), avec vérification automatique.
+/// L'abonnement s'active seulement quand le serveur a vérifié le paiement auprès d'AlphaPay.
+class HostedPayPage extends StatefulWidget {
+  final String token, url;
+  final KPlan plan;
+  HostedPayPage({super.key, required this.token, required this.url, required this.plan});
+
+  @override
+  State<HostedPayPage> createState() => _HostedPayPageState();
+}
+
+class _HostedPayPageState extends State<HostedPayPage> with WidgetsBindingObserver {
+  late final WebViewController _c;
+  Timer? _t;
+  int _p = 0, _n = 0;
+  bool _paid = false;
+
+  @override
+  void initState() {
+    super.initState();
+    WidgetsBinding.instance.addObserver(this);
+    _c = WebViewController()
+      ..setJavaScriptMode(JavaScriptMode.unrestricted)
+      ..setBackgroundColor(Colors.white)
+      ..setNavigationDelegate(NavigationDelegate(
+        onProgress: (p) {
+          if (mounted) setState(() => _p = p);
+        },
+        onNavigationRequest: (r) {
+          final u = r.url;
+          // Fin du paiement : retour vers KOUNADIA, on vérifie tout de suite.
+          if (u.contains('/kounadia/pay/return')) {
+            _check();
+            return NavigationDecision.prevent;
+          }
+          // Code USSD, appel, application Wave/Orange… : ouverts par le téléphone.
+          if (!u.startsWith('http')) {
+            launchUrl(Uri.parse(u), mode: LaunchMode.externalApplication).catchError((_) => false);
+            return NavigationDecision.prevent;
+          }
+          return NavigationDecision.navigate;
+        },
+      ))
+      ..loadRequest(Uri.parse(widget.url));
+    _t = Timer.periodic(Duration(seconds: 4), (_) => _check());
+  }
+
+  @override
+  void dispose() {
+    WidgetsBinding.instance.removeObserver(this);
+    _t?.cancel();
+    super.dispose();
+  }
+
+  @override
+  void didChangeAppLifecycleState(AppLifecycleState s) {
+    if (s == AppLifecycleState.resumed) _check();
+  }
+
+  Future<void> _check() async {
+    if (_paid) return;
+    if (++_n > 225) {
+      _t?.cancel(); // 15 minutes
+      return;
+    }
+    try {
+      final st = await Account.paymentStatus(widget.token);
+      if (!mounted || st != 'paid') return;
+      _t?.cancel();
+      Analytics.log('pay_success', {'plan': widget.plan.id, 'mode': 'page'});
+      setState(() => _paid = true);
+    } catch (_) {}
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      backgroundColor: K.bg,
+      appBar: AppBar(
+        backgroundColor: K.bg,
+        surfaceTintColor: Colors.transparent,
+        foregroundColor: K.text,
+        titleSpacing: 0,
+        leading: IconButton(icon: Icon(Icons.close_rounded), onPressed: () => Navigator.pop(context, _paid)),
+        title: Row(children: [
+          Icon(Icons.lock_rounded, color: K.green, size: 18),
+          SizedBox(width: 6),
+          Expanded(child: T('Paiement sécurisé', style: TextStyle(fontWeight: FontWeight.w900, fontSize: 17))),
+        ]),
+        actions: [
+          Container(
+            margin: EdgeInsets.only(right: 14),
+            padding: EdgeInsets.symmetric(horizontal: 10, vertical: 5),
+            decoration: BoxDecoration(color: K.indigoSoft, borderRadius: BorderRadius.circular(20)),
+            child: Text('${tr(widget.plan.label)} · ${_price(widget.plan.price)}',
+                style: TextStyle(color: K.indigoText, fontSize: 12.5, fontWeight: FontWeight.w800)),
+          ),
+        ],
+        bottom: _p < 100 && !_paid
+            ? PreferredSize(preferredSize: Size.fromHeight(2), child: LinearProgressIndicator(value: _p / 100, minHeight: 2, color: K.indigo))
+            : null,
+      ),
+      body: _paid ? _done() : WebViewWidget(controller: _c),
+      bottomNavigationBar: _paid
+          ? null
+          : SafeArea(
+              child: Container(
+                padding: EdgeInsets.fromLTRB(16, 10, 16, 10),
+                decoration: BoxDecoration(color: K.card, border: Border(top: BorderSide(color: K.border))),
+                child: Row(children: [
+                  SizedBox(width: 16, height: 16, child: CircularProgressIndicator(strokeWidth: 2, color: K.indigo)),
+                  SizedBox(width: 10),
+                  Expanded(
+                    child: T('Premium activé automatiquement dès la confirmation.',
+                        style: TextStyle(color: K.muted, fontSize: 12.5, fontWeight: FontWeight.w600)),
+                  ),
+                  TextButton(onPressed: () {
+                    _n = 0;
+                    _check();
+                  }, child: T('Vérifier', style: TextStyle(color: K.indigoText, fontWeight: FontWeight.w800))),
+                ]),
+              ),
+            ),
+    );
+  }
+
+  Widget _done() => Center(
+        child: Padding(
+          padding: EdgeInsets.all(24),
+          child: Column(mainAxisSize: MainAxisSize.min, children: [
+            Container(
+              width: 96,
+              height: 96,
+              decoration: BoxDecoration(color: K.green.withAlpha(30), shape: BoxShape.circle),
+              child: Icon(Icons.verified_rounded, color: K.green, size: 60),
+            ),
+            SizedBox(height: 20),
+            T('Premium activé 🎉', textAlign: TextAlign.center, style: TextStyle(color: K.text, fontSize: 24, fontWeight: FontWeight.w900)),
+            SizedBox(height: 8),
+            T('Merci ! Tous les contenus KOUNADIA sont débloqués.',
+                textAlign: TextAlign.center, style: TextStyle(color: K.muted, fontSize: 15, height: 1.4)),
+            SizedBox(height: 28),
+            FilledButton(
+              style: FilledButton.styleFrom(
+                  backgroundColor: K.green,
+                  minimumSize: Size.fromHeight(54),
+                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16))),
+              onPressed: () => Navigator.pop(context, true),
+              child: T('Continuer', style: TextStyle(fontSize: 16, fontWeight: FontWeight.w900)),
+            ),
+          ]),
+        ),
+      );
+}

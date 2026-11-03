@@ -386,9 +386,6 @@ class _AccountScreenState extends State<AccountScreen> {
       if (r == true) Account.refresh();
       if (r != 'hosted' || !mounted) return;
     }
-    // D'abord le bon montant : un code Orange généré avec des « frais » en plus est refusé.
-    final go = await showDialog<bool>(context: context, builder: (_) => _PayGuide(plan: p));
-    if (go != true || !mounted) return;
     setState(() => _busy = true);
     var waiting = true;
     void close() {
@@ -406,6 +403,19 @@ class _AccountScreenState extends State<AccountScreen> {
       final (token, url) = await Account.startPayment(p.id);
       close();
       Analytics.log('pay_start', {'plan': p.id});
+      // Page de paiement AlphaPay : affichée DANS KOUNADIA, avec vérification automatique.
+      if (Uri.tryParse(url)?.host.endsWith('alphapay.me') ?? false) {
+        final ok = await Navigator.of(context).push<bool>(MaterialPageRoute(builder: (_) => HostedPayPage(token: token, url: url, plan: p)));
+        if (ok == true) Account.refresh();
+        if (mounted) setState(() => _busy = false);
+        return;
+      }
+      // MoneyFusion : d'abord le bon montant (un code Orange généré avec des « frais » en plus est refusé).
+      final go = await showDialog<bool>(context: context, builder: (_) => _PayGuide(plan: p));
+      if (go != true || !mounted) {
+        if (mounted) setState(() => _busy = false);
+        return;
+      }
       await launchUrl(Uri.parse(url), mode: LaunchMode.externalApplication);
       if (mounted) await showModalBottomSheet<void>(
             context: context,

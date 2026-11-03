@@ -888,4 +888,6 @@ const Map<String, String> kPt = {
   'J\'ai validé, vérifier maintenant': 'Já confirmei, verificar agora',
   'Changer de numéro ou de moyen': 'Mudar de número ou método',
   'Validation du paiement': 'Validação do pagamento',
+  'Premium activé automatiquement dès la confirmation.': 'Premium ativado automaticamente após a confirmação.',
+  'Vérifier': 'Verificar',
 };

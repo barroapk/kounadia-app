@@ -888,4 +888,6 @@ const Map<String, String> kAr = {
   'J\'ai validé, vérifier maintenant': 'أكّدت، تحقق الآن',
   'Changer de numéro ou de moyen': 'تغيير الرقم أو الوسيلة',
   'Validation du paiement': 'تأكيد الدفع',
+  'Premium activé automatiquement dès la confirmation.': 'يتم تفعيل بريميوم تلقائيًا بعد التأكيد.',
+  'Vérifier': 'تحقق',
 };

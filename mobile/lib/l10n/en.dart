@@ -906,4 +906,6 @@ const Map<String, String> kEn = {
   'J\'ai validé, vérifier maintenant': 'I confirmed, check now',
   'Changer de numéro ou de moyen': 'Change number or method',
   'Validation du paiement': 'Payment confirmation',
+  'Premium activé automatiquement dès la confirmation.': 'Premium activated automatically once confirmed.',
+  'Vérifier': 'Check',
 };
