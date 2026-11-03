@@ -890,4 +890,5 @@ const Map<String, String> kPt = {
   'Validation du paiement': 'Validação do pagamento',
   'Premium activé automatiquement dès la confirmation.': 'Premium ativado automaticamente após a confirmação.',
   'Vérifier': 'Verificar',
+  'Ouvrir dans le navigateur': 'Abrir no navegador',
 };

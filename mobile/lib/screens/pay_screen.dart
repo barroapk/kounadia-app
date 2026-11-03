@@ -664,9 +664,15 @@ class _HostedPayPageState extends State<HostedPayPage> with WidgetsBindingObserv
         title: Row(children: [
           Icon(Icons.lock_rounded, color: K.green, size: 18),
           SizedBox(width: 6),
-          Expanded(child: T('Paiement sécurisé', style: TextStyle(fontWeight: FontWeight.w900, fontSize: 17))),
+          Expanded(child: T('Paiement sécurisé', maxLines: 1, overflow: TextOverflow.ellipsis, style: TextStyle(fontWeight: FontWeight.w900, fontSize: 16))),
         ]),
         actions: [
+          // Secours : si la page ne s'affiche pas bien ici, l'ouvrir dans le navigateur (la vérification continue).
+          IconButton(
+            tooltip: tr('Ouvrir dans le navigateur'),
+            icon: Icon(Icons.open_in_new_rounded, size: 20),
+            onPressed: () => launchUrl(Uri.parse(widget.url), mode: LaunchMode.externalApplication),
+          ),
           Container(
             margin: EdgeInsets.only(right: 14),
             padding: EdgeInsets.symmetric(horizontal: 10, vertical: 5),

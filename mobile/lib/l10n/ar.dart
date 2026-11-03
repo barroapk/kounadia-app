@@ -890,4 +890,5 @@ const Map<String, String> kAr = {
   'Validation du paiement': 'تأكيد الدفع',
   'Premium activé automatiquement dès la confirmation.': 'يتم تفعيل بريميوم تلقائيًا بعد التأكيد.',
   'Vérifier': 'تحقق',
+  'Ouvrir dans le navigateur': 'فتح في المتصفح',
 };

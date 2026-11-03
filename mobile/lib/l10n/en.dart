@@ -908,4 +908,5 @@ const Map<String, String> kEn = {
   'Validation du paiement': 'Payment confirmation',
   'Premium activé automatiquement dès la confirmation.': 'Premium activated automatically once confirmed.',
   'Vérifier': 'Check',
+  'Ouvrir dans le navigateur': 'Open in browser',
 };

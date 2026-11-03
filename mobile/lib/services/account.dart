@@ -3,6 +3,7 @@ import 'package:flutter/foundation.dart';
 import 'package:http/http.dart' as http;
 import 'package:shared_preferences/shared_preferences.dart';
 import 'sync.dart';
+import 'user_prefs.dart';
 
 const kApiBase = String.fromEnvironment('API_BASE', defaultValue: 'https://knd-api-5bgz.onrender.com');
 
@@ -194,7 +195,7 @@ class Account {
 
   /// Lance un paiement : renvoie (jeton, lien MoneyFusion).
   static Future<(String, String)> startPayment(String plan) async {
-    final j = await _call('POST', '/kounadia/pay', {'plan': plan});
+    final j = await _call('POST', '/kounadia/pay', {'plan': plan, if (UserPrefs.iso != null) 'country': UserPrefs.iso});
     return (j['token'].toString(), j['url'].toString());
   }
 

@@ -890,4 +890,5 @@ const Map<String, String> kEs = {
   'Validation du paiement': 'Validación del pago',
   'Premium activé automatiquement dès la confirmation.': 'Premium activado automáticamente tras la confirmación.',
   'Vérifier': 'Verificar',
+  'Ouvrir dans le navigateur': 'Abrir en el navegador',
 };
