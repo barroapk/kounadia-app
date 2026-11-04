@@ -357,6 +357,17 @@ export class Poller {
     }
   }
 
+  /** Matchs encore « en cours » (85e minute ou plus) absents de la liste actuelle : passés en terminé. */
+  vanished(prev, cur, ptOk, flOk) {
+    const out = {};
+    for (const [id, q] of Object.entries(prev || {})) {
+      if (cur[id] || !Array.isArray(q) || !inPlay(String(q[2] ?? ''))) continue;
+      if (Number(id) > 0 ? !ptOk : !flOk) continue;
+      if ((parseInt(q[2], 10) || 0) >= 85) out[id] = [q[0], q[1], 'FT'];
+    }
+    return out;
+  }
+
   async alarm() {
     let next = SLOW;
     try {
@@ -1122,13 +1133,16 @@ export class Poller {
     try {
       list = JSON.parse(body);
     } catch (_) {}
+    // PrimaTips répond "" quand aucun match n'est en cours : c'est une liste vide, pas une panne.
+    if (r?.ok && list === '') list = [];
     // Écritures limitées (Cloudflare gratuit : 100 000 écritures par jour) : seulement si quelque chose change.
     if (!r?.ok || !Array.isArray(list)) {
       await this.saveIf('src', `HTTP ${r?.status ?? 'erreur'} ${body.slice(0, 160)}`);
       list = null;
     } else {
-      await this.saveIf('src', 'ok');
+      await this.saveIf('src', list.length ? 'ok' : 'ok (aucun match en cours)');
     }
+    const ptOk = Array.isArray(list); // PrimaTips a bien répondu (avant l'ajout de la liste d'hier)
     // Après minuit (heure de Londres, celle du site) : les matchs d'hier soir ne sont plus dans la liste du jour.
     // On lit aussi la liste d'hier jusqu'à 5 h pour garder leur direct et leur score final.
     const yl = await this.yesterdayLive();
@@ -1139,7 +1153,7 @@ export class Poller {
     // footlive : en plus (et en relais si PrimaTips ne répond pas).
     const fl = await this.footliveLive();
     if (!list && !fl.length) {
-      // Aucun match en cours (la nuit, la source renvoie une liste vide) : le robot tourne quand même ;
+      // Les deux sources injoignables (la nuit, la source renvoie une liste vide) : le robot tourne quand même ;
       // son heure de passage est mise à jour (au plus une fois par minute) pour que l'Admin ne croie pas à une panne.
       if (Date.now() - (this._statAt || 0) >= 60000) {
         this._statAt = Date.now();
@@ -1175,7 +1189,7 @@ export class Poller {
       const hs = Number.isFinite(l.hs) ? l.hs : l.hs == null ? null : Number(l.hs);
       const as = Number.isFinite(l.as) ? l.as : l.as == null ? null : Number(l.as);
       cur[id] = [hs, as, st];
-      if (inPlay(st) && id > 0) live++;
+      if (inPlay(st)) live++; // les deux sources (PrimaTips et footlive)
       const q = prev?.[id];
       if (!q || q[0] !== hs || q[1] !== as || q[2] !== st) changed[id] = cur[id];
       if (!prev) continue; // premier passage : on mémorise sans notifier
@@ -1196,6 +1210,9 @@ export class Poller {
       if (isHT(st) && !isHT(pst)) fresh.push({ ...base, t: 'ht' });
       if (isFin(st) && p && !isFin(pst)) fresh.push({ ...base, t: 'ft' });
     }
+    // Match disparu de la liste après la 85e minute : terminé (affichage seulement).
+    // Seulement pour une source qui a bien répondu (PrimaTips : numéros positifs ; footlive : négatifs).
+    if (prev) Object.assign(changed, Object.assign(cur, this.vanished(prev, cur, ptOk, fl.length > 0)));
     this._live = cur;
     this._liveAt = Date.now();
     // Copie sur disque toutes les 30 s seulement (la mémoire du robot sert entre deux passages).
