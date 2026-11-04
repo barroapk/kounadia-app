@@ -1138,7 +1138,18 @@ export class Poller {
     }
     // footlive : en plus (et en relais si PrimaTips ne répond pas).
     const fl = await this.footliveLive();
-    if (!list && !fl.length) return SLOW;
+    if (!list && !fl.length) {
+      // Aucun match en cours (la nuit, la source renvoie une liste vide) : le robot tourne quand même ;
+      // son heure de passage est mise à jour (au plus une fois par minute) pour que l'Admin ne croie pas à une panne.
+      if (Date.now() - (this._statAt || 0) >= 60000) {
+        this._statAt = Date.now();
+        const stat = (await this.state.storage.get('stat')) || { sent: 0 };
+        stat.at = new Date().toISOString();
+        stat.live = 0;
+        await this.state.storage.put('stat', stat);
+      }
+      return SLOW;
+    }
     list = (list || []).concat(fl);
 
     // État précédent (en mémoire, sinon stocké) ; trop ancien (robot relancé après une pause) = on repart sans notifier.
