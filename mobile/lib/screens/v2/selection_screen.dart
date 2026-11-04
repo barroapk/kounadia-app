@@ -30,7 +30,14 @@ class SelFilter {
 
   V2Cat cat() => V2Cat(title,
       coupon: coupon == null ? null : (d) => d.selection?.coupons[coupon],
-      legs: coupon != null ? null : (d) => d.selection == null ? const <V2Leg>[] : legs(d.selection!));
+      legs: coupon != null ? null : (d) => d.selection == null ? const <V2Leg>[] : _hist(legs(d.selection!)));
+
+  /// Grands matchs : bilan et historique sur le pronostic principal de chaque match (le premier affiché).
+  List<V2Leg> _hist(List<V2Leg> l) {
+    if (key != 'big') return l;
+    final seen = <String>{};
+    return [for (final x in l) if (seen.add(x.id)) x];
+  }
 }
 
 const kSelFilters = <SelFilter>[
@@ -314,7 +321,7 @@ class _SelectionScreenState extends State<SelectionScreen> {
       body.add(Container(
         margin: EdgeInsets.only(bottom: 12),
         decoration: BoxDecoration(color: K.card, borderRadius: BorderRadius.circular(14), border: Border.all(color: K.border)),
-        child: v2WeekLine(week, onHistory: () => _history(d, f)),
+        child: f.key == 'big' ? _yesterday(d, f) : v2WeekLine(week, onHistory: () => _history(d, f)),
       ));
       if (f.key == 'big' && s.bigN > 0) {
         body.add(Padding(
@@ -338,18 +345,17 @@ class _SelectionScreenState extends State<SelectionScreen> {
       ));
     } else {
       final legs = f.legs(s);
+      // Bilan de la semaine et historique ; Grands matchs : seulement les résultats d'hier.
+      body.add(Container(
+        margin: EdgeInsets.only(bottom: 12),
+        decoration: BoxDecoration(color: K.card, borderRadius: BorderRadius.circular(14), border: Border.all(color: K.border)),
+        child: f.key == 'big' ? _yesterday(d, f) : v2WeekLine(week, onHistory: () => _history(d, f)),
+      ));
       if (f.key == 'big') {
-        // Grands matchs : pronostics du jour (pas d'historique de la semaine).
         body.add(Padding(
           padding: EdgeInsets.fromLTRB(4, 0, 4, 12),
           child: T('Ligue des champions, Ligue Europa et grands championnats : les pronostics KOUNADIA du jour.',
               style: TextStyle(color: K.muted, fontSize: 13, height: 1.35)),
-        ));
-      } else {
-        body.add(Container(
-          margin: EdgeInsets.only(bottom: 12),
-          decoration: BoxDecoration(color: K.card, borderRadius: BorderRadius.circular(14), border: Border.all(color: K.border)),
-          child: v2WeekLine(week, onHistory: () => _history(d, f)),
         ));
       }
       if (legs.isEmpty) {
@@ -471,6 +477,21 @@ class _SelectionScreenState extends State<SelectionScreen> {
         ...v2Groups(legs, favs: _favs, onStar: _star),
     ]);
   }
+
+  /// Grands matchs : accès direct aux résultats d'hier (sans bilan de la semaine).
+  Widget _yesterday(V2Data d, SelFilter f) => InkWell(
+        borderRadius: BorderRadius.circular(14),
+        onTap: () => _history(d, f),
+        child: Padding(
+          padding: EdgeInsets.symmetric(horizontal: 14, vertical: 13),
+          child: Row(children: [
+            Icon(Icons.history_rounded, color: K.indigoText, size: 20),
+            SizedBox(width: 10),
+            Expanded(child: T("Résultats d'hier", style: TextStyle(color: K.text, fontSize: 14.5, fontWeight: FontWeight.w800))),
+            Icon(Icons.chevron_right_rounded, color: K.muted),
+          ]),
+        ),
+      );
 
   void _history(V2Data d, SelFilter f) => Navigator.push(context, MaterialPageRoute(builder: (_) => V2HistoryScreen(f.cat(), d)));
 }
