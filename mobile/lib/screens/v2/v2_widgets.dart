@@ -470,7 +470,8 @@ class V2CouponCard extends StatelessWidget {
                   SizedBox(height: 6),
                   Row(children: [
                     Text('@ ${v2Num(c.odd)}', style: TextStyle(color: K.text, fontSize: 19, fontWeight: FontWeight.w900)),
-                    if (c.r != null) ...[SizedBox(width: 10), v2ResultBadge(c.r)],
+                    // Coupon VIP verrouillé (non-abonné) : jamais de résultat gagné/perdu.
+                    if (c.r != null && !c.locked) ...[SizedBox(width: 10), v2ResultBadge(c.r)],
                   ]),
                 ],
               ]),
