@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/scheduler.dart';
 import '../l10n/facts_text.dart';
 import '../l10n/tr.dart';
+import '../services/analytics.dart';
 import '../services/facts_service.dart';
 import '../services/primatips_service.dart' show frName;
 import 'forecast_card.dart' show K, hm;
@@ -39,6 +40,8 @@ class _FactsTickerState extends State<FactsTicker> with SingleTickerProviderStat
   // Le défilement ne tourne que s'il y a des faits à montrer (pas d'images calculées pour rien).
   void _sync() {
     final on = FactsService.items.isNotEmpty;
+    // Audience (KOUNADIA Admin) : bandeau vu, une fois par ouverture de l'app.
+    if (on) Analytics.once('facts_seen', 'facts_seen');
     if (on && !_ticker.isActive) {
       _last = Duration.zero;
       _ticker.start();
@@ -89,7 +92,10 @@ class _FactsTickerState extends State<FactsTicker> with SingleTickerProviderStat
     return Padding(
       padding: const EdgeInsets.fromLTRB(14, 0, 14, 6),
       child: GestureDetector(
-        onTap: () => showFactsSheet(context),
+        onTap: () {
+          Analytics.log('facts_open', {'n': list.length});
+          showFactsSheet(context);
+        },
         child: Container(
           height: 34,
           decoration: kBox(r: 12),
@@ -115,7 +121,10 @@ class _FactsTickerState extends State<FactsTicker> with SingleTickerProviderStat
                 child: NotificationListener<ScrollStartNotification>(
                   onNotification: (n) {
                     // L'utilisateur fait défiler lui-même : on attend avant de reprendre.
-                    if (n.dragDetails != null) _pauseUntil = DateTime.now().add(const Duration(seconds: 4));
+                    if (n.dragDetails != null) {
+                      _pauseUntil = DateTime.now().add(const Duration(seconds: 4));
+                      Analytics.once('facts_swipe', 'facts_swipe');
+                    }
                     return false;
                   },
                   child: ListView.builder(
