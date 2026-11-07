@@ -300,38 +300,29 @@ class _ScoresScreenState extends State<ScoresScreen> with WidgetsBindingObserver
   Widget build(BuildContext context) {
     final all = _listFor(_offset);
     _view = _auto && _filter == 'mine' && !_loading && !all.any(_mine) ? 'all' : _filter;
-    final day = DateTime.now().add(Duration(days: _offset));
-    final label = ['Hier', "Aujourd'hui", 'Demain'][_offset + 1];
 
     return Scaffold(
       backgroundColor: K.bg,
       body: Column(
         children: [
+          // Jour : 3 pastilles (Hier · Aujourd'hui · Demain) avec la date, et la recherche.
           Padding(
-            padding: EdgeInsets.fromLTRB(12, 10, 12, 8),
-            child: Row(
-              children: [
-                _navBtn(Icons.chevron_left_rounded,
-                    _offset > -1 ? () => setState(() => _offset--) : null),
-                Expanded(
-                  child: Center(
-                    child: FittedBox(
-                      fit: BoxFit.scaleDown,
-                      child: T('${tr(label)} (${two(day.day)}/${two(day.month)})',
-                          style: TextStyle(
-                              color: K.text, fontSize: 16, fontWeight: FontWeight.w800)),
-                    ),
-                  ),
+            padding: EdgeInsets.fromLTRB(14, 12, 14, 10),
+            child: Row(children: [
+              Expanded(
+                child: Container(
+                  height: 46,
+                  padding: EdgeInsets.all(4),
+                  decoration: BoxDecoration(color: K.card, borderRadius: BorderRadius.circular(16)),
+                  child: Row(children: [for (final o in const [-1, 0, 1]) Expanded(child: _dayPill(o))]),
                 ),
-                _navBtn(Icons.chevron_right_rounded,
-                    _offset < 1 ? () => setState(() => _offset++) : null),
-                SizedBox(width: 8),
-                _navBtn(_search ? Icons.close_rounded : Icons.search_rounded, () => setState(() {
-                      _search = !_search;
-                      if (!_search) _q = '';
-                    })),
-              ],
-            ),
+              ),
+              SizedBox(width: 10),
+              _navBtn(_search ? Icons.close_rounded : Icons.search_rounded, () => setState(() {
+                    _search = !_search;
+                    if (!_search) _q = '';
+                  })),
+            ]),
           ),
           if (_search)
             Padding(
@@ -356,28 +347,24 @@ class _ScoresScreenState extends State<ScoresScreen> with WidgetsBindingObserver
                 ),
               ),
             ),
-          Padding(
-            padding: EdgeInsets.fromLTRB(12, 0, 12, 10),
-            child: Row(
+          // Filtres : pastilles qui défilent (Tous, Direct, Mes matchs, Temps forts) avec leur nombre.
+          SizedBox(
+            height: 40,
+            child: ListView(
+              scrollDirection: Axis.horizontal,
+              padding: EdgeInsets.symmetric(horizontal: 14),
               children: [
-                Expanded(child: _seg('all', 'Tous', all.length)),
-                SizedBox(width: 6),
-                Expanded(
-                    child: _seg('live', 'Direct',
-                        all.where((m) => m.status == 'live').length,
-                        dot: all.any((m) => m.status == 'live'))),
-                SizedBox(width: 6),
-                Expanded(child: _seg('mine', 'Mes matchs', all.where(_mine).length)),
-                SizedBox(width: 6),
-                Expanded(
-                  child: ValueListenableBuilder<int>(
-                    valueListenable: Highlights.changed,
-                    builder: (_, __, ___) => _seg('hl', 'Temps forts', Highlights.recent().length),
-                  ),
+                _seg('all', 'Tous', all.length, icon: Icons.grid_view_rounded),
+                _seg('live', 'Direct', all.where((m) => m.status == 'live').length, dot: all.any((m) => m.status == 'live')),
+                _seg('mine', 'Mes matchs', all.where(_mine).length, icon: Icons.star_rounded),
+                ValueListenableBuilder<int>(
+                  valueListenable: Highlights.changed,
+                  builder: (_, __, ___) => _seg('hl', 'Temps forts', Highlights.recent().length, icon: Icons.play_circle_rounded),
                 ),
               ],
             ),
           ),
+          SizedBox(height: 10),
           Expanded(
               child: _view == 'hl'
                   ? HighlightsList(byId: {for (final l in _days.values) for (final m in l) m.id: m})
@@ -390,54 +377,75 @@ class _ScoresScreenState extends State<ScoresScreen> with WidgetsBindingObserver
   Widget _navBtn(IconData icon, VoidCallback? onTap) {
     return Material(
       color: K.card,
-      shape: CircleBorder(side: BorderSide(color: K.border)),
+      borderRadius: BorderRadius.circular(16),
       child: InkWell(
-        customBorder: CircleBorder(),
+        borderRadius: BorderRadius.circular(16),
         onTap: onTap,
-        child: SizedBox(
-          width: 36,
-          height: 36,
-          child: Icon(icon, color: onTap == null ? K.border : K.text, size: 24),
-        ),
+        child: SizedBox(width: 46, height: 46, child: Icon(icon, color: onTap == null ? K.border : K.text, size: 23)),
       ),
     );
   }
 
-  Widget _seg(String value, String label, int count, {bool dot = false}) {
-    final sel = _view == value;
+  /// Pastille d'un jour : « Aujourd'hui » et sa date ; la pastille choisie est pleine (dégradé).
+  Widget _dayPill(int o) {
+    final sel = _offset == o;
+    final d = DateTime.now().add(Duration(days: o));
+    final label = ['Hier', "Aujourd'hui", 'Demain'][o + 1];
     return GestureDetector(
-      onTap: () => setState(() {
-        _filter = value;
-        _auto = false;
-      }),
+      onTap: () => setState(() => _offset = o),
       child: AnimatedContainer(
-        duration: Duration(milliseconds: 150),
-        height: 36,
+        duration: Duration(milliseconds: 180),
         alignment: Alignment.center,
         decoration: BoxDecoration(
-          color: sel ? K.indigo : K.card,
-          borderRadius: BorderRadius.circular(10),
-          border: Border.all(color: sel ? K.indigo : K.border),
+          gradient: sel ? LinearGradient(colors: [Color(0xFF4F46E5), Color(0xFF7C3AED)]) : null,
+          borderRadius: BorderRadius.circular(12),
+          boxShadow: sel ? [BoxShadow(color: Color(0x554F46E5), blurRadius: 10, offset: Offset(0, 3))] : null,
         ),
         child: FittedBox(
           fit: BoxFit.scaleDown,
           child: Padding(
             padding: EdgeInsets.symmetric(horizontal: 6),
-            child: Row(mainAxisSize: MainAxisSize.min, children: [
-              if (dot) ...[
-                Container(
-                    width: 7,
-                    height: 7,
-                    decoration: BoxDecoration(color: K.red, shape: BoxShape.circle)),
-                SizedBox(width: 5),
-              ],
-              T('${tr(label)} · $count',
-                  style: TextStyle(
-                      color: sel ? Colors.white : K.muted,
-                      fontWeight: FontWeight.w700,
-                      fontSize: 12.5)),
+            child: Column(mainAxisSize: MainAxisSize.min, children: [
+              T(label, style: TextStyle(color: sel ? Colors.white : K.text, fontSize: 13, fontWeight: FontWeight.w800, height: 1.1)),
+              Text('${two(d.day)}/${two(d.month)}',
+                  style: TextStyle(color: sel ? Colors.white70 : K.muted, fontSize: 10.5, fontWeight: FontWeight.w600)),
             ]),
           ),
+        ),
+      ),
+    );
+  }
+
+  Widget _seg(String value, String label, int count, {bool dot = false, IconData? icon}) {
+    final sel = _view == value;
+    return Padding(
+      padding: EdgeInsets.only(right: 8),
+      child: GestureDetector(
+        onTap: () => setState(() {
+          _filter = value;
+          _auto = false;
+        }),
+        child: AnimatedContainer(
+          duration: Duration(milliseconds: 160),
+          padding: EdgeInsets.fromLTRB(12, 0, 6, 0),
+          decoration: BoxDecoration(
+            color: sel ? K.indigo : K.card,
+            borderRadius: BorderRadius.circular(20),
+          ),
+          child: Row(mainAxisSize: MainAxisSize.min, children: [
+            if (dot)
+              Container(width: 8, height: 8, decoration: BoxDecoration(color: sel ? Colors.white : K.red, shape: BoxShape.circle))
+            else if (icon != null)
+              Icon(icon, size: 16, color: sel ? Colors.white : value == 'mine' ? K.amber : K.muted),
+            SizedBox(width: 6),
+            T(label, style: TextStyle(color: sel ? Colors.white : K.text, fontWeight: FontWeight.w700, fontSize: 13)),
+            SizedBox(width: 6),
+            Container(
+              padding: EdgeInsets.symmetric(horizontal: 7, vertical: 2),
+              decoration: BoxDecoration(color: sel ? Colors.white24 : K.bg, borderRadius: BorderRadius.circular(10)),
+              child: Text('$count', style: TextStyle(color: sel ? Colors.white : K.muted, fontSize: 11.5, fontWeight: FontWeight.w800)),
+            ),
+          ]),
         ),
       ),
     );
@@ -510,7 +518,7 @@ class _ScoresScreenState extends State<ScoresScreen> with WidgetsBindingObserver
         ...groups.entries.where((e) => !FavLeagues.has(e.key)),
       ];
       for (final e in ordered) {
-        makers.add(() => Padding(padding: EdgeInsets.only(bottom: 10), child: _group(e.key, e.value)));
+        makers.add(() => Padding(padding: EdgeInsets.only(bottom: 14), child: _group(e.key, e.value)));
         rows += e.value.length;
         if (rows ~/ 10 > block) {
           block = rows ~/ 10;
@@ -529,7 +537,7 @@ class _ScoresScreenState extends State<ScoresScreen> with WidgetsBindingObserver
       },
       child: ListView.builder(
         physics: AlwaysScrollableScrollPhysics(),
-        padding: EdgeInsets.fromLTRB(12, 0, 12, 96),
+        padding: EdgeInsets.fromLTRB(14, 0, 14, 110),
         itemCount: makers.length,
         itemBuilder: (_, i) => makers[i](),
       ),
@@ -540,10 +548,11 @@ class _ScoresScreenState extends State<ScoresScreen> with WidgetsBindingObserver
     final collapsed = _collapsed.contains(title);
     final hasLive = list.any((m) => m.status == 'live');
     final flag = list.first.flag;
+    final fav = FavLeagues.has(title);
     final rows = <Widget>[];
     if (!collapsed) {
       for (var i = 0; i < list.length; i++) {
-        if (i > 0) rows.add(Container(height: 1, color: K.border));
+        if (i > 0) rows.add(Container(height: 1, margin: EdgeInsets.only(left: 64), color: K.border.withAlpha(140)));
         rows.add(_row(list[i]));
       }
     }
@@ -551,61 +560,62 @@ class _ScoresScreenState extends State<ScoresScreen> with WidgetsBindingObserver
       clipBehavior: Clip.antiAlias,
       decoration: BoxDecoration(
         color: K.card,
-        borderRadius: BorderRadius.circular(14),
-        border: Border.all(color: K.border),
+        borderRadius: BorderRadius.circular(20),
+        boxShadow: [BoxShadow(color: Colors.black.withAlpha(K.dark ? 40 : 14), blurRadius: 14, offset: Offset(0, 4))],
       ),
       child: Column(
         children: [
           InkWell(
             onTap: () => setState(() => collapsed ? _collapsed.remove(title) : _collapsed.add(title)),
-            child: Container(
-              color: K.groupHead,
-              padding: EdgeInsets.fromLTRB(12, 10, 8, 10),
+            child: Padding(
+              padding: EdgeInsets.fromLTRB(14, 12, 8, collapsed ? 12 : 6),
               child: Row(
                 children: [
-                  if (flag.isNotEmpty) ...[
-                    ClipRRect(
-                      borderRadius: BorderRadius.circular(2),
-                      child: CachedNetworkImage(
-                        imageUrl: flag,
-                        width: 18,
-                        height: 13,
-                        fit: BoxFit.cover,
-                        errorWidget: (_, __, ___) => SizedBox(width: 18),
-                      ),
-                    ),
-                    SizedBox(width: 8),
-                  ],
+                  ClipRRect(
+                    borderRadius: BorderRadius.circular(4),
+                    child: flag.isNotEmpty
+                        ? CachedNetworkImage(
+                            imageUrl: flag,
+                            width: 22,
+                            height: 16,
+                            fit: BoxFit.cover,
+                            errorWidget: (_, __, ___) => Container(width: 22, height: 16, color: K.bg),
+                          )
+                        : Container(width: 22, height: 16, color: K.bg, child: Icon(Icons.public_rounded, size: 12, color: K.muted)),
+                  ),
+                  SizedBox(width: 10),
                   Expanded(
                     child: T(frLeague(title),
                         maxLines: 1,
                         overflow: TextOverflow.ellipsis,
-                        style: TextStyle(
-                            color: K.text, fontSize: 13, fontWeight: FontWeight.w700)),
+                        style: TextStyle(color: K.text, fontSize: 13.5, fontWeight: FontWeight.w800, letterSpacing: 0.1)),
                   ),
-                  if (hasLive) ...[
+                  if (hasLive)
                     Container(
-                        width: 7,
-                        height: 7,
-                        decoration: BoxDecoration(color: K.red, shape: BoxShape.circle)),
-                    SizedBox(width: 6),
-                  ],
+                      margin: EdgeInsets.only(left: 6),
+                      padding: EdgeInsets.symmetric(horizontal: 7, vertical: 2),
+                      decoration: BoxDecoration(color: K.red.withAlpha(36), borderRadius: BorderRadius.circular(8)),
+                      child: T('LIVE', style: TextStyle(color: K.red, fontSize: 10.5, fontWeight: FontWeight.w900, letterSpacing: 0.6)),
+                    ),
                   GestureDetector(
                     onTap: () => FavLeagues.toggle(title),
                     child: Padding(
-                      padding: EdgeInsets.symmetric(horizontal: 6),
-                      child: Icon(FavLeagues.has(title) ? Icons.star_rounded : Icons.star_border_rounded,
-                          color: FavLeagues.has(title) ? K.amber : K.muted, size: 19),
+                      padding: EdgeInsets.symmetric(horizontal: 8),
+                      child: Icon(fav ? Icons.star_rounded : Icons.star_border_rounded, color: fav ? K.amber : K.muted, size: 21),
                     ),
                   ),
-                  T('${list.length}', style: TextStyle(color: K.muted, fontSize: 12)),
-                  Icon(collapsed ? Icons.expand_more_rounded : Icons.expand_less_rounded,
-                      color: K.muted, size: 22),
+                  Container(
+                    padding: EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+                    decoration: BoxDecoration(color: K.bg, borderRadius: BorderRadius.circular(10)),
+                    child: Text('${list.length}', style: TextStyle(color: K.muted, fontSize: 11.5, fontWeight: FontWeight.w800)),
+                  ),
+                  Icon(collapsed ? Icons.expand_more_rounded : Icons.expand_less_rounded, color: K.muted, size: 22),
                 ],
               ),
             ),
           ),
           ...rows,
+          if (!collapsed) SizedBox(height: 4),
         ],
       ),
     );
@@ -615,40 +625,39 @@ class _ScoresScreenState extends State<ScoresScreen> with WidgetsBindingObserver
     switch (m.status) {
       case 'live':
         final st = LiveSocket.last[m.id]?.$3;
-        return T((st == null ? null : LiveSocket.minuteOf(m.id, st)) ?? m.minute ?? 'Live',
-            style: TextStyle(color: K.red, fontSize: 13, fontWeight: FontWeight.w800));
+        final mn = (st == null ? null : LiveSocket.minuteOf(m.id, st)) ?? m.minute ?? 'Live';
+        return Container(
+          padding: EdgeInsets.symmetric(horizontal: 7, vertical: 4),
+          decoration: BoxDecoration(color: K.red.withAlpha(34), borderRadius: BorderRadius.circular(9)),
+          child: T(mn, style: TextStyle(color: K.red, fontSize: 12.5, fontWeight: FontWeight.w900)),
+        );
       case 'finished':
-        return T('Fin',
-            style: TextStyle(color: K.muted, fontSize: 12.5, fontWeight: FontWeight.w700));
+        return T('Fin', style: TextStyle(color: K.muted, fontSize: 12.5, fontWeight: FontWeight.w800));
       case 'postponed':
-        return T('Rep.',
-            style: TextStyle(color: K.amber, fontSize: 12, fontWeight: FontWeight.w700));
+        return T('Rep.', style: TextStyle(color: K.amber, fontSize: 12, fontWeight: FontWeight.w800));
       default:
-        return T(m.date != null ? hm(m.date!) : '--:--',
-            style: TextStyle(color: K.text, fontSize: 13, fontWeight: FontWeight.w700));
+        return T(m.date != null ? hm(m.date!) : '--:--', style: TextStyle(color: K.text, fontSize: 13.5, fontWeight: FontWeight.w800));
     }
   }
 
   Widget _team(String name, int? goals, bool win) {
     return Row(
       children: [
-        TeamCrest(name: name, logo: _logos[name] ?? LogoCache.get(name), size: 16),
-        SizedBox(width: 7),
+        TeamCrest(name: name, logo: _logos[name] ?? LogoCache.get(name), size: 20),
+        SizedBox(width: 9),
         Expanded(
           child: T(name,
               maxLines: 1,
               overflow: TextOverflow.ellipsis,
-              style: TextStyle(
-                  color: K.text,
-                  fontSize: 13.5,
-                  fontWeight: win ? FontWeight.w800 : FontWeight.w500)),
+              style: TextStyle(color: K.text, fontSize: 14, fontWeight: win ? FontWeight.w800 : FontWeight.w500)),
         ),
-        SizedBox(width: 6),
-        T(goals?.toString() ?? '',
-            style: TextStyle(
-                color: m_scoreColor(goals),
-                fontSize: 13.5,
-                fontWeight: FontWeight.w800)),
+        SizedBox(width: 8),
+        SizedBox(
+          width: 22,
+          child: Text(goals?.toString() ?? '',
+              textAlign: TextAlign.right,
+              style: TextStyle(color: win ? K.text : m_scoreColor(goals), fontSize: 15.5, fontWeight: FontWeight.w900)),
+        ),
       ],
     );
   }
@@ -692,12 +701,12 @@ class _ScoresScreenState extends State<ScoresScreen> with WidgetsBindingObserver
       onTap: () => _open(m),
       onLongPress: () => _toggleFav(m),
       child: Container(
-        color: m.status == 'live' ? Color(0x14EF4444) : null,
-        padding: EdgeInsets.fromLTRB(10, 8, 10, 8),
+        color: m.status == 'live' ? Color(0x0FEF4444) : null,
+        padding: EdgeInsets.fromLTRB(12, 10, 14, 10),
         child: Row(
           children: [
             SizedBox(
-              width: 44,
+              width: 52,
               child: Column(
                 mainAxisSize: MainAxisSize.min,
                 children: [
@@ -710,7 +719,7 @@ class _ScoresScreenState extends State<ScoresScreen> with WidgetsBindingObserver
               child: Column(
                 children: [
                   _team(m.home, h, has && h > a),
-                  SizedBox(height: 5),
+                  SizedBox(height: 8),
                   _team(m.away, a, has && a > h),
                 ],
               ),
@@ -724,8 +733,8 @@ class _ScoresScreenState extends State<ScoresScreen> with WidgetsBindingObserver
                   if (kV2 && m.tipShort.isNotEmpty)
                     // V2 : le code du pari bien visible (1, X2…), puis la confiance.
                     Container(
-                      padding: EdgeInsets.symmetric(horizontal: 6, vertical: 1),
-                      decoration: BoxDecoration(color: color.withAlpha(40), borderRadius: BorderRadius.circular(6)),
+                      padding: EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+                      decoration: BoxDecoration(color: color.withAlpha(36), borderRadius: BorderRadius.circular(8)),
                       child: T(m.tipShort, style: TextStyle(color: color, fontSize: 13, fontWeight: FontWeight.w900)),
                     ),
                   if (prob != null)

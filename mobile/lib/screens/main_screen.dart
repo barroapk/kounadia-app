@@ -200,6 +200,19 @@ class _MainScreenState extends State<MainScreen> with WidgetsBindingObserver {
     );
   }
 
+  Widget _roundBtn(IconData icon, String tip, VoidCallback onTap) => Tooltip(
+        message: tip,
+        child: Material(
+          color: K.card,
+          shape: CircleBorder(),
+          child: InkWell(
+            customBorder: CircleBorder(),
+            onTap: onTap,
+            child: SizedBox(width: 40, height: 40, child: Icon(icon, color: K.text, size: 21)),
+          ),
+        ),
+      );
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -209,35 +222,26 @@ class _MainScreenState extends State<MainScreen> with WidgetsBindingObserver {
         titleSpacing: 16,
         title: Row(children: [
           Container(
-            width: 32,
-            height: 32,
+            width: 36,
+            height: 36,
             decoration: BoxDecoration(
-              gradient: LinearGradient(colors: [Color(0xFF4F46E5), Color(0xFF7C3AED)]),
-              borderRadius: BorderRadius.circular(9),
+              gradient: LinearGradient(colors: [Color(0xFF4F46E5), Color(0xFF7C3AED)], begin: Alignment.topLeft, end: Alignment.bottomRight),
+              borderRadius: BorderRadius.circular(11),
+              boxShadow: [BoxShadow(color: Color(0x664F46E5), blurRadius: 12, offset: Offset(0, 4))],
             ),
-            child: Icon(Icons.sports_soccer_rounded, color: Colors.white, size: 19),
+            child: Icon(Icons.sports_soccer_rounded, color: Colors.white, size: 21),
           ),
-          SizedBox(width: 10),
-          T('KOUNADIA',
-              style: TextStyle(color: K.text, fontSize: 19, fontWeight: FontWeight.w900, letterSpacing: 1)),
+          SizedBox(width: 11),
+          T('KOUNADIA', style: TextStyle(color: K.text, fontSize: 19, fontWeight: FontWeight.w900, letterSpacing: 1.6)),
         ]),
+        surfaceTintColor: Colors.transparent,
+        scrolledUnderElevation: 0,
         actions: [
-          IconButton(
-            tooltip: tr('Alertes'),
-            icon: Icon(Icons.notifications_rounded, color: K.muted),
-            onPressed: () => _push(AlertsScreen()),
-          ),
-          IconButton(
-            tooltip: tr('Paramètres'),
-            icon: Icon(Icons.settings_rounded, color: K.muted),
-            onPressed: () => _push(SettingsScreen()),
-          ),
-          SizedBox(width: 4),
+          _roundBtn(Icons.notifications_rounded, tr('Alertes'), () => _push(AlertsScreen())),
+          SizedBox(width: 8),
+          _roundBtn(Icons.settings_rounded, tr('Paramètres'), () => _push(SettingsScreen())),
+          SizedBox(width: 14),
         ],
-        bottom: PreferredSize(
-          preferredSize: Size.fromHeight(1),
-          child: Container(height: 1, color: K.border),
-        ),
       ),
       // Bouton Dépôt · Retrait : réduit à une pastille quand on fait défiler vers le bas (il ne cache plus le contenu).
       body: NotificationListener<UserScrollNotification>(
@@ -285,12 +289,18 @@ class _MainScreenState extends State<MainScreen> with WidgetsBindingObserver {
         ),
       ),
       bottomNavigationBar: Container(
-        decoration: BoxDecoration(border: Border(top: BorderSide(color: K.border))),
+        decoration: BoxDecoration(
+          color: K.card,
+          borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
+          boxShadow: [BoxShadow(color: Colors.black.withAlpha(K.dark ? 90 : 26), blurRadius: 20, offset: Offset(0, -4))],
+        ),
+        clipBehavior: Clip.antiAlias,
         child: NavigationBarTheme(
           data: NavigationBarThemeData(
             backgroundColor: K.card,
             indicatorColor: K.indigoSoft,
-            height: 64,
+            surfaceTintColor: Colors.transparent,
+            height: 68,
             labelTextStyle: WidgetStateProperty.resolveWith((s) {
               final on = s.contains(WidgetState.selected);
               return TextStyle(
