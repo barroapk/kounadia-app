@@ -410,7 +410,10 @@ void showV2Why(BuildContext context, V2Leg l) {
                 ]),
               ),
           ],
-          if (l.why.isNotEmpty) ...[
+          if (l.kpi.isNotEmpty) ...[
+            SizedBox(height: 18),
+            _V2Proofs(l),
+          ] else if (l.why.isNotEmpty) ...[
             SizedBox(height: 14),
             T('Pourquoi ce choix', style: TextStyle(color: K.text, fontSize: 14.5, fontWeight: FontWeight.w900)),
             SizedBox(height: 6),
@@ -424,10 +427,120 @@ void showV2Why(BuildContext context, V2Leg l) {
                 ]),
               ),
           ],
+          SizedBox(height: 14),
+          Center(child: T('18+ · Aucun gain garanti', style: TextStyle(color: K.muted, fontSize: 11))),
         ]),
       ),
     ),
   );
+}
+
+/// « Pourquoi ce choix » : les preuves chiffrées en tuiles (valeur en grand, titre, précision).
+class _V2Proofs extends StatelessWidget {
+  final V2Leg l;
+  const _V2Proofs(this.l);
+
+  static IconData _icon(String k) => switch (k) {
+        'study' => Icons.insights_rounded,
+        'pin' => Icons.account_balance_rounded,
+        'mkt' => Icons.show_chart_rounded,
+        'kd' => Icons.verified_rounded,
+        'abs' => Icons.healing_rounded,
+        'xg' => Icons.sports_soccer_rounded,
+        'teams' => Icons.groups_rounded,
+        'form' => Icons.trending_up_rounded,
+        'pos' => Icons.leaderboard_rounded,
+        'pp' => Icons.fact_check_rounded,
+        _ => Icons.bar_chart_rounded,
+      };
+
+  Widget _form(String f) => Row(mainAxisSize: MainAxisSize.min, children: [
+        for (final c in f.split(''))
+          Container(
+            width: 17,
+            height: 17,
+            margin: EdgeInsets.only(right: 3),
+            alignment: Alignment.center,
+            decoration: BoxDecoration(
+                color: c == 'V' ? K.green : c == 'D' ? K.red : K.muted.withAlpha(150), borderRadius: BorderRadius.circular(5)),
+            child: Text(c, style: TextStyle(color: Colors.white, fontSize: 10, fontWeight: FontWeight.w900)),
+          ),
+      ]);
+
+  Widget _tile(V2Kpi x, double w) {
+    final c = x.ok ? K.indigoText : K.amber;
+    return Container(
+      width: w,
+      padding: EdgeInsets.fromLTRB(12, 11, 12, 11),
+      decoration: BoxDecoration(
+        color: K.bg,
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(color: x.ok ? K.border : K.amber.withAlpha(110)),
+      ),
+      child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+        Row(children: [
+          Container(
+            width: 26,
+            height: 26,
+            decoration: BoxDecoration(color: c.withAlpha(34), shape: BoxShape.circle),
+            child: Icon(_icon(x.k), size: 15, color: c),
+          ),
+          SizedBox(width: 7),
+          Expanded(
+            child: Text(x.t, maxLines: 1, overflow: TextOverflow.ellipsis,
+                style: TextStyle(color: K.muted, fontSize: 11.5, fontWeight: FontWeight.w800)),
+          ),
+        ]),
+        SizedBox(height: 8),
+        if (x.k == 'form') ...[
+          _form(x.h),
+          SizedBox(height: 4),
+          _form(x.a),
+        ] else
+          FittedBox(
+            fit: BoxFit.scaleDown,
+            alignment: Alignment.centerLeft,
+            child: Text(x.v, style: TextStyle(color: K.text, fontSize: 21, fontWeight: FontWeight.w900, height: 1.05)),
+          ),
+        if (x.s.isNotEmpty) ...[
+          SizedBox(height: 4),
+          Text(x.s, maxLines: 1, overflow: TextOverflow.ellipsis, style: TextStyle(color: K.muted, fontSize: 11)),
+        ],
+      ]),
+    );
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final ok = l.kpi.where((x) => x.ok).length;
+    return Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+      Row(children: [
+        Expanded(child: T('Pourquoi ce choix', style: TextStyle(color: K.text, fontSize: 16, fontWeight: FontWeight.w900))),
+        Container(
+          padding: EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+          decoration: BoxDecoration(color: K.green.withAlpha(30), borderRadius: BorderRadius.circular(20)),
+          child: Text('$ok/${l.kpi.length} ${tr('preuves favorables')}',
+              style: TextStyle(color: K.green, fontSize: 12, fontWeight: FontWeight.w800)),
+        ),
+      ]),
+      SizedBox(height: 12),
+      LayoutBuilder(builder: (_, box) {
+        final w = (box.maxWidth - 10) / 2;
+        return Wrap(spacing: 10, runSpacing: 10, children: [
+          for (var i = 0; i < l.kpi.length; i++)
+            _tile(l.kpi[i], i == l.kpi.length - 1 && l.kpi.length.isOdd ? box.maxWidth : w),
+        ]);
+      }),
+      if (l.ex) ...[
+        SizedBox(height: 10),
+        Row(children: [
+          Icon(Icons.check_circle_rounded, color: K.green, size: 16),
+          SizedBox(width: 6),
+          T('Choisi aussi par nos analystes', style: TextStyle(color: K.green, fontSize: 12.5, fontWeight: FontWeight.w800)),
+        ]),
+      ],
+    ]);
+  }
 }
 
 /// Carte d'un coupon : titre, cote totale, résultat, matchs (chacun avec son championnat), bilan de la semaine.

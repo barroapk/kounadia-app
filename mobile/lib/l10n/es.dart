@@ -891,4 +891,7 @@ const Map<String, String> kEs = {
   'Premium activé automatiquement dès la confirmation.': 'Premium activado automáticamente tras la confirmación.',
   'Vérifier': 'Verificar',
   'Ouvrir dans le navigateur': 'Abrir en el navegador',
+  'preuves favorables': 'pruebas favorables',
+  'Choisi aussi par nos analystes': 'También elegido por nuestros analistas',
+  '18+ · Aucun gain garanti': '18+ · Sin ganancias garantizadas',
 };

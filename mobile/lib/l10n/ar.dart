@@ -891,4 +891,7 @@ const Map<String, String> kAr = {
   'Premium activé automatiquement dès la confirmation.': 'يتم تفعيل بريميوم تلقائيًا بعد التأكيد.',
   'Vérifier': 'تحقق',
   'Ouvrir dans le navigateur': 'فتح في المتصفح',
+  'preuves favorables': 'أدلة مؤيدة',
+  'Choisi aussi par nos analystes': 'اختاره محللونا أيضًا',
+  '18+ · Aucun gain garanti': '18+ · لا أرباح مضمونة',
 };

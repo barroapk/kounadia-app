@@ -3,6 +3,20 @@ import '../services/primatips_service.dart' show frLeague;
 
 double _d(dynamic v) => (v as num?)?.toDouble() ?? 0;
 
+/// Une preuve chiffrée d'un pari (étude, bookmaker de référence, réussite KOUNADIA, absents, forme…).
+class V2Kpi {
+  final String k, v, t, s, h, a;
+  final bool ok;
+  V2Kpi.fromJson(Map<String, dynamic> j)
+      : k = '${j['k'] ?? ''}',
+        v = '${j['v'] ?? ''}',
+        t = '${j['t'] ?? ''}',
+        s = '${j['s'] ?? ''}',
+        h = '${j['h'] ?? ''}',
+        a = '${j['a'] ?? ''}',
+        ok = j['ok'] != false;
+}
+
 /// Un événement (pari) : match + marché + confiance KOUNADIA + cote.
 class V2Leg {
   final String id, home, away, country, league, mk, txt, fam;
@@ -15,6 +29,8 @@ class V2Leg {
   final double? pp;
   final bool ex;
   final List<String> why;
+  /// Preuves chiffrées (« Pourquoi ce choix ») : type, valeur, titre, précision, dans le sens du pari.
+  final List<V2Kpi> kpi;
   String? r; // won, lost, void, live, null = à venir
   String? score;
   String? minute; // direct
@@ -53,6 +69,7 @@ class V2Leg {
         pp = (j['pp'] as num?)?.toDouble(),
         ex = j['ex'] == true,
         why = ((j['why'] as List?) ?? const []).map((e) => e.toString()).toList(),
+        kpi = [for (final e in ((j['kpi'] as List?) ?? const [])) if (e is Map) V2Kpi.fromJson(Map<String, dynamic>.from(e))],
         pt = (j['pt'] as num?)?.toInt(),
         hl = _s(j['hl']),
         al = _s(j['al']),

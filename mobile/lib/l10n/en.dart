@@ -909,4 +909,7 @@ const Map<String, String> kEn = {
   'Premium activé automatiquement dès la confirmation.': 'Premium activated automatically once confirmed.',
   'Vérifier': 'Check',
   'Ouvrir dans le navigateur': 'Open in browser',
+  'preuves favorables': 'favourable proofs',
+  'Choisi aussi par nos analystes': 'Also picked by our analysts',
+  '18+ · Aucun gain garanti': '18+ · No guaranteed winnings',
 };

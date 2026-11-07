@@ -891,4 +891,7 @@ const Map<String, String> kPt = {
   'Premium activé automatiquement dès la confirmation.': 'Premium ativado automaticamente após a confirmação.',
   'Vérifier': 'Verificar',
   'Ouvrir dans le navigateur': 'Abrir no navegador',
+  'preuves favorables': 'provas favoráveis',
+  'Choisi aussi par nos analystes': 'Também escolhido pelos nossos analistas',
+  '18+ · Aucun gain garanti': '18+ · Sem ganhos garantidos',
 };
