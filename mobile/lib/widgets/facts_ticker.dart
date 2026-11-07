@@ -95,17 +95,14 @@ class _FactsTickerState extends State<FactsTicker> with SingleTickerProviderStat
           decoration: kBox(r: 14),
           clipBehavior: Clip.antiAlias,
           child: Row(children: [
+            // Repère compact (l'éclair seul) : toute la place pour le texte qui défile.
             Container(
-              padding: const EdgeInsets.symmetric(horizontal: 10),
+              width: 36,
               decoration: const BoxDecoration(
                 gradient: LinearGradient(colors: [Color(0xFF4F46E5), Color(0xFF7C3AED)], begin: Alignment.topLeft, end: Alignment.bottomRight),
               ),
               alignment: Alignment.center,
-              child: Row(mainAxisSize: MainAxisSize.min, children: [
-                const Icon(Icons.bolt_rounded, color: Colors.white, size: 17),
-                const SizedBox(width: 3),
-                Text(tr('Faits du jour'), style: const TextStyle(color: Colors.white, fontSize: 11.5, fontWeight: FontWeight.w900)),
-              ]),
+              child: Semantics(label: tr('Faits du jour'), child: const Icon(Icons.bolt_rounded, color: Colors.white, size: 19)),
             ),
             Expanded(
               child: ShaderMask(
@@ -232,9 +229,9 @@ class _FactsSheet extends StatelessWidget {
   static IconData _icon(String k) => switch (k) {
         'ws' || 'hw' || 'aw' || 'us' || 'hu' => Icons.trending_up_rounded,
         'ls' || 'nw' || 'hl' || 'anw' => Icons.trending_down_rounded,
-        'cs' || 'cs1' => Icons.shield_rounded,
+        'cs' || 'cs1' || 'c6' || 'c61' => Icons.shield_rounded,
         'bl' => Icons.block_rounded,
-        'sc' || 'g5' || 'o25' || 'bt' => Icons.sports_soccer_rounded,
+        'sc' || 'g5' || 'g6' || 'o25' || 'bt' => Icons.sports_soccer_rounded,
         'h2hw' || 'h2hu' => Icons.compare_arrows_rounded,
         'top' || 'lead' => Icons.emoji_events_rounded,
         'ab' => Icons.personal_injury_rounded,
