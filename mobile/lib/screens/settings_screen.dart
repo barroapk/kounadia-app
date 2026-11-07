@@ -121,13 +121,13 @@ class SettingsScreen extends StatelessWidget {
   Widget _tile(IconData icon, Color color, String title, String sub, VoidCallback onTap, {Widget? trailing}) => InkWell(
         onTap: onTap,
         child: Padding(
-          padding: EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+          padding: EdgeInsets.symmetric(horizontal: 14, vertical: 14),
           child: Row(children: [
             Container(
-              width: 38,
-              height: 38,
-              decoration: BoxDecoration(color: color.withAlpha(40), borderRadius: BorderRadius.circular(11)),
-              child: Icon(icon, color: color, size: 21),
+              width: 40,
+              height: 40,
+              decoration: BoxDecoration(color: color.withAlpha(36), borderRadius: BorderRadius.circular(13)),
+              child: Icon(icon, color: color, size: 22),
             ),
             SizedBox(width: 14),
             Expanded(
@@ -169,7 +169,8 @@ class SettingsScreen extends StatelessWidget {
                     begin: Alignment.topLeft,
                     end: Alignment.bottomRight,
                   ),
-                  borderRadius: BorderRadius.circular(20),
+                  borderRadius: BorderRadius.circular(24),
+                  boxShadow: [BoxShadow(color: (prem ? Color(0xFFD4A017) : Color(0xFF4F46E5)).withAlpha(90), blurRadius: 20, offset: Offset(0, 6))],
                 ),
                 child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
                   Row(children: [

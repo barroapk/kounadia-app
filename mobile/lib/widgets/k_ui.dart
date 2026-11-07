@@ -3,14 +3,15 @@ import 'package:flutter/material.dart';
 import 'forecast_card.dart' show K;
 import '../l10n/tr.dart';
 
-BoxDecoration kBox({double r = 14}) => BoxDecoration(
+// Carte du nouveau design : coins bien arrondis, sans bordure, ombre douce.
+BoxDecoration kBox({double r = 18}) => BoxDecoration(
       color: K.card,
-      borderRadius: BorderRadius.circular(r),
-      border: Border.all(color: K.border),
+      borderRadius: BorderRadius.circular(r < 18 ? r + 4 : r),
+      boxShadow: [BoxShadow(color: Colors.black.withAlpha(K.dark ? 40 : 14), blurRadius: 14, offset: Offset(0, 4))],
     );
 
 Widget kTitle(String t) => Padding(
-      padding: EdgeInsets.fromLTRB(4, 18, 4, 10),
+      padding: EdgeInsets.fromLTRB(6, 22, 6, 10),
       child: T(tr(t).toUpperCase(),
           style: TextStyle(color: K.muted, fontSize: 12, fontWeight: FontWeight.w800, letterSpacing: 1.1)),
     );
@@ -25,31 +26,29 @@ PreferredSizeWidget kAppBar(String title) => AppBar(
       title: T(title, style: TextStyle(fontSize: 18, fontWeight: FontWeight.w800)),
     );
 
-Widget kPill(String t, bool sel, VoidCallback onTap, {double? height = 38}) => Material(
-      color: sel ? K.indigo : K.card,
-      borderRadius: BorderRadius.circular(12),
+Widget kPill(String t, bool sel, VoidCallback onTap, {double? height = 40}) => Material(
+      color: sel ? Colors.transparent : K.card,
+      borderRadius: BorderRadius.circular(14),
       child: InkWell(
-        borderRadius: BorderRadius.circular(12),
+        borderRadius: BorderRadius.circular(14),
         onTap: onTap,
-        child: Container(
+        child: Ink(
           height: height,
           padding: EdgeInsets.symmetric(horizontal: 14),
-          alignment: Alignment.center,
           decoration: BoxDecoration(
-            borderRadius: BorderRadius.circular(12),
-            border: Border.all(color: sel ? K.indigo : K.border),
+            gradient: sel ? LinearGradient(colors: [Color(0xFF4F46E5), Color(0xFF7C3AED)]) : null,
+            borderRadius: BorderRadius.circular(14),
           ),
-          child: T(t,
+          child: Center(child: T(t,
               style: TextStyle(
-                  color: sel ? Colors.white : K.muted, fontWeight: FontWeight.w700, fontSize: 13.5)),
+                  color: sel ? Colors.white : K.muted, fontWeight: FontWeight.w700, fontSize: 13.5))),
         ),
       ),
     );
-
 Widget kDividers(List<Widget> items) {
   final out = <Widget>[];
   for (var i = 0; i < items.length; i++) {
-    if (i > 0) out.add(Container(height: 1, color: K.border));
+    if (i > 0) out.add(Container(height: 1, margin: EdgeInsets.only(left: 66), color: K.border.withAlpha(140)));
     out.add(items[i]);
   }
   return Container(decoration: kBox(), clipBehavior: Clip.antiAlias, child: Column(children: out));

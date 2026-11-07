@@ -225,7 +225,7 @@ class _CouponTabState extends State<CouponTab> with AutomaticKeepAliveClientMixi
   Widget build(BuildContext context) {
     super.build(context);
     return ListView(
-      padding: EdgeInsets.fromLTRB(12, 4, 12, 96),
+      padding: EdgeInsets.fromLTRB(14, 12, 14, 110),
       children: [
         _viewSwitch(),
         SizedBox(height: 12),
@@ -245,22 +245,22 @@ class _CouponTabState extends State<CouponTab> with AutomaticKeepAliveClientMixi
           },
           child: AnimatedContainer(
             duration: Duration(milliseconds: 150),
-            height: 36,
+            height: 38,
             alignment: Alignment.center,
             decoration: BoxDecoration(
-              color: sel ? K.indigoSoft : Colors.transparent,
-              borderRadius: BorderRadius.circular(9),
+              gradient: sel ? LinearGradient(colors: [Color(0xFF4F46E5), Color(0xFF7C3AED)]) : null,
+              borderRadius: BorderRadius.circular(12),
             ),
             child: T(label,
-                style: TextStyle(color: sel ? K.text : K.muted, fontSize: 13.5, fontWeight: FontWeight.w800)),
+                style: TextStyle(color: sel ? Colors.white : K.muted, fontSize: 13.5, fontWeight: FontWeight.w800)),
           ),
         ),
       );
     }
 
     return Container(
-      padding: EdgeInsets.all(3),
-      decoration: kBox(r: 12),
+      padding: EdgeInsets.all(4),
+      decoration: BoxDecoration(color: K.card, borderRadius: BorderRadius.circular(16)),
       child: Row(children: [half('Créer un coupon', 0), half('Mes coupons · ${_saved.length}', 1)]),
     );
   }
@@ -273,7 +273,8 @@ class _CouponTabState extends State<CouponTab> with AutomaticKeepAliveClientMixi
             begin: Alignment.topLeft,
             end: Alignment.bottomRight,
           ),
-          borderRadius: BorderRadius.circular(18),
+          borderRadius: BorderRadius.circular(22),
+          boxShadow: [BoxShadow(color: Color(0x554F46E5), blurRadius: 18, offset: Offset(0, 6))],
         ),
         child: Row(crossAxisAlignment: CrossAxisAlignment.start, children: [
           CircleAvatar(
@@ -308,8 +309,8 @@ class _CouponTabState extends State<CouponTab> with AutomaticKeepAliveClientMixi
                   height: 32,
                   alignment: Alignment.center,
                   decoration: BoxDecoration(
-                    color: i == sel ? K.indigo : Colors.transparent,
-                    borderRadius: BorderRadius.circular(8),
+                    gradient: i == sel ? LinearGradient(colors: [Color(0xFF4F46E5), Color(0xFF7C3AED)]) : null,
+                    borderRadius: BorderRadius.circular(9),
                   ),
                   child: T(labels[i],
                       style: TextStyle(
@@ -470,21 +471,31 @@ class _CouponTabState extends State<CouponTab> with AutomaticKeepAliveClientMixi
         SizedBox(height: 12),
         _criteria(),
         SizedBox(height: 14),
-        SizedBox(
-          height: 52,
+        DecoratedBox(
+          decoration: BoxDecoration(
+            gradient: LinearGradient(colors: [Color(0xFF4F46E5), Color(0xFF7C3AED)]),
+            borderRadius: BorderRadius.circular(16),
+            boxShadow: [BoxShadow(color: Color(0x664F46E5), blurRadius: 16, offset: Offset(0, 6))],
+          ),
+          child: SizedBox(
+          height: 56,
           child: FilledButton.icon(
             onPressed: _busy ? null : () => _generate(),
             style: FilledButton.styleFrom(
-              backgroundColor: K.indigo,
+              backgroundColor: Colors.transparent,
+              disabledBackgroundColor: Colors.transparent,
+              shadowColor: Colors.transparent,
               foregroundColor: Colors.white,
-              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
+              disabledForegroundColor: Colors.white70,
+              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
             ),
             icon: _busy
                 ? SizedBox(
                     width: 18, height: 18, child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white))
                 : Icon(Icons.auto_awesome_rounded),
             label: T(_busy ? 'Analyse en cours…' : 'Générer mes coupons',
-                style: TextStyle(fontSize: 16, fontWeight: FontWeight.w800)),
+                style: TextStyle(fontSize: 16, fontWeight: FontWeight.w900)),
+          ),
           ),
         ),
         SizedBox(height: 14),
