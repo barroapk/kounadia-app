@@ -220,20 +220,21 @@ class _MainScreenState extends State<MainScreen> with WidgetsBindingObserver {
       backgroundColor: K.bg,
       appBar: AppBar(
         backgroundColor: K.bg,
+        toolbarHeight: 50,
         titleSpacing: 16,
         title: Row(children: [
           Container(
-            width: 36,
-            height: 36,
+            width: 32,
+            height: 32,
             decoration: BoxDecoration(
               gradient: LinearGradient(colors: [Color(0xFF4F46E5), Color(0xFF7C3AED)], begin: Alignment.topLeft, end: Alignment.bottomRight),
-              borderRadius: BorderRadius.circular(11),
+              borderRadius: BorderRadius.circular(10),
               boxShadow: [BoxShadow(color: Color(0x664F46E5), blurRadius: 12, offset: Offset(0, 4))],
             ),
-            child: Icon(Icons.sports_soccer_rounded, color: Colors.white, size: 21),
+            child: Icon(Icons.sports_soccer_rounded, color: Colors.white, size: 19),
           ),
-          SizedBox(width: 11),
-          T('KOUNADIA', style: TextStyle(color: K.text, fontSize: 19, fontWeight: FontWeight.w900, letterSpacing: 1.6)),
+          SizedBox(width: 10),
+          T('KOUNADIA', style: TextStyle(color: K.text, fontSize: 18, fontWeight: FontWeight.w900, letterSpacing: 1.5)),
         ]),
         surfaceTintColor: Colors.transparent,
         scrolledUnderElevation: 0,

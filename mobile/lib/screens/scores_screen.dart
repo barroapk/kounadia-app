@@ -12,6 +12,7 @@ import '../widgets/knd_banner.dart';
 import '../widgets/big_matches.dart';
 import '../widgets/hl_list.dart';
 import '../services/highlights.dart';
+import '../widgets/video_open.dart';
 import '../services/logo_cache.dart';
 import '../services/markets_service.dart';
 import 'pt_match_screen.dart';
@@ -64,6 +65,7 @@ class _ScoresScreenState extends State<ScoresScreen> with WidgetsBindingObserver
     super.initState();
     WidgetsBinding.instance.addObserver(this);
     Highlights.load();
+    Highlights.changed.addListener(_onFav);
     _loadFav();
     FavLeagues.load().then((_) {
       if (FavLeagues.set.value.isNotEmpty && _filter == 'all') {
@@ -94,6 +96,7 @@ class _ScoresScreenState extends State<ScoresScreen> with WidgetsBindingObserver
   void dispose() {
     WidgetsBinding.instance.removeObserver(this);
     FavLeagues.set.removeListener(_onFav);
+    Highlights.changed.removeListener(_onFav);
     _liveTimer?.cancel();
     _fullTimer?.cancel();
     _sock?.cancel();
@@ -307,11 +310,11 @@ class _ScoresScreenState extends State<ScoresScreen> with WidgetsBindingObserver
         children: [
           // Jour : 3 pastilles (Hier · Aujourd'hui · Demain) avec la date, et la recherche.
           Padding(
-            padding: EdgeInsets.fromLTRB(14, 12, 14, 10),
+            padding: EdgeInsets.fromLTRB(14, 4, 14, 8),
             child: Row(children: [
               Expanded(
                 child: Container(
-                  height: 46,
+                  height: 40,
                   padding: EdgeInsets.all(4),
                   decoration: BoxDecoration(color: K.card, borderRadius: BorderRadius.circular(16)),
                   child: Row(children: [for (final o in const [-1, 0, 1]) Expanded(child: _dayPill(o))]),
@@ -349,22 +352,23 @@ class _ScoresScreenState extends State<ScoresScreen> with WidgetsBindingObserver
             ),
           // Filtres : pastilles qui défilent (Tous, Direct, Mes matchs, Temps forts) avec leur nombre.
           SizedBox(
-            height: 40,
+            height: 34,
             child: ListView(
               scrollDirection: Axis.horizontal,
               padding: EdgeInsets.symmetric(horizontal: 14),
               children: [
                 _seg('all', 'Tous', all.length, icon: Icons.grid_view_rounded),
                 _seg('live', 'Direct', all.where((m) => m.status == 'live').length, dot: all.any((m) => m.status == 'live')),
-                _seg('mine', 'Mes matchs', all.where(_mine).length, icon: Icons.star_rounded),
+                // Temps forts juste après « Direct », en rouge : on voit tout de suite qu'il y a des vidéos.
                 ValueListenableBuilder<int>(
                   valueListenable: Highlights.changed,
                   builder: (_, __, ___) => _seg('hl', 'Temps forts', Highlights.recent().length, icon: Icons.play_circle_rounded),
                 ),
+                _seg('mine', 'Mes matchs', all.where(_mine).length, icon: Icons.star_rounded),
               ],
             ),
           ),
-          SizedBox(height: 10),
+          SizedBox(height: 8),
           Expanded(
               child: _view == 'hl'
                   ? HighlightsList(byId: {for (final l in _days.values) for (final m in l) m.id: m})
@@ -381,7 +385,7 @@ class _ScoresScreenState extends State<ScoresScreen> with WidgetsBindingObserver
       child: InkWell(
         borderRadius: BorderRadius.circular(16),
         onTap: onTap,
-        child: SizedBox(width: 46, height: 46, child: Icon(icon, color: onTap == null ? K.border : K.text, size: 23)),
+        child: SizedBox(width: 40, height: 40, child: Icon(icon, color: onTap == null ? K.border : K.text, size: 21)),
       ),
     );
   }
@@ -436,14 +440,16 @@ class _ScoresScreenState extends State<ScoresScreen> with WidgetsBindingObserver
             if (dot)
               Container(width: 8, height: 8, decoration: BoxDecoration(color: sel ? Colors.white : K.red, shape: BoxShape.circle))
             else if (icon != null)
-              Icon(icon, size: 16, color: sel ? Colors.white : value == 'mine' ? K.amber : K.muted),
+              Icon(icon, size: 16, color: sel ? Colors.white : value == 'mine' ? K.amber : value == 'hl' && count > 0 ? K.red : K.muted),
             SizedBox(width: 6),
             T(label, style: TextStyle(color: sel ? Colors.white : K.text, fontWeight: FontWeight.w700, fontSize: 13)),
             SizedBox(width: 6),
             Container(
               padding: EdgeInsets.symmetric(horizontal: 7, vertical: 2),
-              decoration: BoxDecoration(color: sel ? Colors.white24 : K.bg, borderRadius: BorderRadius.circular(10)),
-              child: Text('$count', style: TextStyle(color: sel ? Colors.white : K.muted, fontSize: 11.5, fontWeight: FontWeight.w800)),
+              decoration: BoxDecoration(
+                  color: sel ? Colors.white24 : value == 'hl' && count > 0 ? K.red : K.bg, borderRadius: BorderRadius.circular(10)),
+              child: Text('$count',
+                  style: TextStyle(color: sel || (value == 'hl' && count > 0) ? Colors.white : K.muted, fontSize: 11.5, fontWeight: FontWeight.w800)),
             ),
           ]),
         ),
@@ -664,6 +670,25 @@ class _ScoresScreenState extends State<ScoresScreen> with WidgetsBindingObserver
 
   Color m_scoreColor(int? g) => g == null ? K.muted : K.text;
 
+  /// Vidéo des temps forts d'un match terminé depuis moins de 3 jours (sinon null).
+  HlVideo? _hlOf(LiveMatch m) {
+    if (m.status != 'finished' || m.date == null || DateTime.now().difference(m.date!) > Duration(days: 3)) return null;
+    return Highlights.of(m.id);
+  }
+
+  /// Pastille rouge « ▶ Vidéo » : bien visible dans la liste, ouvre directement les temps forts.
+  Widget _hlPill(LiveMatch m, HlVideo v) => GestureDetector(
+        onTap: () => openHighlight(context, v, title: '${m.home} - ${m.away}', src: 'liste'),
+        child: Container(
+          padding: EdgeInsets.fromLTRB(3, 2, 7, 2),
+          decoration: BoxDecoration(color: K.red, borderRadius: BorderRadius.circular(10)),
+          child: Row(mainAxisSize: MainAxisSize.min, children: [
+            Icon(Icons.play_arrow_rounded, color: Colors.white, size: 14),
+            T('Vidéo', style: TextStyle(color: Colors.white, fontSize: 10.5, fontWeight: FontWeight.w900)),
+          ]),
+        ),
+      );
+
   void _open(LiveMatch m) {
     // Match venu de footlive (numéro négatif) : score et direct seulement, pas de fiche d'analyse.
     if (m.id < 0) {
@@ -711,6 +736,10 @@ class _ScoresScreenState extends State<ScoresScreen> with WidgetsBindingObserver
                 mainAxisSize: MainAxisSize.min,
                 children: [
                   _timeCell(m),
+                  if (_hlOf(m) != null) ...[
+                    SizedBox(height: 5),
+                    _hlPill(m, _hlOf(m)!),
+                  ],
                   if (fav) Icon(Icons.star_rounded, color: K.amber, size: 13),
                 ],
               ),

@@ -271,8 +271,8 @@ class _SelectionScreenState extends State<SelectionScreen> {
           final s = d.today?.selection ?? (d.history.isNotEmpty ? d.history.first.selection : null);
           return Column(children: [
             Container(
-              margin: EdgeInsets.fromLTRB(14, 12, 14, 0),
-              height: 46,
+              margin: EdgeInsets.fromLTRB(14, 6, 14, 0),
+              height: 40,
               padding: EdgeInsets.all(4),
               decoration: BoxDecoration(color: K.card, borderRadius: BorderRadius.circular(16)),
               child: TabBar(

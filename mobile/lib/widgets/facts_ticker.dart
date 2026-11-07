@@ -72,9 +72,9 @@ class _FactsTickerState extends State<FactsTicker> with SingleTickerProviderStat
   Widget _item(DayFact f) => Padding(
         padding: const EdgeInsetsDirectional.only(end: 26),
         child: Row(mainAxisSize: MainAxisSize.min, children: [
-          TeamCrest(name: f.team, logo: f.logo, size: 18),
+          TeamCrest(name: f.team, logo: f.logo, size: 16),
           const SizedBox(width: 7),
-          Text(factText(f), style: TextStyle(color: K.text, fontSize: 13, fontWeight: FontWeight.w700)),
+          Text(factText(f), style: TextStyle(color: K.text, fontSize: 12.5, fontWeight: FontWeight.w700)),
           if (f.date != null)
             Text('  ·  ${hm(f.date!)}', style: TextStyle(color: K.muted, fontSize: 12, fontWeight: FontWeight.w600)),
           const SizedBox(width: 26),
@@ -87,22 +87,22 @@ class _FactsTickerState extends State<FactsTicker> with SingleTickerProviderStat
     final list = FactsService.items;
     if (list.isEmpty) return const SizedBox.shrink();
     return Padding(
-      padding: const EdgeInsets.fromLTRB(16, 2, 16, 8),
+      padding: const EdgeInsets.fromLTRB(14, 0, 14, 6),
       child: GestureDetector(
         onTap: () => showFactsSheet(context),
         child: Container(
-          height: 40,
-          decoration: kBox(r: 14),
+          height: 34,
+          decoration: kBox(r: 12),
           clipBehavior: Clip.antiAlias,
           child: Row(children: [
             // Repère compact (l'éclair seul) : toute la place pour le texte qui défile.
             Container(
-              width: 36,
+              width: 32,
               decoration: const BoxDecoration(
                 gradient: LinearGradient(colors: [Color(0xFF4F46E5), Color(0xFF7C3AED)], begin: Alignment.topLeft, end: Alignment.bottomRight),
               ),
               alignment: Alignment.center,
-              child: Semantics(label: tr('Faits du jour'), child: const Icon(Icons.bolt_rounded, color: Colors.white, size: 19)),
+              child: Semantics(label: tr('Faits du jour'), child: const Icon(Icons.bolt_rounded, color: Colors.white, size: 17)),
             ),
             Expanded(
               child: ShaderMask(

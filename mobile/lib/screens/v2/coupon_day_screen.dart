@@ -87,8 +87,8 @@ class _CouponDayScreenState extends State<CouponDayScreen> {
       child: Column(children: [
         // Onglets en pastilles : Gratuits / VIP (VIP en or).
         Container(
-          margin: EdgeInsets.fromLTRB(14, 12, 14, 4),
-          height: 46,
+          margin: EdgeInsets.fromLTRB(14, 6, 14, 2),
+          height: 40,
           padding: EdgeInsets.all(4),
           decoration: BoxDecoration(color: K.card, borderRadius: BorderRadius.circular(16)),
           child: TabBar(

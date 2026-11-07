@@ -173,6 +173,7 @@ export class Poller {
     if (url.pathname === '/coupons' && req.method === 'POST') return this.saveCoupons(req);
     if (url.pathname === '/contact') return this.contact(req);
     if (url.pathname === '/codes') return this.codes(req, url);
+    if (url.pathname === '/corrections') return this.corrections(req);
     if (url.pathname === '/audit') return this.audit(req);
     if (url.pathname === '/log') {
       const ids = new Set((url.searchParams.get('ids') || '').split(',').filter(Boolean).slice(0, 300).map(Number));
@@ -264,6 +265,58 @@ export class Poller {
       return r.ok;
     } catch (_) {
       return false;
+    }
+  }
+
+  // Corrections de KOUNADIA Admin : faits du jour et vidéos de temps forts retirés (lus par le moteur,
+  // gardés 7 jours). Lecture pour tous ; changement seulement avec la session admin. Après un retrait,
+  // le calcul concerné est relancé tout de suite (faits : V2 ; vidéos : Scores).
+  async corrections(req) {
+    const H = { 'access-control-allow-origin': '*', 'cache-control': 'no-store' };
+    const st = (await this.state.storage.get('corr')) || { facts: {}, hl: {} };
+    const now = Date.now();
+    for (const k of ['facts', 'hl']) {
+      st[k] ??= {};
+      for (const [x, t] of Object.entries(st[k])) if (now - t > 7 * 86400000) delete st[k][x];
+    }
+    const out = () => ({ facts: Object.keys(st.facts), hl: Object.keys(st.hl) });
+    if (req.method === 'GET') return Response.json(out(), { headers: H });
+    if (req.method !== 'POST') return new Response('', { status: 405, headers: H });
+    const auth = req.headers.get('authorization') || '';
+    if (!/^Bearer\s+\S{10,}$/.test(auth)) return Response.json({ error: 'Reconnecte-toi.' }, { status: 401, headers: H });
+    if (!(await this.isAdmin(auth))) return Response.json({ error: 'Accès refusé.' }, { status: 403, headers: H });
+    let body = {};
+    try {
+      body = await req.json();
+    } catch (_) {}
+    const type = body.type === 'hl' ? 'hl' : body.type === 'fact' ? 'facts' : null;
+    const key = String(body.key || '');
+    const okKey = type === 'facts' ? /^f[a-z0-9]{3,12}$/.test(key) : /^-?\d{1,12}:[\w-]{6,20}$/.test(key);
+    if (!type || !okKey) return Response.json({ error: 'Demande invalide.' }, { status: 400, headers: H });
+    if (body.undo) delete st[type][key];
+    else st[type][key] = now;
+    await this.state.storage.put('corr', st);
+    await this.dispatch(type === 'hl' ? 'scores.yml' : 'v2.yml');
+    return Response.json(out(), { headers: H });
+  }
+
+  /** Lance tout de suite une tâche du dépôt kfeed (jeton limité aux « Actions »). */
+  async dispatch(wf) {
+    if (!this.env.GH_DISPATCH) return;
+    try {
+      const r = await fetch(`https://api.github.com/repos/barroapk/kfeed/actions/workflows/${wf}/dispatches`, {
+        method: 'POST',
+        headers: {
+          authorization: `Bearer ${this.env.GH_DISPATCH}`,
+          accept: 'application/vnd.github+json',
+          'user-agent': 'KOUNADIA-robot',
+          'content-type': 'application/json',
+        },
+        body: JSON.stringify({ ref: 'main' }),
+      });
+      if (r.status !== 204) await this.state.storage.put('kickErr', `${new Date().toISOString()} ${wf} HTTP ${r.status}`);
+    } catch (e) {
+      await this.state.storage.put('kickErr', `${new Date().toISOString()} ${wf} ${e}`);
     }
   }
 

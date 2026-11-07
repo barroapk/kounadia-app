@@ -230,22 +230,42 @@ class _BigCard extends StatelessWidget {
   }
 }
 
-class _PlayButton extends StatelessWidget {
+/// Bouton « ▶ Temps forts » qui bat doucement : on voit tout de suite qu'une vidéo existe.
+class _PlayButton extends StatefulWidget {
   final VoidCallback onTap;
   _PlayButton({required this.onTap});
 
   @override
-  Widget build(BuildContext context) => Material(
+  State<_PlayButton> createState() => _PlayButtonState();
+}
+
+class _PlayButtonState extends State<_PlayButton> with SingleTickerProviderStateMixin {
+  late final AnimationController _c = AnimationController(vsync: this, duration: Duration(milliseconds: 900))..repeat(reverse: true);
+
+  @override
+  void dispose() {
+    _c.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) => ScaleTransition(
+        scale: Tween<double>(begin: 1.0, end: 1.09).animate(CurvedAnimation(parent: _c, curve: Curves.easeInOut)),
+        child: _button(),
+      );
+
+  Widget _button() => Material(
         color: Colors.transparent,
         child: InkWell(
           borderRadius: BorderRadius.circular(20),
-          onTap: onTap,
+          onTap: widget.onTap,
           child: Container(
             padding: EdgeInsets.fromLTRB(4, 3, 10, 3),
             decoration: BoxDecoration(
-              color: Color(0xE6FF0000),
+              color: Color(0xFFFF1F1F),
               borderRadius: BorderRadius.circular(20),
-              boxShadow: [BoxShadow(color: Colors.black38, blurRadius: 8)],
+              border: Border.all(color: Colors.white, width: 1.5),
+              boxShadow: [BoxShadow(color: Color(0x99FF0000), blurRadius: 12)],
             ),
             child: Row(mainAxisSize: MainAxisSize.min, children: [
               Icon(Icons.play_arrow_rounded, color: Colors.white, size: 24),
