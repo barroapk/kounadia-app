@@ -85,14 +85,27 @@ class _CouponDayScreenState extends State<CouponDayScreen> {
     return DefaultTabController(
       length: 2,
       child: Column(children: [
+        // Onglets en pastilles : Gratuits / VIP (VIP en or).
         Container(
-          color: K.bg,
+          margin: EdgeInsets.fromLTRB(14, 12, 14, 4),
+          height: 46,
+          padding: EdgeInsets.all(4),
+          decoration: BoxDecoration(color: K.card, borderRadius: BorderRadius.circular(16)),
           child: TabBar(
-            labelColor: K.text,
+            dividerColor: Colors.transparent,
+            indicatorSize: TabBarIndicatorSize.tab,
+            indicator: BoxDecoration(
+              gradient: LinearGradient(colors: [Color(0xFF4F46E5), Color(0xFF7C3AED)]),
+              borderRadius: BorderRadius.circular(12),
+            ),
+            labelColor: Colors.white,
             unselectedLabelColor: K.muted,
-            indicatorColor: K.indigo,
-            labelStyle: TextStyle(fontWeight: FontWeight.w900, fontSize: 14),
-            tabs: [Tab(text: tr('Coupons gratuits')), Tab(text: tr('Coupons VIP'))],
+            labelStyle: TextStyle(fontWeight: FontWeight.w900, fontSize: 13.5),
+            unselectedLabelStyle: TextStyle(fontWeight: FontWeight.w700, fontSize: 13.5),
+            tabs: [
+              Tab(child: Row(mainAxisSize: MainAxisSize.min, children: [Icon(Icons.card_giftcard_rounded, size: 17), SizedBox(width: 6), Text(tr('Coupons gratuits'))])),
+              Tab(child: Row(mainAxisSize: MainAxisSize.min, children: [Icon(Icons.workspace_premium_rounded, size: 17, color: Color(0xFFD4A017)), SizedBox(width: 6), Text(tr('Coupons VIP'))])),
+            ],
           ),
         ),
         Expanded(
@@ -120,7 +133,7 @@ class _CouponDayScreenState extends State<CouponDayScreen> {
     return RefreshIndicator(
       color: K.indigo,
       onRefresh: _reload,
-      child: ListView(physics: AlwaysScrollableScrollPhysics(), padding: EdgeInsets.fromLTRB(12, 12, 12, 96), children: [
+      child: ListView(physics: AlwaysScrollableScrollPhysics(), padding: EdgeInsets.fromLTRB(14, 12, 14, 110), children: [
         if (d.offline) kOfflineBanner(),
         if (t == null) ...[
           // Avant le calcul du matin : compte à rebours, et les coupons d'hier restent visibles avec leurs résultats.

@@ -566,50 +566,71 @@ class V2CouponCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final c = coupon;
+    final n = c == null ? 0 : (c.locked ? c.n : c.legs.length);
     return Container(
-      margin: EdgeInsets.only(bottom: 14),
+      margin: EdgeInsets.only(bottom: 18),
       clipBehavior: Clip.antiAlias,
-      decoration: BoxDecoration(color: K.card, borderRadius: BorderRadius.circular(16), border: Border.all(color: K.border)),
+      decoration: BoxDecoration(
+        color: K.card,
+        borderRadius: BorderRadius.circular(22),
+        boxShadow: [BoxShadow(color: accent.withAlpha(K.dark ? 50 : 40), blurRadius: 18, offset: Offset(0, 6))],
+      ),
       child: Column(crossAxisAlignment: CrossAxisAlignment.stretch, children: [
+        // En-tête coloré : titre, grande cote, nombre de matchs, résultat et partage.
         Container(
-          padding: EdgeInsets.fromLTRB(14, 12, 12, 12),
-          decoration: BoxDecoration(gradient: LinearGradient(colors: [accent.withAlpha(80), accent.withAlpha(20)])),
-          // Titre sur sa ligne ; résultat et cote dessous (le titre n'est plus coupé en deux).
+          padding: EdgeInsets.fromLTRB(18, 16, 10, 16),
+          decoration: BoxDecoration(
+            gradient: LinearGradient(colors: [accent, Color.lerp(accent, Colors.black, 0.28)!], begin: Alignment.topLeft, end: Alignment.bottomRight),
+          ),
           child: Row(children: [
             Expanded(
               child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-                T(title, maxLines: 1, overflow: TextOverflow.ellipsis, style: TextStyle(color: K.text, fontSize: 16, fontWeight: FontWeight.w900)),
+                T(title.toUpperCase(),
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                    style: TextStyle(color: Colors.white.withAlpha(220), fontSize: 12, fontWeight: FontWeight.w900, letterSpacing: 1.1)),
                 if (c != null) ...[
                   SizedBox(height: 6),
-                  Row(children: [
-                    Text('@ ${v2Num(c.odd)}', style: TextStyle(color: K.text, fontSize: 19, fontWeight: FontWeight.w900)),
+                  Row(crossAxisAlignment: CrossAxisAlignment.center, children: [
+                    Text('@${v2Num(c.odd)}', style: TextStyle(color: Colors.white, fontSize: 30, fontWeight: FontWeight.w900, height: 1)),
+                    SizedBox(width: 10),
+                    Container(
+                      padding: EdgeInsets.symmetric(horizontal: 9, vertical: 3),
+                      decoration: BoxDecoration(color: Colors.white.withAlpha(46), borderRadius: BorderRadius.circular(10)),
+                      child: Text('$n ${tr(n > 1 ? 'matchs' : 'match')}',
+                          style: TextStyle(color: Colors.white, fontSize: 12, fontWeight: FontWeight.w800)),
+                    ),
                     // Coupon VIP verrouillé (non-abonné) : jamais de résultat gagné/perdu.
-                    if (c.r != null && !c.locked) ...[SizedBox(width: 10), v2ResultBadge(c.r)],
+                    if (c.r != null && !c.locked) ...[SizedBox(width: 8), v2ResultBadge(c.r)],
                   ]),
                 ],
               ]),
             ),
-            if (c != null && !c.locked && c.legs.isNotEmpty)
+            if (c != null && c.locked)
+              Padding(padding: EdgeInsets.only(right: 8), child: Icon(Icons.lock_rounded, color: Colors.white, size: 26))
+            else if (c != null && c.legs.isNotEmpty)
               IconButton(
                 tooltip: tr('Partager'),
-                visualDensity: VisualDensity.compact,
-                icon: Icon(Icons.share_rounded, color: K.text, size: 22),
+                icon: Icon(Icons.ios_share_rounded, color: Colors.white, size: 23),
                 onPressed: () => shareCoupon(context, v2ToCoupon(c)),
               ),
           ]),
         ),
         if (c == null)
           Padding(
-            padding: EdgeInsets.all(16),
+            padding: EdgeInsets.all(18),
             child: T("Pas de coupon pour cette cote aujourd'hui.", style: TextStyle(color: K.muted, fontSize: 13.5)),
           )
         else if (c.locked)
           _locked(context, c)
-        else
+        else ...[
+          SizedBox(height: 4),
           for (var i = 0; i < c.legs.length; i++) ...[
-            if (i > 0) Container(height: 1, color: K.border),
+            if (i > 0) Container(height: 1, margin: EdgeInsets.symmetric(horizontal: 14), color: K.border.withAlpha(150)),
             V2MatchRow(c.legs[i], showLeague: true),
           ],
+          SizedBox(height: 4),
+        ],
         // Code 1xBet : affiché sur le coupon du jour (avant, pendant et après les matchs).
         if (c != null && !c.locked && codeKey != null)
           ValueListenableBuilder<Map<String, String>>(
@@ -617,37 +638,54 @@ class V2CouponCard extends StatelessWidget {
             builder: (_, __, ___) {
               final code = Codes.of(codeKey!, codeDay);
               if (code == null) return SizedBox.shrink();
-              return Column(crossAxisAlignment: CrossAxisAlignment.stretch, children: [
-                Container(height: 1, color: K.border),
-                V2CodeRow(code: code, kind: codeKey!),
-              ]);
+              return V2CodeRow(code: code, kind: codeKey!);
             },
           ),
         if (week != null) ...[
-          Container(height: 1, color: K.border),
+          Container(height: 1, color: K.border.withAlpha(150)),
           v2WeekLine(week!, onHistory: onHistory),
         ],
       ]),
     );
   }
 
+  // Coupon VIP pour un non-abonné : lignes floutées (aperçu) puis bouton or.
   Widget _locked(BuildContext context, V2Coupon c) => Padding(
-        padding: EdgeInsets.all(14),
+        padding: EdgeInsets.fromLTRB(16, 14, 16, 16),
         child: Column(crossAxisAlignment: CrossAxisAlignment.stretch, children: [
-          Row(children: [
-            Icon(Icons.lock_rounded, color: Color(0xFFD4A017), size: 20),
-            SizedBox(width: 8),
-            Expanded(
-              child: Text('${c.n} ${tr(c.n > 1 ? 'matchs' : 'match')} · Premium',
-                  style: TextStyle(color: K.text, fontSize: 14, fontWeight: FontWeight.w800)),
+          for (var i = 0; i < (c.n < 3 ? c.n : 3); i++)
+            Container(
+              height: 40,
+              margin: EdgeInsets.only(bottom: 8),
+              padding: EdgeInsets.symmetric(horizontal: 12),
+              decoration: BoxDecoration(color: K.bg, borderRadius: BorderRadius.circular(12)),
+              child: Row(children: [
+                Container(width: 22, height: 22, decoration: BoxDecoration(color: K.border, shape: BoxShape.circle)),
+                SizedBox(width: 10),
+                Expanded(child: Container(height: 9, decoration: BoxDecoration(color: K.border, borderRadius: BorderRadius.circular(5)))),
+                SizedBox(width: 30),
+                Container(width: 34, height: 18, decoration: BoxDecoration(color: K.border, borderRadius: BorderRadius.circular(6))),
+              ]),
             ),
-          ]),
-          SizedBox(height: 12),
-          FilledButton.icon(
-            style: FilledButton.styleFrom(backgroundColor: Color(0xFFD4A017), foregroundColor: Colors.black, minimumSize: Size.fromHeight(44)),
-            onPressed: () => Navigator.push(context, MaterialPageRoute(builder: (_) => AccountScreen())),
-            icon: Icon(Icons.workspace_premium_rounded),
-            label: T('Débloquer avec Premium', style: TextStyle(fontWeight: FontWeight.w900)),
+          SizedBox(height: 6),
+          DecoratedBox(
+            decoration: BoxDecoration(
+              gradient: LinearGradient(colors: [Color(0xFFF5C542), Color(0xFFD4A017)]),
+              borderRadius: BorderRadius.circular(14),
+              boxShadow: [BoxShadow(color: Color(0x55D4A017), blurRadius: 12, offset: Offset(0, 4))],
+            ),
+            child: FilledButton.icon(
+              style: FilledButton.styleFrom(
+                backgroundColor: Colors.transparent,
+                shadowColor: Colors.transparent,
+                foregroundColor: Colors.black,
+                minimumSize: Size.fromHeight(50),
+                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
+              ),
+              onPressed: () => Navigator.push(context, MaterialPageRoute(builder: (_) => AccountScreen())),
+              icon: Icon(Icons.workspace_premium_rounded),
+              label: T('Débloquer avec Premium', style: TextStyle(fontWeight: FontWeight.w900, fontSize: 15)),
+            ),
           ),
         ]),
       );
@@ -676,7 +714,8 @@ class V2CodeRow extends StatelessWidget {
   Widget build(BuildContext context) => InkWell(
         onTap: () => _copy(context),
         child: Container(
-          color: _blue.withAlpha(26),
+          margin: EdgeInsets.fromLTRB(14, 4, 14, 14),
+          decoration: BoxDecoration(color: _blue.withAlpha(24), borderRadius: BorderRadius.circular(16), border: Border.all(color: _blue.withAlpha(70))),
           padding: EdgeInsets.fromLTRB(14, 10, 10, 10),
           child: Row(children: [
             Icon(Icons.confirmation_number_rounded, color: _blue, size: 24),

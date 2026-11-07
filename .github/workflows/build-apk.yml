@@ -20,6 +20,10 @@ on:
 permissions:
   contents: write
   actions: write
+# Une fabrication à la fois : la suivante attend (le numéro de version est calculé après la publication précédente).
+concurrency:
+  group: build-apk
+  cancel-in-progress: false
 
 jobs:
   build:
