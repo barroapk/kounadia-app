@@ -451,8 +451,10 @@ class _AccountScreenState extends State<AccountScreen> {
           padding: EdgeInsets.all(16),
           decoration: BoxDecoration(
             gradient: LinearGradient(
-                colors: on ? [Color(0xFF8A6A12), Color(0xFFD4A017)] : [Color(0xFF4F46E5), Color(0xFF7C3AED)]),
-            borderRadius: BorderRadius.circular(18),
+                colors: on ? [Color(0xFF8A6A12), Color(0xFFD4A017)] : [Color(0xFF4F46E5), Color(0xFF7C3AED)],
+                begin: Alignment.topLeft, end: Alignment.bottomRight),
+            borderRadius: BorderRadius.circular(24),
+            boxShadow: [BoxShadow(color: (on ? Color(0xFFD4A017) : Color(0xFF4F46E5)).withAlpha(90), blurRadius: 20, offset: Offset(0, 6))],
           ),
           child: Row(children: [
             CircleAvatar(
@@ -497,78 +499,132 @@ class _AccountScreenState extends State<AccountScreen> {
                 style: TextStyle(color: K.muted, fontSize: 12.5)),
           ),
         ]),
-        SizedBox(height: 18),
+        SizedBox(height: 22),
+        // Ce que débloque Premium : 4 avantages en tuiles.
+        if (!on) ...[
+          T('Avec Premium, tu débloques', style: TextStyle(color: K.text, fontSize: 17, fontWeight: FontWeight.w900)),
+          SizedBox(height: 12),
+          LayoutBuilder(builder: (_, box) {
+            final w = (box.maxWidth - 10) / 2;
+            Widget perk(IconData i, Color c, String t, String s) => Container(
+                  width: w,
+                  padding: EdgeInsets.all(12),
+                  decoration: BoxDecoration(color: K.card, borderRadius: BorderRadius.circular(18)),
+                  child: Row(children: [
+                    Container(width: 36, height: 36, decoration: BoxDecoration(color: c.withAlpha(36), borderRadius: BorderRadius.circular(12)), child: Icon(i, color: c, size: 20)),
+                    SizedBox(width: 10),
+                    Expanded(
+                      child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+                        T(t, maxLines: 1, overflow: TextOverflow.ellipsis, style: TextStyle(color: K.text, fontSize: 13, fontWeight: FontWeight.w800)),
+                        T(s, maxLines: 2, style: TextStyle(color: K.muted, fontSize: 11, height: 1.25)),
+                      ]),
+                    ),
+                  ]),
+                );
+            return Wrap(spacing: 10, runSpacing: 10, children: [
+              perk(Icons.workspace_premium_rounded, Color(0xFFD4A017), 'Coupons VIP', 'Cote 2, 3 et 5 chaque jour'),
+              perk(Icons.verified_rounded, K.green, 'Coups sûrs', 'Toutes les catégories'),
+              perk(Icons.query_stats_rounded, K.indigoText, 'Analyses', 'Preuves chiffrées par match'),
+              perk(Icons.auto_awesome_rounded, Color(0xFF7C3AED), 'Créer coupon', 'Ta cote, tes critères'),
+            ]);
+          }),
+          SizedBox(height: 22),
+        ],
         T(on ? 'Prolonger mon abonnement' : 'Choisir mon abonnement',
-            style: TextStyle(color: K.text, fontSize: 16, fontWeight: FontWeight.w800)),
+            style: TextStyle(color: K.text, fontSize: 17, fontWeight: FontWeight.w900)),
         SizedBox(height: 4),
         T('Paiement sécurisé par Mobile Money. Les jours s\'ajoutent à ton abonnement en cours.',
             style: TextStyle(color: K.muted, fontSize: 12.5)),
-        SizedBox(height: 12),
+        SizedBox(height: 14),
         for (final p in kPlans) _planTile(p),
-        SizedBox(height: 18),
-        OutlinedButton.icon(
-          onPressed: _editEmail,
-          icon: Icon(Icons.alternate_email_rounded, color: K.text),
-          label: T('Modifier mon e-mail', style: TextStyle(color: K.text)),
-        ),
-        SizedBox(height: 8),
-        OutlinedButton.icon(
-          onPressed: _changePw,
-          icon: Icon(Icons.lock_reset_rounded, color: K.text),
-          label: T('Changer mon mot de passe', style: TextStyle(color: K.text)),
-        ),
-        SizedBox(height: 8),
-        OutlinedButton.icon(
-          onPressed: () => Account.logout(),
-          icon: Icon(Icons.logout_rounded, color: K.muted),
-          label: T('Se déconnecter', style: TextStyle(color: K.muted)),
+        SizedBox(height: 22),
+        Container(
+          clipBehavior: Clip.antiAlias,
+          decoration: BoxDecoration(color: K.card, borderRadius: BorderRadius.circular(20)),
+          child: Column(children: [
+            _accRow(Icons.alternate_email_rounded, 'Modifier mon e-mail', _editEmail),
+            Container(height: 1, margin: EdgeInsets.only(left: 58), color: K.border.withAlpha(140)),
+            _accRow(Icons.lock_reset_rounded, 'Changer mon mot de passe', _changePw),
+            Container(height: 1, margin: EdgeInsets.only(left: 58), color: K.border.withAlpha(140)),
+            _accRow(Icons.logout_rounded, 'Se déconnecter', () => Account.logout(), muted: true),
+          ]),
         ),
       ]),
     );
   }
 
+  Widget _accRow(IconData i, String t, VoidCallback onTap, {bool muted = false}) => InkWell(
+        onTap: onTap,
+        child: Padding(
+          padding: EdgeInsets.symmetric(horizontal: 16, vertical: 15),
+          child: Row(children: [
+            Icon(i, color: muted ? K.muted : K.text, size: 22),
+            SizedBox(width: 16),
+            Expanded(child: T(t, style: TextStyle(color: muted ? K.muted : K.text, fontSize: 14.5, fontWeight: FontWeight.w700))),
+            Icon(Icons.chevron_right_rounded, color: K.muted),
+          ]),
+        ),
+      );
+
   Widget _planTile(KPlan p) {
     final best = p.id == 'month';
+    final perDay = (p.price / p.days).round();
     final sub = switch (p.id) {
-      'day' => '3 jours d\'accès complet · idéal pour essayer',
-      'week' => '7 jours · soit 150 F par jour',
-      'month' => '30 jours · soit 140 F par jour · le plus choisi',
-      _ => '90 jours · 2 100 F économisés (soit 117 F par jour)',
+      'day' => 'Idéal pour essayer',
+      'week' => '7 jours d\'accès complet',
+      'month' => 'Le plus choisi',
+      _ => '2 100 F économisés',
     };
+    final gold = Color(0xFFD4A017);
     return Padding(
-      padding: EdgeInsets.only(bottom: 10),
+      padding: EdgeInsets.only(bottom: 12),
       child: Material(
-        color: K.card,
-        borderRadius: BorderRadius.circular(14),
+        color: Colors.transparent,
         child: InkWell(
-          borderRadius: BorderRadius.circular(14),
+          borderRadius: BorderRadius.circular(20),
           onTap: _busy ? null : () => _buy(p),
-          child: Container(
-            padding: EdgeInsets.all(14),
+          child: Ink(
+            padding: EdgeInsets.fromLTRB(16, 14, 14, 14),
             decoration: BoxDecoration(
-                borderRadius: BorderRadius.circular(14), border: Border.all(color: best ? K.amber : K.border, width: best ? 2 : 1)),
+              color: best ? null : K.card,
+              gradient: best ? LinearGradient(colors: [Color(0xFF3B2F0A), Color(0xFF1F1A07)], begin: Alignment.topLeft, end: Alignment.bottomRight) : null,
+              borderRadius: BorderRadius.circular(20),
+              border: best ? Border.all(color: gold, width: 2) : null,
+              boxShadow: best ? [BoxShadow(color: gold.withAlpha(70), blurRadius: 18, offset: Offset(0, 6))] : null,
+            ),
             child: Row(children: [
+              Container(
+                width: 46,
+                height: 46,
+                decoration: BoxDecoration(
+                  gradient: LinearGradient(colors: best ? [Color(0xFFF5C542), gold] : [Color(0xFF4F46E5), Color(0xFF7C3AED)]),
+                  borderRadius: BorderRadius.circular(14),
+                ),
+                alignment: Alignment.center,
+                child: Text('${p.days}', style: TextStyle(color: best ? Colors.black : Colors.white, fontSize: 18, fontWeight: FontWeight.w900)),
+              ),
+              SizedBox(width: 14),
               Expanded(
                 child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
                   Row(children: [
-                    T(p.label, style: TextStyle(color: K.text, fontSize: 15.5, fontWeight: FontWeight.w800)),
+                    Flexible(child: T(p.label, style: TextStyle(color: best ? Colors.white : K.text, fontSize: 16, fontWeight: FontWeight.w900))),
                     if (best) ...[
                       SizedBox(width: 8),
                       Container(
                         padding: EdgeInsets.symmetric(horizontal: 7, vertical: 2),
-                        decoration: BoxDecoration(color: K.amber, borderRadius: BorderRadius.circular(8)),
+                        decoration: BoxDecoration(color: gold, borderRadius: BorderRadius.circular(8)),
                         child: T('POPULAIRE', style: TextStyle(color: Colors.black, fontSize: 10, fontWeight: FontWeight.w900)),
                       ),
                     ],
                   ]),
-                  SizedBox(height: 2),
-                  T(sub, style: TextStyle(color: K.muted, fontSize: 12.5)),
+                  SizedBox(height: 3),
+                  T('${tr(sub)} · ${fcfa(perDay)} / ${tr('jour')}', style: TextStyle(color: best ? Colors.white70 : K.muted, fontSize: 12.5)),
                 ]),
               ),
               Column(crossAxisAlignment: CrossAxisAlignment.end, children: [
-                T(fcfa(p.price), style: TextStyle(color: K.indigoText, fontSize: 18, fontWeight: FontWeight.w900)),
+                T(fcfa(p.price), style: TextStyle(color: best ? gold : K.indigoText, fontSize: 20, fontWeight: FontWeight.w900)),
                 if (Fx.approx(p.price) != null)
-                  T(Fx.approx(p.price)!, style: TextStyle(color: K.muted, fontSize: 12, fontWeight: FontWeight.w700)),
+                  T(Fx.approx(p.price)!, style: TextStyle(color: best ? Colors.white60 : K.muted, fontSize: 12, fontWeight: FontWeight.w700)),
               ]),
             ]),
           ),
