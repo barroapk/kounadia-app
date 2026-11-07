@@ -271,12 +271,21 @@ class _SelectionScreenState extends State<SelectionScreen> {
           final s = d.today?.selection ?? (d.history.isNotEmpty ? d.history.first.selection : null);
           return Column(children: [
             Container(
-              color: K.bg,
+              margin: EdgeInsets.fromLTRB(14, 12, 14, 0),
+              height: 46,
+              padding: EdgeInsets.all(4),
+              decoration: BoxDecoration(color: K.card, borderRadius: BorderRadius.circular(16)),
               child: TabBar(
-                labelColor: K.text,
+                dividerColor: Colors.transparent,
+                indicatorSize: TabBarIndicatorSize.tab,
+                indicator: BoxDecoration(
+                  gradient: LinearGradient(colors: [Color(0xFF4F46E5), Color(0xFF7C3AED)]),
+                  borderRadius: BorderRadius.circular(12),
+                ),
+                labelColor: Colors.white,
                 unselectedLabelColor: K.muted,
-                indicatorColor: K.indigo,
-                labelStyle: TextStyle(fontWeight: FontWeight.w900, fontSize: 14),
+                labelStyle: TextStyle(fontWeight: FontWeight.w900, fontSize: 13.5),
+                unselectedLabelStyle: TextStyle(fontWeight: FontWeight.w700, fontSize: 13.5),
                 tabs: [
                   Tab(text: tr('Coups sûrs')),
                   Tab(text: _favs.isEmpty ? tr('Mes favoris') : '${tr('Mes favoris')} (${_favs.length})'),
@@ -293,7 +302,7 @@ class _SelectionScreenState extends State<SelectionScreen> {
   Widget _wrap(V2Data d, List<Widget> children) => RefreshIndicator(
         color: K.indigo,
         onRefresh: _reload,
-        child: ListView(physics: AlwaysScrollableScrollPhysics(), padding: EdgeInsets.fromLTRB(12, 10, 12, 96), children: [
+        child: ListView(physics: AlwaysScrollableScrollPhysics(), padding: EdgeInsets.fromLTRB(14, 6, 14, 110), children: [
           if (d.offline) kOfflineBanner(),
           ...children,
           SizedBox(height: 6),
@@ -371,21 +380,21 @@ class _SelectionScreenState extends State<SelectionScreen> {
     // En-tête fixe (menu, catégories) ; seules les cartes de matchs défilent.
     final header = Container(
       color: K.bg,
-      padding: EdgeInsets.fromLTRB(12, 10, 12, 8),
+      padding: EdgeInsets.fromLTRB(14, 12, 14, 10),
       child: Column(crossAxisAlignment: CrossAxisAlignment.stretch, children: [
       Row(children: [
         Material(
           color: K.card,
-          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12), side: BorderSide(color: K.border)),
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
           child: InkWell(
-            borderRadius: BorderRadius.circular(12),
+            borderRadius: BorderRadius.circular(14),
             onTap: () => _openMenu(d),
             child: Padding(padding: EdgeInsets.all(10), child: Icon(Icons.menu_rounded, color: K.text)),
           ),
         ),
         SizedBox(width: 12),
         Expanded(
-          child: T(f.title, maxLines: 1, overflow: TextOverflow.ellipsis, style: TextStyle(color: K.text, fontSize: 16, fontWeight: FontWeight.w900)),
+          child: T(f.title, maxLines: 1, overflow: TextOverflow.ellipsis, style: TextStyle(color: K.text, fontSize: 18, fontWeight: FontWeight.w900, letterSpacing: 0.2)),
         ),
       ]),
       SizedBox(height: 10),
@@ -394,7 +403,6 @@ class _SelectionScreenState extends State<SelectionScreen> {
     );
     return Column(children: [
       header,
-      Container(height: 1, color: K.border),
       Expanded(child: _wrap(d, [...body, KndBanner()])),
     ]);
   }
@@ -438,7 +446,7 @@ class _SelectionScreenState extends State<SelectionScreen> {
             padding: EdgeInsetsDirectional.only(end: 8),
             child: Material(
               color: f.key == _sel.key ? K.indigo : K.card,
-              shape: StadiumBorder(side: BorderSide(color: f.key == _sel.key ? K.indigo : K.border)),
+              shape: StadiumBorder(),
               child: InkWell(
                 customBorder: StadiumBorder(),
                 onTap: () => setState(() => _sel = f),
@@ -450,7 +458,11 @@ class _SelectionScreenState extends State<SelectionScreen> {
                     T(_short(f), style: TextStyle(color: f.key == _sel.key ? Colors.white : K.text, fontSize: 13, fontWeight: FontWeight.w800)),
                     if (ready && f.coupon == null) ...[
                       SizedBox(width: 6),
-                      Text('${_count(s!, f)}', style: TextStyle(color: f.key == _sel.key ? Color(0xDDFFFFFF) : K.muted, fontSize: 12, fontWeight: FontWeight.w700)),
+                      Container(
+                        padding: EdgeInsets.symmetric(horizontal: 7, vertical: 2),
+                        decoration: BoxDecoration(color: f.key == _sel.key ? Colors.white24 : K.bg, borderRadius: BorderRadius.circular(10)),
+                        child: Text('${_count(s!, f)}', style: TextStyle(color: f.key == _sel.key ? Colors.white : K.muted, fontSize: 11.5, fontWeight: FontWeight.w800)),
+                      ),
                     ],
                   ]),
                 ),

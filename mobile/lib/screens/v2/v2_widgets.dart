@@ -157,17 +157,21 @@ Widget v2Flag(String? url) => url == null || url.isEmpty
       );
 
 /// En-tête de championnat (comme l'onglet Matchs).
-Widget v2LeagueHead(V2Leg l, {bool live = false}) => Container(
-      color: K.groupHead,
-      padding: EdgeInsets.fromLTRB(12, 9, 10, 9),
+Widget v2LeagueHead(V2Leg l, {bool live = false}) => Padding(
+      padding: EdgeInsets.fromLTRB(14, 12, 12, 6),
       child: Row(children: [
         v2Flag(l.flag),
-        SizedBox(width: 8),
+        SizedBox(width: 10),
         Expanded(
           child: T(l.leagueLabel.isEmpty ? 'Football' : l.leagueLabel,
-              maxLines: 1, overflow: TextOverflow.ellipsis, style: TextStyle(color: K.text, fontSize: 13, fontWeight: FontWeight.w700)),
+              maxLines: 1, overflow: TextOverflow.ellipsis, style: TextStyle(color: K.text, fontSize: 13.5, fontWeight: FontWeight.w800)),
         ),
-        if (live) Container(width: 7, height: 7, decoration: BoxDecoration(color: K.red, shape: BoxShape.circle)),
+        if (live)
+          Container(
+            padding: EdgeInsets.symmetric(horizontal: 7, vertical: 2),
+            decoration: BoxDecoration(color: K.red.withAlpha(36), borderRadius: BorderRadius.circular(8)),
+            child: T('LIVE', style: TextStyle(color: K.red, fontSize: 10.5, fontWeight: FontWeight.w900, letterSpacing: 0.6)),
+          ),
       ]),
     );
 
@@ -181,13 +185,17 @@ class V2Group extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Container(
-      margin: EdgeInsets.only(bottom: 12),
+      margin: EdgeInsets.only(bottom: 14),
       clipBehavior: Clip.antiAlias,
-      decoration: BoxDecoration(color: K.card, borderRadius: BorderRadius.circular(14), border: Border.all(color: K.border)),
+      decoration: BoxDecoration(
+        color: K.card,
+        borderRadius: BorderRadius.circular(20),
+        boxShadow: [BoxShadow(color: Colors.black.withAlpha(K.dark ? 40 : 14), blurRadius: 14, offset: Offset(0, 4))],
+      ),
       child: Column(children: [
         v2LeagueHead(legs.first, live: legs.any((l) => l.r == 'live' && !l.stale)),
         for (var i = 0; i < legs.length; i++) ...[
-          if (i > 0) Container(height: 1, color: K.border),
+          if (i > 0) Container(height: 1, margin: EdgeInsets.only(left: 58), color: K.border.withAlpha(140)),
           V2MatchRow(legs[i], fav: favs?.contains(legs[i].key), onStar: onStar),
         ],
       ]),
@@ -221,17 +229,17 @@ class V2MatchRow extends StatelessWidget {
   }
 
   Widget _team(String name, String? logo, int? n, bool win) => Row(children: [
-        TeamCrest(name: name, logo: logo ?? LogoCache.get(name), size: 18),
-        SizedBox(width: 7),
+        TeamCrest(name: name, logo: logo ?? LogoCache.get(name), size: 20),
+        SizedBox(width: 9),
         Expanded(
           child: Text(name,
               maxLines: 1,
               overflow: TextOverflow.ellipsis,
-              style: TextStyle(color: K.text, fontSize: 13.5, fontWeight: win ? FontWeight.w900 : FontWeight.w600)),
+              style: TextStyle(color: K.text, fontSize: 14, fontWeight: win ? FontWeight.w900 : FontWeight.w600)),
         ),
         if (n != null) ...[
           SizedBox(width: 6),
-          Text('$n', style: TextStyle(color: K.text, fontSize: 13.5, fontWeight: FontWeight.w900)),
+          Text('$n', style: TextStyle(color: K.text, fontSize: 15, fontWeight: FontWeight.w900)),
         ],
       ]);
 
@@ -248,7 +256,11 @@ class V2MatchRow extends StatelessWidget {
     } else if (l.stale) {
       time = Text(tr('Rep.'), textAlign: TextAlign.center, style: TextStyle(color: K.amber, fontSize: 12, fontWeight: FontWeight.w900));
     } else if (l.r == 'live') {
-      time = Text(l.minute ?? 'Live', textAlign: TextAlign.center, style: TextStyle(color: K.red, fontSize: 12, fontWeight: FontWeight.w900));
+      time = Container(
+        padding: EdgeInsets.symmetric(horizontal: 6, vertical: 3),
+        decoration: BoxDecoration(color: K.red.withAlpha(34), borderRadius: BorderRadius.circular(8)),
+        child: Text(l.minute ?? 'Live', textAlign: TextAlign.center, style: TextStyle(color: K.red, fontSize: 12, fontWeight: FontWeight.w900)),
+      );
     } else {
       // Match d'un autre jour (Grands matchs : demain) : le jour au-dessus de l'heure.
       final d = l.date;
@@ -270,8 +282,8 @@ class V2MatchRow extends StatelessWidget {
     return InkWell(
       onTap: () => showV2Why(context, l),
       child: Container(
-        color: l.r == 'live' && !l.stale ? Color(0x14EF4444) : null,
-        padding: EdgeInsets.fromLTRB(6, 7, 8, 7),
+        color: l.r == 'live' && !l.stale ? Color(0x0FEF4444) : null,
+        padding: EdgeInsets.fromLTRB(8, 10, 12, 10),
         child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
           if (showLeague)
             Padding(
@@ -286,12 +298,12 @@ class V2MatchRow extends StatelessWidget {
               ]),
             ),
           Row(crossAxisAlignment: CrossAxisAlignment.center, children: [
-            SizedBox(width: 40, child: Center(child: time)),
+            SizedBox(width: 46, child: Center(child: time)),
             SizedBox(width: 4),
             Expanded(
               child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
                 _team(l.home, l.hl, h, h != null && a != null && h > a && pair == null),
-                SizedBox(height: 3),
+                SizedBox(height: 7),
                 _team(l.away, l.al, a, h != null && a != null && a > h && pair == null),
                 if (statLine != null) ...[
                   SizedBox(height: 5),
