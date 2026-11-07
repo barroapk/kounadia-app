@@ -107,7 +107,7 @@ Color v2Color(String? r) => r == 'won'
                 ? K.muted
                 : K.pending;
 
-Widget v2ResultBadge(String? r, {double size = 12}) {
+Widget v2ResultBadge(String? r, {double size = 12, bool solid = false}) {
   if (r == null) return SizedBox.shrink();
   final (txt, icon) = switch (r) {
     'won' => ('Gagné', Icons.check_circle_rounded),
@@ -116,13 +116,19 @@ Widget v2ResultBadge(String? r, {double size = 12}) {
     _ => ('Annulé', Icons.remove_circle_rounded),
   };
   final c = v2Color(r);
+  // solid : pastille pleine (texte blanc), lisible sur un en-tête coloré.
+  final fg = solid ? Colors.white : c;
   return Container(
-    padding: EdgeInsets.symmetric(horizontal: 8, vertical: 3),
-    decoration: BoxDecoration(color: c.withAlpha(36), borderRadius: BorderRadius.circular(20)),
+    padding: EdgeInsets.symmetric(horizontal: 9, vertical: 4),
+    decoration: BoxDecoration(
+      color: solid ? c : c.withAlpha(36),
+      borderRadius: BorderRadius.circular(20),
+      border: solid ? Border.all(color: Colors.white.withAlpha(150), width: 1.2) : null,
+    ),
     child: Row(mainAxisSize: MainAxisSize.min, children: [
-      Icon(icon, color: c, size: size + 2),
+      Icon(icon, color: fg, size: size + 2),
       SizedBox(width: 4),
-      T(txt, style: TextStyle(color: c, fontSize: size, fontWeight: FontWeight.w800)),
+      T(txt, style: TextStyle(color: fg, fontSize: size, fontWeight: FontWeight.w900)),
     ]),
   );
 }
@@ -590,11 +596,11 @@ class V2CouponCard extends StatelessWidget {
       child: Column(crossAxisAlignment: CrossAxisAlignment.stretch, children: [
         // En-tête coloré : titre, grande cote, nombre de matchs, résultat et partage.
         Container(
-          padding: EdgeInsets.fromLTRB(18, 16, 10, 16),
+          padding: EdgeInsets.fromLTRB(18, 16, 6, 16),
           decoration: BoxDecoration(
             gradient: LinearGradient(colors: [accent, Color.lerp(accent, Colors.black, 0.28)!], begin: Alignment.topLeft, end: Alignment.bottomRight),
           ),
-          child: Row(children: [
+          child: Row(crossAxisAlignment: CrossAxisAlignment.start, children: [
             Expanded(
               child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
                 T(title.toUpperCase(),
@@ -613,7 +619,7 @@ class V2CouponCard extends StatelessWidget {
                           style: TextStyle(color: Colors.white, fontSize: 12, fontWeight: FontWeight.w800)),
                     ),
                     // Coupon VIP verrouillé (non-abonné) : jamais de résultat gagné/perdu.
-                    if (c.r != null && !c.locked) ...[SizedBox(width: 8), v2ResultBadge(c.r)],
+                    if (c.r != null && !c.locked) ...[SizedBox(width: 8), v2ResultBadge(c.r, solid: true)],
                   ]),
                 ],
               ]),
