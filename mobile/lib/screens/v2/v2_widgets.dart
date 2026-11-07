@@ -469,6 +469,9 @@ class _V2Proofs extends StatelessWidget {
         'form' => Icons.trending_up_rounded,
         'pos' => Icons.leaderboard_rounded,
         'pp' => Icons.fact_check_rounded,
+        'h2h' => Icons.compare_arrows_rounded,
+        'fact' => Icons.bolt_rounded,
+        'draw' => Icons.balance_rounded,
         _ => Icons.bar_chart_rounded,
       };
 

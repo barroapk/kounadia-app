@@ -17,7 +17,7 @@ const TOPIC_RE = /^[a-z]{2}_(l2|m2)_[0-9a-z]{1,16}$/;
 
 const KFEED = 'https://raw.githubusercontent.com/barroapk/kfeed';
 // Tâches du dépôt kfeed relancées par le robot : [fichier, toutes les N minutes].
-const KICKS = [['scores.yml', 15], ['vip.yml', 30], ['pronos.yml', 60], ['v2.yml', 30]];
+const KICKS = [['scores.yml', 15], ['vip.yml', 30], ['pronos.yml', 60], ['v2.yml', 30], ['intel.yml', 30]];
 const API = 'https://knd-api-5bgz.onrender.com';
 
 // Pronostics et coupons
