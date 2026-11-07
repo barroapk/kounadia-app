@@ -14,6 +14,7 @@ import 'tip_history_screen.dart';
 import 'coupon_tab.dart';
 import '../widgets/premium_gate.dart';
 import '../widgets/welcome_card.dart';
+import '../widgets/facts_ticker.dart';
 import '../widgets/setup_card.dart';
 import 'account_screen.dart';
 import '../l10n/tr.dart';
@@ -251,7 +252,7 @@ class _MainScreenState extends State<MainScreen> with WidgetsBindingObserver {
           if (mini != _fabMini) setState(() => _fabMini = mini);
           return false;
         },
-        child: Column(children: [UpdateBanner(), Expanded(child: IndexedStack(index: _i, children: _screens))]),
+        child: Column(children: [const FactsTicker(), UpdateBanner(), Expanded(child: IndexedStack(index: _i, children: _screens))]),
       ),
       // Dépôt / Retrait : service disponible uniquement au Burkina Faso.
       floatingActionButton: kPlay || UserPrefs.iso != 'BF' ? null : Material(

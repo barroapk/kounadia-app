@@ -382,17 +382,17 @@ class SettingsScreen extends StatelessWidget {
                         _tile(Icons.info_rounded, K.muted, 'À propos', 'KOUNADIA SERVICE', () => _info(
                               c,
                               'KOUNADIA',
-                              'Scores en direct, classements, statistiques, coupons du jour et Coups sûrs de football.\n\n'
+                              'Scores en direct, faits du jour, temps forts, classements, statistiques, coupons du jour et Coups sûrs de football.\n\n'
                                   'Les pronostics sont fournis à titre informatif uniquement. '
                                   'Ils ne constituent ni une garantie de résultat ni un conseil financier. 18+ · Joue de manière responsable.\n\n'
-                                  'Une application de KOUNADIA SERVICE\nDéveloppée au Burkina Faso 🇧🇫',
+                                  'Une application de KOUNADIA SERVICE',
                             )),
                       ]),
                     ])),
           ]),
           SizedBox(height: 24),
           Center(
-            child: T('KOUNADIA SERVICE · Version $kAppVersion${kAppBuild > 0 ? ' (build $kAppBuild)' : ''}\nFait au Burkina Faso 🇧🇫',
+            child: T('KOUNADIA SERVICE · Version $kAppVersion',
                 textAlign: TextAlign.center, style: TextStyle(color: K.muted, fontSize: 12)),
           ),
         ],
