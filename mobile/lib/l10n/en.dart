@@ -935,5 +935,5 @@ const Map<String, String> kEn = {
   'Des milliers de passionnés de football nous font confiance.': 'Thousands of football fans trust us.',
   'KOUNADIA SERVICE · Version #.#.#': 'KOUNADIA SERVICE · Version #.#.#',
   'Scores en direct, faits du jour, temps forts, classements, statistiques, coupons du jour et Coups sûrs de football.\n\nLes pronostics sont fournis à titre informatif uniquement. Ils ne constituent ni une garantie de résultat ni un conseil financier. 18+ · Joue de manière responsable.\n\nUne application de KOUNADIA SERVICE': 'Live scores, key facts, highlights, standings, statistics, slips of the day and Sure bets for football.\n\nPredictions are for information only. They are neither a guarantee of results nor financial advice. 18+ · Play responsibly.\n\nAn app by KOUNADIA SERVICE',
-  'Coupon VIP · Sûr 80 %': 'VIP slip · Safe 80%',
+  'Coupon VIP · Sûr': 'VIP slip · Safe',
 };
