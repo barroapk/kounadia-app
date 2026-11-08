@@ -30,11 +30,11 @@ const TIP = {
 };
 // Coupons gagnés (Coupon du jour, VIP, Coups sûrs) : annoncés à tous, uniquement quand ils sont gagnés.
 const CPN = {
-  fr: { single: 'Single du jour', free: 'Coupon gratuit', vip2: 'Coupon VIP cote 2', vip3: 'Coupon VIP cote 3', vip5: 'Coupon VIP cote 5', c2: 'Coup sûr cote 2+', c5: 'Coup sûr cote 5+', c10: 'Coup sûr cote 10+', t: '🎉 {c} gagné !', b: '{n}/{n} matchs gagnés · cote {odd}', vb: '{n}/{n} matchs gagnés · cote {odd} · Rejoins le Premium dès 525 F' },
-  en: { single: 'Single of the day', free: 'Free slip', vip2: 'VIP slip odds 2', vip3: 'VIP slip odds 3', vip5: 'VIP slip odds 5', c2: 'Sure bets odds 2+', c5: 'Sure bets odds 5+', c10: 'Sure bets odds 10+', t: '🎉 {c} won!', b: '{n}/{n} matches won · odds {odd}', vb: '{n}/{n} matches won · odds {odd} · Go Premium from 525 F' },
-  pt: { single: 'Simples do dia', free: 'Cupom grátis', vip2: 'Cupom VIP odd 2', vip3: 'Cupom VIP odd 3', vip5: 'Cupom VIP odd 5', c2: 'Apostas seguras odd 2+', c5: 'Apostas seguras odd 5+', c10: 'Apostas seguras odd 10+', t: '🎉 {c} ganho!', b: '{n}/{n} jogos ganhos · odd {odd}', vb: '{n}/{n} jogos ganhos · odd {odd} · Seja Premium a partir de 525 F' },
-  es: { single: 'Simple del día', free: 'Cupón gratis', vip2: 'Cupón VIP cuota 2', vip3: 'Cupón VIP cuota 3', vip5: 'Cupón VIP cuota 5', c2: 'Apuestas seguras cuota 2+', c5: 'Apuestas seguras cuota 5+', c10: 'Apuestas seguras cuota 10+', t: '🎉 ¡{c} ganado!', b: '{n}/{n} partidos ganados · cuota {odd}', vb: '{n}/{n} partidos ganados · cuota {odd} · Hazte Premium desde 525 F' },
-  ar: { single: 'رهان اليوم الفردي', free: 'القسيمة المجانية', vip2: 'قسيمة VIP احتمال 2', vip3: 'قسيمة VIP احتمال 3', vip5: 'قسيمة VIP احتمال 5', c2: 'رهانات آمنة احتمال 2+', c5: 'رهانات آمنة احتمال 5+', c10: 'رهانات آمنة احتمال 10+', t: '🎉 ربحت {c}!', b: '{n}/{n} مباريات رابحة · الاحتمال {odd}', vb: '{n}/{n} مباريات رابحة · الاحتمال {odd} · اشترك في بريميوم ابتداءً من 525 F' },
+  fr: { single: 'Single du jour', free: 'Coupon gratuit', vip1: 'Coupon VIP Sûr 80 %', vip2: 'Coupon VIP cote 2', vip3: 'Coupon VIP cote 3', vip5: 'Coupon VIP cote 5', c2: 'Coup sûr cote 2+', c5: 'Coup sûr cote 5+', c10: 'Coup sûr cote 10+', t: '🎉 {c} gagné !', b: '{n}/{n} matchs gagnés · cote {odd}', vb: '{n}/{n} matchs gagnés · cote {odd} · Rejoins le Premium dès 525 F' },
+  en: { single: 'Single of the day', free: 'Free slip', vip1: 'VIP slip Safe 80%', vip2: 'VIP slip odds 2', vip3: 'VIP slip odds 3', vip5: 'VIP slip odds 5', c2: 'Sure bets odds 2+', c5: 'Sure bets odds 5+', c10: 'Sure bets odds 10+', t: '🎉 {c} won!', b: '{n}/{n} matches won · odds {odd}', vb: '{n}/{n} matches won · odds {odd} · Go Premium from 525 F' },
+  pt: { single: 'Simples do dia', free: 'Cupom grátis', vip1: 'Cupom VIP Seguro 80%', vip2: 'Cupom VIP odd 2', vip3: 'Cupom VIP odd 3', vip5: 'Cupom VIP odd 5', c2: 'Apostas seguras odd 2+', c5: 'Apostas seguras odd 5+', c10: 'Apostas seguras odd 10+', t: '🎉 {c} ganho!', b: '{n}/{n} jogos ganhos · odd {odd}', vb: '{n}/{n} jogos ganhos · odd {odd} · Seja Premium a partir de 525 F' },
+  es: { single: 'Simple del día', free: 'Cupón gratis', vip1: 'Cupón VIP Seguro 80 %', vip2: 'Cupón VIP cuota 2', vip3: 'Cupón VIP cuota 3', vip5: 'Cupón VIP cuota 5', c2: 'Apuestas seguras cuota 2+', c5: 'Apuestas seguras cuota 5+', c10: 'Apuestas seguras cuota 10+', t: '🎉 ¡{c} ganado!', b: '{n}/{n} partidos ganados · cuota {odd}', vb: '{n}/{n} partidos ganados · cuota {odd} · Hazte Premium desde 525 F' },
+  ar: { single: 'رهان اليوم الفردي', free: 'القسيمة المجانية', vip1: 'قسيمة VIP آمنة 80%', vip2: 'قسيمة VIP احتمال 2', vip3: 'قسيمة VIP احتمال 3', vip5: 'قسيمة VIP احتمال 5', c2: 'رهانات آمنة احتمال 2+', c5: 'رهانات آمنة احتمال 5+', c10: 'رهانات آمنة احتمال 10+', t: '🎉 ربحت {c}!', b: '{n}/{n} مباريات رابحة · الاحتمال {odd}', vb: '{n}/{n} مباريات رابحة · الاحتمال {odd} · اشترك في بريميوم ابتداءً من 525 F' },
 };
 const fill = (t, v) => t.replace(/\{(\w+)\}/g, (_, k) => (v[k] ?? ''));
 
@@ -324,7 +324,7 @@ export class Poller {
   // Single et coupon gratuit : pour tous ; coupons VIP et Coups sûrs : seulement avec un ticket Premium (ou l'admin).
   async codes(req, url) {
     const H = { 'access-control-allow-origin': '*', 'cache-control': 'no-store' };
-    const KEYS = ['single', 'free', 'vip2', 'vip3', 'vip5'];
+    const KEYS = ['single', 'free', 'vip1', 'vip2', 'vip3', 'vip5'];
     const FREE = new Set(['single', 'free']);
     const st = (await this.state.storage.get('codes')) || { day: '', c: {} };
     if (req.method === 'GET') {
@@ -626,7 +626,7 @@ export class Poller {
       for (const D of [t, ...(Array.isArray(v2?.history) ? v2.history.slice(0, 1) : [])]) {
         if (!D?.day) continue;
         // Coups sûrs : plus de coupons (cote 2, 5, 10) depuis la 1.5.0 ; seuls les coupons du jour sont annoncés.
-        const list = [['single', D.coupons?.single], ['free', D.coupons?.free], ['vip2', D.coupons?.vip2], ['vip3', D.coupons?.vip3], ['vip5', D.coupons?.vip5]];
+        const list = [['single', D.coupons?.single], ['free', D.coupons?.free], ['vip1', D.coupons?.vip1], ['vip2', D.coupons?.vip2], ['vip3', D.coupons?.vip3], ['vip5', D.coupons?.vip5]];
         for (const [k, c] of list) {
           const id = `${D.day}:${k}`;
           if (c?.r !== 'won' || st.cw[id]) continue;

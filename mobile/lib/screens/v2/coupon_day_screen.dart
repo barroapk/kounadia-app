@@ -12,12 +12,13 @@ import 'v2_cats.dart';
 import 'v2_history_screen.dart';
 import 'v2_widgets.dart';
 
-/// Les coupons du jour : 2 gratuits, 3 VIP.
+/// Les coupons du jour : 2 gratuits, 4 VIP (dont « Sûr 80 % » : une victoire très sûre).
 final kFreeCats = <(String, String, Color)>[
   ('single', 'Single du jour', Color(0xFF16A34A)),
   ('free', 'Coupon gratuit', Color(0xFF0EA5E9)),
 ];
 final kVipCats = <(String, String, Color)>[
+  ('vip1', 'Coupon VIP · Sûr 80 %', Color(0xFF059669)),
   ('vip2', 'Coupon VIP · cote 2', Color(0xFFD4A017)),
   ('vip3', 'Coupon VIP · cote 3', Color(0xFFEA580C)),
   ('vip5', 'Coupon VIP · cote 5', Color(0xFFDC2626)),

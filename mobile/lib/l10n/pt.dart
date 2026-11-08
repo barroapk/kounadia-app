@@ -917,4 +917,5 @@ const Map<String, String> kPt = {
   'Des milliers de passionnés de football nous font confiance.': 'Milhares de fãs de futebol confiam em nós.',
   'KOUNADIA SERVICE · Version #.#.#': 'KOUNADIA SERVICE · Versão #.#.#',
   'Scores en direct, faits du jour, temps forts, classements, statistiques, coupons du jour et Coups sûrs de football.\n\nLes pronostics sont fournis à titre informatif uniquement. Ils ne constituent ni une garantie de résultat ni un conseil financier. 18+ · Joue de manière responsable.\n\nUne application de KOUNADIA SERVICE': 'Placares ao vivo, destaques do dia, melhores momentos, classificações, estatísticas, bilhetes do dia e Apostas seguras de futebol.\n\nOs prognósticos são apenas informativos. Não são garantia de resultado nem conselho financeiro. 18+ · Joga com responsabilidade.\n\nUm aplicativo da KOUNADIA SERVICE',
+  'Coupon VIP · Sûr 80 %': 'Cupom VIP · Seguro 80%',
 };

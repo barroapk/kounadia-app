@@ -917,4 +917,5 @@ const Map<String, String> kEs = {
   'Des milliers de passionnés de football nous font confiance.': 'Miles de aficionados al fútbol confían en nosotros.',
   'KOUNADIA SERVICE · Version #.#.#': 'KOUNADIA SERVICE · Versión #.#.#',
   'Scores en direct, faits du jour, temps forts, classements, statistiques, coupons du jour et Coups sûrs de football.\n\nLes pronostics sont fournis à titre informatif uniquement. Ils ne constituent ni une garantie de résultat ni un conseil financier. 18+ · Joue de manière responsable.\n\nUne application de KOUNADIA SERVICE': 'Marcadores en directo, datos del día, resúmenes, clasificaciones, estadísticas, boletos del día y Apuestas seguras de fútbol.\n\nLos pronósticos son solo informativos. No son una garantía de resultado ni un consejo financiero. 18+ · Juega con responsabilidad.\n\nUna aplicación de KOUNADIA SERVICE',
+  'Coupon VIP · Sûr 80 %': 'Cupón VIP · Seguro 80 %',
 };

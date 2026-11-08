@@ -917,4 +917,5 @@ const Map<String, String> kAr = {
   'Des milliers de passionnés de football nous font confiance.': 'آلاف من عشاق كرة القدم يثقون بنا.',
   'KOUNADIA SERVICE · Version #.#.#': 'KOUNADIA SERVICE · الإصدار #.#.#',
   'Scores en direct, faits du jour, temps forts, classements, statistiques, coupons du jour et Coups sûrs de football.\n\nLes pronostics sont fournis à titre informatif uniquement. Ils ne constituent ni une garantie de résultat ni un conseil financier. 18+ · Joue de manière responsable.\n\nUne application de KOUNADIA SERVICE': 'نتائج مباشرة، حقائق اليوم، أبرز اللقطات، الترتيب، الإحصائيات، قسائم اليوم والرهانات المضمونة في كرة القدم.\n\nالتوقعات للمعلومة فقط. ليست ضمانًا للنتيجة ولا نصيحة مالية. +18 · العب بمسؤولية.\n\nتطبيق من KOUNADIA SERVICE',
+  'Coupon VIP · Sûr 80 %': 'قسيمة VIP · آمنة 80%',
 };
